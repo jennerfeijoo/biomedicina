@@ -1,138 +1,141 @@
 🧬 Programa de Divulgación Biomédica Avanzada
 
-Una plataforma web educativa que conecta la ciencia de vanguardia con la sociedad, sirviendo como puente entre el laboratorio y la vida cotidiana.
+Conectando la ciencia de vanguardia con la sociedad: un puente entre el laboratorio y la vida cotidiana
 📋 Descripción
 
-Este programa innovador está diseñado para desmitificar los avances más complejos de la biomedicina moderna y hacerlos accesibles a todos los públicos. A través de siete módulos especializados, exploramos cómo la ingeniería, la inteligencia artificial y la biotecnología están transformando la medicina y nuestra comprensión del cuerpo humano.
+Este programa innovador está diseñado para desmitificar los avances más complejos de la biomedicina moderna y hacerlos accesibles a todos los públicos, desde ciudadanos curiosos hasta profesionales de la salud y educación.
+
+A través de siete módulos especializados, exploramos cómo la ingeniería, la inteligencia artificial y la biotecnología están transformando la medicina y nuestra comprensión del cuerpo humano.
 🎯 Público Objetivo
-
-    Público General: Personas curiosas interesadas en entender los avances científicos
-
-    Estudiantes: Universitarios y posgraduados de carreras científicas
-
-    Docentes: Profesores de ciencias en todos los niveles educativos
-
-    Profesionales de la Salud: Médicos, enfermeros, farmacéuticos y otros profesionales
-
+Público	Descripción
+👥 Público General	Personas curiosas interesadas en entender los avances científicos que impactan su salud y bienestar
+🎓 Estudiantes	Universitarios y posgraduados de carreras científicas, médicas o tecnológicas
+👨‍🏫 Docentes	Profesores de ciencias que desean actualizar conocimientos y encontrar recursos educativos
+⚕️ Profesionales de la Salud	Médicos, enfermeros, farmacéuticos que quieren mantenerse actualizados
 🧩 Módulos del Programa
-1. La Ingeniería de lo Invisible
+🔬 Módulo I: La Ingeniería de lo Invisible
 
-    Nanomedicina: "Viaje al interior del cuerpo: fármacos inteligentes que ven y curan"
+Nanomedicina: "Viaje al interior del cuerpo: fármacos inteligentes que ven y curan"
 
-2. El Lenguaje Secreto de tu Cuerpo
+    Explora el fascinante universo de la nanomedicina, donde partículas diminutas interactúan con el organismo a escalas invisibles.
 
-    Bioseñales: "Qué dicen tus latidos y tu cerebro: la ingeniería detrás de la lectura"
+🧠 Módulo II: El Lenguaje Secreto de tu Cuerpo
 
-3. El Cerebro Artificial en la Clínica
+Bioseñales: "Qué dicen tus latidos y tu cerebro: la ingeniería detrás de la lectura"
 
-    Inteligencia Artificial: "Cuando las máquinas ayudan a diagnosticar: el rol de los datos en tu salud"
+    Descifra el lenguaje eléctrico y químico que tu cuerpo usa para comunicarse internamente.
 
-4. La Verdad Detrás del Titular
+🤖 Módulo III: El Cerebro Artificial en la Clínica
 
-    Estadística Crítica: "Por qué 'significativo' no siempre es 'importante': la precisión de la evidencia científica"
+Inteligencia Artificial: "Cuando las máquinas ayudan a diagnosticar: el rol de los datos en tu salud"
 
-5. Diseño para la Vida
+    Descubre cómo los algoritmos de IA están revolucionando el diagnóstico médico.
 
-    Biomateriales: "Creando repuestos para el cuerpo: la ciencia detrás de un implante que dura"
+📊 Módulo IV: La Verdad Detrás del Titular
 
-6. El Sello de Garantía
+Estadística Crítica: "Por qué 'significativo' no siempre es 'importante': la precisión de la evidencia científica"
 
-    Ética y Regulación: "De la probeta al paciente: cómo garantizamos que la ciencia sea segura"
+    Aprende a leer entre líneas los titulares de salud y entender la solidez real de los estudios.
 
-7. El Código de la Vida
+🦴 Módulo V: Diseño para la Vida
 
-    Genética e Ingeniería Celular: "Editando el futuro: cómo reescribimos el ADN"
+Biomateriales: "Creando repuestos para el cuerpo: la ciencia detrás de un implante que dura"
 
-🚀 Características Técnicas
+    Adéntrate en el mundo de los materiales diseñados para interactuar con sistemas biológicos.
 
-    Diseño Responsivo: Adaptable a dispositivos móviles y tablets
+🛡️ Módulo VI: El Sello de Garantía
 
-    Interfaz Moderna: Diseño limpio y profesional con esquema de colores científico
+Ética y Regulación: "De la probeta al paciente: cómo garantizamos que la ciencia sea segura"
 
-    Navegación Intuitiva: Menú sticky y estructura clara de contenidos
+    Conoce el andamiaje ético y regulatorio que garantiza tratamientos seguros y eficaces.
 
-    Accesibilidad: Contraste adecuado y tipografía legible
+🧬 Módulo VII: El Código de la Vida
+
+Genética e Ingeniería Celular: "Editando el futuro: cómo reescribimos el ADN"
+
+    Explora las tecnologías que permiten leer, escribir y editar la información genética.
 
 🛠️ Tecnologías Utilizadas
 
-    HTML5: Estructura semántica moderna
+    HTML5 - Estructura semántica moderna
 
-    CSS3: Estilos con variables CSS, Grid y Flexbox
+    CSS3 - Estilos con variables CSS, Grid y Flexbox
 
-    Diseño Responsive: Media queries para adaptabilidad
+    Diseño Responsive - Adaptable a todos los dispositivos
 
-    Sin Dependencias: Código vanilla sin frameworks externos
+    Vanilla JavaScript - Sin dependencias externas
 
 📁 Estructura del Proyecto
 text
 
 divulgacion-biomedica/
 │
-├── index.html              # Página principal
-├── README.md               # Este archivo
+├── index.html                 # Página principal
+├── README.md                  # Documentación
 │
-├── modulo1/                # Directorio del módulo 1
+├── modulo1/                   # Módulo I - Nanomedicina
 │   └── index.html
-├── modulo2/                # Directorio del módulo 2
+├── modulo2/                   # Módulo II - Bioseñales
 │   └── index.html
-├── modulo3/                # Directorio del módulo 3
+├── modulo3/                   # Módulo III - Inteligencia Artificial
 │   └── index.html
-├── modulo4/                # Directorio del módulo 4
+├── modulo4/                   # Módulo IV - Estadística Crítica
 │   └── index.html
-├── modulo5/                # Directorio del módulo 5
+├── modulo5/                   # Módulo V - Biomateriales
 │   └── index.html
-├── modulo6/                # Directorio del módulo 6
+├── modulo6/                   # Módulo VI - Ética y Regulación
 │   └── index.html
-└── modulo7/                # Directorio del módulo 7
+└── modulo7/                   # Módulo VII - Genética
     └── index.html
 
-🖥️ Instalación y Uso
+🚀 Instalación y Uso
+Opción 1: GitHub Pages (Recomendada)
 
-    Clona el repositorio:
-    bash
+    Ve a la configuración de tu repositorio
 
-git clone https://github.com/tu-usuario/divulgacion-biomedica.git
+    Activa GitHub Pages en la sección "Pages"
 
-    Abre el proyecto:
+    Selecciona la rama main como fuente
 
-        Navega a la carpeta del proyecto
+    Tu sitio estará disponible en: https://tuusuario.github.io/divulgacion-biomedica
 
-        Abre index.html en tu navegador web
+Opción 2: Ejecución Local
+bash
 
-    Alternativa: Puedes ver la página directamente en GitHub Pages si está configurado.
+# Clona el repositorio
+git clone https://github.com/tuusuario/divulgacion-biomedica.git
+
+# Navega al directorio
+cd divulgacion-biomedica
+
+# Abre el archivo principal
+open index.html
+# o en Windows:
+start index.html
 
 🎨 Personalización
 
-El proyecto utiliza variables CSS para una fácil personalización:
+El proyecto utiliza variables CSS para fácil personalización:
 css
 
 :root {
-    --primary: #2c3e50;
-    --secondary: #3498db;
-    --accent: #e74c3c;
-    --light: #f8f9fa;
-    --dark: #2c3e50;
+    --primary: #2c3e50;      /* Color principal */
+    --secondary: #3498db;    /* Color secundario */
+    --accent: #e74c3c;       /* Color de acento */
+    --light: #f8f9fa;        /* Fondo claro */
+    --dark: #2c3e50;         /* Texto oscuro */
 }
 
 🤝 Contribuciones
 
-Las contribuciones son bienvenidas. Si deseas mejorar este proyecto:
+Las contribuciones son bienvenidas. Por favor:
 
-    Haz fork del proyecto
+    Haz un Fork del proyecto
 
-    Crea una rama para tu feature (git checkout -b feature/nueva-caracteristica)
+    Crea una rama para tu feature (git checkout -b feature/NuevaCaracteristica)
 
     Commit tus cambios (git commit -m 'Agregar nueva característica')
 
-    Push a la rama (git push origin feature/nueva-caracteristica)
+    Push a la rama (git push origin feature/NuevaCaracteristica)
 
     Abre un Pull Request
-
-📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo LICENSE para más detalles.
-📞 Contacto
-
-Para más información sobre el Programa de Divulgación Biomédica Avanzada, visita nuestra página web o contáctanos a través de los enlaces en el footer.
-
-© 2023 Programa de Divulgación Biomédica Avanzada - Conectando la ciencia de vanguardia con la sociedad
