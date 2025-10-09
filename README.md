@@ -36,11 +36,4 @@ Este programa innovador está diseñado para desmitificar los avances más compl
 ### 🧬 Módulo VII: El Código de la Vida
 **Genética e Ingeniería Celular** - Tecnologías para editar información genética
 
-## 🚀 Instalación
 
-```bash
-# Clona el repositorio
-git clone https://github.com/tuusuario/divulgacion-biomedica.git
-
-# Abre el archivo principal
-open index.html
