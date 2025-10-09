@@ -1193,6 +1193,62 @@
                 `Longitud de onda de emisión: ${wavelength.toFixed(1)} nm (${wavelength < 500 ? 'Azul-Verde' : wavelength < 600 ? 'Amarillo-Naranja' : 'Rojo-Infrarrojo'})`;
             document.getElementById('bandgap-results').style.display = 'block';
         }
+
+        // Función para la calculadora de relación superficie-volumen
+        function calculateSurfaceVolume() {
+            const geometry = document.getElementById('geometry-type').value;
+            const dim1 = parseFloat(document.getElementById('dimension1').value);
+            const dim2 = parseFloat(document.getElementById('dimension2').value);
+            
+            let surface, volume, ratio;
+            
+            switch(geometry) {
+                case 'sphere':
+                    surface = 4 * Math.PI * Math.pow(dim1, 2);
+                    volume = (4/3) * Math.PI * Math.pow(dim1, 3);
+                    ratio = surface / volume;
+                    break;
+                case 'cube':
+                    surface = 6 * Math.pow(dim1, 2);
+                    volume = Math.pow(dim1, 3);
+                    ratio = surface / volume;
+                    break;
+                case 'cylinder':
+                    surface = 2 * Math.PI * dim1 * (dim1 + dim2);
+                    volume = Math.PI * Math.pow(dim1, 2) * dim2;
+                    ratio = surface / volume;
+                    break;
+                case 'rod':
+                    // Asumiendo nanovarilla como cilindro con longitud >> diámetro
+                    surface = 2 * Math.PI * dim1 * dim2 + 2 * Math.PI * Math.pow(dim1, 2);
+                    volume = Math.PI * Math.pow(dim1, 2) * dim2;
+                    ratio = surface / volume;
+                    break;
+            }
+            
+            document.getElementById('sv-result').textContent = 
+                `Superficie: ${surface.toFixed(2)} nm² | Volumen: ${volume.toFixed(2)} nm³ | Relación S/V: ${ratio.toFixed(2)} nm⁻¹`;
+            
+            let interpretation;
+            if (ratio > 1) {
+                interpretation = "Alta relación S/V típica de nanomateriales. Predominan efectos superficiales.";
+            } else {
+                interpretation = "Baja relación S/V. Comportamiento más similar a material a granel.";
+            }
+            
+            document.getElementById('sv-interpretation').textContent = interpretation;
+            document.getElementById('sv-results').style.display = 'block';
+        }
+        
+        // Control de visibilidad de dimensiones según geometría
+        document.getElementById('geometry-type').addEventListener('change', function() {
+            const dim2Group = document.getElementById('dimension2-group');
+            if (this.value === 'cylinder' || this.value === 'rod') {
+                dim2Group.style.display = 'flex';
+            } else {
+                dim2Group.style.display = 'none';
+            }
+        });
         
         // Actualizar valor del slider de tamaño
         document.getElementById('qd-size').addEventListener('input', function() {
