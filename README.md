@@ -15,20 +15,11 @@ El sitio esta dividido en cuatro rutas principales y una seccion de investigacio
 | Area | Contenido principal | Directorio |
 |------|---------------------|-------------|
 | Ciencias Basicas | Matematicas, fisica, quimica, programacion y estadistica. | /ciencias-basicas/ |
-| Biologicas y Medicas | Biologia molecular, genetica, fisiologia, histologia y bioquimica. |
-/biologicas-medicas/ |
-| Ingenieria Biomedica Aplicada | Biomecanica, bioinstrumentacion, biomateriales, simulacion e
-informatica medica. | /ingenieria-biomedica/ |
-| Gestion, Etica y Comunicacion | Etica cientifica, politicas publicas, historia, innovacion y divulgacion. |
-/gestion-etica-comunicacion/ |
-| Investigacion y Divulgacion | Resumenes de articulos, proyectos y avances biomedicos clasificados
-por area. | /investigacion/ |
-Cada asignatura tiene su propio directorio con un archivo index.html, que incluye:
-- Introduccion teorica
-- Conceptos clave
-- Recursos abiertos
-- Ejercicios o practicas
-- Enlaces a otras areas relacionadas
+| Biologicas y Medicas | Biologia molecular, genetica, fisiologia, histologia y bioquimica. | /biologicas-medicas/ |
+| Ingenieria Biomedica Aplicada | Biomecanica, bioinstrumentacion, biomateriales, simulacion e informatica medica. | /ingenieria-biomedica/ |
+| Gestion, Etica y Comunicacion | Etica cientifica, politicas publicas, historia, innovacion y divulgacion. | /gestion-etica-comunicacion/ |
+| Investigacion y Divulgacion | Resumenes de articulos, proyectos y avances biomedicos clasificados por area. | /investigacion/ |
+
 ---
 ## Como contribuir
 1. Haz un fork del repositorio.
