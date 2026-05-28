@@ -11,12 +11,28 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "citonauta_curriculum.json"
 TEMPLATE_PATH = ROOT / "templates" / "asignatura.html"
+REQUIRED_TEMPLATE_KEYS = {
+    "subject_title",
+    "area_title",
+    "subject_description",
+    "css_path",
+    "editorial_css_path",
+    "home_path",
+    "area_path",
+    "previous_link",
+    "next_link",
+    "biomedical_connection",
+    "learning_objectives",
+    "modules",
+    "key_concepts",
+}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -38,8 +54,7 @@ def escape(value: Any) -> str:
 def rel_path(from_file: Path, to_file: Path) -> str:
     """Devuelve una ruta relativa POSIX desde un HTML generado hacia otro archivo."""
     start_dir = from_file.parent
-    relative = Path(to_file).relative_to(ROOT)
-    return Path(__import__("os").path.relpath(ROOT / relative, start=start_dir)).as_posix()
+    return Path(os.path.relpath(to_file, start=start_dir)).as_posix()
 
 
 def render_list(items: list[str], empty_message: str) -> str:
@@ -61,7 +76,15 @@ def render_nav_link(current_file: Path, subject: dict[str, Any] | None, label_pr
     target = ROOT / subject["path"]
     href = rel_path(current_file, target)
     title = escape(subject.get("title", subject.get("id", "Asignatura")))
-    return f'<a class="btn-link {css_class}" href="{href}">{label_prefix} {title}</a>'
+    css_classes = f"btn-link {css_class}".strip()
+    label = f"{label_prefix} {title}".strip()
+    return f'<a class="{css_classes}" href="{href}">{label}</a>'
+
+
+def validate_template(template: str) -> None:
+    missing = [key for key in REQUIRED_TEMPLATE_KEYS if "{{ " + key + " }}" not in template]
+    if missing:
+        raise ValueError("La plantilla no contiene estas variables requeridas: " + ", ".join(sorted(missing)))
 
 
 def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any], subjects: list[dict[str, Any]], index: int) -> str:
@@ -69,6 +92,7 @@ def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any],
     home_path = rel_path(output_path, ROOT / "index.html")
     area_path = rel_path(output_path, ROOT / area["path"])
     css_path = rel_path(output_path, ROOT / "assets" / "css" / "style.css")
+    editorial_css_path = rel_path(output_path, ROOT / "assets" / "css" / "editorial.css")
     previous_subject, next_subject = subject_neighbors(subjects, index)
 
     replacements = {
@@ -76,6 +100,7 @@ def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any],
         "area_title": escape(area.get("title", area.get("id", "Área"))),
         "subject_description": escape(subject.get("description", "Página de asignatura de CitoNauta Biomedicina.")),
         "css_path": css_path,
+        "editorial_css_path": editorial_css_path,
         "home_path": home_path,
         "area_path": area_path,
         "previous_link": render_nav_link(output_path, previous_subject, "←", "secondary"),
@@ -92,35 +117,41 @@ def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any],
     return html_output
 
 
-def generate(dry_run: bool, force: bool, only_missing: bool) -> dict[str, int]:
-    data = load_json(DATA_PATH)
-    template = load_template(TEMPLATE_PATH)
-    summary = {"generated": 0, "skipped_existing": 0, "would_generate": 0, "errors": 0}
-
+def iter_subjects(data: dict[str, Any]):
     for area in data.get("areas", []):
         subjects = area.get("subjects", [])
         for index, subject in enumerate(subjects):
-            target_path = ROOT / subject["path"]
-            exists = target_path.exists()
+            yield area, subjects, index, subject
 
-            if exists and only_missing:
-                summary["skipped_existing"] += 1
-                continue
-            if exists and not force:
-                summary["skipped_existing"] += 1
-                continue
 
-            rendered = render_subject(template, area, subject, subjects, index)
+def generate(dry_run: bool, force: bool, only_missing: bool) -> dict[str, int]:
+    data = load_json(DATA_PATH)
+    template = load_template(TEMPLATE_PATH)
+    validate_template(template)
+    summary = {"generated": 0, "skipped_existing": 0, "would_generate": 0, "errors": 0}
 
-            if dry_run:
-                print(f"[dry-run] generaría: {target_path.relative_to(ROOT)}")
-                summary["would_generate"] += 1
-                continue
+    for area, subjects, index, subject in iter_subjects(data):
+        target_path = ROOT / subject["path"]
+        exists = target_path.exists()
 
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            target_path.write_text(rendered, encoding="utf-8")
-            print(f"[ok] generado: {target_path.relative_to(ROOT)}")
-            summary["generated"] += 1
+        if exists and only_missing:
+            summary["skipped_existing"] += 1
+            continue
+        if exists and not force:
+            summary["skipped_existing"] += 1
+            continue
+
+        rendered = render_subject(template, area, subject, subjects, index)
+
+        if dry_run:
+            print(f"[dry-run] generaría: {target_path.relative_to(ROOT)}")
+            summary["would_generate"] += 1
+            continue
+
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(rendered + "\n", encoding="utf-8")
+        print(f"[ok] generado: {target_path.relative_to(ROOT)}")
+        summary["generated"] += 1
 
     return summary
 
