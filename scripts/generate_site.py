@@ -34,9 +34,20 @@ REQUIRED_TEMPLATE_KEYS = {
     "previous_link",
     "next_link",
     "biomedical_connection",
+    "level",
+    "estimated_workload",
+    "status",
+    "prerequisites",
+    "course_competencies",
     "learning_objectives",
+    "learning_outcomes",
     "modules",
+    "detailed_units",
+    "practical_activities",
+    "assessment",
     "key_concepts",
+    "related_subjects",
+    "suggested_resources",
 }
 
 
@@ -62,11 +73,58 @@ def rel_path(from_file: Path, to_file: Path) -> str:
     return Path(os.path.relpath(to_file, start=start_dir)).as_posix()
 
 
-def render_list(items: list[str], empty_message: str) -> str:
+def render_list(items: list[Any], empty_message: str) -> str:
     if not items:
         return f'<p class="muted">{escape(empty_message)}</p>'
     rendered = "\n".join(f"        <li>{escape(item)}</li>" for item in items)
     return f"<ul>\n{rendered}\n      </ul>"
+
+
+def render_key_value_list(items: list[dict[str, Any]], empty_message: str) -> str:
+    if not items:
+        return f'<p class="muted">{escape(empty_message)}</p>'
+    rendered_items = []
+    for item in items:
+        title = escape(item.get("title", item.get("name", "Elemento")))
+        description = escape(item.get("description", ""))
+        extra = escape(item.get("weight", item.get("type", "")))
+        meta = f'<span class="course-tag">{extra}</span>' if extra else ""
+        rendered_items.append(
+            "        <li>"
+            f"<strong>{title}</strong>{meta}"
+            f"<p>{description}</p>"
+            "</li>"
+        )
+    return '<ul class="rich-list">\n' + "\n".join(rendered_items) + "\n      </ul>"
+
+
+def render_units(units: list[dict[str, Any]], empty_message: str) -> str:
+    if not units:
+        return f'<p class="muted">{escape(empty_message)}</p>'
+    rendered_units = []
+    for unit in units:
+        number = escape(unit.get("unit", ""))
+        title = escape(unit.get("title", "Unidad"))
+        description = escape(unit.get("description", ""))
+        topics = render_list(unit.get("topics", []), "Temas pendientes.")
+        outcomes = render_list(unit.get("learning_outcomes", []), "Resultados pendientes.")
+        activities = render_list(unit.get("activities", []), "Actividades pendientes.")
+        applications = render_list(unit.get("biomedical_applications", []), "Aplicaciones pendientes.")
+        rendered_units.append(
+            "      <article class=\"course-unit\">\n"
+            f"        <h3>Unidad {number}. {title}</h3>\n"
+            f"        <p>{description}</p>\n"
+            "        <h4>Temas</h4>\n"
+            f"        {topics}\n"
+            "        <h4>Resultados esperados</h4>\n"
+            f"        {outcomes}\n"
+            "        <h4>Actividades</h4>\n"
+            f"        {activities}\n"
+            "        <h4>Aplicaciones biomédicas</h4>\n"
+            f"        {applications}\n"
+            "      </article>"
+        )
+    return '<div class="course-units">\n' + "\n".join(rendered_units) + "\n      </div>"
 
 
 def subject_neighbors(subjects: list[dict[str, Any]], index: int) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -135,9 +193,20 @@ def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any],
         "previous_link": render_nav_link(output_path, previous_subject, "←", "secondary"),
         "next_link": render_nav_link(output_path, next_subject, "", ""),
         "biomedical_connection": escape(subject.get("biomedical_connection", "Conexión biomédica pendiente de desarrollo.")),
+        "level": escape(subject.get("level", "Pregrado universitario")),
+        "estimated_workload": escape(subject.get("estimated_workload", "12-16 semanas; 90-150 horas de trabajo total")),
+        "status": escape(subject.get("status", "placeholder")),
+        "prerequisites": render_list(subject.get("prerequisites", []), "Prerrequisitos pendientes de desarrollo."),
+        "course_competencies": render_list(subject.get("course_competencies", []), "Competencias pendientes de desarrollo."),
         "learning_objectives": render_list(subject.get("learning_objectives", []), "Objetivos de aprendizaje pendientes de desarrollo."),
+        "learning_outcomes": render_list(subject.get("learning_outcomes", []), "Resultados de aprendizaje pendientes de desarrollo."),
         "modules": render_list(subject.get("modules", []), "Módulos pendientes de desarrollo."),
+        "detailed_units": render_units(subject.get("detailed_units", []), "Unidades detalladas pendientes de desarrollo."),
+        "practical_activities": render_key_value_list(subject.get("practical_activities", []), "Actividades prácticas pendientes de desarrollo."),
+        "assessment": render_key_value_list(subject.get("assessment", []), "Evaluación sugerida pendiente de desarrollo."),
         "key_concepts": render_list(subject.get("key_concepts", []), "Conceptos clave pendientes de desarrollo."),
+        "related_subjects": render_list(subject.get("related_subjects", []), "Relaciones curriculares pendientes de desarrollo."),
+        "suggested_resources": render_key_value_list(subject.get("suggested_resources", []), "Recursos sugeridos pendientes de desarrollo."),
     }
 
     html_output = template
