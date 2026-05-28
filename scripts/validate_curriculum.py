@@ -38,9 +38,30 @@ REQUIRED_TEMPLATE_KEYS = {
     "previous_link",
     "next_link",
     "biomedical_connection",
+    "level",
+    "estimated_workload",
+    "status",
+    "prerequisites",
+    "course_competencies",
     "learning_objectives",
+    "learning_outcomes",
     "modules",
+    "detailed_units",
+    "practical_activities",
+    "assessment",
     "key_concepts",
+    "related_subjects",
+    "suggested_resources",
+}
+OPTIONAL_LIST_FIELDS = {
+    "prerequisites",
+    "course_competencies",
+    "learning_outcomes",
+    "detailed_units",
+    "practical_activities",
+    "assessment",
+    "related_subjects",
+    "suggested_resources",
 }
 
 
@@ -95,6 +116,9 @@ def validate_subject(area_id: str, subject: dict[str, Any], index: int, errors: 
         if not isinstance(subject.get(list_field), list):
             add_error(errors, f"{area_id}/{subject_id}.{list_field} debe ser una lista")
 
+    for list_field in OPTIONAL_LIST_FIELDS:
+        if list_field in subject and not isinstance(subject.get(list_field), list):
+            add_error(errors, f"{area_id}/{subject_id}.{list_field} debe ser una lista")
 
 
 def validate_curriculum(data: dict[str, Any]) -> list[str]:
