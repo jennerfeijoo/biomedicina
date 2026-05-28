@@ -4,6 +4,10 @@
 El script lee data/citonauta_curriculum.json y usa templates/asignatura.html
 para generar páginas HTML de asignaturas. Por defecto funciona en modo seguro:
 no sobrescribe archivos existentes salvo que se use --force.
+
+También puede enriquecer asignaturas con archivos opcionales en:
+
+data/subjects/<area_id>/<subject_id>.json
 """
 
 from __future__ import annotations
@@ -18,6 +22,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "citonauta_curriculum.json"
 TEMPLATE_PATH = ROOT / "templates" / "asignatura.html"
+SUBJECT_DATA_DIR = ROOT / "data" / "subjects"
 REQUIRED_TEMPLATE_KEYS = {
     "subject_title",
     "area_title",
@@ -87,7 +92,31 @@ def validate_template(template: str) -> None:
         raise ValueError("La plantilla no contiene estas variables requeridas: " + ", ".join(sorted(missing)))
 
 
+def subject_overlay_path(area_id: str, subject_id: str) -> Path:
+    return SUBJECT_DATA_DIR / area_id / f"{subject_id}.json"
+
+
+def merge_subject_overlay(area: dict[str, Any], subject: dict[str, Any]) -> dict[str, Any]:
+    """Combina metadatos centrales con contenido editorial opcional por asignatura."""
+    merged = dict(subject)
+    overlay_path = subject_overlay_path(area["id"], subject["id"])
+    if not overlay_path.exists():
+        return merged
+
+    overlay = load_json(overlay_path)
+    if overlay.get("id") != subject["id"]:
+        raise ValueError(f"Overlay con id inconsistente en {overlay_path.relative_to(ROOT)}")
+    if overlay.get("area_id") != area["id"]:
+        raise ValueError(f"Overlay con area_id inconsistente en {overlay_path.relative_to(ROOT)}")
+
+    for key, value in overlay.items():
+        if key not in {"id", "area_id"}:
+            merged[key] = value
+    return merged
+
+
 def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any], subjects: list[dict[str, Any]], index: int) -> str:
+    subject = merge_subject_overlay(area, subject)
     output_path = ROOT / subject["path"]
     home_path = rel_path(output_path, ROOT / "index.html")
     area_path = rel_path(output_path, ROOT / area["path"])
@@ -124,13 +153,23 @@ def iter_subjects(data: dict[str, Any]):
             yield area, subjects, index, subject
 
 
-def generate(dry_run: bool, force: bool, only_missing: bool) -> dict[str, int]:
+def should_include_subject(subject: dict[str, Any], only_subjects: set[str]) -> bool:
+    if not only_subjects:
+        return True
+    return subject.get("id") in only_subjects or subject.get("path") in only_subjects
+
+
+def generate(dry_run: bool, force: bool, only_missing: bool, only_subjects: set[str]) -> dict[str, int]:
     data = load_json(DATA_PATH)
     template = load_template(TEMPLATE_PATH)
     validate_template(template)
-    summary = {"generated": 0, "skipped_existing": 0, "would_generate": 0, "errors": 0}
+    summary = {"generated": 0, "skipped_existing": 0, "skipped_filter": 0, "would_generate": 0, "errors": 0}
 
     for area, subjects, index, subject in iter_subjects(data):
+        if not should_include_subject(subject, only_subjects):
+            summary["skipped_filter"] += 1
+            continue
+
         target_path = ROOT / subject["path"]
         exists = target_path.exists()
 
@@ -161,9 +200,15 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Muestra qué se generaría sin escribir archivos.")
     parser.add_argument("--force", action="store_true", help="Sobrescribe páginas existentes. Usar solo con revisión previa.")
     parser.add_argument("--only-missing", action="store_true", help="Genera solo páginas que no existan.")
+    parser.add_argument("--subject", action="append", default=[], help="Genera solo una asignatura por id o ruta. Puede repetirse.")
     args = parser.parse_args()
 
-    summary = generate(dry_run=args.dry_run, force=args.force, only_missing=args.only_missing)
+    summary = generate(
+        dry_run=args.dry_run,
+        force=args.force,
+        only_missing=args.only_missing,
+        only_subjects=set(args.subject),
+    )
     print("\nResumen:")
     for key, value in summary.items():
         print(f"- {key}: {value}")
