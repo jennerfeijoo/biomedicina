@@ -106,6 +106,8 @@ Conserva id={subject['id']!r} y area_id={subject['area_id']!r}. El estado final 
 
 Requisitos editoriales y de tamaño:
 - Genera exactamente 6 unidades progresivas y numéralas del 1 al 6.
+- El campo description de cada unidad debe ser una síntesis sustantiva de entre 140 y 220
+  caracteres; no uses frases telegráficas ni simples etiquetas temáticas.
 - Cada unidad contiene exactamente 2 bloques explicativos; cada bloque incluye 2 o 3 párrafos
   sustantivos y entre 3 y 5 puntos clave.
 - Cada unidad contiene exactamente 1 ejemplo guiado con entre 3 y 6 pasos de razonamiento.
