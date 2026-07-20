@@ -22,6 +22,69 @@ Reglas obligatorias:
 """.strip()
 
 
+def _text(value: Any, maximum: int) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= maximum:
+        return text
+    return text[: maximum - 1].rstrip() + "…"
+
+
+def _list(value: Any, maximum_items: int, maximum_chars: int = 220) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [_text(item, maximum_chars) for item in value[:maximum_items] if str(item).strip()]
+
+
+def _compact_baseline(baseline: dict[str, Any]) -> dict[str, Any]:
+    """Keep curricular intent while excluding pre-existing long-form course bodies."""
+    return {
+        "id": baseline.get("id"),
+        "area_id": baseline.get("area_id"),
+        "status": baseline.get("status"),
+        "description": _text(baseline.get("description"), 700),
+        "level": _text(baseline.get("level"), 160),
+        "estimated_workload": _text(baseline.get("estimated_workload"), 160),
+        "biomedical_connection": _text(baseline.get("biomedical_connection"), 900),
+        "prerequisites": _list(baseline.get("prerequisites"), 8),
+        "course_competencies": _list(baseline.get("course_competencies"), 10),
+        "learning_objectives": _list(baseline.get("learning_objectives"), 10),
+        "learning_outcomes": _list(baseline.get("learning_outcomes"), 12),
+        "modules": _list(baseline.get("modules"), 10),
+        "key_concepts": _list(baseline.get("key_concepts"), 20, 100),
+        "related_subjects": _list(baseline.get("related_subjects"), 10, 100),
+    }
+
+
+def _compact_source(source: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "title": _text(source.get("title"), 220),
+        "url": str(source.get("url") or ""),
+        "year": source.get("year"),
+        "type": _text(source.get("type"), 80),
+        "authors": _list(source.get("authors"), 4, 100),
+        "abstract_excerpt": _text(
+            source.get("abstract_excerpt") or source.get("description"),
+            320,
+        ),
+    }
+
+
+def _compact_related(item: dict[str, Any]) -> dict[str, Any]:
+    baseline = item.get("baseline_summary")
+    if not isinstance(baseline, dict):
+        baseline = {}
+    return {
+        "similarity": item.get("similarity"),
+        "id": item.get("id"),
+        "title": item.get("title"),
+        "area_id": item.get("area_id"),
+        "description": _text(item.get("description"), 320),
+        "biomedical_connection": _text(item.get("biomedical_connection"), 420),
+        "modules": _list(baseline.get("modules"), 6, 140),
+        "key_concepts": _list(baseline.get("key_concepts"), 10, 80),
+    }
+
+
 def generation_prompt(
     subject: dict[str, Any],
     baseline: dict[str, Any],
@@ -32,10 +95,11 @@ def generation_prompt(
 ) -> str:
     payload = {
         "ASIGNATURA": subject,
-        "CONTENIDO_BASE": baseline,
-        "FUENTES_PERMITIDAS": sources,
-        "CURSOS_RELACIONADOS": related_context,
+        "CONTENIDO_BASE": _compact_baseline(baseline),
+        "FUENTES_PERMITIDAS": [_compact_source(item) for item in sources[:8]],
+        "CURSOS_RELACIONADOS": [_compact_related(item) for item in related_context[:4]],
     }
+    compact_payload = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     return f"""
 Completa la asignatura indicada hasta convertirla en una guía educativa autosuficiente.
 Conserva id={subject['id']!r} y area_id={subject['area_id']!r}. El estado final debe ser complete.
@@ -57,8 +121,8 @@ Requisitos editoriales y de tamaño:
 - En generation_metadata usa content_model={content_model!r} y review_model={review_model!r}.
 - Cierra completamente el objeto JSON. No termines en mitad de una cadena, lista u objeto.
 
-DATOS DE TRABAJO:
-{json.dumps(payload, ensure_ascii=False, indent=2)}
+DATOS DE TRABAJO COMPACTADOS:
+{compact_payload}
 """.strip()
 
 
