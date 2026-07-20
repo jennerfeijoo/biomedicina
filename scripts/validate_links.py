@@ -36,7 +36,7 @@ def resolve_link(source: Path, href: str) -> Path:
 
 
 def html_files() -> list[Path]:
-    ignored_dirs = {".git", "node_modules", "__pycache__"}
+    ignored_dirs = {".git", "node_modules", "__pycache__", "templates"}
     files: list[Path] = []
     for path in ROOT.rglob("*.html"):
         if any(part in ignored_dirs for part in path.parts):

@@ -3,6 +3,25 @@ CitoNauta es una plataforma educativa y de divulgacion cientifica abierta que in
 investigadores y curiosos a explorar el universo de la biomedicina moderna, desde los fundamentos de
 las ciencias basicas hasta las aplicaciones tecnologicas y eticas mas actuales.
 > "Explorar la vida desde dentro, con los ojos del conocimiento."
+
+## Estado actual
+
+- 84 asignaturas distribuidas en cuatro áreas académicas.
+- Todas las asignaturas incluyen prerrequisitos, competencias, objetivos, resultados evaluables, seis o más unidades, prácticas, evaluación, conceptos clave, conexiones curriculares y recursos abiertos.
+- Las páginas se generan de forma reproducible desde `data/citonauta_curriculum.json`, `data/course_outlines.json` y los contenidos especializados de `data/subjects/`.
+- Los índices de área y las páginas de curso se mantienen sincronizados con las plantillas de `templates/`.
+
+## Generación y validación
+
+```bash
+python scripts/validate_curriculum.py
+python scripts/generate_site.py --force
+python scripts/check_generated_preview.py --limit 84
+python scripts/validate_links.py --quiet
+```
+
+El generador conserva el modo seguro por defecto: solo sobrescribe páginas existentes cuando se usa `--force`.
+
 ---
 ## Proposito
 El objetivo de CitoNauta es crear una guia estructurada y libre para aprender biomedicina de forma
