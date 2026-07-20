@@ -12,9 +12,12 @@ import re
 from pathlib import Path
 from typing import Any
 
+import generate_site
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "citonauta_curriculum.json"
 TEMPLATE_PATH = ROOT / "templates" / "asignatura.html"
+AREA_TEMPLATE_PATH = ROOT / "templates" / "area.html"
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 REQUIRED_SUBJECT_FIELDS = {
     "id",
@@ -41,6 +44,7 @@ REQUIRED_TEMPLATE_KEYS = {
     "level",
     "estimated_workload",
     "status",
+    "status_label",
     "prerequisites",
     "course_competencies",
     "learning_objectives",
@@ -88,6 +92,13 @@ def validate_template(errors: list[str]) -> None:
     for key in sorted(REQUIRED_TEMPLATE_KEYS):
         if "{{ " + key + " }}" not in template:
             add_error(errors, f"La plantilla no contiene la variable requerida: {key}")
+    if not AREA_TEMPLATE_PATH.exists():
+        add_error(errors, f"No existe la plantilla: {AREA_TEMPLATE_PATH.relative_to(ROOT)}")
+        return
+    try:
+        generate_site.validate_area_template(AREA_TEMPLATE_PATH.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        add_error(errors, str(exc))
 
 
 def validate_subject(area_id: str, subject: dict[str, Any], index: int, errors: list[str]) -> None:
@@ -119,6 +130,68 @@ def validate_subject(area_id: str, subject: dict[str, Any], index: int, errors: 
     for list_field in OPTIONAL_LIST_FIELDS:
         if list_field in subject and not isinstance(subject.get(list_field), list):
             add_error(errors, f"{area_id}/{subject_id}.{list_field} debe ser una lista")
+
+
+def validate_complete_course(area: dict[str, Any], subject: dict[str, Any], errors: list[str]) -> None:
+    key = f"{area['id']}/{subject['id']}"
+    try:
+        course = generate_site.merge_subject_overlay(area, subject)
+    except (FileNotFoundError, KeyError, TypeError, ValueError) as exc:
+        add_error(errors, f"No se pudo construir el curso {key}: {exc}")
+        return
+
+    if course.get("status") not in {"review", "complete"}:
+        add_error(errors, f"{key} debe quedar en estado review o complete")
+
+    minimums = {
+        "prerequisites": 3,
+        "course_competencies": 4,
+        "learning_objectives": 4,
+        "learning_outcomes": 6,
+        "modules": 6,
+        "detailed_units": 6,
+        "practical_activities": 4,
+        "assessment": 3,
+        "key_concepts": 10,
+        "related_subjects": 4,
+        "suggested_resources": 5,
+    }
+    for field, minimum in minimums.items():
+        value = course.get(field)
+        if not isinstance(value, list) or len(value) < minimum:
+            length = len(value) if isinstance(value, list) else "no es lista"
+            add_error(errors, f"{key}.{field} requiere al menos {minimum} elementos; tiene {length}")
+
+    units = course.get("detailed_units", [])
+    if isinstance(units, list) and len(units) > 10:
+        add_error(errors, f"{key}.detailed_units debe contener entre 6 y 10 unidades; tiene {len(units)}")
+    for unit_index, unit in enumerate(units, start=1):
+        if not isinstance(unit, dict):
+            add_error(errors, f"{key}.detailed_units[{unit_index}] debe ser un objeto")
+            continue
+        for text_field in ("title", "description"):
+            if not str(unit.get(text_field, "")).strip():
+                add_error(errors, f"{key}.detailed_units[{unit_index}] requiere {text_field}")
+        for list_field, minimum in (("topics", 3), ("learning_outcomes", 2), ("activities", 2), ("biomedical_applications", 1)):
+            value = unit.get(list_field)
+            if not isinstance(value, list) or len(value) < minimum:
+                add_error(errors, f"{key}.detailed_units[{unit_index}].{list_field} requiere al menos {minimum} elementos")
+
+    weights: list[int] = []
+    for item in course.get("assessment", []):
+        raw_weight = str(item.get("weight", "")).strip().rstrip("%") if isinstance(item, dict) else ""
+        if raw_weight.isdigit():
+            weights.append(int(raw_weight))
+    if weights and sum(weights) != 100:
+        add_error(errors, f"{key}.assessment suma {sum(weights)}%; debe sumar 100%")
+
+    for resource_index, resource in enumerate(course.get("suggested_resources", []), start=1):
+        if not isinstance(resource, dict):
+            add_error(errors, f"{key}.suggested_resources[{resource_index}] debe ser un objeto")
+            continue
+        url = str(resource.get("url", "")).strip()
+        if url and not url.startswith(("https://", "http://")):
+            add_error(errors, f"{key}.suggested_resources[{resource_index}] contiene URL no segura: {url!r}")
 
 
 def validate_curriculum(data: dict[str, Any]) -> list[str]:
@@ -160,6 +233,7 @@ def validate_curriculum(data: dict[str, Any]) -> list[str]:
         local_subject_ids: set[str] = set()
         for subject_index, subject in enumerate(subjects):
             validate_subject(area_id, subject, subject_index, errors)
+            validate_complete_course(area, subject, errors)
             subject_id = subject.get("id", "")
             subject_path = subject.get("path", "")
             subject_status = subject.get("status")

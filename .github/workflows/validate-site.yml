@@ -1,0 +1,35 @@
+name: Validar CitoNauta
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validar currículo y plantillas
+        run: python scripts/validate_curriculum.py
+
+      - name: Revisar las 84 vistas previas
+        run: python scripts/check_generated_preview.py --limit 84
+
+      - name: Comprobar páginas generadas
+        run: |
+          python scripts/generate_site.py --force
+          git diff --exit-code
+
+      - name: Validar enlaces internos
+        run: python scripts/validate_links.py --quiet
