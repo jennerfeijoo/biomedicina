@@ -14,8 +14,9 @@ class ModelConfig:
     embedding: str = "qwen3-embedding:0.6b"
     host: str = "http://127.0.0.1:11434"
     context_tokens: int = 32768
+    output_tokens: int = 16384
     temperature: float = 0.2
-    timeout_seconds: float = 900.0
+    timeout_seconds: float = 3600.0
 
 
 @dataclass(slots=True)
