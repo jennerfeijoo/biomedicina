@@ -105,6 +105,8 @@ Completa la asignatura indicada hasta convertirla en una guía educativa autosuf
 Conserva id={subject['id']!r} y area_id={subject['area_id']!r}. El estado final debe ser complete.
 
 Requisitos editoriales y de tamaño:
+- El campo description general del curso debe ser una síntesis sustantiva de entre 160 y 300
+  caracteres que explique alcance, método y conexión biomédica; no uses una frase promocional breve.
 - Genera exactamente 6 unidades progresivas y numéralas del 1 al 6.
 - El campo description de cada unidad debe ser una síntesis sustantiva de entre 140 y 220
   caracteres; no uses frases telegráficas ni simples etiquetas temáticas.

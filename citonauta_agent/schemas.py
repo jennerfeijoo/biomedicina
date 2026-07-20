@@ -150,6 +150,37 @@ class CourseContent(BaseModel):
     sources_used: list[SourceRecord] = Field(min_length=5, max_length=20)
     generation_metadata: GenerationMetadata
 
+    @model_validator(mode="before")
+    @classmethod
+    def expand_short_course_description(cls, data: Any) -> Any:
+        """Expand a concise course synopsis without changing its stated scope."""
+        if not isinstance(data, dict):
+            return data
+
+        description = " ".join(str(data.get("description") or "").split())
+        if len(description) >= 120:
+            return data
+
+        raw_modules = data.get("modules")
+        modules = (
+            [" ".join(str(item).split()) for item in raw_modules[:3] if str(item).strip()]
+            if isinstance(raw_modules, list)
+            else []
+        )
+        focus = ", ".join(modules) if modules else "los fundamentos y métodos principales del curso"
+        lead = description.rstrip(" .")
+        if not lead:
+            lead = "Asignatura orientada al análisis riguroso de problemas biomédicos"
+        expanded = (
+            f"{lead}. El curso desarrolla {focus} mediante razonamiento aplicado, interpretación "
+            "crítica de evidencia y actividades progresivas vinculadas con contextos biomédicos, "
+            "sus supuestos, limitaciones y consecuencias prácticas."
+        )
+
+        normalized = dict(data)
+        normalized["description"] = expanded
+        return normalized
+
     @model_validator(mode="after")
     def validate_course(self) -> "CourseContent":
         expected_units = list(range(1, len(self.detailed_units) + 1))

@@ -133,6 +133,38 @@ class CitonautaAgent:
         course.suggested_resources = resources[:12]
         return CourseContent.model_validate(course.model_dump(mode="json"))
 
+    def _candidate_path(self, subject: SubjectRef) -> Path:
+        return self.config.state_path / "candidates" / f"{subject.id}.json"
+
+    def _load_candidate(
+        self,
+        subject: SubjectRef,
+        source_pool: list[dict[str, Any]],
+    ) -> CourseContent | None:
+        path = self._candidate_path(subject)
+        if not path.exists():
+            return None
+        try:
+            course = CourseContent.model_validate_json(path.read_text(encoding="utf-8"))
+            course = self._normalize_course(course, subject, source_pool)
+            semantic_errors = validate_semantics(
+                course, self.config.generation.minimum_course_words
+            )
+            if semantic_errors:
+                raise ValueError("; ".join(semantic_errors))
+        except Exception as exc:
+            print(f"[{subject.id}] candidato descartado: {type(exc).__name__}: {exc}")
+            path.unlink(missing_ok=True)
+            return None
+        print(f"[{subject.id}] candidato recuperado: {path}")
+        return course
+
+    def _save_candidate(self, subject: SubjectRef, course: CourseContent) -> Path:
+        path = self._candidate_path(subject)
+        write_preview(path, course)
+        print(f"[{subject.id}] checkpoint: {path}")
+        return path
+
     def _produce_course(
         self,
         subject: SubjectRef,
@@ -148,18 +180,21 @@ class CitonautaAgent:
         source_pool = self._source_pool(baseline, research)
         related = self.rag.related(subject, self.config.generation.related_courses)
 
-        course: CourseContent | None = None
+        candidate_path = self._candidate_path(subject)
+        course = self._load_candidate(subject, source_pool)
         review: CourseReview | None = None
         last_generation_error = ""
         for attempt in range(1, self.config.generation.maximum_generation_attempts + 1):
-            print(f"[{subject.id}] generación {attempt}")
+            if course is not None and review is None:
+                print(f"[{subject.id}] se reutiliza el candidato validado")
+            else:
+                print(f"[{subject.id}] generación {attempt}")
             try:
                 if course is None:
                     course = self.ollama.generate_course(
                         subject.as_prompt_dict(), baseline, source_pool, related
                     )
-                else:
-                    assert review is not None
+                elif review is not None:
                     course = self.ollama.repair_course(course, review, technical=False)
                 course = self._normalize_course(course, subject, source_pool)
             except Exception as exc:
@@ -185,9 +220,11 @@ class CitonautaAgent:
                 )
                 continue
 
+            self._save_candidate(subject, course)
             print(f"[{subject.id}] revisión independiente")
             review = self.ollama.review_course(course, source_pool)
             if review.passes_gate:
+                candidate_path.unlink(missing_ok=True)
                 return course, review, source_pool
             print(
                 f"[{subject.id}] revisión rechazada: "
