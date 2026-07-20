@@ -111,6 +111,8 @@ Requisitos editoriales y de tamaño:
 - Cada unidad contiene exactamente 2 bloques explicativos; cada bloque incluye 2 o 3 párrafos
   sustantivos y entre 3 y 5 puntos clave.
 - Cada unidad contiene exactamente 1 ejemplo guiado con entre 3 y 6 pasos de razonamiento.
+- El campo scenario de cada ejemplo debe describir un caso biomédico concreto en entre 90 y 220
+  caracteres; no uses únicamente una lista de valores o una frase telegráfica.
 - Cada unidad incluye 2 actividades, 2 preguntas de autoevaluación con respuesta, 2 errores
   frecuentes y entre 1 y 3 aplicaciones biomédicas.
 - El curso completo debe contener entre 2200 y 3000 palabras sustantivas. Prioriza profundidad
