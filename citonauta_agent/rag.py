@@ -19,6 +19,12 @@ def _cosine(left: list[float], right: list[float]) -> float:
     return numerator / (left_norm * right_norm)
 
 
+def _short_list(value: Any, limit: int) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item)[:180] for item in value[:limit] if str(item).strip()]
+
+
 class CatalogRAG:
     def __init__(
         self,
@@ -77,11 +83,21 @@ class CatalogRAG:
             key=lambda item: item[0],
             reverse=True,
         )[:limit]
-        return [
-            {
-                "similarity": round(score, 4),
-                **candidate.as_prompt_dict(),
-                "baseline_summary": self.catalog.baseline(candidate.id),
-            }
-            for score, candidate in ranking
-        ]
+
+        results: list[dict[str, Any]] = []
+        for score, candidate in ranking:
+            baseline = self.catalog.baseline(candidate.id)
+            results.append(
+                {
+                    "similarity": round(score, 4),
+                    **candidate.as_prompt_dict(),
+                    "baseline_summary": {
+                        "modules": _short_list(baseline.get("modules"), 6),
+                        "key_concepts": _short_list(baseline.get("key_concepts"), 10),
+                        "learning_objectives": _short_list(
+                            baseline.get("learning_objectives"), 6
+                        ),
+                    },
+                }
+            )
+        return results
