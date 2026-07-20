@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from typing import Any
 
@@ -38,6 +39,25 @@ class OllamaGateway:
                 + ". Instálalos con `ollama pull <modelo>`."
             )
 
+    @staticmethod
+    def _is_grammar_error(exc: Exception) -> bool:
+        message = str(exc).casefold()
+        return "failed to parse grammar" in message or (
+            "failed to initialize samplers" in message and "grammar" in message
+        )
+
+    @staticmethod
+    def _schema_fallback_prompt(user_prompt: str, schema: dict[str, Any]) -> str:
+        schema_text = json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
+        return (
+            user_prompt
+            + "\n\nDEVUELVE UN ÚNICO OBJETO JSON VÁLIDO, SIN MARKDOWN NI TEXTO EXTERNO. "
+            + "Respeta exactamente los nombres, tipos y campos obligatorios del siguiente esquema. "
+            + "Las restricciones adicionales serán verificadas después con Pydantic.\n\n"
+            + "ESQUEMA JSON:\n"
+            + schema_text
+        )
+
     def _structured_chat(
         self,
         model: str,
@@ -45,18 +65,43 @@ class OllamaGateway:
         user_prompt: str,
         temperature: float | None = None,
     ) -> BaseModel:
-        response = self.client.chat(
-            model=model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            format=schema.model_json_schema(),
-            options={
-                "temperature": self.config.temperature if temperature is None else temperature,
-                "num_ctx": self.config.context_tokens,
-            },
-        )
+        schema_json = schema.model_json_schema()
+        options = {
+            "temperature": self.config.temperature if temperature is None else temperature,
+            "num_ctx": self.config.context_tokens,
+        }
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        try:
+            response = self.client.chat(
+                model=model,
+                messages=messages,
+                format=schema_json,
+                options=options,
+            )
+        except Exception as exc:
+            if not self._is_grammar_error(exc):
+                raise
+            print(
+                f"[{model}] el backend no pudo compilar el esquema; "
+                "se usa JSON validado por Pydantic."
+            )
+            response = self.client.chat(
+                model=model,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": self._schema_fallback_prompt(user_prompt, schema_json),
+                    },
+                ],
+                format="json",
+                options=options,
+            )
+
         content = response.message.content
         return schema.model_validate_json(content)
 
@@ -82,7 +127,7 @@ class OllamaGateway:
     def review_course(self, course: CourseContent, sources: list[dict[str, Any]]) -> CourseReview:
         prompt = review_prompt(
             course.model_dump_json(indent=2),
-            __import__("json").dumps(sources, ensure_ascii=False, indent=2),
+            json.dumps(sources, ensure_ascii=False, indent=2),
         )
         result = self._structured_chat(self.config.review, CourseReview, prompt, temperature=0.0)
         assert isinstance(result, CourseReview)
