@@ -113,6 +113,16 @@ CourseReview = {
         return str(content or "")
 
     @staticmethod
+    def _chunk_thinking(chunk: Any) -> str:
+        message = getattr(chunk, "message", None)
+        thinking = getattr(message, "thinking", None) if message is not None else None
+        if thinking is None and isinstance(chunk, dict):
+            raw_message = chunk.get("message") or {}
+            if isinstance(raw_message, dict):
+                thinking = raw_message.get("thinking")
+        return str(thinking or "")
+
+    @staticmethod
     def _chunk_field(chunk: Any, name: str) -> Any:
         value = getattr(chunk, name, None)
         if value is None and isinstance(chunk, dict):
@@ -126,17 +136,22 @@ CourseReview = {
         messages: list[dict[str, str]],
         output_format: dict[str, Any] | str,
         options: dict[str, Any],
+        think: bool | str | None = None,
     ) -> str:
-        stream = self.client.chat(
-            model=model,
-            messages=messages,
-            format=output_format,
-            options=options,
-            stream=True,
-        )
+        request: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "format": output_format,
+            "options": options,
+            "stream": True,
+        }
+        if think is not None:
+            request["think"] = think
+        stream = self.client.chat(**request)
 
         pieces: list[str] = []
         received_chars = 0
+        thinking_chars = 0
         next_progress = 5000
         done_reason: str | None = None
         prompt_tokens: int | None = None
@@ -153,6 +168,7 @@ CourseReview = {
             if current_output_tokens is not None:
                 output_tokens = int(current_output_tokens)
 
+            thinking_chars += len(self._chunk_thinking(chunk))
             text = self._chunk_content(chunk)
             if not text:
                 continue
@@ -167,16 +183,20 @@ CourseReview = {
                     next_progress += 5000
 
         content = "".join(pieces).strip()
-        if not content:
-            raise RuntimeError(f"{model} no devolvió contenido JSON")
-
         metrics = [f"{len(content):,} caracteres"]
         if prompt_tokens is not None:
             metrics.append(f"entrada={prompt_tokens:,} tokens")
         if output_tokens is not None:
             metrics.append(f"salida={output_tokens:,} tokens")
+        if thinking_chars:
+            metrics.append(f"razonamiento={thinking_chars:,} caracteres")
         if done_reason:
             metrics.append(f"fin={done_reason}")
+
+        if not content:
+            detail = ", ".join(metrics)
+            raise RuntimeError(f"{model} no devolvió contenido JSON ({detail})")
+
         print(f"[{model}] respuesta completa: " + ", ".join(metrics), flush=True)
 
         if done_reason and done_reason.casefold() in {"length", "max_tokens"}:
@@ -192,6 +212,8 @@ CourseReview = {
         schema: type[BaseModel],
         user_prompt: str,
         temperature: float | None = None,
+        *,
+        think: bool | str | None = None,
     ) -> BaseModel:
         schema_json = schema.model_json_schema()
         output_budget = 2048 if schema is CourseReview else self.config.output_tokens
@@ -211,6 +233,7 @@ CourseReview = {
                 messages=messages,
                 output_format=schema_json,
                 options=options,
+                think=think,
             )
         except Exception as exc:
             if not self._is_grammar_error(exc):
@@ -231,6 +254,7 @@ CourseReview = {
                 ],
                 output_format="json",
                 options=options,
+                think=think,
             )
 
         return schema.model_validate_json(content)
@@ -259,7 +283,13 @@ CourseReview = {
             course.model_dump_json(indent=2),
             json.dumps(sources, ensure_ascii=False, indent=2),
         )
-        result = self._structured_chat(self.config.review, CourseReview, prompt, temperature=0.0)
+        result = self._structured_chat(
+            self.config.review,
+            CourseReview,
+            prompt,
+            temperature=0.0,
+            think=False,
+        )
         assert isinstance(result, CourseReview)
         return result
 
