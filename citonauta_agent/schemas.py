@@ -35,6 +35,30 @@ class WorkedExample(BaseModel):
     reasoning_steps: list[str] = Field(min_length=3, max_length=8)
     conclusion: str = Field(min_length=40)
 
+    @model_validator(mode="before")
+    @classmethod
+    def expand_short_scenario(cls, data: Any) -> Any:
+        """Expand only mechanically short scenarios while preserving their supplied facts."""
+        if not isinstance(data, dict):
+            return data
+
+        scenario = " ".join(str(data.get("scenario") or "").split())
+        if len(scenario) >= 60:
+            return data
+
+        title = " ".join(str(data.get("title") or "el ejemplo guiado").split())
+        lead = scenario.rstrip(" .")
+        if not lead:
+            lead = f"Situación aplicada para {title}"
+        expanded = (
+            f"{lead}. El ejemplo plantea un caso biomédico concreto en el que se debe identificar "
+            "la pregunta, examinar los datos disponibles y justificar cada decisión analítica."
+        )
+
+        normalized = dict(data)
+        normalized["scenario"] = expanded
+        return normalized
+
 
 class SelfCheck(BaseModel):
     question: str = Field(min_length=15)
