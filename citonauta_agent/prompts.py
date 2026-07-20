@@ -40,15 +40,22 @@ def generation_prompt(
 Completa la asignatura indicada hasta convertirla en una guía educativa autosuficiente.
 Conserva id={subject['id']!r} y area_id={subject['area_id']!r}. El estado final debe ser complete.
 
-Requisitos editoriales:
-- 6 a 10 unidades progresivas.
-- Cada unidad contiene 2 a 4 bloques explicativos, con al menos dos párrafos claros por bloque.
-- Cada unidad contiene al menos un ejemplo guiado con pasos de razonamiento.
-- Incluye preguntas de autoevaluación con respuesta, errores frecuentes y aplicaciones biomédicas.
-- El curso completo debe superar aproximadamente 2200 palabras de contenido sustantivo.
+Requisitos editoriales y de tamaño:
+- Genera exactamente 6 unidades progresivas y numéralas del 1 al 6.
+- Cada unidad contiene exactamente 2 bloques explicativos; cada bloque incluye 2 o 3 párrafos
+  sustantivos y entre 3 y 5 puntos clave.
+- Cada unidad contiene exactamente 1 ejemplo guiado con entre 3 y 6 pasos de razonamiento.
+- Cada unidad incluye 2 actividades, 2 preguntas de autoevaluación con respuesta, 2 errores
+  frecuentes y entre 1 y 3 aplicaciones biomédicas.
+- El curso completo debe contener entre 2200 y 3000 palabras sustantivas. Prioriza profundidad
+  conceptual y precisión; evita redundancia, introducciones ceremoniales y listas infladas.
+- Incluye 4 actividades prácticas globales, 3 componentes de evaluación cuyas ponderaciones
+  sumen 100%, entre 10 y 18 conceptos clave y entre 4 y 8 asignaturas relacionadas.
+- Incluye entre 5 y 8 fuentes y recursos, exclusivamente de FUENTES PERMITIDAS. No copies
+  resúmenes largos ni repitas datos bibliográficos en las explicaciones.
 - Las competencias, objetivos, resultados y evaluación deben estar alineados.
-- Las referencias y recursos deben proceder solo de FUENTES PERMITIDAS.
 - En generation_metadata usa content_model={content_model!r} y review_model={review_model!r}.
+- Cierra completamente el objeto JSON. No termines en mitad de una cadena, lista u objeto.
 
 DATOS DE TRABAJO:
 {json.dumps(payload, ensure_ascii=False, indent=2)}
@@ -74,7 +81,7 @@ def repair_prompt(course_json: str, review_json: str, validator_errors: str = ""
     return f"""
 Corrige el curso completo conservando sus partes correctas. Resuelve todos los problemas del
 informe y de los validadores. No reduzcas la profundidad ni elimines campos obligatorios.
-Devuelve nuevamente el curso completo en JSON.
+Mantén el resultado entre 2200 y 3000 palabras y devuelve el objeto JSON completo y cerrado.
 
 CURSO ACTUAL:
 {course_json}

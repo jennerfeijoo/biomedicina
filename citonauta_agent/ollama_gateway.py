@@ -47,15 +47,59 @@ class OllamaGateway:
         )
 
     @staticmethod
-    def _schema_fallback_prompt(user_prompt: str, schema: dict[str, Any]) -> str:
-        schema_text = json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
+    def _schema_contract(schema: type[BaseModel]) -> str:
+        if schema is CourseContent:
+            return """
+CourseContent = {
+  id:string, area_id:string, status:"complete", description:string, level:string,
+  estimated_workload:string, biomedical_connection:string,
+  prerequisites:[string], course_competencies:[string], learning_objectives:[string],
+  learning_outcomes:[string], modules:[string],
+  detailed_units:[{
+    unit:integer, title:string, description:string,
+    explanations:[{title:string, paragraphs:[string], key_points:[string]}],
+    topics:[string], learning_outcomes:[string],
+    worked_examples:[{title:string, scenario:string, reasoning_steps:[string], conclusion:string}],
+    activities:[string], self_check:[{question:string, answer:string}],
+    common_misconceptions:[string], biomedical_applications:[string]
+  }],
+  practical_activities:[{title:string, description:string, weight:string|null, type:string|null, url:string|null}],
+  assessment:[{title:string, description:string, weight:"NN%", type:string|null, url:string|null}],
+  key_concepts:[string], related_subjects:[string],
+  suggested_resources:[{title:string, description:string, weight:string|null, type:string|null, url:string|null}],
+  sources_used:[{title:string, url:string, year:integer|null, type:string, authors:[string], abstract_excerpt:string}],
+  generation_metadata:{autonomous_agent:true, content_model:string, review_model:string, generated_at:string, schema_version:string}
+}
+""".strip()
+        if schema is CourseReview:
+            return """
+CourseReview = {
+  approved:boolean,
+  clarity_score:integer,
+  scientific_score:integer,
+  pedagogical_score:integer,
+  completeness_score:integer,
+  blocking_issues:[string],
+  improvements:[string],
+  unsupported_claims:[string]
+}
+""".strip()
+        return "Devuelve un objeto JSON con todos los campos solicitados en el mensaje."
+
+    @classmethod
+    def _schema_fallback_prompt(
+        cls,
+        user_prompt: str,
+        schema: type[BaseModel],
+    ) -> str:
         return (
             user_prompt
             + "\n\nDEVUELVE UN ÚNICO OBJETO JSON VÁLIDO, SIN MARKDOWN NI TEXTO EXTERNO. "
-            + "Respeta exactamente los nombres, tipos y campos obligatorios del siguiente esquema. "
-            + "Las restricciones adicionales serán verificadas después con Pydantic.\n\n"
-            + "ESQUEMA JSON:\n"
-            + schema_text
+            + "Respeta exactamente los nombres y tipos del contrato compacto siguiente. "
+            + "Las longitudes, cardinalidades y demás restricciones se verificarán después con Pydantic. "
+            + "Debes cerrar todas las cadenas, listas y llaves antes de terminar.\n\n"
+            + "CONTRATO DE SALIDA:\n"
+            + cls._schema_contract(schema)
         )
 
     @staticmethod
@@ -67,6 +111,13 @@ class OllamaGateway:
             if isinstance(raw_message, dict):
                 content = raw_message.get("content")
         return str(content or "")
+
+    @staticmethod
+    def _chunk_field(chunk: Any, name: str) -> Any:
+        value = getattr(chunk, name, None)
+        if value is None and isinstance(chunk, dict):
+            value = chunk.get(name)
+        return value
 
     def _stream_chat_content(
         self,
@@ -87,7 +138,21 @@ class OllamaGateway:
         pieces: list[str] = []
         received_chars = 0
         next_progress = 5000
+        done_reason: str | None = None
+        prompt_tokens: int | None = None
+        output_tokens: int | None = None
+
         for chunk in stream:
+            current_reason = self._chunk_field(chunk, "done_reason")
+            current_prompt_tokens = self._chunk_field(chunk, "prompt_eval_count")
+            current_output_tokens = self._chunk_field(chunk, "eval_count")
+            if current_reason:
+                done_reason = str(current_reason)
+            if current_prompt_tokens is not None:
+                prompt_tokens = int(current_prompt_tokens)
+            if current_output_tokens is not None:
+                output_tokens = int(current_output_tokens)
+
             text = self._chunk_content(chunk)
             if not text:
                 continue
@@ -104,10 +169,21 @@ class OllamaGateway:
         content = "".join(pieces).strip()
         if not content:
             raise RuntimeError(f"{model} no devolvió contenido JSON")
-        print(
-            f"[{model}] respuesta completa: {len(content):,} caracteres",
-            flush=True,
-        )
+
+        metrics = [f"{len(content):,} caracteres"]
+        if prompt_tokens is not None:
+            metrics.append(f"entrada={prompt_tokens:,} tokens")
+        if output_tokens is not None:
+            metrics.append(f"salida={output_tokens:,} tokens")
+        if done_reason:
+            metrics.append(f"fin={done_reason}")
+        print(f"[{model}] respuesta completa: " + ", ".join(metrics), flush=True)
+
+        if done_reason and done_reason.casefold() in {"length", "max_tokens"}:
+            raise RuntimeError(
+                f"{model} agotó el presupuesto de salida ({output_tokens or 'desconocido'} tokens) "
+                "antes de completar el JSON"
+            )
         return content
 
     def _structured_chat(
@@ -118,9 +194,11 @@ class OllamaGateway:
         temperature: float | None = None,
     ) -> BaseModel:
         schema_json = schema.model_json_schema()
+        output_budget = 2048 if schema is CourseReview else self.config.output_tokens
         options = {
             "temperature": self.config.temperature if temperature is None else temperature,
             "num_ctx": self.config.context_tokens,
+            "num_predict": output_budget,
         }
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -148,7 +226,7 @@ class OllamaGateway:
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {
                         "role": "user",
-                        "content": self._schema_fallback_prompt(user_prompt, schema_json),
+                        "content": self._schema_fallback_prompt(user_prompt, schema),
                     },
                 ],
                 output_format="json",
