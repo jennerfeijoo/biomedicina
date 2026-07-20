@@ -58,6 +58,58 @@ class OllamaGateway:
             + schema_text
         )
 
+    @staticmethod
+    def _chunk_content(chunk: Any) -> str:
+        message = getattr(chunk, "message", None)
+        content = getattr(message, "content", None) if message is not None else None
+        if content is None and isinstance(chunk, dict):
+            raw_message = chunk.get("message") or {}
+            if isinstance(raw_message, dict):
+                content = raw_message.get("content")
+        return str(content or "")
+
+    def _stream_chat_content(
+        self,
+        *,
+        model: str,
+        messages: list[dict[str, str]],
+        output_format: dict[str, Any] | str,
+        options: dict[str, Any],
+    ) -> str:
+        stream = self.client.chat(
+            model=model,
+            messages=messages,
+            format=output_format,
+            options=options,
+            stream=True,
+        )
+
+        pieces: list[str] = []
+        received_chars = 0
+        next_progress = 5000
+        for chunk in stream:
+            text = self._chunk_content(chunk)
+            if not text:
+                continue
+            pieces.append(text)
+            received_chars += len(text)
+            if received_chars >= next_progress:
+                print(
+                    f"[{model}] JSON recibido: {received_chars:,} caracteres",
+                    flush=True,
+                )
+                while next_progress <= received_chars:
+                    next_progress += 5000
+
+        content = "".join(pieces).strip()
+        if not content:
+            raise RuntimeError(f"{model} no devolvió contenido JSON")
+        print(
+            f"[{model}] respuesta completa: {len(content):,} caracteres",
+            flush=True,
+        )
+        return content
+
     def _structured_chat(
         self,
         model: str,
@@ -76,10 +128,10 @@ class OllamaGateway:
         ]
 
         try:
-            response = self.client.chat(
+            content = self._stream_chat_content(
                 model=model,
                 messages=messages,
-                format=schema_json,
+                output_format=schema_json,
                 options=options,
             )
         except Exception as exc:
@@ -87,9 +139,10 @@ class OllamaGateway:
                 raise
             print(
                 f"[{model}] el backend no pudo compilar el esquema; "
-                "se usa JSON validado por Pydantic."
+                "se usa JSON validado por Pydantic.",
+                flush=True,
             )
-            response = self.client.chat(
+            content = self._stream_chat_content(
                 model=model,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
@@ -98,11 +151,10 @@ class OllamaGateway:
                         "content": self._schema_fallback_prompt(user_prompt, schema_json),
                     },
                 ],
-                format="json",
+                output_format="json",
                 options=options,
             )
 
-        content = response.message.content
         return schema.model_validate_json(content)
 
     def generate_course(
