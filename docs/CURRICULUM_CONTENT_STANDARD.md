@@ -17,7 +17,7 @@ Una página mínima contiene:
 - módulos sugeridos;
 - conceptos clave.
 
-Un curso completo debe contener además:
+Un programa curricular estructurado debe contener además:
 
 - nivel académico;
 - carga estimada;
@@ -83,6 +83,17 @@ Cada asignatura completa debe tener, como mínimo:
 - 5 a 12 recursos sugeridos;
 - conexiones explícitas con otras asignaturas.
 
+Cada unidad lectiva publicada debe contener, como mínimo:
+
+- resultados de aprendizaje y mapa de contenidos;
+- explicación conceptual con definiciones operativas;
+- relaciones entre conceptos, evidencia y límites;
+- caso biomédico o sociotécnico con criterio de solución;
+- actividad con producto, pasos y rúbrica;
+- seis preguntas de autoevaluación con respuestas;
+- glosario y cinco recursos enlazados;
+- navegación a la unidad anterior, siguiente, curso e índice.
+
 ## 5. Reglas editoriales
 
 - El contenido debe ser claro, técnico y útil para aprendizaje universitario.
@@ -98,24 +109,25 @@ Cada asignatura completa debe tener, como mínimo:
 - `placeholder`: página creada como marcador estructural.
 - `draft`: contenido inicial útil, pero no completamente revisado.
 - `review`: curso detallado pendiente de revisión final.
-- `complete`: curso completo, revisado y coherente con el estándar.
+- `generated`: unidades lectivas disponibles y pendientes de revisión experta.
+- `complete`: contenido revisado por una persona especialista y coherente con el estándar.
 
 ## 7. Estrategia de migración
 
-No se deben migrar decenas de asignaturas con contenido superficial. La prioridad debe ser:
+La generación masiva aporta una base coherente, pero no sustituye la edición especializada. La prioridad de revisión debe ser:
 
-1. consolidar el modelo de curso completo;
-2. migrar pocas asignaturas con alto nivel de detalle;
-3. revisar visualmente y pedagógicamente;
-4. escalar por bloques pequeños.
+1. consolidar el modelo común de unidad;
+2. revisar exactitud conceptual por familias disciplinares;
+3. añadir ejemplos cuantitativos, figuras y referencias específicas donde aporten valor;
+4. promover a `complete` solo tras revisión identificable.
 
 La regla práctica es:
 
-> Menos asignaturas, pero más completas y útiles.
+> Cobertura visible no es lo mismo que validación académica: ambas deben declararse por separado.
 
-## 8. Criterio de aceptación para una asignatura completa
+## 8. Criterio de aceptación editorial
 
-Una asignatura puede considerarse lista para `review` cuando:
+Una asignatura puede considerarse `generated` cuando:
 
 - tiene propósito formativo claro;
 - contiene unidades temáticas detalladas;
@@ -126,3 +138,5 @@ Una asignatura puede considerarse lista para `review` cuando:
 - incluye recursos o bibliografía orientativa;
 - sus enlaces internos funcionan;
 - su página es legible en móvil.
+
+Solo puede considerarse `complete` cuando una revisión experta comprueba además definiciones, ejemplos, bibliografía, prácticas, respuestas y ausencia de afirmaciones clínicas no sustentadas.
