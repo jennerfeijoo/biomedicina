@@ -1,18 +1,20 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "subject_id": "fundamentos-programacion",
   "area_id": "ciencias-basicas",
   "unit": 4,
   "slug": "colecciones-archivos",
   "title": "Colecciones y archivos",
-  "status": "complete",
+  "status": "review",
   "purpose": "Seleccionar y usar listas, tuplas, diccionarios, conjuntos y archivos para representar datos biomédicos con estructura explícita, validación, trazabilidad y manejo seguro de errores.",
   "learning_objectives": [
     "Distinguir secuencias, mapeos y conjuntos según orden, duplicados y forma de acceso.",
     "Aplicar indexación, recorrido, comprensión y operaciones de agregación sin perder significado.",
     "Explicar mutabilidad, aliasing y copia superficial en estructuras anidadas.",
     "Leer y escribir archivos de texto, CSV y JSON usando context managers y codificación declarada.",
-    "Validar esquemas, tipos, unidades y datos faltantes antes de analizar."
+    "Validar esquemas, tipos, unidades y datos faltantes antes de analizar.",
+    "Definir esquemas versionados y manifiestos de procedencia para archivos.",
+    "Aplicar estrategias de escritura que preserven datos originales y salidas válidas."
   ],
   "theory_sections": [
     {
@@ -20,7 +22,8 @@
       "paragraphs": [
         "Una colección agrupa varios valores bajo una estructura común. Las listas mantienen orden, permiten duplicados y son mutables; las tuplas mantienen orden, pero se usan como registros inmutables o valores que no deberían cambiar; los diccionarios relacionan claves únicas con valores; los conjuntos almacenan elementos únicos y permiten operaciones de pertenencia, unión e intersección. Elegir una colección no es una preferencia estética: expresa propiedades del problema.",
         "Una lista de frecuencias cardíacas conserva la secuencia temporal, mientras que un conjunto eliminaría repeticiones y destruiría información. Un diccionario puede representar una observación con claves como identificador, edad y presión, pero no garantiza por sí solo tipos, unidades ni campos obligatorios. Una tupla puede representar una coordenada, aunque una clase o estructura tipada puede ser más clara cuando existen muchos campos.",
-        "Las operaciones de indexación, slicing, recorrido y comprensión permiten transformar colecciones. Una comprensión de lista es apropiada para una transformación breve y legible; cuando incluye varias condiciones, efectos secundarios o lógica científica compleja, un bucle explícito suele ser mejor. La concisión no debe ocultar decisiones sobre datos faltantes, unidades o criterios de exclusión."
+        "Las operaciones de indexación, slicing, recorrido y comprensión permiten transformar colecciones. Una comprensión de lista es apropiada para una transformación breve y legible; cuando incluye varias condiciones, efectos secundarios o lógica científica compleja, un bucle explícito suele ser mejor. La concisión no debe ocultar decisiones sobre datos faltantes, unidades o criterios de exclusión.",
+        "La elección de colección también tiene implicaciones de eficiencia. Buscar por posición en una lista es directo, pero encontrar repetidamente un identificador requiere recorrerla; un diccionario permite acceso promedio por clave. Un conjunto es apropiado para detectar duplicados o pertenencia, pero no conserva el orden semántico de una serie. Estas propiedades deben subordinarse al significado: optimizar destruyendo secuencia, multiplicidad o procedencia produce un resultado más rápido y menos válido."
       ],
       "key_points": [
         "La estructura elegida debe conservar las propiedades relevantes de los datos.",
@@ -34,7 +37,8 @@
       "paragraphs": [
         "En Python, una variable referencia un objeto. Asignar b=a no crea necesariamente una copia; ambos nombres pueden apuntar a la misma lista. Si se modifica b, el cambio también aparece al observar a. Este comportamiento, llamado aliasing, es útil cuando se desea compartir estado, pero peligroso cuando se supone que existen copias independientes.",
         "Una copia superficial duplica la colección externa, pero mantiene referencias a objetos internos. En una lista de diccionarios, copiar la lista no duplica cada diccionario. Las modificaciones profundas pueden propagarse entre estructuras. La copia profunda crea recursivamente nuevos objetos, aunque puede ser costosa y no siempre apropiada. Antes de copiar, debe definirse qué identidad y qué historial se desean conservar.",
-        "La mutabilidad también afecta funciones. Una función que recibe una lista puede modificarla sin retornar nada, introduciendo un efecto secundario. En análisis científico suele ser preferible devolver una colección nueva o documentar claramente la modificación in situ. Los argumentos por defecto mutables, como una lista vacía en la definición de una función, se reutilizan entre llamadas y constituyen un error clásico."
+        "La mutabilidad también afecta funciones. Una función que recibe una lista puede modificarla sin retornar nada, introduciendo un efecto secundario. En análisis científico suele ser preferible devolver una colección nueva o documentar claramente la modificación in situ. Los argumentos por defecto mutables, como una lista vacía en la definición de una función, se reutilizan entre llamadas y constituyen un error clásico.",
+        "Las estructuras anidadas deberían representar una jerarquía real, no crecer sin diseño. Una lista de diccionarios puede servir para una tabla pequeña, pero permite registros con claves diferentes. TypedDict, dataclasses o validadores de esquema hacen visibles campos y tipos, aunque no reemplazan reglas de dominio. La normalización tabular evita repetir datos de participante en cada medición, pero introduce relaciones que deben reconstruirse mediante claves estables."
       ],
       "key_points": [
         "Asignar otro nombre no implica copiar el objeto.",
@@ -48,7 +52,8 @@
       "paragraphs": [
         "Los archivos permiten persistir datos más allá de la ejecución. Un context manager con with abre el recurso y garantiza su cierre incluso si ocurre una excepción. Deben declararse modo y codificación; UTF-8 es una opción habitual para texto. Las rutas deben construirse con pathlib en lugar de concatenar separadores manualmente, porque los sistemas operativos usan convenciones diferentes.",
         "CSV representa filas y columnas, pero no contiene tipos, unidades ni significado formal. Un valor vacío puede significar dato faltante, no medido, no aplicable o error de exportación. JSON conserva números, cadenas, listas, booleanos y objetos anidados, pero tampoco valida automáticamente un esquema. Al leer cualquiera de estos formatos se deben comprobar campos obligatorios, nombres, tipos, rangos, unidades y duplicados.",
-        "La ingestión de datos debe separar lectura, conversión y validación. Primero se conserva el texto original; después se intenta convertir; finalmente se aplican reglas del dominio. Si una fila falla, el programa debe informar número de línea y causa, en lugar de descartarla silenciosamente. También conviene mantener el archivo original sin modificar y guardar una versión procesada con registro de transformaciones."
+        "La ingestión de datos debe separar lectura, conversión y validación. Primero se conserva el texto original; después se intenta convertir; finalmente se aplican reglas del dominio. Si una fila falla, el programa debe informar número de línea y causa, en lugar de descartarla silenciosamente. También conviene mantener el archivo original sin modificar y guardar una versión procesada con registro de transformaciones.",
+        "La persistencia necesita decisiones sobre formato, versión y procedencia. JSON no admite directamente fechas, NaN o arreglos de NumPy sin conversión; CSV no distingue números de texto ni listas anidadas. El programa debe registrar versión del esquema y no asumir que todo archivo futuro tendrá la misma estructura. Para resultados importantes conviene escribir a una ruta nueva o temporal y reemplazar de forma controlada, reduciendo el riesgo de dejar un archivo incompleto tras un fallo."
       ],
       "key_points": [
         "with gestiona el ciclo de vida del archivo de manera segura.",
@@ -56,83 +61,143 @@
         "Lectura, conversión y validación son etapas distintas.",
         "Los errores deben ser localizables y las transformaciones trazables."
       ]
+    },
+    {
+      "heading": "4. Esquemas, procedencia y persistencia segura",
+      "paragraphs": [
+        "Un esquema especifica nombres, tipos, obligatoriedad, unidades y restricciones. Puede expresarse en documentación, código o un formato formal. Validar solo que una columna exista es insuficiente si contiene otra unidad o si el identificador dejó de ser único. La versión del esquema permite detectar cambios deliberados y diseñar migraciones en lugar de interpretar silenciosamente un formato nuevo como antiguo.",
+        "La procedencia registra de dónde proviene un archivo, cuándo se obtuvo, qué versión tiene y qué transformaciones se aplicaron. Un hash puede detectar cambios de bytes, aunque no demuestra calidad ni autenticidad por sí solo. En un proyecto educativo, un manifiesto con ruta, tamaño, fecha, licencia y hash enseña a tratar los datos como una entrada versionada, no como un objeto intercambiable.",
+        "Las escrituras deberían evitar corrupción parcial. Un patrón sencillo genera la salida en un archivo temporal, fuerza el cierre y después reemplaza el destino. Las copias de seguridad y la escritura atómica dependen del sistema de archivos, pero el principio es no destruir la última versión válida antes de verificar la nueva. Para formatos grandes, bases de datos y concurrencia se requieren mecanismos más avanzados.",
+        "Los datos humanos necesitan minimización, seudonimización, control de acceso y políticas de retención. Eliminar el nombre no garantiza anonimato, porque fechas, ubicaciones y combinaciones raras pueden reidentificar. Este curso usará datos sintéticos o públicos apropiados. Las decisiones de privacidad pertenecen al diseño del flujo, no a una limpieza final después de programar."
+      ],
+      "key_points": [
+        "Un esquema incluye significado, tipos, unidades y restricciones.",
+        "La procedencia conecta cada resultado con su fuente y transformaciones.",
+        "La persistencia debe evitar destruir una versión válida ante fallos.",
+        "La privacidad se diseña desde la recogida y no se resuelve solo quitando nombres."
+      ]
     }
   ],
   "glossary": [
-    {"term": "Lista", "definition": "Secuencia mutable y ordenada que admite elementos repetidos."},
-    {"term": "Tupla", "definition": "Secuencia ordenada que no permite reasignar sus elementos."},
-    {"term": "Diccionario", "definition": "Mapeo mutable de claves únicas a valores."},
-    {"term": "Conjunto", "definition": "Colección no ordenada de elementos únicos."},
-    {"term": "Mutabilidad", "definition": "Capacidad de un objeto para cambiar después de crearse."},
-    {"term": "Aliasing", "definition": "Situación en la que varios nombres referencian el mismo objeto."},
-    {"term": "Copia superficial", "definition": "Copia de la estructura externa que comparte objetos internos."},
-    {"term": "Context manager", "definition": "Mecanismo que prepara y libera recursos alrededor de un bloque with."},
-    {"term": "CSV", "definition": "Formato tabular de texto basado en filas y campos delimitados."},
-    {"term": "JSON", "definition": "Formato textual para números, cadenas, listas, booleanos y objetos anidados."},
-    {"term": "Esquema", "definition": "Definición de campos, tipos, restricciones y relaciones esperadas."},
-    {"term": "Codificación", "definition": "Regla que relaciona caracteres con bytes en un archivo de texto."
+    {
+      "term": "Lista",
+      "definition": "Secuencia mutable y ordenada que admite elementos repetidos."
+    },
+    {
+      "term": "Tupla",
+      "definition": "Secuencia ordenada que no permite reasignar sus elementos."
+    },
+    {
+      "term": "Diccionario",
+      "definition": "Mapeo mutable de claves únicas a valores."
+    },
+    {
+      "term": "Conjunto",
+      "definition": "Colección no ordenada de elementos únicos."
+    },
+    {
+      "term": "Mutabilidad",
+      "definition": "Capacidad de un objeto para cambiar después de crearse."
+    },
+    {
+      "term": "Aliasing",
+      "definition": "Situación en la que varios nombres referencian el mismo objeto."
+    },
+    {
+      "term": "Copia superficial",
+      "definition": "Copia de la estructura externa que comparte objetos internos."
+    },
+    {
+      "term": "Context manager",
+      "definition": "Mecanismo que prepara y libera recursos alrededor de un bloque with."
+    },
+    {
+      "term": "CSV",
+      "definition": "Formato tabular de texto basado en filas y campos delimitados."
+    },
+    {
+      "term": "JSON",
+      "definition": "Formato textual para números, cadenas, listas, booleanos y objetos anidados."
+    },
+    {
+      "term": "Esquema",
+      "definition": "Definición de campos, tipos, restricciones y relaciones esperadas."
+    },
+    {
+      "term": "Codificación",
+      "definition": "Regla que relaciona caracteres con bytes en un archivo de texto."
     }
   ],
-  "worked_example": {
-    "title": "Lectura validada de mediciones en CSV",
-    "scenario": "Un archivo educativo contiene columnas paciente, tiempo_s y frecuencia_lpm. Se necesita leerlo, convertir tipos y rechazar filas sin identificador, con tiempo negativo o frecuencia fuera de un intervalo definido para la práctica.",
-    "pseudocode": [
-      "Abrir el archivo con with, newline vacío y UTF-8.",
-      "Usar DictReader para conservar nombres de columnas.",
-      "Verificar que existen los campos obligatorios.",
-      "Convertir tiempo y frecuencia dentro de un bloque try.",
-      "Acumular errores con número de fila y conservar solo registros válidos."
-    ],
-    "code": "import csv\nfrom pathlib import Path\n\ndef leer_mediciones(ruta: Path) -> tuple[list[dict], list[str]]:\n    registros: list[dict] = []\n    errores: list[str] = []\n    with ruta.open(encoding='utf-8', newline='') as archivo:\n        lector = csv.DictReader(archivo)\n        requeridas = {'paciente', 'tiempo_s', 'frecuencia_lpm'}\n        if not requeridas.issubset(lector.fieldnames or []):\n            raise ValueError('Faltan columnas obligatorias')\n        for numero, fila in enumerate(lector, start=2):\n            try:\n                paciente = fila['paciente'].strip()\n                tiempo = float(fila['tiempo_s'])\n                frecuencia = float(fila['frecuencia_lpm'])\n                if not paciente or tiempo < 0 or not 20 <= frecuencia <= 250:\n                    raise ValueError('Valores fuera del dominio educativo')\n                registros.append({'paciente': paciente, 'tiempo_s': tiempo, 'frecuencia_lpm': frecuencia})\n            except (TypeError, ValueError) as error:\n                errores.append(f'Fila {numero}: {error}')\n    return registros, errores",
-    "reasoning_steps": [
-      "Los nombres de columna se comprueban antes de iterar.",
-      "Las cadenas se convierten explícitamente a números.",
-      "La validación de dominio ocurre después de la conversión.",
-      "Cada error conserva la fila para facilitar corrección.",
-      "La función retorna datos y errores; no los oculta ni imprime obligatoriamente."
-    ],
-    "expected_output": "Una lista de registros válidos y otra lista con mensajes localizables para filas rechazadas.",
-    "limitations": [
-      "Los límites usados son criterios educativos, no referencias clínicas.",
-      "No se valida la identidad real del paciente ni la secuencia temporal completa.",
-      "Un sistema de producción requeriría esquema formal, pruebas y controles de privacidad."
-    ]
-  },
-  "guided_activity": {
-    "title": "Construir un importador trazable",
-    "instructions": [
-      "Define el esquema esperado antes de leer datos.",
-      "Conserva el archivo original y trabaja sobre una copia o salida nueva.",
-      "Separa lectura, conversión, validación y resumen.",
-      "Registra filas problemáticas sin descartarlas silenciosamente.",
-      "Escribe pruebas para archivos vacíos, columnas faltantes y tipos inválidos."
-    ],
-    "starter_code": "from pathlib import Path\n\ndef cargar_json(ruta: Path) -> list[dict]:\n    # Abrir, cargar, validar la raíz y retornar registros.\n    raise NotImplementedError",
-    "checking_criteria": [
-      "La estructura de datos conserva orden, duplicados y claves según la necesidad.",
-      "Los archivos se abren con context manager y codificación explícita.",
-      "Los mensajes de error permiten identificar la fila o campo.",
-      "Las transformaciones no sobrescriben el archivo de origen.",
-      "Se documentan unidades y significado de valores faltantes."
-    ]
-  },
   "common_errors": [
-    {"error": "Usar un conjunto para mediciones temporales.", "correction": "Usar una estructura ordenada que conserve repeticiones y secuencia."},
-    {"error": "Creer que b=a crea una copia independiente.", "correction": "Reconocer que ambos nombres pueden referenciar la misma colección."},
-    {"error": "Abrir archivos sin with.", "correction": "Gestionar el recurso mediante un context manager."},
-    {"error": "Convertir valores inválidos sin informar la fila.", "correction": "Capturar errores específicos y añadir contexto localizable."},
-    {"error": "Tratar una cadena vacía como cero.", "correction": "Definir explícitamente el significado de faltantes antes de convertir."},
-    {"error": "Sobrescribir el archivo original durante la limpieza.", "correction": "Conservar la fuente y escribir una salida versionada."
+    {
+      "error": "Usar un conjunto para mediciones temporales.",
+      "correction": "Usar una estructura ordenada que conserve repeticiones y secuencia."
+    },
+    {
+      "error": "Creer que b=a crea una copia independiente.",
+      "correction": "Reconocer que ambos nombres pueden referenciar la misma colección."
+    },
+    {
+      "error": "Abrir archivos sin with.",
+      "correction": "Gestionar el recurso mediante un context manager."
+    },
+    {
+      "error": "Convertir valores inválidos sin informar la fila.",
+      "correction": "Capturar errores específicos y añadir contexto localizable."
+    },
+    {
+      "error": "Tratar una cadena vacía como cero.",
+      "correction": "Definir explícitamente el significado de faltantes antes de convertir."
+    },
+    {
+      "error": "Sobrescribir el archivo original durante la limpieza.",
+      "correction": "Conservar la fuente y escribir una salida versionada."
+    },
+    {
+      "error": "Aceptar cualquier JSON porque pudo decodificarse.",
+      "correction": "Validar versión, campos, tipos, unidades y restricciones del esquema."
     }
   ],
   "self_assessment": [
-    {"question": "¿Qué colección conserva orden y duplicados?", "answer": "Una lista o tupla; la lista además es mutable."},
-    {"question": "¿Qué ocurre normalmente al ejecutar b=a para una lista?", "answer": "Ambos nombres referencian el mismo objeto; no se crea una copia independiente."},
-    {"question": "¿Qué limita una copia superficial?", "answer": "Los objetos anidados siguen compartidos entre la copia y el original."},
-    {"question": "¿Por qué se usa with al abrir archivos?", "answer": "Porque asegura el cierre y la liberación del recurso incluso ante excepciones."},
-    {"question": "¿Por qué CSV no constituye un esquema completo?", "answer": "Porque no define tipos, unidades, restricciones ni significado de valores faltantes."},
-    {"question": "¿Qué ventaja tiene separar lectura y validación?", "answer": "Permite localizar fallos, probar etapas y conservar el dato original antes de transformarlo."},
-    {"question": "¿Por qué conviene registrar filas rechazadas?", "answer": "Para auditar la limpieza y corregir problemas sin perder información silenciosamente."
+    {
+      "question": "¿Qué colección conserva orden y duplicados?",
+      "answer": "Una lista o tupla; la lista además es mutable."
+    },
+    {
+      "question": "¿Qué ocurre normalmente al ejecutar b=a para una lista?",
+      "answer": "Ambos nombres referencian el mismo objeto; no se crea una copia independiente."
+    },
+    {
+      "question": "¿Qué limita una copia superficial?",
+      "answer": "Los objetos anidados siguen compartidos entre la copia y el original."
+    },
+    {
+      "question": "¿Por qué se usa with al abrir archivos?",
+      "answer": "Porque asegura el cierre y la liberación del recurso incluso ante excepciones."
+    },
+    {
+      "question": "¿Por qué CSV no constituye un esquema completo?",
+      "answer": "Porque no define tipos, unidades, restricciones ni significado de valores faltantes."
+    },
+    {
+      "question": "¿Qué ventaja tiene separar lectura y validación?",
+      "answer": "Permite localizar fallos, probar etapas y conservar el dato original antes de transformarlo."
+    },
+    {
+      "question": "¿Por qué conviene registrar filas rechazadas?",
+      "answer": "Para auditar la limpieza y corregir problemas sin perder información silenciosamente."
+    },
+    {
+      "question": "¿Por qué versionar un esquema?",
+      "answer": "Para detectar cambios incompatibles y migrar datos de forma explícita."
+    },
+    {
+      "question": "¿Qué registra la procedencia?",
+      "answer": "Origen, versión, licencia y transformaciones que conectan una fuente con un resultado."
+    },
+    {
+      "question": "¿Qué ventaja tiene escribir primero a un archivo temporal?",
+      "answer": "Reduce el riesgo de reemplazar una salida válida por un archivo incompleto tras un fallo."
     }
   ],
   "biomedical_connections": [
@@ -142,10 +207,206 @@
     "Conservación de archivos originales y registro de transformaciones."
   ],
   "sources": [
-    {"title": "Estructuras de datos", "organization": "Python Software Foundation", "url": "https://docs.python.org/es/3/tutorial/datastructures.html", "type": "documentación oficial"},
-    {"title": "csv — CSV File Reading and Writing", "organization": "Python Software Foundation", "url": "https://docs.python.org/3/library/csv.html", "type": "documentación oficial"},
-    {"title": "json — JSON encoder and decoder", "organization": "Python Software Foundation", "url": "https://docs.python.org/3/library/json.html", "type": "documentación oficial"},
-    {"title": "pathlib — Object-oriented filesystem paths", "organization": "Python Software Foundation", "url": "https://docs.python.org/3/library/pathlib.html", "type": "documentación oficial"}
+    {
+      "title": "Estructuras de datos",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/es/3/tutorial/datastructures.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "csv — CSV File Reading and Writing",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/csv.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "json — JSON encoder and decoder",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/json.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "pathlib — Object-oriented filesystem paths",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/pathlib.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "Python Data Model — Objects, values and types",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/reference/datamodel.html#objects-values-and-types",
+      "type": "referencia oficial"
+    },
+    {
+      "title": "JSON Schema Specification",
+      "organization": "JSON Schema",
+      "url": "https://json-schema.org/specification",
+      "type": "especificación"
+    },
+    {
+      "title": "Data Organization in Spreadsheets",
+      "organization": "The American Statistician",
+      "url": "https://doi.org/10.1080/00031305.2017.1375989",
+      "type": "artículo académico"
+    }
   ],
-  "editorial_notice": "Material educativo para programación científica. El tratamiento de datos humanos requiere controles adicionales de privacidad, seguridad, gobierno y validación."
+  "editorial_notice": "Material educativo para programación científica y biomédica. Requiere revisión docente experta. Los ejemplos emplean datos sintéticos o abiertos y no constituyen software clínico validado, ni deben utilizarse para diagnóstico, triaje, tratamiento o decisiones asistenciales.",
+  "estimated_hours": 24,
+  "weeks": [
+    9,
+    10,
+    11
+  ],
+  "difficulty": "Intermedia",
+  "prerequisite_knowledge": [
+    "Funciones, contratos y excepciones.",
+    "Bucles y comprensión de colecciones.",
+    "Uso básico de pathlib y del sistema de archivos."
+  ],
+  "progression": {
+    "previous": "Funciones modulares que separan validación, cálculo y efectos.",
+    "next": "Análisis tabular, resúmenes y visualización reproducible."
+  },
+  "worked_examples": [
+    {
+      "title": "Lectura validada de mediciones en CSV",
+      "scenario": "Un archivo educativo contiene columnas paciente, tiempo_s y frecuencia_lpm. Se necesita leerlo, convertir tipos y rechazar filas sin identificador, con tiempo negativo o frecuencia fuera de un intervalo definido para la práctica.",
+      "pseudocode": [
+        "Abrir el archivo con with, newline vacío y UTF-8.",
+        "Usar DictReader para conservar nombres de columnas.",
+        "Verificar que existen los campos obligatorios.",
+        "Convertir tiempo y frecuencia dentro de un bloque try.",
+        "Acumular errores con número de fila y conservar solo registros válidos."
+      ],
+      "code": "import csv\nfrom pathlib import Path\n\ndef leer_mediciones(ruta: Path) -> tuple[list[dict], list[str]]:\n    registros: list[dict] = []\n    errores: list[str] = []\n    with ruta.open(encoding='utf-8', newline='') as archivo:\n        lector = csv.DictReader(archivo)\n        requeridas = {'paciente', 'tiempo_s', 'frecuencia_lpm'}\n        if not requeridas.issubset(lector.fieldnames or []):\n            raise ValueError('Faltan columnas obligatorias')\n        for numero, fila in enumerate(lector, start=2):\n            try:\n                paciente = fila['paciente'].strip()\n                tiempo = float(fila['tiempo_s'])\n                frecuencia = float(fila['frecuencia_lpm'])\n                if not paciente or tiempo < 0 or not 20 <= frecuencia <= 250:\n                    raise ValueError('Valores fuera del dominio educativo')\n                registros.append({'paciente': paciente, 'tiempo_s': tiempo, 'frecuencia_lpm': frecuencia})\n            except (TypeError, ValueError) as error:\n                errores.append(f'Fila {numero}: {error}')\n    return registros, errores",
+      "reasoning_steps": [
+        "Los nombres de columna se comprueban antes de iterar.",
+        "Las cadenas se convierten explícitamente a números.",
+        "La validación de dominio ocurre después de la conversión.",
+        "Cada error conserva la fila para facilitar corrección.",
+        "La función retorna datos y errores; no los oculta ni imprime obligatoriamente."
+      ],
+      "expected_output": "Una lista de registros válidos y otra lista con mensajes localizables para filas rechazadas.",
+      "limitations": [
+        "Los límites usados son criterios educativos, no referencias clínicas.",
+        "No se valida la identidad real del paciente ni la secuencia temporal completa.",
+        "Un sistema de producción requeriría esquema formal, pruebas y controles de privacidad."
+      ]
+    },
+    {
+      "title": "Validación de un documento JSON con versión de esquema",
+      "scenario": "Un archivo sintético debe contener schema_version, sample_id y measurements. Se conserva una lista de errores en lugar de aceptar parcialmente el documento.",
+      "code": "def validar_documento(doc: object) -> list[str]:\n    errores: list[str] = []\n    if not isinstance(doc, dict):\n        return ['la raíz debe ser un objeto']\n    if doc.get('schema_version') != '1.0':\n        errores.append('schema_version no soportada')\n    if not isinstance(doc.get('sample_id'), str) or not doc.get('sample_id'):\n        errores.append('sample_id inválido')\n    mediciones = doc.get('measurements')\n    if not isinstance(mediciones, list):\n        errores.append('measurements debe ser una lista')\n    elif not all(isinstance(x, (int, float)) for x in mediciones):\n        errores.append('cada medición debe ser numérica')\n    return errores",
+      "reasoning_steps": [
+        "La raíz se valida antes de acceder a claves.",
+        "La versión evita interpretar formatos incompatibles.",
+        "Identificador y mediciones tienen contratos separados.",
+        "La función acumula errores útiles para corrección.",
+        "La ausencia de errores no demuestra calidad científica de las mediciones."
+      ],
+      "expected_output": "Una lista vacía para documentos estructuralmente válidos o mensajes específicos.",
+      "limitations": [
+        "Es un esquema manual y pequeño.",
+        "No valida unidades, procedencia ni privacidad.",
+        "Sistemas reales pueden usar JSON Schema o modelos tipados."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Construir un importador trazable",
+      "instructions": [
+        "Define el esquema esperado antes de leer datos.",
+        "Conserva el archivo original y trabaja sobre una copia o salida nueva.",
+        "Separa lectura, conversión, validación y resumen.",
+        "Registra filas problemáticas sin descartarlas silenciosamente.",
+        "Escribe pruebas para archivos vacíos, columnas faltantes y tipos inválidos."
+      ],
+      "starter_code": "from pathlib import Path\n\ndef cargar_json(ruta: Path) -> list[dict]:\n    # Abrir, cargar, validar la raíz y retornar registros.\n    raise NotImplementedError",
+      "checking_criteria": [
+        "La estructura de datos conserva orden, duplicados y claves según la necesidad.",
+        "Los archivos se abren con context manager y codificación explícita.",
+        "Los mensajes de error permiten identificar la fila o campo.",
+        "Las transformaciones no sobrescriben el archivo de origen.",
+        "Se documentan unidades y significado de valores faltantes."
+      ],
+      "purpose": "Aplicar el contenido mediante un flujo verificable y documentado.",
+      "problems": [
+        "Elige lista, conjunto o diccionario para una serie temporal.",
+        "Detecta aliasing tras b=a; b.append(1).",
+        "Abre un CSV UTF-8 mediante with y pathlib.",
+        "Distingue fila vacía, cero y no aplicable.",
+        "Especifica un esquema para muestra, tiempo_s y valor.",
+        "Explica por qué un hash no valida calidad."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Nivel 1 · Colecciones",
+      "purpose": "Conservar estructura y significado.",
+      "problems": [
+        {
+          "prompt": "Elige lista, conjunto o diccionario para una serie temporal.",
+          "solution": "Lista de registros ordenados; un conjunto perdería orden y duplicados."
+        },
+        {
+          "prompt": "Detecta aliasing tras b=a; b.append(1).",
+          "solution": "a también cambia porque ambos nombres apuntan a la misma lista."
+        },
+        {
+          "prompt": "Explica una copia superficial de lista de diccionarios.",
+          "solution": "La lista exterior es nueva, pero los diccionarios internos siguen compartidos."
+        },
+        {
+          "prompt": "Usa un conjunto para detectar identificadores duplicados.",
+          "solution": "Comparar cada id con vistos; si existe, registrar duplicado; si no, añadir."
+        }
+      ]
+    },
+    {
+      "title": "Nivel 2 · Archivos",
+      "purpose": "Leer y escribir con trazabilidad.",
+      "problems": [
+        {
+          "prompt": "Abre un CSV UTF-8 mediante with y pathlib.",
+          "solution": "ruta.open(encoding='utf-8', newline='') dentro de with."
+        },
+        {
+          "prompt": "Distingue fila vacía, cero y no aplicable.",
+          "solution": "Son estados semánticos distintos y deben codificarse/documentarse por separado."
+        },
+        {
+          "prompt": "Valida columnas obligatorias antes de iterar.",
+          "solution": "Comparar conjunto requerido con fieldnames y fallar si falta alguna."
+        },
+        {
+          "prompt": "Diseña una salida que no sobrescriba la fuente.",
+          "solution": "Escribir a directorio processed con nombre/version/hash derivados."
+        }
+      ]
+    },
+    {
+      "title": "Nivel 3 · Esquema y procedencia",
+      "purpose": "Auditar formatos y transformaciones.",
+      "problems": [
+        {
+          "prompt": "Especifica un esquema para muestra, tiempo_s y valor.",
+          "solution": "Tipos, obligatoriedad, unidad de tiempo, rango del valor y unicidad de claves."
+        },
+        {
+          "prompt": "Explica por qué un hash no valida calidad.",
+          "solution": "Solo identifica bytes; no demuestra exactitud, licencia ni adecuación científica."
+        },
+        {
+          "prompt": "Diseña un manifiesto de datos mínimo.",
+          "solution": "Ruta, hash, tamaño, fecha, licencia, origen y versión de esquema."
+        },
+        {
+          "prompt": "Describe una escritura segura.",
+          "solution": "Escribir, cerrar y validar un temporal antes de reemplazar el destino."
+        }
+      ]
+    }
+  ]
 }

@@ -1,11 +1,11 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "subject_id": "fundamentos-programacion",
   "area_id": "ciencias-basicas",
   "unit": 3,
   "slug": "funciones-modularidad",
   "title": "Funciones y modularidad",
-  "status": "complete",
+  "status": "review",
   "purpose": "Diseñar funciones pequeñas, verificables y reutilizables mediante parámetros, valores de retorno, contratos, alcance, documentación y composición, con énfasis en cálculos biomédicos reproducibles y separación de responsabilidades.",
   "learning_objectives": [
     "Definir funciones con nombres, parámetros y retornos coherentes con una tarea concreta.",
@@ -13,7 +13,9 @@
     "Especificar contratos mediante precondiciones, postcondiciones, tipos y excepciones.",
     "Separar cálculo, validación, entrada, presentación y almacenamiento en componentes distintos.",
     "Componer funciones y evitar duplicación sin crear abstracciones innecesarias.",
-    "Diseñar pruebas unitarias con casos normales, límite e inválidos."
+    "Diseñar pruebas unitarias con casos normales, límite e inválidos.",
+    "Organizar funciones en módulos con interfaces públicas y dependencias explícitas.",
+    "Encadenar excepciones conservando contexto y causa original."
   ],
   "theory_sections": [
     {
@@ -21,7 +23,8 @@
       "paragraphs": [
         "Una función agrupa instrucciones bajo un nombre y transforma entradas en una salida o efecto definido. Su valor principal no es reducir líneas, sino expresar una responsabilidad. Una función llamada convertir_mm_a_m debe realizar esa conversión y no, al mismo tiempo, leer archivos, imprimir gráficos y modificar variables globales. La claridad del nombre, de los parámetros y del retorno permite entender el programa sin revisar todos los detalles internos.",
         "Los parámetros son nombres definidos en la declaración; los argumentos son valores suministrados en una llamada. Los parámetros posicionales dependen del orden y los argumentos nombrados hacen explícito qué representa cada valor. Los valores por defecto son apropiados cuando existe una opción segura y estable, pero no deben ocultar decisiones científicas relevantes. Un umbral, una unidad o un método estadístico importante debe ser visible en la llamada o en la configuración.",
-        "El contrato de una función describe qué acepta, qué devuelve, qué errores puede producir y qué supuestos mantiene. Las anotaciones de tipo y los docstrings comunican parte de ese contrato, pero no lo hacen cumplir por sí solos. Las precondiciones verifican entradas; las postcondiciones describen propiedades de la salida. En código científico, las unidades, el tratamiento de faltantes y el rango válido pertenecen al contrato tanto como el tipo numérico."
+        "El contrato de una función describe qué acepta, qué devuelve, qué errores puede producir y qué supuestos mantiene. Las anotaciones de tipo y los docstrings comunican parte de ese contrato, pero no lo hacen cumplir por sí solos. Las precondiciones verifican entradas; las postcondiciones describen propiedades de la salida. En código científico, las unidades, el tratamiento de faltantes y el rango válido pertenecen al contrato tanto como el tipo numérico.",
+        "Una interfaz de función debe ser pequeña pero suficiente. Pasar diez argumentos relacionados puede indicar que falta una estructura de configuración; pasar un diccionario genérico puede ocultar campos obligatorios. Los parámetros solo posicionales, nombrados y con valores por defecto permiten diseñar llamadas legibles. Las decisiones que alteran unidades, fórmulas o exclusiones deben aparecer explícitamente, mientras que opciones de presentación inocuas pueden tener un valor predeterminado documentado."
       ],
       "key_points": [
         "Una función debe tener una responsabilidad principal reconocible.",
@@ -35,7 +38,8 @@
       "paragraphs": [
         "return finaliza la ejecución de la función y entrega un valor al código que la llamó. Imprimir no equivale a retornar: print muestra una representación, mientras que return permite reutilizar el resultado en cálculos, pruebas o almacenamiento. Una función que calcula una media debería devolver el número; la interfaz que presenta el resultado puede decidir después cuántos decimales y qué unidad mostrar.",
         "Las variables creadas dentro de una función suelen ser locales. No están disponibles fuera de ella y pueden reutilizar nombres sin modificar variables externas. Este aislamiento reduce interferencias. Las variables globales, por el contrario, crean dependencias ocultas: una función puede cambiar de resultado sin que la llamada muestre todos sus datos. Las constantes de configuración pueden existir a nivel de módulo, pero el estado mutable compartido debe minimizarse.",
-        "Un efecto secundario es un cambio observable más allá del valor retornado, como escribir un archivo, modificar una lista recibida o actualizar una base de datos. Los efectos no son siempre incorrectos, pero deben separarse y documentarse. Una arquitectura sencilla puede tener una función pura para calcular, otra para validar y otra para guardar. Esa separación facilita pruebas, reutilización y auditoría del razonamiento."
+        "Un efecto secundario es un cambio observable más allá del valor retornado, como escribir un archivo, modificar una lista recibida o actualizar una base de datos. Los efectos no son siempre incorrectos, pero deben separarse y documentarse. Una arquitectura sencilla puede tener una función pura para calcular, otra para validar y otra para guardar. Esa separación facilita pruebas, reutilización y auditoría del razonamiento.",
+        "La mutabilidad de los argumentos exige atención. Aunque la variable local tenga un nombre distinto, una lista recibida sigue siendo el mismo objeto si se modifica in situ. Una función pura que devuelve una nueva lista facilita pruebas y composición, pero copiar datos grandes tiene coste. La elección debe declararse en el contrato. Los valores por defecto mutables se crean una sola vez al definir la función; usar None y crear la colección dentro evita compartir estado accidental entre llamadas."
       ],
       "key_points": [
         "return entrega datos reutilizables; print solo presenta información.",
@@ -49,7 +53,8 @@
       "paragraphs": [
         "La modularidad divide un problema en componentes que pueden entenderse y comprobarse por separado. Una función valida mediciones, otra calcula un resumen y otra construye un informe. La composición conecta sus salidas y entradas. Para que funcione, los contratos deben ser compatibles: una función no debe devolver texto decorado cuando la siguiente espera un número, ni cambiar unidades sin declararlo.",
         "Extraer código repetido a una función reduce inconsistencias, pero abstraer demasiado pronto puede ocultar diferencias importantes. Dos cálculos visualmente parecidos pueden usar unidades o supuestos distintos. Antes de generalizar se debe identificar qué comportamiento es verdaderamente común y qué debe permanecer como parámetro explícito. Las funciones breves no son automáticamente mejores; deben ser lo bastante completas para representar una idea coherente.",
-        "Las pruebas unitarias comparan una entrada con un resultado o error esperado. Deben cubrir el camino normal, valores frontera, entradas inválidas y casos que históricamente causaron fallos. Una buena función facilita las pruebas porque recibe datos explícitos y retorna resultados, sin depender de teclado, reloj o archivos. La documentación debe explicar propósito, parámetros, retorno, excepciones y límites, no repetir línea por línea el código."
+        "Las pruebas unitarias comparan una entrada con un resultado o error esperado. Deben cubrir el camino normal, valores frontera, entradas inválidas y casos que históricamente causaron fallos. Una buena función facilita las pruebas porque recibe datos explícitos y retorna resultados, sin depender de teclado, reloj o archivos. La documentación debe explicar propósito, parámetros, retorno, excepciones y límites, no repetir línea por línea el código.",
+        "Los módulos convierten un conjunto de funciones en una interfaz reutilizable. El bloque if __name__ == '__main__' separa la ejecución como programa de la importación como biblioteca. Los imports deben ser explícitos y no producir cálculos costosos ni modificar archivos. Una organización elemental puede separar io.py, validation.py, analysis.py y cli.py. Esta estructura no es burocracia: permite probar la lógica sin depender del teclado o del sistema de archivos."
       ],
       "key_points": [
         "La modularidad permite verificar componentes de manera aislada.",
@@ -57,80 +62,143 @@
         "La abstracción debe conservar diferencias científicas relevantes.",
         "Las funciones con entradas explícitas y retornos definidos son más fáciles de probar."
       ]
+    },
+    {
+      "heading": "4. Módulos, dependencias e interfaces mantenibles",
+      "paragraphs": [
+        "Un módulo es un archivo importable y un paquete organiza módulos relacionados. La interfaz pública debería ser menor que la implementación interna: otras partes del proyecto dependen de nombres estables, mientras los detalles pueden cambiar. Prefijar helpers internos y exportar funciones centrales reduce acoplamiento, aunque Python confía principalmente en convenciones.",
+        "Las dependencias deben apuntar hacia componentes más generales. La lógica de cálculo no debería importar una interfaz gráfica ni conocer una ruta fija. En su lugar recibe datos y configuración. Esta inversión sencilla permite que una prueba suministre datos en memoria y que la aplicación real use archivos. No exige un framework: basta con evitar que las funciones puras creen directamente sus dependencias externas.",
+        "Las excepciones forman parte de la interfaz. Una función de bajo nivel puede producir ValueError o FileNotFoundError; una capa superior decide si añade contexto, reintenta o termina. Capturar y reemplazar una excepción debería preservar su causa mediante raise ... from ..., facilitando el diagnóstico. Devolver None para cualquier fallo pierde información cuando None también puede ser un resultado válido.",
+        "La documentación de una interfaz incluye ejemplo mínimo, tipos, unidades, efectos, excepciones y estabilidad. Los doctests pueden comprobar ejemplos simples, pero no reemplazan una suite. Mantener una API pequeña y coherente prepara al estudiante para paquetes científicos y evita que el proyecto final se convierta en un único script imposible de probar por partes."
+      ],
+      "key_points": [
+        "La interfaz pública debe ser estable y menor que los detalles internos.",
+        "La lógica de cálculo recibe dependencias en lugar de crearlas ocultamente.",
+        "Las excepciones específicas y encadenadas conservan contexto.",
+        "Una API documentada mejora prueba, reutilización y mantenimiento."
+      ]
     }
   ],
   "glossary": [
-    {"term": "Función", "definition": "Bloque reutilizable que realiza una responsabilidad definida."},
-    {"term": "Parámetro", "definition": "Nombre que recibe un valor dentro de la definición de una función."},
-    {"term": "Argumento", "definition": "Valor concreto suministrado al llamar una función."},
-    {"term": "Retorno", "definition": "Valor entregado por una función mediante return."},
-    {"term": "Alcance", "definition": "Región del programa en la que un nombre es accesible."},
-    {"term": "Variable local", "definition": "Nombre creado dentro de una función y limitado a su ejecución."},
-    {"term": "Efecto secundario", "definition": "Cambio observable distinto del valor retornado."},
-    {"term": "Función pura", "definition": "Función cuyo resultado depende de sus entradas y que no modifica estado externo."},
-    {"term": "Contrato", "definition": "Especificación de entradas, salida, errores, unidades y supuestos."},
-    {"term": "Precondición", "definition": "Condición que debe cumplir la entrada antes de ejecutar el cálculo."},
-    {"term": "Postcondición", "definition": "Propiedad que debe cumplir la salida si la función termina correctamente."},
-    {"term": "Prueba unitaria", "definition": "Comprobación aislada de una unidad pequeña de comportamiento."}
+    {
+      "term": "Función",
+      "definition": "Bloque reutilizable que realiza una responsabilidad definida."
+    },
+    {
+      "term": "Parámetro",
+      "definition": "Nombre que recibe un valor dentro de la definición de una función."
+    },
+    {
+      "term": "Argumento",
+      "definition": "Valor concreto suministrado al llamar una función."
+    },
+    {
+      "term": "Retorno",
+      "definition": "Valor entregado por una función mediante return."
+    },
+    {
+      "term": "Alcance",
+      "definition": "Región del programa en la que un nombre es accesible."
+    },
+    {
+      "term": "Variable local",
+      "definition": "Nombre creado dentro de una función y limitado a su ejecución."
+    },
+    {
+      "term": "Efecto secundario",
+      "definition": "Cambio observable distinto del valor retornado."
+    },
+    {
+      "term": "Función pura",
+      "definition": "Función cuyo resultado depende de sus entradas y que no modifica estado externo."
+    },
+    {
+      "term": "Contrato",
+      "definition": "Especificación de entradas, salida, errores, unidades y supuestos."
+    },
+    {
+      "term": "Precondición",
+      "definition": "Condición que debe cumplir la entrada antes de ejecutar el cálculo."
+    },
+    {
+      "term": "Postcondición",
+      "definition": "Propiedad que debe cumplir la salida si la función termina correctamente."
+    },
+    {
+      "term": "Prueba unitaria",
+      "definition": "Comprobación aislada de una unidad pequeña de comportamiento."
+    }
   ],
-  "worked_example": {
-    "title": "Separación de validación y cálculo de una media",
-    "scenario": "Se necesita resumir una lista educativa de mediciones positivas. El diseño debe separar la validación del cálculo para que cada responsabilidad pueda probarse de forma independiente.",
-    "pseudocode": [
-      "Definir validar_mediciones para rechazar listas vacías, valores no numéricos o no positivos.",
-      "Definir media para validar y después calcular suma dividida por cantidad.",
-      "Retornar un float sin añadir texto ni interpretación.",
-      "Aplicar formato y unidad fuera de la función de cálculo."
-    ],
-    "code": "def validar_mediciones(valores: list[float]) -> None:\n    if not valores:\n        raise ValueError('La lista no puede estar vacía')\n    if any(not isinstance(v, (int, float)) for v in valores):\n        raise TypeError('Todas las mediciones deben ser numéricas')\n    if any(v <= 0 for v in valores):\n        raise ValueError('Las mediciones deben ser positivas')\n\ndef media(valores: list[float]) -> float:\n    validar_mediciones(valores)\n    return sum(valores) / len(valores)\n\nresultado = media([10.0, 12.0, 14.0])\nprint(f'{resultado:.1f} unidades')",
-    "reasoning_steps": [
-      "La validación tiene una responsabilidad separada y puede reutilizarse.",
-      "La lista vacía se detecta antes de dividir por su longitud.",
-      "TypeError distingue un tipo incorrecto de un valor numérico fuera del dominio.",
-      "media retorna un número que puede usarse en otros cálculos.",
-      "El formato y la unidad pertenecen a la capa de presentación."
-    ],
-    "expected_output": "12.0 unidades",
-    "limitations": [
-      "El ejemplo solo acepta valores positivos y no gestiona datos faltantes.",
-      "No determina si la media es un resumen estadístico adecuado.",
-      "La unidad real debe definirse en el contrato del problema."
-    ]
-  },
-  "guided_activity": {
-    "title": "Refactorizar un cálculo monolítico",
-    "instructions": [
-      "Parte de un script que lee texto, convierte, valida, calcula e imprime en un solo bloque.",
-      "Extrae funciones separadas para conversión, validación, cálculo y presentación.",
-      "Añade anotaciones de tipo y docstrings con unidades y excepciones.",
-      "Escribe pruebas para entradas válidas, vacías, no numéricas y límites.",
-      "Explica qué funciones tienen efectos secundarios."
-    ],
-    "starter_code": "def convertir_a_float(texto: str) -> float:\n    return float(texto)\n\ndef calcular_cambio(inicial: float, final: float) -> float:\n    # Validar y devolver final - inicial.\n    raise NotImplementedError",
-    "checking_criteria": [
-      "Cada función tiene una responsabilidad principal.",
-      "Los cálculos retornan números y la presentación se realiza fuera.",
-      "Las excepciones forman parte del contrato documentado.",
-      "Las pruebas cubren caminos normales, fronteras e inválidos."
-    ]
-  },
   "common_errors": [
-    {"error": "Usar print dentro de toda función de cálculo.", "correction": "Retornar el valor y presentar el resultado en otra capa."},
-    {"error": "Depender de variables globales mutables.", "correction": "Pasar datos como argumentos y retornar resultados explícitos."},
-    {"error": "Asignar varias responsabilidades a una función.", "correction": "Separar validación, cálculo, entrada, salida y persistencia."},
-    {"error": "Usar valores por defecto para ocultar unidades o umbrales.", "correction": "Hacer visibles las decisiones que cambian el significado científico."},
-    {"error": "Documentar solo la sintaxis.", "correction": "Explicar propósito, contrato, unidades, excepciones y limitaciones."},
-    {"error": "Probar únicamente el resultado favorable.", "correction": "Añadir casos de error, límites y regresión."
+    {
+      "error": "Usar print dentro de toda función de cálculo.",
+      "correction": "Retornar el valor y presentar el resultado en otra capa."
+    },
+    {
+      "error": "Depender de variables globales mutables.",
+      "correction": "Pasar datos como argumentos y retornar resultados explícitos."
+    },
+    {
+      "error": "Asignar varias responsabilidades a una función.",
+      "correction": "Separar validación, cálculo, entrada, salida y persistencia."
+    },
+    {
+      "error": "Usar valores por defecto para ocultar unidades o umbrales.",
+      "correction": "Hacer visibles las decisiones que cambian el significado científico."
+    },
+    {
+      "error": "Documentar solo la sintaxis.",
+      "correction": "Explicar propósito, contrato, unidades, excepciones y limitaciones."
+    },
+    {
+      "error": "Probar únicamente el resultado favorable.",
+      "correction": "Añadir casos de error, límites y regresión."
+    },
+    {
+      "error": "Importar un módulo que ejecuta análisis al cargarse.",
+      "correction": "Proteger la ejecución principal y limitar los imports a definiciones."
     }
   ],
   "self_assessment": [
-    {"question": "¿Qué diferencia existe entre parámetro y argumento?", "answer": "El parámetro aparece en la definición; el argumento es el valor usado en una llamada."},
-    {"question": "¿Por qué return no equivale a print?", "answer": "return entrega un valor reutilizable; print solo muestra una representación."},
-    {"question": "¿Qué problema generan las variables globales mutables?", "answer": "Introducen dependencias y cambios ocultos que dificultan pruebas y razonamiento."},
-    {"question": "¿Qué incluye el contrato de una función científica?", "answer": "Tipos, unidades, precondiciones, retorno, errores, supuestos y límites."},
-    {"question": "¿Qué es un efecto secundario?", "answer": "Un cambio observable fuera del valor retornado, como escribir un archivo o modificar estado externo."},
-    {"question": "¿Cuándo conviene extraer una función?", "answer": "Cuando existe una responsabilidad coherente, reutilizable o verificable de forma aislada."},
-    {"question": "¿Qué hace que una función sea fácil de probar?", "answer": "Entradas explícitas, resultado determinista, retorno definido y pocas dependencias externas."
+    {
+      "question": "¿Qué diferencia existe entre parámetro y argumento?",
+      "answer": "El parámetro aparece en la definición; el argumento es el valor usado en una llamada."
+    },
+    {
+      "question": "¿Por qué return no equivale a print?",
+      "answer": "return entrega un valor reutilizable; print solo muestra una representación."
+    },
+    {
+      "question": "¿Qué problema generan las variables globales mutables?",
+      "answer": "Introducen dependencias y cambios ocultos que dificultan pruebas y razonamiento."
+    },
+    {
+      "question": "¿Qué incluye el contrato de una función científica?",
+      "answer": "Tipos, unidades, precondiciones, retorno, errores, supuestos y límites."
+    },
+    {
+      "question": "¿Qué es un efecto secundario?",
+      "answer": "Un cambio observable fuera del valor retornado, como escribir un archivo o modificar estado externo."
+    },
+    {
+      "question": "¿Cuándo conviene extraer una función?",
+      "answer": "Cuando existe una responsabilidad coherente, reutilizable o verificable de forma aislada."
+    },
+    {
+      "question": "¿Qué hace que una función sea fácil de probar?",
+      "answer": "Entradas explícitas, resultado determinista, retorno definido y pocas dependencias externas."
+    },
+    {
+      "question": "¿Qué problema causa un argumento por defecto mutable?",
+      "answer": "El mismo objeto se reutiliza entre llamadas y puede acumular estado inesperado."
+    },
+    {
+      "question": "¿Para qué sirve if __name__ == '__main__'?",
+      "answer": "Separa la ejecución como programa de la importación como módulo."
+    },
+    {
+      "question": "¿Qué significa inyectar una dependencia?",
+      "answer": "Recibirla como argumento o interfaz en lugar de crearla ocultamente dentro de la lógica."
     }
   ],
   "biomedical_connections": [
@@ -140,10 +208,198 @@
     "Pruebas unitarias de transformaciones antes de integrarlas en pipelines."
   ],
   "sources": [
-    {"title": "Más herramientas para control de flujo — Definir funciones", "organization": "Python Software Foundation", "url": "https://docs.python.org/es/3/tutorial/controlflow.html#defining-functions", "type": "documentación oficial"},
-    {"title": "El modelo de ejecución de Python", "organization": "Python Software Foundation", "url": "https://docs.python.org/es/3/reference/executionmodel.html", "type": "referencia oficial"},
-    {"title": "Typing — Support for type hints", "organization": "Python Software Foundation", "url": "https://docs.python.org/3/library/typing.html", "type": "referencia oficial"},
-    {"title": "PEP 257 — Docstring Conventions", "organization": "Python Software Foundation", "url": "https://peps.python.org/pep-0257/", "type": "guía oficial"}
+    {
+      "title": "Más herramientas para control de flujo — Definir funciones",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/es/3/tutorial/controlflow.html#defining-functions",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "El modelo de ejecución de Python",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/es/3/reference/executionmodel.html",
+      "type": "referencia oficial"
+    },
+    {
+      "title": "Typing — Support for type hints",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/typing.html",
+      "type": "referencia oficial"
+    },
+    {
+      "title": "PEP 257 — Docstring Conventions",
+      "organization": "Python Software Foundation",
+      "url": "https://peps.python.org/pep-0257/",
+      "type": "guía oficial"
+    },
+    {
+      "title": "Python Modules",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/tutorial/modules.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "Errors and Exceptions",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/tutorial/errors.html",
+      "type": "documentación oficial"
+    }
   ],
-  "editorial_notice": "Material educativo para programación científica. Los ejemplos no constituyen software clínico validado ni deben usarse para decisiones asistenciales."
+  "editorial_notice": "Material educativo para programación científica y biomédica. Requiere revisión docente experta. Los ejemplos emplean datos sintéticos o abiertos y no constituyen software clínico validado, ni deben utilizarse para diagnóstico, triaje, tratamiento o decisiones asistenciales.",
+  "estimated_hours": 24,
+  "weeks": [
+    6,
+    7,
+    8
+  ],
+  "difficulty": "Intermedia",
+  "prerequisite_knowledge": [
+    "Algoritmos secuenciales y estructuras de control.",
+    "Listas básicas y manejo de excepciones elemental.",
+    "Capacidad para escribir y ejecutar scripts Python."
+  ],
+  "progression": {
+    "previous": "Control explícito de ramas, iteraciones, errores y trazabilidad.",
+    "next": "Representación persistente de colecciones y datos tabulares en archivos."
+  },
+  "worked_examples": [
+    {
+      "title": "Separación de validación y cálculo de una media",
+      "scenario": "Se necesita resumir una lista educativa de mediciones positivas. El diseño debe separar la validación del cálculo para que cada responsabilidad pueda probarse de forma independiente.",
+      "pseudocode": [
+        "Definir validar_mediciones para rechazar listas vacías, valores no numéricos o no positivos.",
+        "Definir media para validar y después calcular suma dividida por cantidad.",
+        "Retornar un float sin añadir texto ni interpretación.",
+        "Aplicar formato y unidad fuera de la función de cálculo."
+      ],
+      "code": "def validar_mediciones(valores: list[float]) -> None:\n    if not valores:\n        raise ValueError('La lista no puede estar vacía')\n    if any(not isinstance(v, (int, float)) for v in valores):\n        raise TypeError('Todas las mediciones deben ser numéricas')\n    if any(v <= 0 for v in valores):\n        raise ValueError('Las mediciones deben ser positivas')\n\ndef media(valores: list[float]) -> float:\n    validar_mediciones(valores)\n    return sum(valores) / len(valores)\n\nresultado = media([10.0, 12.0, 14.0])\nprint(f'{resultado:.1f} unidades')",
+      "reasoning_steps": [
+        "La validación tiene una responsabilidad separada y puede reutilizarse.",
+        "La lista vacía se detecta antes de dividir por su longitud.",
+        "TypeError distingue un tipo incorrecto de un valor numérico fuera del dominio.",
+        "media retorna un número que puede usarse en otros cálculos.",
+        "El formato y la unidad pertenecen a la capa de presentación."
+      ],
+      "expected_output": "12.0 unidades",
+      "limitations": [
+        "El ejemplo solo acepta valores positivos y no gestiona datos faltantes.",
+        "No determina si la media es un resumen estadístico adecuado.",
+        "La unidad real debe definirse en el contrato del problema."
+      ]
+    },
+    {
+      "title": "Composición de parser, validador y cálculo",
+      "scenario": "Un módulo recibe texto con una concentración, lo convierte, valida el dominio y aplica una conversión de mmol/L a mol/L sin mezclar lectura con cálculo.",
+      "code": "def parsear_float(texto: str) -> float:\n    try:\n        return float(texto)\n    except ValueError as error:\n        raise ValueError(f'no es un número: {texto!r}') from error\n\ndef validar_no_negativo(valor: float, nombre: str) -> float:\n    if valor < 0:\n        raise ValueError(f'{nombre} debe ser no negativo')\n    return valor\n\ndef mmol_l_a_mol_l(valor: float) -> float:\n    return validar_no_negativo(valor, 'concentración') / 1000.0\n\nresultado = mmol_l_a_mol_l(parsear_float('2.5'))",
+      "reasoning_steps": [
+        "Cada función representa una etapa y puede probarse sola.",
+        "La excepción de conversión conserva su causa.",
+        "La validación recibe el nombre para producir contexto.",
+        "La conversión retorna un número sin imprimir.",
+        "La composición produce 0.0025 mol/L."
+      ],
+      "expected_output": "0.0025 mol/L.",
+      "limitations": [
+        "No maneja separadores decimales regionales.",
+        "La unidad de entrada debe estar fijada por el contrato.",
+        "No incluye incertidumbre ni metadatos de la medición."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Refactorizar un cálculo monolítico",
+      "instructions": [
+        "Parte de un script que lee texto, convierte, valida, calcula e imprime en un solo bloque.",
+        "Extrae funciones separadas para conversión, validación, cálculo y presentación.",
+        "Añade anotaciones de tipo y docstrings con unidades y excepciones.",
+        "Escribe pruebas para entradas válidas, vacías, no numéricas y límites.",
+        "Explica qué funciones tienen efectos secundarios."
+      ],
+      "starter_code": "def convertir_a_float(texto: str) -> float:\n    return float(texto)\n\ndef calcular_cambio(inicial: float, final: float) -> float:\n    # Validar y devolver final - inicial.\n    raise NotImplementedError",
+      "checking_criteria": [
+        "Cada función tiene una responsabilidad principal.",
+        "Los cálculos retornan números y la presentación se realiza fuera.",
+        "Las excepciones forman parte del contrato documentado.",
+        "Las pruebas cubren caminos normales, fronteras e inválidos."
+      ],
+      "purpose": "Aplicar el contenido mediante un flujo verificable y documentado.",
+      "problems": [
+        "Diseña la firma de una función que convierte segundos a minutos.",
+        "Distingue print y return en una función de media.",
+        "Divide lectura, validación, cálculo y presentación en funciones.",
+        "Explica cuándo usar argumento nombrado.",
+        "Escribe pruebas para una función inversa de conversión.",
+        "Detecta acoplamiento en una función que abre una ruta fija."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Nivel 1 · Contratos",
+      "purpose": "Diseñar funciones claras.",
+      "problems": [
+        {
+          "prompt": "Diseña la firma de una función que convierte segundos a minutos.",
+          "solution": "def segundos_a_minutos(segundos: float) -> float, con segundos>=0 según contrato."
+        },
+        {
+          "prompt": "Distingue print y return en una función de media.",
+          "solution": "return entrega el número; print solo presenta texto."
+        },
+        {
+          "prompt": "Identifica el efecto de append sobre una lista recibida.",
+          "solution": "Modifica el objeto externo y constituye un efecto secundario."
+        },
+        {
+          "prompt": "Corrige def agregar(x, valores=[]).",
+          "solution": "Usar valores=None y crear una lista dentro cuando sea None."
+        }
+      ]
+    },
+    {
+      "title": "Nivel 2 · Modularidad",
+      "purpose": "Separar responsabilidades.",
+      "problems": [
+        {
+          "prompt": "Divide lectura, validación, cálculo y presentación en funciones.",
+          "solution": "Cada capa recibe y retorna datos explícitos; solo lectura/presentación realizan E/S."
+        },
+        {
+          "prompt": "Explica cuándo usar argumento nombrado.",
+          "solution": "Cuando el significado o varias opciones pueden confundirse por posición."
+        },
+        {
+          "prompt": "Diseña una excepción con contexto y causa encadenada.",
+          "solution": "Capturar ValueError de float y lanzar ValueError('campo X inválido') from error."
+        },
+        {
+          "prompt": "Organiza validation.py, analysis.py y cli.py.",
+          "solution": "validation contiene reglas, analysis cálculos puros y cli interacción/archivos."
+        }
+      ]
+    },
+    {
+      "title": "Nivel 3 · Pruebas e interfaces",
+      "purpose": "Evaluar composición y mantenibilidad.",
+      "problems": [
+        {
+          "prompt": "Escribe pruebas para una función inversa de conversión.",
+          "solution": "Casos conocidos y propiedad inversa dentro de tolerancia."
+        },
+        {
+          "prompt": "Detecta acoplamiento en una función que abre una ruta fija.",
+          "solution": "La ruta es dependencia oculta; recibir datos o ruta como argumento facilita pruebas."
+        },
+        {
+          "prompt": "Explica por qué devolver None para todo error es ambiguo.",
+          "solution": "None puede ser salida válida y no informa causa; usar excepción o resultado estructurado."
+        },
+        {
+          "prompt": "Propón la API mínima de un módulo de resúmenes.",
+          "solution": "Funciones públicas validar_datos y resumir; helpers internos no exportados."
+        }
+      ]
+    }
+  ]
 }
