@@ -1,0 +1,43 @@
+name: Apply Algorithms and Data Structures Semester
+
+on:
+  push:
+    branches:
+      - content/algoritmos-estructuras-datos-semester-course
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: ${{ !contains(github.event.head_commit.message, '[skip aed-semester]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout course branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/algoritmos-estructuras-datos-semester-course
+
+      - name: Materialize and validate semester units
+        run: |
+          python scripts/materialize_aed_semester.py
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject algoritmos-estructuras-datos --strict
+          python scripts/audit_semester_portfolio.py --strict
+
+      - name: Commit academic units
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated_units/algoritmos-estructuras-datos/unit-01.json \
+                  data/generated_units/algoritmos-estructuras-datos/unit-02.json \
+                  data/generated_units/algoritmos-estructuras-datos/unit-03.json \
+                  data/generated_units/algoritmos-estructuras-datos/unit-04.json \
+                  data/generated_units/algoritmos-estructuras-datos/unit-05.json \
+                  data/generated_units/algoritmos-estructuras-datos/unit-06.json
+          if git diff --cached --quiet; then
+            echo "No academic changes to commit"
+            exit 0
+          fi
+          git commit -m "Develop Algorithms and Data Structures semester units [skip aed-semester]"
+          git push origin HEAD:content/algoritmos-estructuras-datos-semester-course
