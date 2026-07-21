@@ -2,29 +2,160 @@ name: CitoNauta Quality Gates
 
 on:
   pull_request:
-
-permissions:
-  contents: write
+  push:
+    branches:
+      - main
 
 jobs:
-  complete-reference-electrode:
+  validate-generated-units:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          show-progress: false
+
+      - name: Run generated-unit validation
+        id: unit_validation
+        continue-on-error: true
+        run: python3 scripts/validate_generated_units.py > generated-unit-validation.txt 2>&1
+
+      - name: Upload generated-unit validation report
+        if: steps.unit_validation.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-unit-validation
+          path: generated-unit-validation.txt
+
+      - name: Enforce generated-unit validation
+        if: steps.unit_validation.outcome != 'success'
+        run: |
+          cat generated-unit-validation.txt
+          exit 1
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Complete reference-electrode section
+
+      - name: Validate curriculum data
+        run: python scripts/validate_curriculum.py
+
+      - name: Validate incremental course plans
+        run: python scripts/validate_course_plan_packages.py
+
+      - name: Validate generated units
+        run: python scripts/validate_generated_units.py
+
+      - name: Validate semester course architectures
         run: |
-          python scripts/complete_q2_reference_electrode.py
-          if ! git diff --quiet -- data/generated_units/quimica-ii/unit-05.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add data/generated_units/quimica-ii/unit-05.json
-            git commit -m "Complete reference-electrode section"
-            git push origin HEAD:${{ github.head_ref }}
-          fi
+          python -m json.tool data/generated_courses/algebra.json > /dev/null
+          python -m json.tool data/generated_courses/calculo.json > /dev/null
+          python -m json.tool data/generated_courses/fisica-i.json > /dev/null
+          python -m json.tool data/generated_courses/probabilidad-estadistica.json > /dev/null
+          python -m json.tool data/generated_courses/quimica-ii.json > /dev/null
+
+      - name: Report semester readiness
+        run: python scripts/audit_semester_readiness.py
+
+      - name: Enforce Algebra semester readiness
+        run: python scripts/audit_semester_readiness.py --subject algebra --strict
+
+      - name: Audit Calculus semester readiness
+        id: calculus_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject calculo --strict > calculus-semester-readiness.txt 2>&1
+
+      - name: Upload Calculus semester audit
+        if: steps.calculus_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculus-semester-readiness
+          path: calculus-semester-readiness.txt
+
+      - name: Enforce Calculus semester readiness
+        if: steps.calculus_readiness.outcome != 'success'
+        run: |
+          cat calculus-semester-readiness.txt
+          exit 1
+
+      - name: Audit Physics I semester readiness
+        id: physics_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject fisica-i --strict > physics-semester-readiness.txt 2>&1
+
+      - name: Upload Physics I semester audit
+        if: steps.physics_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: physics-semester-readiness
+          path: physics-semester-readiness.txt
+
+      - name: Enforce Physics I semester readiness
+        if: steps.physics_readiness.outcome != 'success'
+        run: |
+          cat physics-semester-readiness.txt
+          exit 1
+
+      - name: Audit Probability and Statistics semester readiness
+        id: probability_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject probabilidad-estadistica --strict > probability-semester-readiness.txt 2>&1
+
+      - name: Upload Probability and Statistics semester audit
+        if: steps.probability_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: probability-semester-readiness
+          path: probability-semester-readiness.txt
+
+      - name: Enforce Probability and Statistics semester readiness
+        if: steps.probability_readiness.outcome != 'success'
+        run: |
+          cat probability-semester-readiness.txt
+          exit 1
+
+      - name: Audit Chemistry II semester readiness
+        id: chemistry_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject quimica-ii --strict > chemistry-semester-readiness.txt 2>&1
+
+      - name: Upload Chemistry II semester audit
+        if: steps.chemistry_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chemistry-semester-readiness
+          path: chemistry-semester-readiness.txt
+
+      - name: Enforce Chemistry II semester readiness
+        if: steps.chemistry_readiness.outcome != 'success'
+        run: |
+          cat chemistry-semester-readiness.txt
+          exit 1
+
+      - name: Validate developed-unit renderer
+        run: node --check assets/js/generated-units.js
+
+      - name: Validate semester-course renderer
+        run: node --check assets/js/semester-course.js
+
+      - name: Validate autonomous course content
+        run: python scripts/validate_agent_content.py
+
+      - name: Check generated preview
+        run: python scripts/check_generated_preview.py --limit 8
+
+      - name: Check enriched HTML synchronization
+        run: python scripts/enrich_generated_pages.py --check
+
+      - name: Check generator dry run
+        run: python scripts/generate_site.py --dry-run
+
+      - name: Validate internal links
+        run: python scripts/validate_links.py
