@@ -7,6 +7,32 @@ on:
       - main
 
 jobs:
+  validate-generated-units:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          show-progress: false
+
+      - name: Run generated-unit validation
+        id: unit_validation
+        continue-on-error: true
+        run: python3 scripts/validate_generated_units.py > generated-unit-validation.txt 2>&1
+
+      - name: Upload generated-unit validation report
+        if: steps.unit_validation.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-unit-validation
+          path: generated-unit-validation.txt
+
+      - name: Enforce generated-unit validation
+        if: steps.unit_validation.outcome != 'success'
+        run: |
+          cat generated-unit-validation.txt
+          exit 1
+
   validate:
     runs-on: ubuntu-latest
     steps:
