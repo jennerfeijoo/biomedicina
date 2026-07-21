@@ -53,11 +53,34 @@ jobs:
       - name: Validate generated units
         run: python scripts/validate_generated_units.py
 
+      - name: Validate semester course architectures
+        run: |
+          python -m json.tool data/generated_courses/algebra.json > /dev/null
+          python -m json.tool data/generated_courses/calculo.json > /dev/null
+
       - name: Report semester readiness
         run: python scripts/audit_semester_readiness.py
 
       - name: Enforce Algebra semester readiness
         run: python scripts/audit_semester_readiness.py --subject algebra --strict
+
+      - name: Audit Calculus semester readiness
+        id: calculus_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject calculo --strict > calculus-semester-readiness.txt 2>&1
+
+      - name: Upload Calculus semester audit
+        if: steps.calculus_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculus-semester-readiness
+          path: calculus-semester-readiness.txt
+
+      - name: Enforce Calculus semester readiness
+        if: steps.calculus_readiness.outcome != 'success'
+        run: |
+          cat calculus-semester-readiness.txt
+          exit 1
 
       - name: Validate developed-unit renderer
         run: node --check assets/js/generated-units.js
