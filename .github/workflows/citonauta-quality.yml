@@ -57,6 +57,7 @@ jobs:
         run: |
           python -m json.tool data/generated_courses/algebra.json > /dev/null
           python -m json.tool data/generated_courses/calculo.json > /dev/null
+          python -m json.tool data/generated_courses/fisica-i.json > /dev/null
 
       - name: Report semester readiness
         run: python scripts/audit_semester_readiness.py
@@ -80,6 +81,24 @@ jobs:
         if: steps.calculus_readiness.outcome != 'success'
         run: |
           cat calculus-semester-readiness.txt
+          exit 1
+
+      - name: Audit Physics I semester readiness
+        id: physics_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject fisica-i --strict > physics-semester-readiness.txt 2>&1
+
+      - name: Upload Physics I semester audit
+        if: steps.physics_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: physics-semester-readiness
+          path: physics-semester-readiness.txt
+
+      - name: Enforce Physics I semester readiness
+        if: steps.physics_readiness.outcome != 'success'
+        run: |
+          cat physics-semester-readiness.txt
           exit 1
 
       - name: Validate developed-unit renderer
