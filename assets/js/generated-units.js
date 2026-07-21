@@ -12,9 +12,7 @@
 
   function appendList(parent, items, className = "") {
     const list = element("ul", className);
-    for (const item of items || []) {
-      list.appendChild(element("li", "", item));
-    }
+    for (const item of items || []) list.appendChild(element("li", "", item));
     parent.appendChild(list);
     return list;
   }
@@ -31,9 +29,7 @@
     for (const section of sections) {
       const block = element("section", "generated-unit-theory");
       appendHeading(block, 5, section.heading || "Concepto");
-      for (const paragraph of section.paragraphs || []) {
-        block.appendChild(element("p", "", paragraph));
-      }
+      for (const paragraph of section.paragraphs || []) block.appendChild(element("p", "", paragraph));
       if (section.key_points?.length) {
         const summary = element("div", "generated-unit-key-points");
         summary.appendChild(element("strong", "", "Ideas clave"));
@@ -60,7 +56,7 @@
   function renderWorkedExample(parent, example) {
     if (!example || typeof example !== "object") return;
     const section = element("section", "generated-unit-panel");
-    appendHeading(section, 4, `Ejemplo desarrollado: ${example.title || "Aplicación"}`);
+    appendHeading(section, 4, `Ejemplo: ${example.title || "Aplicación"}`);
     if (example.scenario) section.appendChild(element("p", "generated-unit-scenario", example.scenario));
     if (example.pseudocode?.length) {
       section.appendChild(element("strong", "", "Pseudocódigo"));
@@ -171,15 +167,10 @@
     parent.appendChild(list);
   }
 
-  function renderDevelopedUnit(article, unit) {
+  function renderUnit(article, unit) {
     article.classList.add("course-unit-developed");
     article.replaceChildren();
-
-    const header = element("div", "generated-unit-header");
-    const heading = element("h3", "", `Unidad ${unit.unit}. ${unit.title}`);
-    const badge = element("span", "generated-unit-badge", "Contenido desarrollado");
-    header.append(heading, badge);
-    article.appendChild(header);
+    article.appendChild(element("h3", "", `Unidad ${unit.unit}. ${unit.title}`));
 
     if (unit.purpose) article.appendChild(element("p", "generated-unit-purpose", unit.purpose));
     if (unit.learning_objectives?.length) {
@@ -199,7 +190,6 @@
       appendList(article, unit.biomedical_connections);
     }
     renderSources(article, unit.sources);
-    if (unit.editorial_notice) article.appendChild(element("p", "generated-unit-notice", unit.editorial_notice));
   }
 
   function unitNumberFromArticle(article) {
@@ -247,23 +237,15 @@
       }))
     );
 
-    const developed = results.filter(Boolean);
-    if (developed.length === 0) return;
-
     const articleByUnit = new Map();
     for (const article of articles) {
       const number = unitNumberFromArticle(article);
       if (number !== null) articleByUnit.set(number, article);
     }
-    for (const unit of developed) {
+    for (const unit of results.filter(Boolean)) {
       const article = articleByUnit.get(Number(unit.unit));
-      if (article) renderDevelopedUnit(article, unit);
+      if (article) renderUnit(article, unit);
     }
-
-    const progress = element("div", "generated-unit-progress");
-    progress.appendChild(element("strong", "", `${developed.length} de ${articles.length} unidades desarrolladas`));
-    progress.appendChild(element("p", "", "Las unidades marcadas como contenido desarrollado incluyen la lección completa. Las restantes muestran todavía su planificación curricular."));
-    unitsSection.parentElement?.insertBefore(progress, unitsSection);
   }
 
   if (document.readyState === "loading") {
