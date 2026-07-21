@@ -7,6 +7,54 @@ on:
       - main
 
 jobs:
+  repair-algebra-json:
+    if: github.event_name == 'pull_request' && github.head_ref == 'content/algebra-semester-course' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout pull-request branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/algebra-semester-course
+          fetch-depth: 0
+
+      - name: Repair missing common-error object closures
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          changed = []
+          for path in sorted(Path('data/generated_units/algebra').glob('unit-*.json')):
+              lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+              repaired = []
+              edits = 0
+              for line in lines:
+                  raw = line.rstrip('\r\n')
+                  if raw.lstrip().startswith('{"error":') and not raw.rstrip().endswith('}') and not raw.rstrip().endswith('},'):
+                      ending = '\n' if line.endswith('\n') else ''
+                      line = raw + '}' + ending
+                      edits += 1
+                  repaired.append(line)
+              if edits:
+                  path.write_text(''.join(repaired), encoding='utf-8')
+                  json.loads(path.read_text(encoding='utf-8'))
+                  changed.append(f'{path}: {edits}')
+          print('\n'.join(changed) if changed else 'No changes required.')
+          PY
+
+      - name: Commit repair
+        run: |
+          if git diff --quiet -- data/generated_units/algebra; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated_units/algebra
+          git commit -m "Fix Algebra semester JSON closures"
+          git push origin HEAD:content/algebra-semester-course
+
   validate-generated-units:
     runs-on: ubuntu-latest
     steps:
