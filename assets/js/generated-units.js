@@ -1,0 +1,274 @@
+(() => {
+  "use strict";
+
+  const UNIT_FILE_LIMIT = 12;
+
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+
+  function appendList(parent, items, className = "") {
+    const list = element("ul", className);
+    for (const item of items || []) {
+      list.appendChild(element("li", "", item));
+    }
+    parent.appendChild(list);
+    return list;
+  }
+
+  function appendHeading(parent, level, text) {
+    const heading = element(`h${level}`, "generated-unit-heading", text);
+    parent.appendChild(heading);
+    return heading;
+  }
+
+  function renderTheory(parent, sections) {
+    if (!Array.isArray(sections) || sections.length === 0) return;
+    appendHeading(parent, 4, "Desarrollo teórico");
+    for (const section of sections) {
+      const block = element("section", "generated-unit-theory");
+      appendHeading(block, 5, section.heading || "Concepto");
+      for (const paragraph of section.paragraphs || []) {
+        block.appendChild(element("p", "", paragraph));
+      }
+      if (section.key_points?.length) {
+        const summary = element("div", "generated-unit-key-points");
+        summary.appendChild(element("strong", "", "Ideas clave"));
+        appendList(summary, section.key_points);
+        block.appendChild(summary);
+      }
+      parent.appendChild(block);
+    }
+  }
+
+  function renderGlossary(parent, glossary) {
+    if (!Array.isArray(glossary) || glossary.length === 0) return;
+    const details = element("details", "generated-unit-details");
+    details.appendChild(element("summary", "", `Glosario (${glossary.length} términos)`));
+    const dl = element("dl", "generated-unit-glossary");
+    for (const item of glossary) {
+      dl.appendChild(element("dt", "", item.term));
+      dl.appendChild(element("dd", "", item.definition));
+    }
+    details.appendChild(dl);
+    parent.appendChild(details);
+  }
+
+  function renderWorkedExample(parent, example) {
+    if (!example || typeof example !== "object") return;
+    const section = element("section", "generated-unit-panel");
+    appendHeading(section, 4, `Ejemplo desarrollado: ${example.title || "Aplicación"}`);
+    if (example.scenario) section.appendChild(element("p", "generated-unit-scenario", example.scenario));
+    if (example.pseudocode?.length) {
+      section.appendChild(element("strong", "", "Pseudocódigo"));
+      appendList(section, example.pseudocode);
+    }
+    if (example.reasoning_steps?.length) {
+      section.appendChild(element("strong", "", "Razonamiento paso a paso"));
+      const ordered = element("ol", "generated-unit-steps");
+      for (const step of example.reasoning_steps) ordered.appendChild(element("li", "", step));
+      section.appendChild(ordered);
+    }
+    if (example.code) {
+      const pre = element("pre", "generated-unit-code");
+      pre.appendChild(element("code", "", example.code));
+      section.appendChild(pre);
+    }
+    if (example.expected_output) {
+      const output = element("p", "");
+      output.appendChild(element("strong", "", "Salida esperada: "));
+      output.appendChild(document.createTextNode(example.expected_output));
+      section.appendChild(output);
+    }
+    if (example.interpretation) {
+      const interpretation = element("p", "");
+      interpretation.appendChild(element("strong", "", "Interpretación: "));
+      interpretation.appendChild(document.createTextNode(example.interpretation));
+      section.appendChild(interpretation);
+    }
+    if (example.limitations?.length) {
+      section.appendChild(element("strong", "", "Limitaciones"));
+      appendList(section, example.limitations);
+    }
+    parent.appendChild(section);
+  }
+
+  function renderActivity(parent, activity) {
+    if (!activity || typeof activity !== "object") return;
+    const section = element("section", "generated-unit-panel");
+    appendHeading(section, 4, `Actividad guiada: ${activity.title || "Práctica"}`);
+    if (activity.instructions?.length) {
+      section.appendChild(element("strong", "", "Instrucciones"));
+      appendList(section, activity.instructions);
+    }
+    if (activity.problems?.length) {
+      section.appendChild(element("strong", "", "Problemas o tareas"));
+      appendList(section, activity.problems);
+    }
+    if (activity.starter_code) {
+      const pre = element("pre", "generated-unit-code");
+      pre.appendChild(element("code", "", activity.starter_code));
+      section.appendChild(pre);
+    }
+    if (activity.checking_criteria?.length) {
+      section.appendChild(element("strong", "", "Criterios de comprobación"));
+      appendList(section, activity.checking_criteria);
+    }
+    parent.appendChild(section);
+  }
+
+  function renderCommonErrors(parent, errors) {
+    if (!Array.isArray(errors) || errors.length === 0) return;
+    appendHeading(parent, 4, "Errores frecuentes");
+    const list = element("div", "generated-unit-errors");
+    for (const item of errors) {
+      const card = element("div", "generated-unit-error");
+      card.appendChild(element("strong", "", item.error));
+      card.appendChild(element("p", "", item.correction));
+      list.appendChild(card);
+    }
+    parent.appendChild(list);
+  }
+
+  function renderAssessment(parent, questions) {
+    if (!Array.isArray(questions) || questions.length === 0) return;
+    const details = element("details", "generated-unit-details");
+    details.appendChild(element("summary", "", `Autoevaluación (${questions.length} preguntas)`));
+    const wrapper = element("div", "generated-unit-assessment");
+    questions.forEach((item, index) => {
+      const question = element("details", "generated-unit-question");
+      question.appendChild(element("summary", "", `${index + 1}. ${item.question}`));
+      question.appendChild(element("p", "", item.answer));
+      wrapper.appendChild(question);
+    });
+    details.appendChild(wrapper);
+    parent.appendChild(details);
+  }
+
+  function renderSources(parent, sources) {
+    if (!Array.isArray(sources) || sources.length === 0) return;
+    appendHeading(parent, 4, "Fuentes de la unidad");
+    const list = element("ul", "generated-unit-sources");
+    for (const source of sources) {
+      const item = element("li", "");
+      const url = String(source.url || "");
+      if (url.startsWith("https://") || url.startsWith("http://")) {
+        const link = element("a", "", source.title || url);
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        item.appendChild(link);
+      } else {
+        item.appendChild(element("span", "", source.title || "Fuente"));
+      }
+      const organization = [source.organization, source.type].filter(Boolean).join(" · ");
+      if (organization) item.appendChild(document.createTextNode(` — ${organization}`));
+      list.appendChild(item);
+    }
+    parent.appendChild(list);
+  }
+
+  function renderDevelopedUnit(article, unit) {
+    article.classList.add("course-unit-developed");
+    article.replaceChildren();
+
+    const header = element("div", "generated-unit-header");
+    const heading = element("h3", "", `Unidad ${unit.unit}. ${unit.title}`);
+    const badge = element("span", "generated-unit-badge", "Contenido desarrollado");
+    header.append(heading, badge);
+    article.appendChild(header);
+
+    if (unit.purpose) article.appendChild(element("p", "generated-unit-purpose", unit.purpose));
+    if (unit.learning_objectives?.length) {
+      appendHeading(article, 4, "Objetivos de aprendizaje");
+      appendList(article, unit.learning_objectives);
+    }
+
+    renderTheory(article, unit.theory_sections);
+    renderGlossary(article, unit.glossary);
+    renderWorkedExample(article, unit.worked_example);
+    renderActivity(article, unit.guided_activity);
+    renderCommonErrors(article, unit.common_errors);
+    renderAssessment(article, unit.self_assessment);
+
+    if (unit.biomedical_connections?.length) {
+      appendHeading(article, 4, "Conexiones biomédicas");
+      appendList(article, unit.biomedical_connections);
+    }
+    renderSources(article, unit.sources);
+    if (unit.editorial_notice) article.appendChild(element("p", "generated-unit-notice", unit.editorial_notice));
+  }
+
+  function unitNumberFromArticle(article) {
+    const heading = article.querySelector("h3");
+    const match = heading?.textContent?.match(/Unidad\s+(\d+)/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  async function fetchUnit(rootUrl, subjectId, unitNumber) {
+    const file = `unit-${String(unitNumber).padStart(2, "0")}.json`;
+    const url = new URL(`data/generated_units/${subjectId}/${file}`, rootUrl);
+    const response = await fetch(url, { cache: "no-cache" });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`No se pudo cargar ${url.pathname}: ${response.status}`);
+    return response.json();
+  }
+
+  function currentSubjectId() {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    if (parts.at(-1)?.endsWith(".html")) parts.pop();
+    return parts.at(-1) || "";
+  }
+
+  async function init() {
+    const unitsSection = document.querySelector("#unidades .course-units");
+    if (!unitsSection) return;
+
+    const articles = [...unitsSection.querySelectorAll(".course-unit")];
+    if (articles.length === 0) return;
+
+    const subjectId = currentSubjectId();
+    if (!subjectId) return;
+
+    const rootUrl = new URL("../../", window.location.href);
+    const css = element("link");
+    css.rel = "stylesheet";
+    css.href = new URL("assets/css/generated-units.css", rootUrl).href;
+    document.head.appendChild(css);
+
+    const total = Math.min(Math.max(articles.length, 1), UNIT_FILE_LIMIT);
+    const results = await Promise.all(
+      Array.from({ length: total }, (_, index) => fetchUnit(rootUrl, subjectId, index + 1).catch((error) => {
+        console.error(error);
+        return null;
+      }))
+    );
+
+    const developed = results.filter(Boolean);
+    if (developed.length === 0) return;
+
+    const articleByUnit = new Map();
+    for (const article of articles) {
+      const number = unitNumberFromArticle(article);
+      if (number !== null) articleByUnit.set(number, article);
+    }
+    for (const unit of developed) {
+      const article = articleByUnit.get(Number(unit.unit));
+      if (article) renderDevelopedUnit(article, unit);
+    }
+
+    const progress = element("div", "generated-unit-progress");
+    progress.appendChild(element("strong", "", `${developed.length} de ${articles.length} unidades desarrolladas`));
+    progress.appendChild(element("p", "", "Las unidades marcadas como contenido desarrollado incluyen la lección completa. Las restantes muestran todavía su planificación curricular."));
+    unitsSection.parentElement?.insertBefore(progress, unitsSection);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  } else {
+    init();
+  }
+})();
