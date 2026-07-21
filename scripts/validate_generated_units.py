@@ -116,12 +116,23 @@ def main() -> int:
     if not paths:
         print("No hay unidades generadas todavía.")
         return 0
+
     total_words = 0
+    valid_count = 0
+    errors: list[str] = []
     for path in paths:
-        words = validate_unit(path)
-        total_words += words
-        print(f"OK {path.relative_to(ROOT)}: {words} palabras")
-    print(f"Unidades válidas: {len(paths)} · {total_words} palabras")
+        try:
+            total_words += validate_unit(path)
+            valid_count += 1
+        except (ValueError, TypeError, json.JSONDecodeError) as error:
+            errors.append(f"ERROR {path.relative_to(ROOT)}: {error}")
+
+    if errors:
+        print("\n".join(errors))
+        print(f"Validación fallida: {len(errors)} archivo(s) con errores · {valid_count} válidos")
+        return 1
+
+    print(f"Unidades válidas: {valid_count} · {total_words} palabras")
     return 0
 
 
