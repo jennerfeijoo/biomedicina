@@ -16,14 +16,6 @@ DEST_DIR = ROOT / "data" / "generated_units" / "algoritmos-estructuras-datos"
 EXPECTED_SHA256 = "02e130c49ed6798842797b6879eb22c653e2d6d0b0d7f24799ab77c76f74d27f"
 SUBJECT_ID = "algoritmos-estructuras-datos"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
-FORBIDDEN = (
-    "contenido desarrollado",
-    "unidades desarrolladas",
-    "ejemplo desarrollado",
-    "en revisión académica",
-    "pendiente de ampliación",
-    "generado automáticamente",
-)
 TITLES = {
     1: "Pensamiento algorítmico",
     2: "Complejidad y eficiencia",
@@ -32,15 +24,21 @@ TITLES = {
     5: "Ordenamiento y búsqueda",
     6: "Diseño, pruebas y reproducibilidad",
 }
-WEEKS = {
-    1: [1, 2],
-    2: [3, 4, 5],
-    3: [6, 7, 8],
-    4: [9, 10, 11],
-    5: [12, 13],
-    6: [14, 15, 16],
-}
+WEEKS = {1: [1, 2], 2: [3, 4, 5], 3: [6, 7, 8], 4: [9, 10, 11], 5: [12, 13], 6: [14, 15, 16]}
 HOURS = {1: 16, 2: 24, 3: 24, 4: 24, 5: 16, 6: 24}
+FORBIDDEN = (
+    "contenido desarrollado",
+    "unidades desarrolladas",
+    "ejemplo desarrollado",
+    "en revisión académica",
+    "pendiente de ampliación",
+    "generado automáticamente",
+)
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
 
 
 def normalized(value: str) -> str:
@@ -51,9 +49,23 @@ def domain(url: str) -> str:
     return urlparse(url).netloc.casefold().removeprefix("www.")
 
 
-def require(condition: bool, message: str) -> None:
-    if not condition:
-        raise ValueError(message)
+def decode_verified_payload(encoded: str) -> tuple[bytes, int | None]:
+    try:
+        payload = base64.b64decode(encoded, validate=True)
+        if hashlib.sha256(payload).hexdigest() == EXPECTED_SHA256:
+            return payload, None
+    except ValueError:
+        pass
+
+    for index in range(len(encoded)):
+        candidate = encoded[:index] + encoded[index + 1 :]
+        try:
+            payload = base64.b64decode(candidate, validate=True)
+        except ValueError:
+            continue
+        if hashlib.sha256(payload).hexdigest() == EXPECTED_SHA256:
+            return payload, index
+    raise ValueError("ninguna eliminación única recuperó el paquete con el SHA-256 esperado")
 
 
 def validate_unit(data: dict, number: int) -> None:
@@ -70,56 +82,36 @@ def validate_unit(data: dict, number: int) -> None:
     theory = data.get("theory_sections", [])
     require(len(theory) >= 4, f"{prefix}: secciones teóricas")
     require(all(len(section.get("paragraphs", [])) >= 4 for section in theory), f"{prefix}: profundidad teórica")
-    require(sum(len(section.get("equations", [])) for section in theory) >= 1, f"{prefix}: ecuaciones MathJax")
+    require(sum(len(section.get("equations", [])) for section in theory) >= 1, f"{prefix}: ecuaciones")
     require(len(data.get("glossary", [])) >= 10, f"{prefix}: glosario")
     require(len(data.get("worked_examples", [])) >= 2, f"{prefix}: ejemplos")
     require(len(data.get("guided_activities", [])) >= 1, f"{prefix}: actividad guiada")
-    require(len(data.get("practice_sets", [])) >= 3, f"{prefix}: práctica escalonada")
+    require(len(data.get("practice_sets", [])) >= 3, f"{prefix}: práctica")
     require(sum(len(item.get("problems", [])) for item in data.get("practice_sets", [])) >= 12, f"{prefix}: problemas")
-    require(len(data.get("common_errors", [])) >= 6, f"{prefix}: errores frecuentes")
+    require(len(data.get("common_errors", [])) >= 6, f"{prefix}: errores")
     require(len(data.get("self_assessment", [])) >= 10, f"{prefix}: autoevaluación")
-    require(len(data.get("biomedical_connections", [])) >= 4, f"{prefix}: conexiones biomédicas")
+    require(len(data.get("biomedical_connections", [])) >= 4, f"{prefix}: conexiones")
     sources = data.get("sources", [])
-    require(len(sources) >= 5, f"{prefix}: fuentes")
     urls = [str(item.get("url", "")) for item in sources]
+    require(len(sources) >= 5, f"{prefix}: fuentes")
     require(len(urls) == len(set(urls)), f"{prefix}: fuentes duplicadas")
-    require(len({domain(url) for url in urls if domain(url)}) >= 3, f"{prefix}: dominios de fuentes")
+    require(len({domain(url) for url in urls if domain(url)}) >= 3, f"{prefix}: dominios")
     glossary = [normalized(str(item.get("term", ""))) for item in data.get("glossary", [])]
     questions = [normalized(str(item.get("question", ""))) for item in data.get("self_assessment", [])]
     require(len(glossary) == len(set(glossary)), f"{prefix}: glosario duplicado")
     require(len(questions) == len(set(questions)), f"{prefix}: preguntas duplicadas")
     serialized = json.dumps(data, ensure_ascii=False)
-    require(len(WORD_RE.findall(serialized)) >= 2200, f"{prefix}: extensión insuficiente")
+    require(len(WORD_RE.findall(serialized)) >= 2200, f"{prefix}: extensión")
     lowered = serialized.casefold()
     for phrase in FORBIDDEN:
-        require(phrase not in lowered, f"{prefix}: frase interna prohibida: {phrase}")
+        require(phrase not in lowered, f"{prefix}: frase interna: {phrase}")
     notice = str(data.get("editorial_notice", "")).casefold()
     require("revisión docente experta" in notice, f"{prefix}: aviso editorial")
-    clinical_limits = (
-        "no constituyen software clínico validado",
-        "no constituyen validación de software clínico",
+    require(
+        "no constituyen software clínico validado" in notice
+        or "no constituyen validación de software clínico" in notice,
+        f"{prefix}: límite clínico",
     )
-    require(any(phrase in notice for phrase in clinical_limits), f"{prefix}: límite clínico")
-
-
-def decode_verified_payload(encoded: str) -> tuple[bytes, int | None]:
-    try:
-        payload = base64.b64decode(encoded, validate=True)
-        if hashlib.sha256(payload).hexdigest() == EXPECTED_SHA256:
-            return payload, None
-    except ValueError:
-        pass
-
-    require(len(encoded) % 4 == 1, "el paquete no coincide y no presenta un único carácter excedente")
-    for index in range(len(encoded)):
-        candidate = encoded[:index] + encoded[index + 1 :]
-        try:
-            payload = base64.b64decode(candidate, validate=True)
-        except ValueError:
-            continue
-        if hashlib.sha256(payload).hexdigest() == EXPECTED_SHA256:
-            return payload, index
-    raise ValueError("no fue posible recuperar el paquete mediante la eliminación controlada de un carácter")
 
 
 def main() -> int:
@@ -132,13 +124,9 @@ def main() -> int:
     if repaired_index is not None:
         print(f"Paquete recuperado eliminando el carácter excedente en la posición {repaired_index}")
 
-    expected_members = {
-        f"data/generated_units/{SUBJECT_ID}/unit{number:02d}.json"
-        for number in range(1, 7)
-    }
+    expected_members = {f"data/generated_units/{SUBJECT_ID}/unit{number:02d}.json" for number in range(1, 7)}
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-        members = set(archive.namelist())
-        require(members == expected_members, f"miembros inesperados: {sorted(members ^ expected_members)}")
+        require(set(archive.namelist()) == expected_members, "miembros inesperados en el ZIP")
         validated: list[tuple[int, dict]] = []
         for number in range(1, 7):
             member = f"data/generated_units/{SUBJECT_ID}/unit{number:02d}.json"
@@ -148,9 +136,7 @@ def main() -> int:
             validated.append((number, data))
 
     require(sum(data["estimated_hours"] for _, data in validated) == 128, "horas totales")
-    all_weeks = [week for _, data in validated for week in data["weeks"]]
-    require(sorted(all_weeks) == list(range(1, 17)), "cobertura semanal")
-
+    require(sorted(week for _, data in validated for week in data["weeks"]) == list(range(1, 17)), "cobertura semanal")
     DEST_DIR.mkdir(parents=True, exist_ok=True)
     for number, data in validated:
         destination = DEST_DIR / f"unit-{number:02d}.json"
