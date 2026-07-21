@@ -27,21 +27,36 @@ jobs:
           python-version: "3.11"
 
       - name: Materialize verified unit package
-        run: python scripts/materialize_bases_datos_semester.py
+        id: materialize
+        continue-on-error: true
+        run: python scripts/materialize_bases_datos_semester.py > databases-materialization.log 2>&1
 
-      - name: Validate units and semester architecture
-        run: |
-          python scripts/validate_generated_units.py
-          python scripts/audit_semester_readiness.py --subject bases-datos --strict
-
-      - name: Commit academic units
+      - name: Commit academic units or diagnostic
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/generated_units/bases-datos/unit-{01..06}.json
+          git add databases-materialization.log
+          for unit in data/generated_units/bases-datos/unit-{01..06}.json; do
+            if [ -f "$unit" ]; then
+              git add "$unit"
+            fi
+          done
           if git diff --cached --quiet; then
-            echo "Academic units already materialized"
+            echo "No materialization changes"
             exit 0
           fi
-          git commit -m "Materialize Databases semester units [skip databases-materializer]"
+          git commit -m "Capture Databases semester materialization [skip databases-materializer]"
           git push origin HEAD:content/bases-datos-semester-course
+
+      - name: Enforce materialization
+        if: steps.materialize.outcome != 'success'
+        run: |
+          cat databases-materialization.log
+          exit 1
+
+      - name: Validate units and semester architecture
+        if: steps.materialize.outcome == 'success'
+        run: |
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject bases-datos --strict
