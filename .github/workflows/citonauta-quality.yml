@@ -53,90 +53,42 @@ jobs:
       - name: Validate generated units
         run: python scripts/validate_generated_units.py
 
-      - name: Validate semester course architectures
+      - name: Validate every semester course architecture
         run: |
-          python -m json.tool data/generated_courses/algebra.json > /dev/null
-          python -m json.tool data/generated_courses/calculo.json > /dev/null
-          python -m json.tool data/generated_courses/fisica-i.json > /dev/null
-          python -m json.tool data/generated_courses/probabilidad-estadistica.json > /dev/null
-          python -m json.tool data/generated_courses/quimica-ii.json > /dev/null
+          set -euo pipefail
+          for course in data/generated_courses/*.json; do
+            python -m json.tool "$course" > /dev/null
+          done
 
-      - name: Report semester readiness
-        run: python scripts/audit_semester_readiness.py
+      - name: Enforce semester readiness for every course
+        run: |
+          set -euo pipefail
+          for course in data/generated_courses/*.json; do
+            subject="$(basename "$course" .json)"
+            python scripts/audit_semester_readiness.py --subject "$subject" --strict
+          done
 
-      - name: Enforce Algebra semester readiness
-        run: python scripts/audit_semester_readiness.py --subject algebra --strict
-
-      - name: Audit Calculus semester readiness
-        id: calculus_readiness
+      - name: Run cross-course portfolio audit
+        id: portfolio_audit
         continue-on-error: true
-        run: python scripts/audit_semester_readiness.py --subject calculo --strict > calculus-semester-readiness.txt 2>&1
+        run: |
+          mkdir -p audit-artifacts
+          python scripts/audit_semester_portfolio.py \
+            --strict \
+            --json-output audit-artifacts/semester-portfolio-audit.json \
+            > audit-artifacts/semester-portfolio-audit.txt 2>&1
 
-      - name: Upload Calculus semester audit
-        if: steps.calculus_readiness.outcome != 'success'
+      - name: Upload semester portfolio audit
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: calculus-semester-readiness
-          path: calculus-semester-readiness.txt
+          name: semester-portfolio-audit
+          path: audit-artifacts/
 
-      - name: Enforce Calculus semester readiness
-        if: steps.calculus_readiness.outcome != 'success'
+      - name: Enforce semester portfolio audit
+        if: steps.portfolio_audit.outcome != 'success'
         run: |
-          cat calculus-semester-readiness.txt
-          exit 1
-
-      - name: Audit Physics I semester readiness
-        id: physics_readiness
-        continue-on-error: true
-        run: python scripts/audit_semester_readiness.py --subject fisica-i --strict > physics-semester-readiness.txt 2>&1
-
-      - name: Upload Physics I semester audit
-        if: steps.physics_readiness.outcome != 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: physics-semester-readiness
-          path: physics-semester-readiness.txt
-
-      - name: Enforce Physics I semester readiness
-        if: steps.physics_readiness.outcome != 'success'
-        run: |
-          cat physics-semester-readiness.txt
-          exit 1
-
-      - name: Audit Probability and Statistics semester readiness
-        id: probability_readiness
-        continue-on-error: true
-        run: python scripts/audit_semester_readiness.py --subject probabilidad-estadistica --strict > probability-semester-readiness.txt 2>&1
-
-      - name: Upload Probability and Statistics semester audit
-        if: steps.probability_readiness.outcome != 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: probability-semester-readiness
-          path: probability-semester-readiness.txt
-
-      - name: Enforce Probability and Statistics semester readiness
-        if: steps.probability_readiness.outcome != 'success'
-        run: |
-          cat probability-semester-readiness.txt
-          exit 1
-
-      - name: Audit Chemistry II semester readiness
-        id: chemistry_readiness
-        continue-on-error: true
-        run: python scripts/audit_semester_readiness.py --subject quimica-ii --strict > chemistry-semester-readiness.txt 2>&1
-
-      - name: Upload Chemistry II semester audit
-        if: steps.chemistry_readiness.outcome != 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: chemistry-semester-readiness
-          path: chemistry-semester-readiness.txt
-
-      - name: Enforce Chemistry II semester readiness
-        if: steps.chemistry_readiness.outcome != 'success'
-        run: |
-          cat chemistry-semester-readiness.txt
+          cat audit-artifacts/semester-portfolio-audit.txt
           exit 1
 
       - name: Validate developed-unit renderer
