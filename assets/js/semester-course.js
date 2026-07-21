@@ -42,23 +42,14 @@
     const meta = document.querySelector(".course-meta");
     if (!meta) return;
 
-    const workload = meta.querySelector("dd");
-    if (workload && course.academic_level) workload.textContent = course.academic_level;
-
     const values = meta.querySelectorAll("dd");
+    if (values[0] && course.academic_level) values[0].textContent = course.academic_level;
     if (values[1] && course.duration_weeks && course.total_workload_hours) {
       values[1].textContent = `${course.duration_weeks} semanas · ${course.weekly_hours} horas semanales · ${course.total_workload_hours} horas totales`;
     }
-    if (values[2] && course.status) {
-      const labels = {
-        draft: "Borrador académico",
-        developed: "Contenido desarrollado",
-        review: "Curso semestral en revisión académica",
-        complete: "Curso semestral revisado"
-      };
-      values[2].textContent = labels[course.status] || course.status;
-      values[2].dataset.status = course.status;
-    }
+
+    const editorialStatus = values[2]?.closest("div");
+    if (editorialStatus) editorialStatus.remove();
   }
 
   function renderPurpose(course) {
@@ -135,7 +126,7 @@
     if (existing) existing.remove();
 
     const wrapper = element("div", "semester-course-table-wrap");
-    appendHeading(wrapper, 3, "Cronograma de 16 semanas", "cronograma-semestral");
+    appendHeading(wrapper, 3, `Cronograma de ${course.duration_weeks} semanas`, "cronograma-semestral");
     const table = element("table", "semester-course-table");
     const thead = element("thead");
     const headRow = element("tr");
@@ -185,7 +176,7 @@
     const totalRow = element("tr", "semester-course-total");
     totalRow.appendChild(element("th", "", "Total"));
     totalRow.appendChild(element("th", "", `${total} %`));
-    totalRow.appendChild(element("td", "", total === 100 ? "Ponderación verificada" : "Revisar ponderaciones"));
+    totalRow.appendChild(element("td", "", ""));
     tbody.appendChild(totalRow);
     table.appendChild(tbody);
     wrapper.appendChild(table);
