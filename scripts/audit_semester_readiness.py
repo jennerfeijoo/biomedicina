@@ -10,6 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 UNIT_ROOT = ROOT / "data" / "generated_units"
+COURSE_ROOT = ROOT / "data" / "generated_courses"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 
@@ -24,6 +25,19 @@ MIN_SOURCES = 5
 MIN_WORKED_EXAMPLES = 2
 MIN_GUIDED_ACTIVITIES = 1
 MIN_PRACTICE_ITEMS = 8
+MIN_COMMON_ERRORS = 5
+
+MIN_DURATION_WEEKS = 12
+MAX_DURATION_WEEKS = 16
+MIN_TOTAL_HOURS = 90
+MIN_SEMESTER_PLAN_ROWS = 12
+MIN_DIAGNOSTIC_QUESTIONS = 10
+MIN_COURSE_OUTCOMES = 6
+MIN_COURSE_COMPETENCIES = 5
+MIN_COURSE_RESOURCES = 8
+MIN_PROJECT_PHASES = 4
+MIN_PROJECT_DELIVERABLES = 3
+MIN_RUBRIC_CRITERIA = 4
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -72,6 +86,9 @@ def practice_item_count(data: dict[str, Any]) -> int:
             value = activity.get(key)
             if isinstance(value, list):
                 total += len(value)
+    for practice_set in data.get("practice_sets", []):
+        if isinstance(practice_set, dict) and isinstance(practice_set.get("problems"), list):
+            total += len(practice_set["problems"])
     return total
 
 
@@ -96,7 +113,68 @@ def audit_unit(path: Path, data: dict[str, Any]) -> tuple[int, list[str]]:
         issues.append("falta actividad guiada")
     if practice_item_count(data) < MIN_PRACTICE_ITEMS:
         issues.append(f"menos de {MIN_PRACTICE_ITEMS} problemas o tareas")
+    if len(data.get("common_errors", [])) < MIN_COMMON_ERRORS:
+        issues.append(f"menos de {MIN_COMMON_ERRORS} errores frecuentes")
     return words, issues
+
+
+def audit_course_architecture(subject_id: str) -> list[str]:
+    path = COURSE_ROOT / f"{subject_id}.json"
+    if not path.exists():
+        return [f"falta {path.relative_to(ROOT)}"]
+
+    try:
+        data = load_json(path)
+    except (ValueError, TypeError, json.JSONDecodeError) as error:
+        return [f"curso JSON inválido: {error}"]
+
+    issues: list[str] = []
+    if data.get("schema_version") != "2.0":
+        issues.append("el curso debe usar schema_version 2.0")
+    if data.get("subject_id") != subject_id:
+        issues.append("subject_id del curso no coincide con la carpeta")
+    if data.get("status") not in {"review", "complete"}:
+        issues.append("status del curso debe ser review o complete")
+
+    duration = int(data.get("duration_weeks", 0) or 0)
+    if not MIN_DURATION_WEEKS <= duration <= MAX_DURATION_WEEKS:
+        issues.append(f"duración={duration}; debe estar entre {MIN_DURATION_WEEKS} y {MAX_DURATION_WEEKS} semanas")
+    total_hours = int(data.get("total_workload_hours", 0) or 0)
+    if total_hours < MIN_TOTAL_HOURS:
+        issues.append(f"carga total={total_hours}; mínimo {MIN_TOTAL_HOURS} horas")
+    if len(data.get("semester_plan", [])) < MIN_SEMESTER_PLAN_ROWS:
+        issues.append(f"cronograma con menos de {MIN_SEMESTER_PLAN_ROWS} semanas")
+    if len(data.get("course_competencies", [])) < MIN_COURSE_COMPETENCIES:
+        issues.append(f"menos de {MIN_COURSE_COMPETENCIES} competencias")
+    if len(data.get("learning_outcomes", [])) < MIN_COURSE_OUTCOMES:
+        issues.append(f"menos de {MIN_COURSE_OUTCOMES} resultados de aprendizaje")
+
+    diagnostic = data.get("diagnostic_assessment", {})
+    if len(diagnostic.get("questions", [])) < MIN_DIAGNOSTIC_QUESTIONS:
+        issues.append(f"diagnóstico con menos de {MIN_DIAGNOSTIC_QUESTIONS} preguntas")
+
+    assessment = data.get("assessment_plan", [])
+    if not assessment:
+        issues.append("falta plan de evaluación")
+    else:
+        total_weight = sum(float(item.get("weight_percent", 0) or 0) for item in assessment if isinstance(item, dict))
+        if abs(total_weight - 100.0) > 1e-9:
+            issues.append(f"ponderaciones de evaluación suman {total_weight:g} %, no 100 %")
+
+    project = data.get("final_project", {})
+    if len(project.get("phases", [])) < MIN_PROJECT_PHASES:
+        issues.append(f"proyecto con menos de {MIN_PROJECT_PHASES} fases")
+    if len(project.get("deliverables", [])) < MIN_PROJECT_DELIVERABLES:
+        issues.append(f"proyecto con menos de {MIN_PROJECT_DELIVERABLES} entregables")
+    rubric = project.get("rubric", [])
+    if len(rubric) < MIN_RUBRIC_CRITERIA:
+        issues.append(f"rúbrica con menos de {MIN_RUBRIC_CRITERIA} criterios")
+    elif abs(sum(float(item.get("weight_percent", 0) or 0) for item in rubric if isinstance(item, dict)) - 100.0) > 1e-9:
+        issues.append("la rúbrica del proyecto no suma 100 %")
+
+    if len(data.get("core_resources", [])) < MIN_COURSE_RESOURCES:
+        issues.append(f"menos de {MIN_COURSE_RESOURCES} recursos centrales")
+    return issues
 
 
 def main() -> int:
@@ -136,7 +214,7 @@ def main() -> int:
             except (ValueError, TypeError, json.JSONDecodeError) as error:
                 unit_issues.append(f"{path.name}: JSON inválido: {error}")
 
-        course_issues: list[str] = []
+        course_issues = audit_course_architecture(subject_id)
         if len(paths) < MIN_UNITS:
             course_issues.append(f"{len(paths)} unidades; mínimo {MIN_UNITS}")
         if total_words < MIN_TOTAL_WORDS:
