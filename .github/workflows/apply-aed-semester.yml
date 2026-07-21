@@ -18,22 +18,27 @@ jobs:
         with:
           ref: content/algoritmos-estructuras-datos-semester-course
 
-      - name: Materialize validated semester units
-        run: python scripts/materialize_aed_semester.py
+      - name: Materialize and capture result
+        run: |
+          set +e
+          python scripts/materialize_aed_semester.py > aed-materialization.log 2>&1
+          status=$?
+          echo "exit_status=$status" >> aed-materialization.log
+          exit 0
 
-      - name: Commit academic units
+      - name: Commit academic units or diagnostic log
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/generated_units/algoritmos-estructuras-datos/unit-01.json \
-                  data/generated_units/algoritmos-estructuras-datos/unit-02.json \
-                  data/generated_units/algoritmos-estructuras-datos/unit-03.json \
-                  data/generated_units/algoritmos-estructuras-datos/unit-04.json \
-                  data/generated_units/algoritmos-estructuras-datos/unit-05.json \
-                  data/generated_units/algoritmos-estructuras-datos/unit-06.json
+          git add aed-materialization.log
+          for unit in data/generated_units/algoritmos-estructuras-datos/unit-{01..06}.json; do
+            if [ -f "$unit" ]; then
+              git add "$unit"
+            fi
+          done
           if git diff --cached --quiet; then
-            echo "No academic changes to commit"
+            echo "No changes to commit"
             exit 0
           fi
-          git commit -m "Develop Algorithms and Data Structures semester units [skip aed-semester]"
+          git commit -m "Capture Algorithms semester materialization [skip aed-semester]"
           git push origin HEAD:content/algoritmos-estructuras-datos-semester-course
