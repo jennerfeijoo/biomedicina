@@ -102,13 +102,35 @@ def validate_unit(data: dict, number: int) -> None:
     require(any(phrase in notice for phrase in clinical_limits), f"{prefix}: límite clínico")
 
 
+def decode_verified_payload(encoded: str) -> tuple[bytes, int | None]:
+    try:
+        payload = base64.b64decode(encoded, validate=True)
+        if hashlib.sha256(payload).hexdigest() == EXPECTED_SHA256:
+            return payload, None
+    except ValueError:
+        pass
+
+    require(len(encoded) % 4 == 1, "el paquete no coincide y no presenta un único carácter excedente")
+    for index in range(len(encoded)):
+        candidate = encoded[:index] + encoded[index + 1 :]
+        try:
+            payload = base64.b64decode(candidate, validate=True)
+        except ValueError:
+            continue
+        if hashlib.sha256(payload).hexdigest() == EXPECTED_SHA256:
+            return payload, index
+    raise ValueError("no fue posible recuperar el paquete mediante la eliminación controlada de un carácter")
+
+
 def main() -> int:
     chunks = sorted(CHUNK_DIR.glob("chunk-*.txt"))
     require(len(chunks) == 9, f"se esperaban 9 fragmentos y se encontraron {len(chunks)}")
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
-    payload = base64.b64decode(encoded, validate=True)
+    payload, repaired_index = decode_verified_payload(encoded)
     actual_sha = hashlib.sha256(payload).hexdigest()
     require(actual_sha == EXPECTED_SHA256, f"SHA-256 inesperado: {actual_sha}")
+    if repaired_index is not None:
+        print(f"Paquete recuperado eliminando el carácter excedente en la posición {repaired_index}")
 
     expected_members = {
         f"data/generated_units/{SUBJECT_ID}/unit{number:02d}.json"
