@@ -1,0 +1,35 @@
+name: Apply Algorithms Semester Migration
+
+on:
+  push:
+    branches:
+      - content/algoritmos-estructuras-datos-semester-course
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: ${{ !contains(github.event.head_commit.message, '[skip algorithms-semester]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: content/algoritmos-estructuras-datos-semester-course
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply migration
+        run: python scripts/upgrade_algorithms_semester.py
+      - name: Validate units and course
+        run: |
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject algoritmos-estructuras-datos --strict
+      - name: Commit migrated academic content
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add data/generated_units/algoritmos-estructuras-datos data/generated_courses/algoritmos-estructuras-datos.json
+          git commit -m 'Upgrade Algorithms and Data Structures units [skip algorithms-semester]' || exit 0
+          git push
