@@ -19,7 +19,7 @@ def repair_text(text: str) -> str:
         current = lines[index]
         following = lines[index + 1].strip()
         stripped = current.strip()
-        if stripped.startswith("{") and stripped.endswith('"') and following in {"]", "],", "}", "},"}:
+        if stripped.startswith("{") and stripped.endswith('"') and following in {"]", "],"}:
             lines[index] = current + "}"
     return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
 
