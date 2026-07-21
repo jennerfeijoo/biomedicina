@@ -1,0 +1,34 @@
+name: Apply Chemistry I Unit 1
+
+on:
+  push:
+    branches:
+      - content/quimica-i-semester-course
+
+permissions:
+  contents: write
+
+jobs:
+  apply-unit:
+    if: ${{ !contains(github.event.head_commit.message, '[skip q1-unit-01]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout course branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/quimica-i-semester-course
+
+      - name: Materialize validated unit
+        run: python scripts/apply_quimica_i_unit_01_payload.py
+
+      - name: Commit upgraded unit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated_units/quimica-i/unit-01.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Upgrade Chemistry I unit 1 [skip q1-unit-01]"
+          git push origin HEAD:content/quimica-i-semester-course
