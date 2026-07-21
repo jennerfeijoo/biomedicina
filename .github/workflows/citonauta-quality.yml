@@ -6,9 +6,6 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-
 jobs:
   validate-generated-units:
     runs-on: ubuntu-latest
@@ -41,25 +38,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Repair Chemistry II JSON and section depth
-        if: github.event_name == 'pull_request' && github.head_ref == 'content/quimica-ii-semester-course'
-        run: |
-          python scripts/repair_quimica_ii_json.py
-          if ! git diff --quiet -- data/generated_units/quimica-ii; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add data/generated_units/quimica-ii
-            git commit -m "Repair Chemistry II unit structure"
-            git push origin HEAD:${{ github.head_ref }}
-          fi
 
       - name: Validate curriculum data
         run: python scripts/validate_curriculum.py
