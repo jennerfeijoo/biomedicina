@@ -59,6 +59,7 @@ jobs:
           python -m json.tool data/generated_courses/calculo.json > /dev/null
           python -m json.tool data/generated_courses/fisica-i.json > /dev/null
           python -m json.tool data/generated_courses/probabilidad-estadistica.json > /dev/null
+          python -m json.tool data/generated_courses/quimica-ii.json > /dev/null
 
       - name: Report semester readiness
         run: python scripts/audit_semester_readiness.py
@@ -118,6 +119,24 @@ jobs:
         if: steps.probability_readiness.outcome != 'success'
         run: |
           cat probability-semester-readiness.txt
+          exit 1
+
+      - name: Audit Chemistry II semester readiness
+        id: chemistry_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject quimica-ii --strict > chemistry-semester-readiness.txt 2>&1
+
+      - name: Upload Chemistry II semester audit
+        if: steps.chemistry_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chemistry-semester-readiness
+          path: chemistry-semester-readiness.txt
+
+      - name: Enforce Chemistry II semester readiness
+        if: steps.chemistry_readiness.outcome != 'success'
+        run: |
+          cat chemistry-semester-readiness.txt
           exit 1
 
       - name: Validate developed-unit renderer
