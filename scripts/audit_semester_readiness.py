@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from collections import defaultdict
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+UNIT_ROOT = ROOT / "data" / "generated_units"
+WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
+URL_RE = re.compile(r"^https?://", re.IGNORECASE)
+
+MIN_UNITS = 6
+MIN_WORDS_PER_UNIT = 2_000
+MIN_TOTAL_WORDS = 15_000
+MIN_THEORY_SECTIONS = 4
+MIN_OBJECTIVES = 5
+MIN_GLOSSARY = 12
+MIN_SELF_ASSESSMENT = 8
+MIN_SOURCES = 5
+MIN_WORKED_EXAMPLES = 2
+MIN_GUIDED_ACTIVITIES = 1
+MIN_PRACTICE_ITEMS = 8
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("la raíz debe ser un objeto JSON")
+    return data
+
+
+def collect_text(value: Any, *, key: str = "") -> list[str]:
+    if isinstance(value, str):
+        if key == "url" or URL_RE.match(value):
+            return []
+        return [value]
+    if isinstance(value, list):
+        output: list[str] = []
+        for item in value:
+            output.extend(collect_text(item, key=key))
+        return output
+    if isinstance(value, dict):
+        output: list[str] = []
+        for child_key, child in value.items():
+            if child_key in {"schema_version", "subject_id", "area_id", "slug", "status"}:
+                continue
+            output.extend(collect_text(child, key=child_key))
+        return output
+    return []
+
+
+def count_words(data: dict[str, Any]) -> int:
+    return len(WORD_RE.findall(" ".join(collect_text(data))))
+
+
+def as_list(data: dict[str, Any], singular: str, plural: str) -> list[Any]:
+    plural_value = data.get(plural)
+    if isinstance(plural_value, list):
+        return plural_value
+    singular_value = data.get(singular)
+    return [singular_value] if isinstance(singular_value, dict) else []
+
+
+def practice_item_count(data: dict[str, Any]) -> int:
+    total = 0
+    for activity in as_list(data, "guided_activity", "guided_activities"):
+        for key in ("problems", "tasks", "exercises"):
+            value = activity.get(key)
+            if isinstance(value, list):
+                total += len(value)
+    return total
+
+
+def audit_unit(path: Path, data: dict[str, Any]) -> tuple[int, list[str]]:
+    words = count_words(data)
+    issues: list[str] = []
+    if words < MIN_WORDS_PER_UNIT:
+        issues.append(f"{words} palabras; mínimo {MIN_WORDS_PER_UNIT}")
+    if len(data.get("learning_objectives", [])) < MIN_OBJECTIVES:
+        issues.append(f"menos de {MIN_OBJECTIVES} objetivos")
+    if len(data.get("theory_sections", [])) < MIN_THEORY_SECTIONS:
+        issues.append(f"menos de {MIN_THEORY_SECTIONS} secciones teóricas")
+    if len(data.get("glossary", [])) < MIN_GLOSSARY:
+        issues.append(f"menos de {MIN_GLOSSARY} términos de glosario")
+    if len(data.get("self_assessment", [])) < MIN_SELF_ASSESSMENT:
+        issues.append(f"menos de {MIN_SELF_ASSESSMENT} preguntas de autoevaluación")
+    if len(data.get("sources", [])) < MIN_SOURCES:
+        issues.append(f"menos de {MIN_SOURCES} fuentes")
+    if len(as_list(data, "worked_example", "worked_examples")) < MIN_WORKED_EXAMPLES:
+        issues.append(f"menos de {MIN_WORKED_EXAMPLES} ejemplos resueltos")
+    if len(as_list(data, "guided_activity", "guided_activities")) < MIN_GUIDED_ACTIVITIES:
+        issues.append("falta actividad guiada")
+    if practice_item_count(data) < MIN_PRACTICE_ITEMS:
+        issues.append(f"menos de {MIN_PRACTICE_ITEMS} problemas o tareas")
+    return words, issues
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Audita si las asignaturas equivalen a un curso semestral.")
+    parser.add_argument("--subject", help="Limita la auditoría a un subject_id.")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Devuelve código distinto de cero cuando la asignatura seleccionada no cumple el estándar.",
+    )
+    args = parser.parse_args()
+
+    grouped: dict[str, list[Path]] = defaultdict(list)
+    for path in sorted(UNIT_ROOT.glob("*/unit-*.json")):
+        grouped[path.parent.name].append(path)
+
+    if args.subject:
+        grouped = {args.subject: grouped.get(args.subject, [])}
+
+    if not grouped:
+        print("No hay unidades para auditar.")
+        return 1 if args.strict else 0
+
+    failed_subjects = 0
+    for subject_id, paths in sorted(grouped.items()):
+        total_words = 0
+        unit_issues: list[str] = []
+        schema_versions: set[str] = set()
+        for path in paths:
+            try:
+                data = load_json(path)
+                schema_versions.add(str(data.get("schema_version", "")))
+                words, issues = audit_unit(path, data)
+                total_words += words
+                if issues:
+                    unit_issues.append(f"{path.name}: " + "; ".join(issues))
+            except (ValueError, TypeError, json.JSONDecodeError) as error:
+                unit_issues.append(f"{path.name}: JSON inválido: {error}")
+
+        course_issues: list[str] = []
+        if len(paths) < MIN_UNITS:
+            course_issues.append(f"{len(paths)} unidades; mínimo {MIN_UNITS}")
+        if total_words < MIN_TOTAL_WORDS:
+            course_issues.append(f"{total_words} palabras totales; mínimo {MIN_TOTAL_WORDS}")
+        if schema_versions != {"2.0"}:
+            course_issues.append("todas las unidades deben usar schema_version 2.0")
+
+        ready = not course_issues and not unit_issues
+        state = "SEMESTRALMENTE LISTA" if ready else "PENDIENTE DE AMPLIACIÓN"
+        print(f"\n{subject_id}: {state}")
+        print(f"  unidades={len(paths)} · palabras={total_words} · esquemas={','.join(sorted(schema_versions)) or 'ninguno'}")
+        for issue in course_issues:
+            print(f"  CURSO: {issue}")
+        for issue in unit_issues:
+            print(f"  UNIDAD: {issue}")
+        if not ready:
+            failed_subjects += 1
+
+    print(f"\nAsignaturas auditadas: {len(grouped)} · pendientes: {failed_subjects}")
+    return 1 if args.strict and failed_subjects else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
