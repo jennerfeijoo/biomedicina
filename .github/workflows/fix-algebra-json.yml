@@ -1,0 +1,62 @@
+name: Repair Algebra JSON syntax
+
+on:
+  push:
+    branches:
+      - content/algebra-semester-course
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/algebra-semester-course
+          fetch-depth: 0
+
+      - name: Repair missing object closures
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('data/generated_units/algebra')
+          changed = []
+          for path in sorted(root.glob('unit-*.json')):
+              lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+              repaired = []
+              edits = 0
+              for line in lines:
+                  stripped = line.rstrip('\r\n')
+                  if stripped.lstrip().startswith('{"error":') and not stripped.rstrip().endswith('}') and not stripped.rstrip().endswith('},'):
+                      newline = '\n' if line.endswith('\n') else ''
+                      line = stripped + '}' + newline
+                      edits += 1
+                  repaired.append(line)
+              if edits:
+                  path.write_text(''.join(repaired), encoding='utf-8')
+                  json.loads(path.read_text(encoding='utf-8'))
+                  changed.append(f'{path}: {edits} cierre(s)')
+
+          if not changed:
+              print('No se necesitaron correcciones.')
+          else:
+              print('\n'.join(changed))
+          PY
+
+      - name: Commit repaired JSON
+        run: |
+          if git diff --quiet -- data/generated_units/algebra; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated_units/algebra
+          git commit -m "Fix Algebra semester JSON closures"
+          git push origin HEAD:content/algebra-semester-course
