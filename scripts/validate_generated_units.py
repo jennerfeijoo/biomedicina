@@ -30,7 +30,7 @@ def collect_text(value: Any, *, key: str = "") -> list[str]:
             output.extend(collect_text(item, key=key))
         return output
     if isinstance(value, dict):
-        output = []
+        output: list[str] = []
         for child_key, child in value.items():
             if child_key in {"schema_version", "subject_id", "area_id", "slug", "status"}:
                 continue
@@ -39,8 +39,29 @@ def collect_text(value: Any, *, key: str = "") -> list[str]:
     return []
 
 
-def validate_unit(path: Path) -> int:
-    data = load_json(path)
+def as_list(data: dict[str, Any], singular: str, plural: str) -> list[Any]:
+    plural_value = data.get(plural)
+    if isinstance(plural_value, list):
+        return plural_value
+    singular_value = data.get(singular)
+    return [singular_value] if isinstance(singular_value, dict) else []
+
+
+def practice_count(data: dict[str, Any]) -> int:
+    total = 0
+    for activity in as_list(data, "guided_activity", "guided_activities"):
+        if not isinstance(activity, dict):
+            continue
+        for key in ("problems", "tasks", "exercises"):
+            if isinstance(activity.get(key), list):
+                total += len(activity[key])
+    for practice_set in data.get("practice_sets", []):
+        if isinstance(practice_set, dict) and isinstance(practice_set.get("problems"), list):
+            total += len(practice_set["problems"])
+    return total
+
+
+def validate_common(path: Path, data: dict[str, Any]) -> None:
     required = {
         "schema_version",
         "subject_id",
@@ -53,8 +74,6 @@ def validate_unit(path: Path) -> int:
         "learning_objectives",
         "theory_sections",
         "glossary",
-        "worked_example",
-        "guided_activity",
         "common_errors",
         "self_assessment",
         "biomedical_connections",
@@ -64,6 +83,10 @@ def validate_unit(path: Path) -> int:
     missing = sorted(required - data.keys())
     if missing:
         raise ValueError("faltan campos: " + ", ".join(missing))
+    if not as_list(data, "worked_example", "worked_examples"):
+        raise ValueError("falta worked_example o worked_examples")
+    if not as_list(data, "guided_activity", "guided_activities"):
+        raise ValueError("falta guided_activity o guided_activities")
 
     subject_id = str(data["subject_id"])
     if path.parent.name != subject_id:
@@ -71,43 +94,88 @@ def validate_unit(path: Path) -> int:
     match = re.fullmatch(r"unit-(\d{2})\.json", path.name)
     if not match or int(match.group(1)) != int(data["unit"]):
         raise ValueError("el número de unidad no coincide con el nombre del archivo")
-    if data["status"] != "complete":
-        raise ValueError("status debe ser complete")
 
-    objectives = data["learning_objectives"]
-    sections = data["theory_sections"]
-    glossary = data["glossary"]
-    self_assessment = data["self_assessment"]
-    sources = data["sources"]
-    if not isinstance(objectives, list) or len(objectives) < 4:
-        raise ValueError("se requieren al menos cuatro objetivos")
-    if not isinstance(sections, list) or len(sections) < 3:
-        raise ValueError("se requieren al menos tres secciones teóricas")
-    for index, section in enumerate(sections, start=1):
-        if len(section.get("paragraphs", [])) < 3:
-            raise ValueError(f"la sección teórica {index} necesita al menos tres párrafos")
-        if len(section.get("key_points", [])) < 3:
-            raise ValueError(f"la sección teórica {index} necesita al menos tres puntos clave")
-    if not isinstance(glossary, list) or len(glossary) < 8:
-        raise ValueError("se requieren al menos ocho términos de glosario")
-    if not isinstance(self_assessment, list) or len(self_assessment) < 5:
-        raise ValueError("se requieren al menos cinco preguntas de autoevaluación")
-    if not isinstance(sources, list) or len(sources) < 3:
-        raise ValueError("se requieren al menos tres fuentes")
-    for source in sources:
+    for source in data["sources"]:
         if not URL_RE.match(str(source.get("url") or "")):
             raise ValueError("todas las fuentes deben tener URL HTTP válida")
 
     text = " ".join(collect_text(data))
-    words = len(WORD_RE.findall(text))
-    if words < 900:
-        raise ValueError(f"contenido insuficiente: {words} palabras")
-    if words > 2300:
-        raise ValueError(f"contenido excesivo para una unidad: {words} palabras")
     lowered = text.casefold()
     for marker in ("lorem ipsum", "contenido pendiente", "por completar", "placeholder"):
         if marker in lowered:
             raise ValueError(f"marcador incompleto detectado: {marker}")
+
+
+def validate_transitional(data: dict[str, Any], words: int) -> None:
+    if data["status"] != "complete":
+        raise ValueError("en schema 1.0, status debe ser complete")
+    if len(data["learning_objectives"]) < 4:
+        raise ValueError("se requieren al menos cuatro objetivos")
+    if len(data["theory_sections"]) < 3:
+        raise ValueError("se requieren al menos tres secciones teóricas")
+    for index, section in enumerate(data["theory_sections"], start=1):
+        if len(section.get("paragraphs", [])) < 3:
+            raise ValueError(f"la sección teórica {index} necesita al menos tres párrafos")
+        if len(section.get("key_points", [])) < 3:
+            raise ValueError(f"la sección teórica {index} necesita al menos tres puntos clave")
+    if len(data["glossary"]) < 8:
+        raise ValueError("se requieren al menos ocho términos de glosario")
+    if len(data["self_assessment"]) < 5:
+        raise ValueError("se requieren al menos cinco preguntas de autoevaluación")
+    if len(data["sources"]) < 3:
+        raise ValueError("se requieren al menos tres fuentes")
+    if words < 900:
+        raise ValueError(f"contenido insuficiente: {words} palabras")
+    if words > 2300:
+        raise ValueError(f"contenido excesivo para una unidad transicional: {words} palabras")
+
+
+def validate_semester(data: dict[str, Any], words: int) -> None:
+    if data["status"] not in {"review", "complete"}:
+        raise ValueError("en schema 2.0, status debe ser review o complete")
+    if int(data.get("estimated_hours", 0) or 0) < 12:
+        raise ValueError("schema 2.0 requiere al menos 12 horas estimadas")
+    if not isinstance(data.get("weeks"), list) or not data["weeks"]:
+        raise ValueError("schema 2.0 requiere semanas asignadas")
+    if len(data["learning_objectives"]) < 5:
+        raise ValueError("schema 2.0 requiere al menos cinco objetivos")
+    if len(data["theory_sections"]) < 4:
+        raise ValueError("schema 2.0 requiere al menos cuatro secciones teóricas")
+    for index, section in enumerate(data["theory_sections"], start=1):
+        if len(section.get("paragraphs", [])) < 4:
+            raise ValueError(f"la sección teórica {index} necesita al menos cuatro párrafos")
+        if len(section.get("key_points", [])) < 4:
+            raise ValueError(f"la sección teórica {index} necesita al menos cuatro puntos clave")
+    if len(data["glossary"]) < 12:
+        raise ValueError("schema 2.0 requiere al menos doce términos de glosario")
+    if len(as_list(data, "worked_example", "worked_examples")) < 2:
+        raise ValueError("schema 2.0 requiere al menos dos ejemplos")
+    if len(data["common_errors"]) < 5:
+        raise ValueError("schema 2.0 requiere al menos cinco errores frecuentes")
+    if len(data["self_assessment"]) < 8:
+        raise ValueError("schema 2.0 requiere al menos ocho preguntas de autoevaluación")
+    if len(data["sources"]) < 5:
+        raise ValueError("schema 2.0 requiere al menos cinco fuentes")
+    if practice_count(data) < 8:
+        raise ValueError("schema 2.0 requiere al menos ocho problemas o tareas")
+    if words < 2000:
+        raise ValueError(f"contenido semestral insuficiente: {words} palabras")
+    if words > 5000:
+        raise ValueError(f"contenido excesivo para una sola unidad: {words} palabras")
+
+
+def validate_unit(path: Path) -> int:
+    data = load_json(path)
+    validate_common(path, data)
+    text = " ".join(collect_text(data))
+    words = len(WORD_RE.findall(text))
+    schema = str(data.get("schema_version"))
+    if schema == "1.0":
+        validate_transitional(data, words)
+    elif schema == "2.0":
+        validate_semester(data, words)
+    else:
+        raise ValueError(f"schema_version no soportado: {schema}")
     return words
 
 

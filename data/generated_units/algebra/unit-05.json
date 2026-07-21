@@ -1,141 +1,311 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "subject_id": "algebra",
   "area_id": "ciencias-basicas",
   "unit": 5,
   "slug": "valores-propios-descomposiciones",
-  "title": "Valores propios y descomposiciones",
-  "status": "complete",
-  "purpose": "Comprender valores y vectores propios, diagonalización y descomposición en valores singulares como herramientas para estudiar direcciones invariantes, dinámica lineal, compresión y reducción dimensional.",
+  "title": "Autovalores, modos y descomposición en valores singulares",
+  "status": "review",
+  "estimated_hours": 20,
+  "weeks": [11, 12],
+  "difficulty": "Intermedio–avanzado",
+  "prerequisite_knowledge": [
+    "Matrices, rango, núcleo, inversa y cambio de base.",
+    "Bases, coordenadas, ortogonalidad y proyecciones.",
+    "Determinantes de matrices pequeñas.",
+    "Interpretación de modelos lineales discretos y errores numéricos."
+  ],
+  "progression": {
+    "previous": "Las matrices como operadores y la relación entre rango, núcleo e información.",
+    "next": "Mínimos cuadrados, regresión matricial, regularización introductoria y validación integral."
+  },
+  "purpose": "Analizar direcciones invariantes, modos dinámicos y estructura de rango mediante autovalores, autovectores, diagonalización y descomposición en valores singulares; aplicar estas herramientas a dinámica lineal, compresión, reducción dimensional y problemas inversos, manteniendo una separación rigurosa entre estructura matemática, señal biológica y utilidad aplicada.",
   "learning_objectives": [
-    "Definir valor propio y vector propio mediante la ecuación Av=λv.",
-    "Interpretar valores propios como escalas asociadas a direcciones invariantes.",
-    "Explicar cuándo una matriz puede diagonalizarse y qué ventaja ofrece.",
-    "Describir la descomposición en valores singulares para matrices rectangulares.",
-    "Relacionar espectro, rango y aproximaciones de baja dimensión con datos biomédicos."
+    "Definir y comprobar pares propios mediante A v=λv con v no nulo.",
+    "Calcular autovalores y autovectores de matrices 2×2 y matrices triangulares sencillas.",
+    "Distinguir multiplicidad algebraica, multiplicidad geométrica y diagonalizabilidad.",
+    "Interpretar potencias de matrices y estabilidad de sistemas discretos mediante modos propios.",
+    "Describir la SVD como una rotación, un escalado y otra rotación entre espacios.",
+    "Relacionar valores singulares con rango, condición, pseudoinversa y sensibilidad.",
+    "Construir aproximaciones de bajo rango y evaluar qué información matemática y biomédica puede perderse."
   ],
   "theory_sections": [
     {
-      "heading": "Valores y vectores propios",
+      "heading": "1. Direcciones invariantes y problema propio",
       "paragraphs": [
-        "Para una matriz cuadrada A, un vector no nulo v es vector propio si Av=λv para algún escalar λ. La transformación puede cambiar la magnitud de v y, si λ es negativo, invertir su dirección, pero no lo desvía hacia otra dirección. Estas direcciones invariantes permiten describir comportamientos que permanecen alineados bajo aplicaciones repetidas del operador.",
-        "Los valores propios se obtienen resolviendo det(A-λI)=0. Cada solución λ puede tener uno o más vectores propios asociados, obtenidos del núcleo de A-λI. El cálculo manual es útil en matrices pequeñas, pero en problemas grandes se emplean algoritmos numéricos. Los resultados dependen de precisión, escalamiento y estructura de la matriz.",
-        "En modelos dinámicos lineales x_{k+1}=Ax_k, la magnitud de los valores propios influye en la evolución. Componentes asociadas a |λ|<1 decrecen, las de |λ|>1 crecen y las de módulo uno pueden persistir u oscilar. Esta lectura no debe trasladarse sin más a sistemas biológicos no lineales, pero proporciona una base para estudiar estabilidad local."
+        "Una transformación lineal suele cambiar tanto la magnitud como la dirección de un vector. Un autovector es una excepción: al aplicar A, el resultado permanece sobre la misma recta. Se cumple A v=λv, donde v es no nulo y λ es el autovalor asociado. Si λ es positivo, la orientación se conserva; si es negativo, se invierte; si su módulo es mayor que uno, la magnitud aumenta; y si es menor que uno, disminuye bajo aplicaciones repetidas.",
+        "El vector cero se excluye porque satisface A0=λ0 para cualquier λ y no define una dirección. Los múltiplos no nulos de un autovector pertenecen al mismo subespacio propio. Por ello, el objeto geométrico relevante no es un vector aislado, sino el núcleo de A-λI, denominado espacio propio. Su dimensión es la multiplicidad geométrica del autovalor.",
+        "Para encontrar autovalores se reescribe (A-λI)v=0. Una solución no trivial existe cuando A-λI es singular, por lo que det(A-λI)=0. Este determinante produce el polinomio característico. En matrices triangulares, los autovalores son las entradas diagonales. En matrices generales grandes, formar el polinomio no es el método numérico habitual; se emplean algoritmos especializados como iteraciones QR.",
+        "Los autovalores dependen del operador y no de la base usada para representarlo. Matrices semejantes B^{-1}AB tienen el mismo polinomio característico. Los autovectores sí cambian de coordenadas con la base. Esta invariancia permite elegir representaciones convenientes sin alterar los modos propios del operador abstracto."
+      ],
+      "equations": [
+        {"label": "Ecuación propia", "latex": "A\\mathbf{v}=\\lambda\\mathbf{v},\\qquad\\mathbf{v}\\neq\\mathbf{0}"},
+        {"label": "Ecuación característica", "latex": "\\det(A-\\lambda I)=0"},
+        {"label": "Espacio propio", "latex": "E_{\\lambda}=\\ker(A-\\lambda I)"}
       ],
       "key_points": [
-        "Av=λv identifica direcciones que no cambian de orientación.",
-        "Los valores propios se obtienen del polinomio característico.",
-        "El espectro influye en la dinámica de aplicaciones repetidas.",
-        "La interpretación depende de la matriz y del modelo."
+        "Un autovector conserva su dirección bajo la transformación.",
+        "El vector cero nunca se considera autovector.",
+        "Los autovalores aparecen cuando A-λI pierde invertibilidad.",
+        "El espectro es invariante bajo cambios de base."
       ]
     },
     {
-      "heading": "Diagonalización y modos",
+      "heading": "2. Multiplicidades y diagonalización",
       "paragraphs": [
-        "Una matriz A es diagonalizable si existe una base de vectores propios y puede escribirse A=PDP^-1, donde las columnas de P son vectores propios y D contiene los valores propios. En esa base, aplicar A equivale a escalar cada componente de manera independiente. Esto simplifica potencias de matrices, análisis de sistemas y resolución de algunos modelos diferenciales.",
-        "No toda matriz es diagonalizable. Si no existen suficientes vectores propios independientes, la representación diagonal falla y se requieren formas más generales. Incluso cuando existe, la diagonalización puede ser numéricamente inestable si la base de vectores propios está mal condicionada. Por ello, la utilidad computacional depende de algo más que la existencia teórica.",
-        "En vibraciones y sistemas acoplados, los vectores propios pueden representar modos y los valores propios parámetros de frecuencia o crecimiento. En análisis fisiológico, hablar de modos requiere especificar qué matriz se construyó y qué representan sus entradas. Un modo matemático no equivale automáticamente a un mecanismo biológico."
+        "La multiplicidad algebraica de un autovalor es el número de veces que aparece como raíz del polinomio característico. La multiplicidad geométrica es la dimensión de su espacio propio. Siempre es al menos uno y no supera la multiplicidad algebraica. Una matriz de n×n es diagonalizable cuando posee n autovectores linealmente independientes.",
+        "Si A=PDP^{-1}, las columnas de P son autovectores y D es diagonal con los autovalores correspondientes. La transformación se interpreta como tres pasos: cambiar a coordenadas propias con P^{-1}, escalar cada coordenada mediante D y regresar con P. Esta representación simplifica potencias porque A^k=PD^kP^{-1}.",
+        "No toda matriz es diagonalizable. La matriz [[1,1],[0,1]] tiene un autovalor repetido igual a uno, pero solo un autovector independiente. En estos casos se requieren formas de Jordan para una descripción exacta teórica. Para el trabajo numérico, la forma de Schur suele ser más estable que una diagonalización basada en una matriz P mal condicionada.",
+        "Las matrices simétricas reales constituyen un caso especialmente favorable: todos sus autovalores son reales y existe una base ortonormal de autovectores. Se escribe A=QΛQ^T. Este teorema espectral sustenta formas cuadráticas, matrices de covarianza y componentes principales. La simetría aporta estabilidad y una geometría clara que no debe suponerse en matrices arbitrarias."
+      ],
+      "equations": [
+        {"label": "Diagonalización", "latex": "A=PDP^{-1}"},
+        {"label": "Potencia mediante modos", "latex": "A^k=PD^kP^{-1}"},
+        {"label": "Teorema espectral simétrico", "latex": "A=A^T\\quad\\Longrightarrow\\quad A=Q\\Lambda Q^T,\\;Q^TQ=I"}
       ],
       "key_points": [
-        "Diagonalizar significa expresar el operador en una base de vectores propios.",
-        "La matriz diagonal separa modos lineales.",
-        "No todas las matrices poseen una base completa de vectores propios.",
-        "Un modo algebraico necesita interpretación física o biológica independiente."
+        "Diagonalizar requiere una base completa de autovectores.",
+        "Multiplicidad algebraica y geométrica no son equivalentes.",
+        "Las potencias se simplifican en coordenadas propias.",
+        "Las matrices simétricas admiten una diagonalización ortogonal."
       ]
     },
     {
-      "heading": "Descomposición en valores singulares y aproximación de bajo rango",
+      "heading": "3. Sistemas dinámicos discretos y estabilidad modal",
       "paragraphs": [
-        "La descomposición en valores singulares factoriza una matriz A de m×n como UΣV^T. Las columnas de V son direcciones de entrada ortonormales, las columnas de U direcciones de salida y los valores singulares de Σ indican cuánto se amplifica cada dirección. Existe para cualquier matriz real, incluso rectangular o singular.",
-        "El número de valores singulares positivos coincide con el rango. Si algunos valores son muy pequeños, la matriz pierde información o es sensible al ruido en esas direcciones. La pseudoinversa usa los valores singulares no nulos para resolver problemas de mínimos cuadrados, aunque invertir valores muy pequeños puede amplificar error y requiere regularización.",
-        "Conservar solo los mayores valores singulares produce una aproximación de bajo rango que minimiza el error euclídeo o de Frobenius para un rango dado. Esta propiedad se usa en compresión de imágenes, reducción de ruido y representación de datos. La reducción conserva variación matemática, no necesariamente relevancia clínica; los componentes descartados pueden contener señales débiles importantes."
+        "Un sistema lineal discreto x_{k+1}=A x_k evoluciona aplicando la misma matriz en cada paso. Si A es diagonalizable y x_0 se descompone en autovectores, cada componente evoluciona como λ_i^k. El estado total es la suma de modos que crecen, decrecen, cambian de signo u oscilan según sus autovalores.",
+        "Si todos los autovalores tienen módulo menor que uno, el origen es asintóticamente estable en el modelo lineal: A^k x_0 tiende a cero. Si alguno tiene módulo mayor que uno y el estado inicial posee componente en ese modo, la magnitud crece. Autovalores de módulo uno requieren análisis adicional, especialmente cuando existen bloques no diagonalizables, porque pueden aparecer términos que crecen con k.",
+        "En una matriz de transición con conservación, un autovalor uno puede representar un estado estacionario. En modelos poblacionales o compartimentales, el autovector dominante describe proporciones relativas de largo plazo bajo supuestos constantes. Este resultado no implica que un sistema biológico real alcance necesariamente ese estado: parámetros, entradas, no linealidades y regulación pueden cambiar con el tiempo.",
+        "Linealizar un sistema no lineal cerca de un equilibrio produce una matriz jacobiana. Sus autovalores informan estabilidad local, no comportamiento global. Un modo propio puede ser matemáticamente dominante y, sin embargo, no ser observable, excitable o biológicamente relevante bajo las condiciones experimentales. La interpretación debe conservar la escala, el dominio y la fuente del operador."
+      ],
+      "equations": [
+        {"label": "Evolución discreta", "latex": "\\mathbf{x}_{k}=A^k\\mathbf{x}_0"},
+        {"label": "Descomposición modal", "latex": "\\mathbf{x}_0=\\sum_i c_i\\mathbf{v}_i\\quad\\Longrightarrow\\quad\\mathbf{x}_k=\\sum_i c_i\\lambda_i^k\\mathbf{v}_i"},
+        {"label": "Criterio espectral básico", "latex": "\\rho(A)=\\max_i|\\lambda_i|<1"}
       ],
       "key_points": [
-        "La SVD existe para matrices cuadradas y rectangulares.",
-        "Los valores singulares cuantifican amplificación por direcciones ortogonales.",
-        "El rango es el número de valores singulares positivos.",
-        "La aproximación de bajo rango equilibra compresión y pérdida de información."
+        "Cada modo propio evoluciona con una potencia de su autovalor.",
+        "El radio espectral orienta la estabilidad de modelos discretos.",
+        "Un autovalor dominante no constituye por sí solo un mecanismo biológico.",
+        "La linealización solo informa comportamiento local."
+      ]
+    },
+    {
+      "heading": "4. Descomposición en valores singulares",
+      "paragraphs": [
+        "La SVD factoriza cualquier matriz real A de m×n como UΣV^T. Las columnas de V forman direcciones ortonormales en la entrada; Σ escala esas direcciones por valores singulares no negativos; y U orienta las salidas. A diferencia de la diagonalización, la SVD existe para matrices rectangulares, singulares y no simétricas.",
+        "Los valores singulares son las raíces cuadradas de los autovalores no negativos de A^TA. Los vectores singulares derechos son autovectores de A^TA y los izquierdos de AA^T. El número de valores singulares positivos coincide con el rango. Un valor singular cero identifica una dirección exacta del núcleo; uno muy pequeño señala una dirección apenas observable y potencialmente sensible al ruido.",
+        "La condición en norma dos es σ_max/σ_min para una matriz de rango completo. Cuando σ_min es pequeño, invertir esa dirección requiere dividir por un número pequeño y amplifica errores. La pseudoinversa A^+=VΣ^+U^T invierte los valores singulares positivos y permite describir soluciones de mínimos cuadrados o norma mínima. La decisión de qué valores considerar efectivos depende de precisión y finalidad.",
+        "La SVD también separa espacios fundamentales. Los vectores singulares derechos asociados a valores positivos generan el complemento del núcleo; los izquierdos correspondientes generan la imagen. Los vectores restantes completan bases ortonormales del núcleo y del complemento de la imagen. Esta estructura ofrece una lectura geométrica de qué entradas son visibles y qué salidas pueden explicarse."
+      ],
+      "equations": [
+        {"label": "SVD", "latex": "A=U\\Sigma V^T"},
+        {"label": "Relación espectral", "latex": "A^TA\\mathbf{v}_i=\\sigma_i^2\\mathbf{v}_i"},
+        {"label": "Pseudoinversa", "latex": "A^+=V\\Sigma^+U^T"}
+      ],
+      "key_points": [
+        "La SVD existe para cualquier matriz finita.",
+        "Los valores singulares cuantifican ganancia por direcciones ortogonales.",
+        "Valores pequeños explican sensibilidad e información débil.",
+        "La pseudoinversa conecta SVD, mínimos cuadrados y soluciones de norma mínima."
+      ]
+    },
+    {
+      "heading": "5. Aproximación de bajo rango, PCA y validación biomédica",
+      "paragraphs": [
+        "La aproximación truncada A_r conserva los r valores singulares mayores y sus vectores asociados. El teorema de Eckart–Young establece que es la mejor aproximación de rango r según las normas espectral y de Frobenius. El error en norma de Frobenius es la raíz de la suma de cuadrados de los valores singulares descartados. Esta propiedad fundamenta compresión y reducción de ruido.",
+        "La elección de r no debe basarse solo en un porcentaje de energía. Una componente de baja varianza puede contener una señal rara, una frontera anatómica o un subgrupo clínicamente importante. Deben evaluarse reconstrucción, estabilidad, desempeño en tareas posteriores y preservación de estructuras relevantes. La compresión matemática y la utilidad clínica son objetivos distintos.",
+        "PCA aplica una descomposición espectral o SVD a datos centrados. Las componentes principales son direcciones ortogonales que maximizan varianza sucesiva. Si las variables están en escalas diferentes, estandarizar cambia las componentes. PCA es descriptiva y lineal; no identifica causalidad, no separa necesariamente fuentes y puede ocultar estructuras no lineales o grupos minoritarios.",
+        "En imágenes, matrices de expresión y señales, la reducción dimensional debe evitar fuga de información: el centrado, escalado y ajuste de componentes se realizan únicamente con datos de entrenamiento cuando existe una evaluación predictiva. La estabilidad debe comprobarse mediante remuestreo o perturbaciones. Los componentes pueden cambiar de signo sin alterar el subespacio, y componentes cercanos en valor pueden rotar considerablemente.",
+        "La visualización de dos componentes es un mapa parcial. La proximidad aparente depende del preprocesamiento y de la varianza retenida. Antes de interpretar agrupamientos deben revisarse batch effects, variables de confusión, calidad de medición y representatividad. Los datos son una proyección del sistema; la SVD organiza esa proyección, no reemplaza la biología."
+      ],
+      "equations": [
+        {"label": "Aproximación truncada", "latex": "A_r=\\sum_{i=1}^{r}\\sigma_i\\mathbf{u}_i\\mathbf{v}_i^T"},
+        {"label": "Error de Frobenius", "latex": "\\|A-A_r\\|_F^2=\\sum_{i=r+1}^{q}\\sigma_i^2"},
+        {"label": "Datos centrados para PCA", "latex": "X_c=X-\\mathbf{1}\\boldsymbol{\\mu}^T"}
+      ],
+      "key_points": [
+        "La SVD truncada es óptima para un criterio algebraico definido.",
+        "La varianza retenida no garantiza relevancia biomédica.",
+        "PCA requiere centrado y una decisión explícita sobre escalado.",
+        "La reducción dimensional debe validarse dentro del flujo analítico completo."
       ]
     }
   ],
   "glossary": [
-    {"term": "Valor propio", "definition": "Escalar que indica el factor aplicado a una dirección propia."},
-    {"term": "Vector propio", "definition": "Vector no nulo cuya dirección se conserva bajo una transformación."},
-    {"term": "Espectro", "definition": "Conjunto de valores propios de una matriz."},
-    {"term": "Polinomio característico", "definition": "Expresión det(A-λI) cuyas raíces son valores propios."},
-    {"term": "Diagonalización", "definition": "Factorización A=PDP^-1 usando una base de vectores propios."},
-    {"term": "Modo", "definition": "Patrón independiente asociado a una dirección propia en un modelo lineal."},
-    {"term": "Valor singular", "definition": "Factor no negativo que cuantifica la amplificación de una dirección en la SVD."},
-    {"term": "SVD", "definition": "Factorización A=UΣV^T con matrices ortogonales y valores singulares."},
-    {"term": "Pseudoinversa", "definition": "Generalización de la inversa construida a partir de la SVD."},
-    {"term": "Aproximación de bajo rango", "definition": "Representación que conserva un número limitado de componentes dominantes."},
-    {"term": "Regularización", "definition": "Estrategia para limitar inestabilidad y sobreajuste en problemas inversos."}
+    {"term": "Autovalor", "definition": "Escalar asociado a una dirección propia de una transformación cuadrada."},
+    {"term": "Autovector", "definition": "Vector no nulo cuya dirección se conserva bajo una transformación."},
+    {"term": "Espacio propio", "definition": "Núcleo de A-λI formado por los autovectores de λ y el cero."},
+    {"term": "Espectro", "definition": "Conjunto de autovalores de una matriz."},
+    {"term": "Polinomio característico", "definition": "Determinante det(A-λI) cuyas raíces son los autovalores."},
+    {"term": "Multiplicidad algebraica", "definition": "Número de repeticiones de un autovalor como raíz característica."},
+    {"term": "Multiplicidad geométrica", "definition": "Dimensión del espacio propio de un autovalor."},
+    {"term": "Diagonalización", "definition": "Representación A=PDP^-1 mediante una base de autovectores."},
+    {"term": "Radio espectral", "definition": "Mayor módulo entre los autovalores de una matriz."},
+    {"term": "Modo", "definition": "Patrón asociado a una dirección propia dentro de un modelo lineal."},
+    {"term": "Valor singular", "definition": "Factor no negativo que cuantifica la ganancia de una dirección ortogonal."},
+    {"term": "Vector singular", "definition": "Dirección ortonormal de entrada o salida asociada a un valor singular."},
+    {"term": "SVD", "definition": "Factorización A=UΣV^T válida para matrices rectangulares o singulares."},
+    {"term": "Pseudoinversa", "definition": "Generalización de la inversa construida al invertir valores singulares positivos."},
+    {"term": "Rango efectivo", "definition": "Número de direcciones consideradas informativas bajo una tolerancia numérica o científica."},
+    {"term": "Aproximación de bajo rango", "definition": "Representación que conserva un subconjunto de componentes singulares."},
+    {"term": "PCA", "definition": "Método lineal que ordena direcciones ortogonales por varianza en datos centrados."},
+    {"term": "Varianza explicada", "definition": "Proporción de suma de cuadrados asociada a componentes retenidos."}
   ],
-  "worked_example": {
-    "title": "Compresión de una matriz de imagen",
-    "scenario": "Una imagen simplificada tiene valores singulares 50, 10, 2 y 0.5. Se desea aproximarla usando solo dos componentes.",
-    "reasoning_steps": [
-      "Ordenar los valores singulares de mayor a menor, como ya están dados.",
-      "Conservar 50 y 10 junto con sus vectores singulares asociados.",
-      "Anular los valores 2 y 0.5 para construir una matriz de rango 2.",
-      "Calcular la energía cuadrática retenida: (50^2+10^2)/(50^2+10^2+2^2+0.5^2).",
-      "Obtener aproximadamente 2600/2604.25, es decir, más del 99.8 % de la suma de cuadrados.",
-      "Reconocer que alta energía retenida no garantiza conservar todas las características diagnósticas."
-    ],
-    "interpretation": "La aproximación de rango 2 reproduce gran parte de la variación numérica, pero necesita evaluación visual y clínica antes de usarse para diagnóstico.",
-    "limitations": [
-      "El ejemplo usa valores singulares sin mostrar los vectores asociados.",
-      "La energía cuadrática no mide relevancia diagnóstica.",
-      "La compresión puede borrar estructuras pequeñas de interés."
-    ]
-  },
-  "guided_activity": {
-    "title": "Espectro y reducción dimensional",
-    "instructions": [
-      "Calcula valores propios o singulares en matrices pequeñas.",
-      "Relaciona cada resultado con rango y estabilidad.",
-      "Distingue diagonalización de SVD.",
-      "Evalúa qué información se conserva o se pierde."
-    ],
-    "problems": [
-      "Obtén los valores propios de diag(3,0.5).",
-      "Explica la evolución de x_{k+1}=Ax_k para A=diag(1.2,0.8).",
-      "Determina si una matriz con un solo vector propio independiente puede diagonalizarse en dimensión dos.",
-      "Indica qué revela un valor singular cercano a cero.",
-      "Propón un criterio adicional a la varianza para evaluar una reducción dimensional clínica."
-    ],
-    "checking_criteria": [
-      "Las ecuaciones propias se comprueban sustituyendo.",
-      "La estabilidad se relaciona con módulo de valores propios.",
-      "La SVD se aplica correctamente a matrices rectangulares.",
-      "La interpretación menciona pérdida potencial de señal relevante."
-    ]
-  },
+  "worked_examples": [
+    {
+      "title": "Modos de un sistema compartimental discreto",
+      "scenario": "Un modelo educativo usa A=[[0.8,0.1],[0.2,0.9]] para actualizar cantidades relativas en dos compartimentos. Se desea estudiar sus modos y el comportamiento de A^k.",
+      "equations": [
+        {"label": "Modelo", "latex": "\\mathbf{x}_{k+1}=\\begin{pmatrix}0.8&0.1\\\\0.2&0.9\\end{pmatrix}\\mathbf{x}_k"},
+        {"label": "Polinomio característico", "latex": "\\det(A-\\lambda I)=\\lambda^2-1.7\\lambda+0.70"}
+      ],
+      "reasoning_steps": [
+        "Resolver λ²-1,7λ+0,70=0 y obtener λ1=1 y λ2=0,7.",
+        "Para λ1=1, resolver (A-I)v=0 y obtener una dirección proporcional a (1,2).",
+        "Para λ2=0,7, obtener una dirección proporcional a (1,-1).",
+        "Expresar el estado inicial como combinación de ambos modos.",
+        "Reconocer que el modo λ=1 persiste y el modo λ=0,7 decrece como 0,7^k.",
+        "Comprobar numéricamente varias iteraciones.",
+        "Limitar la interpretación: el modelo no incluye entradas, pérdidas no lineales ni parámetros variables."
+      ],
+      "interpretation": "El sistema converge hacia una proporción alineada con (1,2), mientras la diferencia entre compartimentos asociada al segundo modo desaparece gradualmente.",
+      "verification": [
+        "A(1,2)^T=(1,2)^T.",
+        "A(1,-1)^T=0,7(1,-1)^T.",
+        "La traza 1,7 y el determinante 0,70 coinciden con suma y producto de autovalores."
+      ],
+      "limitations": [
+        "Es un modelo discreto lineal de cantidades relativas.",
+        "No se ha demostrado que los coeficientes representen un sistema fisiológico real.",
+        "Un estado estacionario algebraico no equivale a homeostasis biológica completa."
+      ]
+    },
+    {
+      "title": "Compresión mediante SVD truncada",
+      "scenario": "Una matriz simplificada de imagen tiene valores singulares 50, 10, 2 y 0,5. Se desea conservar dos componentes y cuantificar el error algebraico.",
+      "equations": [
+        {"label": "Fracción de energía retenida", "latex": "\\eta=\\frac{50^2+10^2}{50^2+10^2+2^2+0.5^2}"},
+        {"label": "Error de Frobenius", "latex": "\\|A-A_2\\|_F=\\sqrt{2^2+0.5^2}"}
+      ],
+      "reasoning_steps": [
+        "Ordenar los valores singulares de mayor a menor.",
+        "Conservar σ1=50 y σ2=10 junto con sus vectores singulares.",
+        "Construir A2=σ1u1v1^T+σ2u2v2^T.",
+        "Calcular η=2600/2604,25≈0,99837, es decir 99,84 % de la suma de cuadrados.",
+        "Calcular el error de Frobenius sqrt(4,25)≈2,062.",
+        "Comparar reconstrucción visual y métricas específicas de la tarea.",
+        "Advertir que una estructura pequeña puede quedar en componentes de baja energía."
+      ],
+      "interpretation": "La aproximación de rango dos conserva casi toda la energía numérica, pero esto no demuestra que conserve todas las características relevantes.",
+      "verification": [
+        "La energía retenida y descartada suman la energía total.",
+        "El rango de A2 no supera dos.",
+        "El error coincide con los valores singulares descartados."
+      ],
+      "limitations": [
+        "No se muestran los vectores singulares ni la imagen reconstruida.",
+        "La energía de Frobenius no es una métrica clínica.",
+        "La selección de rango debe validarse para la tarea y población."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Laboratorio de espectro, SVD y perturbaciones",
+      "purpose": "Explorar cómo cambian modos, condición y aproximaciones de bajo rango cuando una matriz se perturba.",
+      "instructions": [
+        "Construye una matriz simétrica 3×3 y calcula sus pares propios.",
+        "Comprueba A v_i≈λ_i v_i y Q^TQ≈I.",
+        "Simula x_{k+1}=A x_k desde varios estados iniciales.",
+        "Calcula la SVD de una matriz rectangular de datos centrados.",
+        "Reconstruye con uno, dos y tres componentes y mide el error.",
+        "Añade ruido pequeño y compara autovectores, valores singulares y subespacios.",
+        "Discute qué resultados son estables y cuáles dependen del preprocesamiento."
+      ],
+      "starter_code": "import numpy as np\n\nA = np.array([[0.8, 0.1], [0.2, 0.9]])\nvalues, vectors = np.linalg.eig(A)\nprint(values)\nfor i in range(len(values)):\n    print(np.linalg.norm(A @ vectors[:, i] - values[i] * vectors[:, i]))\n\nX = np.array([[2., 1., 0.], [3., 1., 1.], [4., 2., 1.], [5., 3., 2.]])\nXc = X - X.mean(axis=0, keepdims=True)\nU, s, VT = np.linalg.svd(Xc, full_matrices=False)\nX2 = U[:, :2] @ np.diag(s[:2]) @ VT[:2, :]\nprint(s, np.linalg.norm(Xc - X2, ord='fro'))",
+      "problems": [
+        "Verifica la relación entre traza, determinante y autovalores en A.",
+        "Compara el radio espectral con la evolución de las iteraciones.",
+        "Calcula la condición de una matriz con un valor singular pequeño.",
+        "Evalúa el error de reconstrucción para distintos rangos.",
+        "Explica por qué el signo de un vector singular puede cambiar sin alterar la descomposición."
+      ],
+      "checking_criteria": [
+        "Las ecuaciones propias se verifican mediante residuos.",
+        "La matriz se centra antes de interpretar una PCA.",
+        "El rango elegido se justifica con varias métricas.",
+        "La perturbación se documenta y no se confunde con validación clínica.",
+        "La interpretación distingue componentes matemáticos de mecanismos biológicos."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Nivel 1 · Cálculo e interpretación propia",
+      "problems": [
+        {"prompt": "Encuentra los autovalores de diag(3,0,5).", "solution": "Al ser diagonal, los autovalores son 3 y 0,5."},
+        {"prompt": "Comprueba que (1,1) es autovector de [[2,1],[1,2]].", "solution": "A(1,1)^T=(3,3)^T=3(1,1)^T, por tanto λ=3."},
+        {"prompt": "Encuentra el otro autovector de la matriz anterior.", "solution": "(1,-1) con λ=1."},
+        {"prompt": "¿Puede el vector cero ser autovector?", "solution": "No; no define dirección y satisfaría la ecuación para cualquier λ."}
+      ]
+    },
+    {
+      "title": "Nivel 2 · Diagonalización y dinámica",
+      "problems": [
+        {"prompt": "Una matriz 2×2 tiene dos autovalores distintos. ¿Es diagonalizable?", "solution": "Sí, porque los autovectores asociados a autovalores distintos son independientes."},
+        {"prompt": "Analiza x_{k+1}=diag(1,2,0,6)x_k.", "solution": "La primera componente crece como 1,2^k y la segunda decrece como 0,6^k; salvo ausencia del primer modo, el estado no converge a cero."},
+        {"prompt": "Explica por qué [[1,1],[0,1]] no es diagonalizable.", "solution": "Tiene λ=1 con multiplicidad algebraica 2 pero un espacio propio de dimensión 1."},
+        {"prompt": "¿Qué garantiza el teorema espectral para una matriz simétrica real?", "solution": "Autovalores reales y una base ortonormal de autovectores."}
+      ]
+    },
+    {
+      "title": "Nivel 3 · SVD, reducción y validación",
+      "problems": [
+        {"prompt": "Una matriz tiene valores singulares 8,2,0. ¿Cuál es su rango?", "solution": "Rango 2."},
+        {"prompt": "Calcula κ2 si σmax=100 y σmin=0,01.", "solution": "κ2=10000, lo que indica fuerte potencial de amplificación relativa."},
+        {"prompt": "Explica por qué truncar valores singulares pequeños puede estabilizar una inversión.", "solution": "Evita dividir por números pequeños que amplifican ruido, a cambio de introducir sesgo y perder direcciones."},
+        {"prompt": "Un PCA conserva 95 % de varianza. Enumera tres comprobaciones adicionales antes de usarlo.", "solution": "Evaluar estabilidad por remuestreo, preservación de subgrupos o señales relevantes, fuga de información, batch effects, desempeño posterior y representatividad."}
+      ]
+    }
+  ],
   "common_errors": [
-    {"error": "Aceptar el vector cero como vector propio.", "correction": "Exigir que el vector propio sea no nulo."},
-    {"error": "Creer que toda matriz es diagonalizable.", "correction": "Comprobar si existen suficientes vectores propios independientes."},
-    {"error": "Confundir valores propios con valores singulares.", "correction": "Recordar que los singulares son no negativos y existen para matrices rectangulares."},
-    {"error": "Interpretar el componente principal como mecanismo biológico.", "correction": "Separar dirección de variación matemática de explicación causal."},
-    {"error": "Invertir valores singulares muy pequeños sin control.", "correction": "Evaluar regularización y sensibilidad al ruido."}
+    {"error": "Aceptar el vector cero como autovector.", "correction": "Exigir explícitamente v no nulo."},
+    {"error": "Confundir autovalores con entradas diagonales en cualquier matriz.", "correction": "La regla directa solo vale para matrices triangulares."},
+    {"error": "Suponer que toda matriz es diagonalizable.", "correction": "Comprobar que existen suficientes autovectores independientes."},
+    {"error": "Usar diagonalización mal condicionada como método numérico universal.", "correction": "Preferir Schur, SVD u otros algoritmos estables según el problema."},
+    {"error": "Confundir autovalores con valores singulares.", "correction": "Los singulares son no negativos, existen para matrices rectangulares y describen ganancia ortogonal."},
+    {"error": "Invertir valores singulares diminutos sin control.", "correction": "Analizar ruido, tolerancia y regularización."},
+    {"error": "Interpretar una componente principal como mecanismo causal.", "correction": "Tratarla como dirección de varianza y buscar validación biológica independiente."},
+    {"error": "Elegir rango solo por varianza acumulada.", "correction": "Evaluar tarea, subgrupos, estabilidad, reconstrucción y señales débiles relevantes."}
   ],
   "self_assessment": [
-    {"question": "¿Qué ecuación define un vector propio?", "answer": "Av=λv con v distinto de cero."},
-    {"question": "¿Qué ventaja aporta la diagonalización?", "answer": "Permite representar la transformación como escalas independientes en una base propia."},
-    {"question": "¿Por qué una matriz puede no ser diagonalizable?", "answer": "Porque puede no tener suficientes vectores propios linealmente independientes."},
-    {"question": "¿Qué matrices admite la SVD?", "answer": "Cualquier matriz real o compleja, incluso rectangular o singular."},
-    {"question": "¿Qué indica un valor singular pequeño?", "answer": "Una dirección con poca amplificación y posible sensibilidad a ruido al invertir."},
-    {"question": "¿Qué riesgo tiene una aproximación de bajo rango?", "answer": "Puede eliminar componentes débiles que sean científicamente o clínicamente importantes."}
+    {"question": "¿Qué ecuación define un autovector?", "answer": "A v=λv con v distinto de cero."},
+    {"question": "¿Cómo se encuentran autovalores de una matriz pequeña?", "answer": "Resolviendo det(A-λI)=0."},
+    {"question": "¿Qué diferencia hay entre multiplicidad algebraica y geométrica?", "answer": "La algebraica cuenta repeticiones como raíz; la geométrica es la dimensión del espacio propio."},
+    {"question": "¿Cuándo es diagonalizable una matriz n×n?", "answer": "Cuando posee n autovectores linealmente independientes."},
+    {"question": "¿Qué indica |λ|<1 en un modo discreto?", "answer": "Que su amplitud decrece bajo iteraciones del modelo lineal."},
+    {"question": "¿Qué ventaja tiene la SVD frente a la diagonalización?", "answer": "Existe para cualquier matriz, incluso rectangular o singular, y usa bases ortonormales."},
+    {"question": "¿Qué revela un valor singular cero?", "answer": "Una dirección del núcleo y pérdida exacta de información."},
+    {"question": "¿Cómo se relaciona la condición con valores singulares?", "answer": "En norma dos es la razón entre el mayor y el menor valor singular relevante."},
+    {"question": "¿Qué optimiza una SVD truncada?", "answer": "El error de aproximación de rango fijo en normas espectral y de Frobenius."},
+    {"question": "¿Por qué PCA no demuestra causalidad?", "answer": "Porque identifica direcciones de varianza en una representación, sin establecer mecanismos ni efectos de intervención."
+    }
   ],
   "biomedical_connections": [
-    "Análisis de modos en sistemas fisiológicos linealizados.",
-    "Compresión y reducción de ruido en imágenes médicas.",
-    "Solución de problemas inversos y mínimos cuadrados.",
-    "Reducción dimensional de matrices de expresión, señales y características."
+    "Análisis de modos en sistemas fisiológicos linealizados y modelos compartimentales.",
+    "Compresión, denoising y representación de bajo rango en imágenes.",
+    "PCA de matrices de expresión, señales y características biomédicas.",
+    "Diagnóstico de condición e identificabilidad en problemas inversos.",
+    "Preparación geométrica para regularización y validación de modelos."
   ],
   "sources": [
-    {"title": "Linear Algebra", "organization": "MIT OpenCourseWare", "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/", "type": "curso abierto"},
-    {"title": "Introduction to Applied Linear Algebra", "organization": "Stanford University", "url": "https://web.stanford.edu/~boyd/vmls/", "type": "libro abierto"},
-    {"title": "The Singular Value Decomposition", "organization": "MIT", "url": "https://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm", "type": "nota académica"}
+    {"title": "Linear Algebra", "organization": "MIT OpenCourseWare", "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/", "type": "curso abierto", "use": "Autovalores, diagonalización, matrices simétricas y SVD."},
+    {"title": "Interactive Linear Algebra — Eigenvalues", "organization": "Georgia Tech", "url": "https://textbooks.math.gatech.edu/ila/eigenvectors.html", "type": "libro abierto", "use": "Interpretación geométrica y cálculo de pares propios."},
+    {"title": "Introduction to Applied Linear Algebra", "organization": "Stanford University", "url": "https://web.stanford.edu/~boyd/vmls/", "type": "libro abierto", "use": "Dinámica, SVD y aproximaciones aplicadas."},
+    {"title": "Linear Algebra Background", "organization": "Springer", "url": "https://doi.org/10.1007/978-3-031-36566-9_7", "type": "capítulo universitario", "use": "Autovalores y modelado en biología computacional."},
+    {"title": "NumPy Linear Algebra", "organization": "NumPy", "url": "https://numpy.org/doc/stable/reference/routines.linalg.html", "type": "documentación oficial", "use": "eig, eigh, svd, matrix_rank y cond."},
+    {"title": "SciPy Linear Algebra", "organization": "SciPy", "url": "https://docs.scipy.org/doc/scipy/reference/linalg.html", "type": "documentación oficial", "use": "Descomposiciones espectrales y métodos numéricos."}
   ],
-  "editorial_notice": "Material educativo para aprendizaje autónomo. Las interpretaciones de componentes, modos o compresión requieren validación específica del problema biomédico."
+  "editorial_notice": "Curso educativo abierto. Los modos, componentes y aproximaciones de bajo rango requieren validación específica antes de interpretarse biológica o clínicamente."
 }

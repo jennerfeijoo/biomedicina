@@ -1,143 +1,374 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "subject_id": "algebra",
   "area_id": "ciencias-basicas",
   "unit": 6,
-  "slug": "algebra-aplicada-validacion",
-  "title": "Álgebra aplicada y validación",
-  "status": "complete",
-  "purpose": "Integrar modelos lineales, análisis dimensional, estabilidad numérica, estimación de parámetros y validación para construir soluciones algebraicas biomédicas trazables y reproducibles.",
+  "slug": "modelos-lineales-minimos-cuadrados-validacion",
+  "title": "Mínimos cuadrados, modelos lineales y validación",
+  "status": "review",
+  "estimated_hours": 29,
+  "weeks": [13, 14, 15, 16],
+  "difficulty": "Intermedio–integrador",
+  "prerequisite_knowledge": [
+    "Sistemas lineales, rango, residuos y sensibilidad.",
+    "Bases ortonormales, proyecciones y producto interno.",
+    "Matrices, transformaciones, condición y SVD.",
+    "Funciones lineales, unidades y flujo de modelado."
+  ],
+  "progression": {
+    "previous": "La estructura espectral, la SVD y la interpretación de direcciones informativas o inestables.",
+    "next": "Cálculo, bioestadística, métodos numéricos, machine learning y modelado biomédico."
+  },
+  "purpose": "Integrar todo el curso mediante problemas sobredeterminados, proyección ortogonal, mínimos cuadrados, regresión matricial, métodos QR y SVD, análisis de residuos, regularización introductoria, validación, reproducibilidad y comunicación responsable de modelos biomédicos.",
   "learning_objectives": [
-    "Traducir un problema biomédico a variables, ecuaciones, supuestos y restricciones explícitas.",
-    "Comprobar consistencia dimensional y plausibilidad de resultados.",
-    "Resolver modelos lineales y evaluar sensibilidad ante perturbaciones.",
-    "Distinguir ajuste, validación, predicción e interpretación causal.",
-    "Documentar un flujo algebraico reproducible con controles y limitaciones."
+    "Formular problemas de ajuste como sistemas sobredeterminados Aβ≈y.",
+    "Derivar geométricamente las ecuaciones normales a partir de la ortogonalidad del residuo.",
+    "Resolver mínimos cuadrados mediante ecuaciones normales, QR o SVD y comparar sus limitaciones.",
+    "Interpretar coeficientes, predicciones, residuos y unidades en modelos lineales.",
+    "Distinguir interpolación, ajuste, predicción, calibración y explicación causal.",
+    "Analizar rango, condición, colinealidad, escalado y regularización introductoria.",
+    "Diseñar un flujo reproducible de verificación y validación con datos independientes.",
+    "Comunicar resultados sin convertir una métrica o un buen ajuste en utilidad biomédica automática."
   ],
   "theory_sections": [
     {
-      "heading": "Del problema a un modelo algebraico",
+      "heading": "1. De sistemas incompatibles a problemas de aproximación",
       "paragraphs": [
-        "Modelar consiste en seleccionar variables y relaciones suficientes para responder una pregunta definida. El proceso comienza antes de cualquier cálculo: debe declararse qué sistema se estudia, qué entradas y salidas se observan, qué unidades se usan y qué supuestos simplifican la realidad. Un modelo útil no intenta copiar todos los detalles, sino conservar los aspectos relevantes para la decisión o explicación planteada.",
-        "Los modelos lineales expresan una salida como combinación de entradas y parámetros. Pueden representar balances de masa, mezclas, calibraciones o aproximaciones locales. La linealidad puede ser física, aproximada o resultado de una transformación. Debe comprobarse en el intervalo de interés; extrapolar más allá de los datos puede invalidar la relación aunque el ajuste sea excelente.",
-        "Las restricciones importan. Concentraciones y masas no pueden ser negativas; proporciones suelen estar entre cero y uno; algunos parámetros comparten unidades o dependen de otros. Incorporar restricciones evita soluciones algebraicamente posibles pero físicamente absurdas. También ayuda a detectar que una pregunta no está identificada con los datos disponibles."
+        "Cuando existen más observaciones que parámetros, el sistema Aβ=y suele carecer de solución exacta. Las mediciones contienen ruido, el modelo simplifica el fenómeno y los puntos no quedan exactamente en el espacio columna de A. En vez de forzar una igualdad imposible, se define un criterio de aproximación. El criterio más común minimiza la norma euclídea del residuo r=y-Aβ.",
+        "El problema de mínimos cuadrados busca β̂ que minimice ||Aβ-y||². Geométricamente, Aβ recorre el espacio columna de A y la mejor aproximación es la proyección ortogonal de y sobre ese subespacio. El residuo óptimo es perpendicular a cada columna de A. Esta interpretación conecta sistemas, proyecciones y ajuste sin depender de una fórmula memorizada.",
+        "La elección de la norma importa. Minimizar cuadrados penaliza más los residuos grandes y conduce a una solución algebraicamente conveniente. También puede ser sensible a valores extremos. Otras pérdidas, como valor absoluto o funciones robustas, responden a criterios diferentes. El método debe elegirse según el proceso de error y la finalidad, no solo porque una biblioteca lo ofrece.",
+        "Si A tiene columnas independientes, la solución de mínimos cuadrados es única. Si existe colinealidad exacta, múltiples vectores de coeficientes producen la misma predicción. La pseudoinversa selecciona la solución de norma mínima, pero esta convención no crea identificabilidad científica. Debe informarse qué combinaciones de parámetros pueden estimarse."
+      ],
+      "equations": [
+        {"label": "Problema de mínimos cuadrados", "latex": "\\widehat{\\boldsymbol{\\beta}}=\\arg\\min_{\\boldsymbol{\\beta}}\\|\\mathbf{y}-A\\boldsymbol{\\beta}\\|_2^2"},
+        {"label": "Residuo", "latex": "\\mathbf{r}=\\mathbf{y}-A\\widehat{\\boldsymbol{\\beta}}"},
+        {"label": "Ortogonalidad", "latex": "A^T\\mathbf{r}=0"}
       ],
       "key_points": [
-        "El modelo empieza con una pregunta y un sistema definidos.",
-        "Las variables deben tener significado, unidades y dominio.",
-        "La linealidad es un supuesto que necesita justificación.",
-        "Las restricciones eliminan soluciones físicamente imposibles."
+        "Un sistema sobredeterminado se trata como aproximación, no como igualdad forzada.",
+        "Mínimos cuadrados es una proyección sobre el espacio columna.",
+        "La función de pérdida define qué significa mejor ajuste.",
+        "La pseudoinversa no resuelve falta de identificabilidad científica."
       ]
     },
     {
-      "heading": "Verificación dimensional, residual y sensibilidad",
+      "heading": "2. Ecuaciones normales, QR y SVD",
       "paragraphs": [
-        "El análisis dimensional comprueba que ambos lados de una ecuación tengan unidades compatibles. No demuestra que el modelo sea correcto, pero detecta numerosos errores de factores, conversiones y fórmulas. Las constantes con unidades deben declararse; una expresión aparentemente adimensional puede ocultar escalas de referencia. En biomedicina, confundir miligramos con microgramos o minutos con segundos puede cambiar un resultado por órdenes de magnitud.",
-        "Después de resolver, debe reconstruirse la observación y calcularse el residual: diferencia entre dato observado y valor predicho. Un residual pequeño es necesario para un buen ajuste, pero no garantiza validez. Los residuos deben examinarse por patrón, magnitud y relación con variables. Si muestran tendencia sistemática, el modelo puede omitir no linealidad, sesgo del sensor o heterogeneidad.",
-        "La sensibilidad mide cómo cambia la solución cuando cambian datos o parámetros. Puede estudiarse perturbando entradas dentro de su incertidumbre y recalculando. Un modelo que cambia radicalmente ante variaciones pequeñas es frágil, incluso si produce una solución exacta con los valores centrales. El condicionamiento matricial formaliza parte de esta idea en sistemas lineales."
+        "La condición A^T(y-Aβ̂)=0 produce las ecuaciones normales A^TAβ̂=A^Ty. Si A tiene rango columna completo, A^TA es invertible y β̂=(A^TA)^{-1}A^Ty. Esta expresión es útil para derivar y comprender la geometría, pero formar A^TA eleva aproximadamente al cuadrado el número de condición y puede empeorar la estabilidad numérica.",
+        "La factorización QR escribe A=QR, donde Q tiene columnas ortonormales y R es triangular superior. El problema se reduce a Rβ̂=Q^Ty. QR evita formar A^TA y suele ser una opción estable para mínimos cuadrados de rango completo. La elección entre Householder, Givens u otros algoritmos depende de estructura y tamaño; una biblioteca fiable es preferible a una implementación improvisada.",
+        "La SVD A=UΣV^T proporciona una solución mediante la pseudoinversa. Es especialmente informativa cuando el rango es deficiente o casi deficiente. Los valores singulares muestran qué combinaciones están bien determinadas. Truncar valores pequeños o introducir regularización reduce amplificación de ruido, pero añade sesgo. La tolerancia no debe ocultarse.",
+        "No existe un único algoritmo óptimo para toda situación. Las ecuaciones normales pueden ser adecuadas en ejemplos didácticos bien condicionados; QR es una opción general robusta; SVD ofrece diagnóstico y manejo de rango a mayor coste. En matrices dispersas o enormes se usan métodos iterativos. La selección debe documentar precisión, memoria, tiempo y estructura."
+      ],
+      "equations": [
+        {"label": "Ecuaciones normales", "latex": "A^TA\\widehat{\\boldsymbol{\\beta}}=A^T\\mathbf{y}"},
+        {"label": "Solución mediante QR", "latex": "A=QR\\quad\\Longrightarrow\\quad R\\widehat{\\boldsymbol{\\beta}}=Q^T\\mathbf{y}"},
+        {"label": "Solución mediante pseudoinversa", "latex": "\\widehat{\\boldsymbol{\\beta}}=A^+\\mathbf{y}=V\\Sigma^+U^T\\mathbf{y}"}
       ],
       "key_points": [
-        "Las ecuaciones deben ser dimensionalmente homogéneas.",
-        "Los residuos comparan observación y predicción.",
-        "Un buen ajuste no garantiza un modelo válido.",
-        "La sensibilidad revela fragilidad frente a incertidumbre."
+        "Las ecuaciones normales derivan de la ortogonalidad del residuo.",
+        "Formar A^TA puede empeorar el condicionamiento.",
+        "QR resuelve el ajuste sin invertir explícitamente A^TA.",
+        "SVD diagnostica rango, sensibilidad y soluciones de norma mínima."
       ]
     },
     {
-      "heading": "Validación, reproducibilidad y límites",
+      "heading": "3. Regresión lineal matricial e interpretación de coeficientes",
       "paragraphs": [
-        "Verificar significa comprobar que los cálculos implementan correctamente el modelo propuesto. Validar significa evaluar si el modelo representa suficientemente el fenómeno para el uso previsto. Son tareas diferentes. Un programa puede resolver sin errores una ecuación inadecuada; también puede existir un modelo razonable implementado con errores.",
-        "La validación puede incluir comparación con datos independientes, controles experimentales, simulaciones, análisis de residuos y revisión de supuestos. Dividir datos en desarrollo y evaluación reduce optimismo, aunque no elimina sesgos de selección. En aplicaciones biomédicas, la validez también depende de población, dispositivo, protocolo y contexto operativo.",
-        "La reproducibilidad exige registrar datos de entrada, transformaciones, ecuaciones, versiones de software, criterios de exclusión y resultados intermedios. Deben comunicarse incertidumbre y límites. Un modelo algebraico puede apoyar una decisión, pero no transforma asociación en causalidad ni reemplaza evidencia clínica. La conclusión debe ajustarse al alcance real."
+        "La regresión lineal modela la media condicional de una respuesta como combinación de predictores. En notación matricial, y=Xβ+ε. Una columna de unos representa el intercepto. Cada fila corresponde a una observación y cada columna a una variable o término construido. Interacciones, polinomios o variables indicadoras siguen siendo lineales en los coeficientes aunque la relación con una variable original no sea una recta simple.",
+        "Un coeficiente representa el cambio promedio esperado en la respuesta por una unidad del predictor, manteniendo constantes los demás términos del modelo. Esta interpretación es condicional a la especificación, las unidades, el rango y la población. Con predictores correlacionados, los coeficientes pueden ser inestables y representar contrastes poco frecuentes en los datos.",
+        "El intercepto es la predicción cuando todos los predictores valen cero. Puede carecer de significado si esa combinación no existe o queda fuera del rango. Centrar variables puede producir un intercepto más interpretable y reducir correlación entre algunos términos. Estandarizar cambia las unidades de los coeficientes y facilita comparaciones numéricas, pero no convierte efectos en causalidad.",
+        "Los valores ajustados son Xβ̂ y los residuos y-Xβ̂. Un gráfico de residuos puede revelar curvatura, heterogeneidad de varianza, valores extremos o estructura temporal. R² resume reducción de suma de cuadrados respecto a un modelo con intercepto, pero no mide calibración, causalidad ni utilidad individual. Un R² alto puede coexistir con sesgo sistemático.",
+        "Predicción y explicación requieren objetivos distintos. Para predicción se prioriza desempeño en datos nuevos y calibración; para interpretación causal se necesitan diseño y supuestos adicionales. Una asociación ajustada puede persistir por confusión residual, selección, error de medición o mala especificación. La álgebra organiza el ajuste, pero no resuelve por sí sola la inferencia."
+      ],
+      "equations": [
+        {"label": "Modelo lineal", "latex": "\\mathbf{y}=X\\boldsymbol{\\beta}+\\boldsymbol{\\varepsilon}"},
+        {"label": "Predicción", "latex": "\\widehat{\\mathbf{y}}=X\\widehat{\\boldsymbol{\\beta}}"},
+        {"label": "Coeficiente de determinación", "latex": "R^2=1-\\frac{\\sum_i(y_i-\\widehat{y}_i)^2}{\\sum_i(y_i-\\overline{y})^2}"}
       ],
       "key_points": [
-        "Verificación evalúa implementación; validación evalúa adecuación al uso.",
-        "Los datos independientes reducen sobreajuste y optimismo.",
-        "La reproducibilidad requiere trazabilidad completa.",
-        "Las conclusiones no deben exceder el diseño ni los supuestos."
+        "El modelo es lineal en coeficientes, no necesariamente en cada variable original.",
+        "Los coeficientes son condicionales a variables, escala y población.",
+        "Los residuos son datos para diagnosticar el modelo.",
+        "R² y significación estadística no equivalen a utilidad biomédica."
+      ]
+    },
+    {
+      "heading": "4. Colinealidad, escalado y regularización introductoria",
+      "paragraphs": [
+        "La colinealidad aparece cuando una columna de X puede aproximarse mediante otras. El modelo puede predecir bien dentro del conjunto observado y, al mismo tiempo, producir coeficientes grandes e inestables. Los valores singulares y el número de condición permiten detectar direcciones débilmente determinadas. Examinar solo correlaciones por pares puede omitir dependencias multivariadas.",
+        "El escalado modifica el condicionamiento y la interpretación. Medir una variable en gramos o microgramos cambia la magnitud de su coeficiente sin cambiar las predicciones si se transforma de forma coherente. Estandarizar puede mejorar cálculos y comparabilidad, pero los resultados deben traducirse a unidades comprensibles. Variables categóricas e interceptos requieren un tratamiento explícito.",
+        "La regularización ridge añade λ||β||² al criterio y produce (X^TX+λI)β̂=X^Ty cuando se aplica a los coeficientes penalizados. Eleva las direcciones pequeñas y estabiliza la solución, a cambio de sesgo. El intercepto suele excluirse de la penalización después de centrar. El parámetro λ debe seleccionarse mediante un procedimiento definido, como validación cruzada dentro de los datos de desarrollo.",
+        "La regularización no corrige variables mal medidas, sesgo de selección, fuga de datos o ausencia de validación externa. Tampoco convierte automáticamente un modelo en interpretable. Es una decisión sobre el compromiso entre ajuste y complejidad. El flujo debe registrar preprocesamiento, selección de λ y cualquier uso de datos de evaluación.",
+        "En problemas biomédicos, el número de variables puede superar al de observaciones. Entonces existen infinitas soluciones no regularizadas y riesgo de sobreajuste. La SVD, ridge y métodos de selección pueden ayudar, pero el desempeño debe evaluarse por remuestreo adecuado, agrupación por paciente o centro y validación independiente."
+      ],
+      "equations": [
+        {"label": "Ridge", "latex": "\\widehat{\\boldsymbol{\\beta}}_{\\lambda}=\\arg\\min_{\\boldsymbol{\\beta}}\\left(\\|\\mathbf{y}-X\\boldsymbol{\\beta}\\|_2^2+\\lambda\\|\\boldsymbol{\\beta}\\|_2^2\\right)"},
+        {"label": "Ecuación ridge", "latex": "(X^TX+\\lambda I)\\widehat{\\boldsymbol{\\beta}}_{\\lambda}=X^T\\mathbf{y}"}
+      ],
+      "key_points": [
+        "Colinealidad afecta estabilidad más que ajuste aparente.",
+        "El escalado cambia coeficientes y condición, pero no debe ocultar unidades.",
+        "Ridge estabiliza a cambio de introducir sesgo.",
+        "La regularización forma parte de un flujo de validación, no lo reemplaza."
+      ]
+    },
+    {
+      "heading": "5. Verificación, validación y reproducibilidad",
+      "paragraphs": [
+        "Verificación responde si las ecuaciones y el código implementan el método previsto. Incluye pruebas con casos conocidos, comprobación dimensional, comparación entre solución manual y computacional, control de formas matriciales y reproducción de predicciones. Un software sin errores puede implementar un modelo equivocado; por ello, verificación y formulación deben revisarse por separado.",
+        "Validación responde si el modelo es adecuado para un uso específico. La validación interna estima desempeño dentro de la población y proceso de desarrollo mediante particiones o remuestreo. La validación externa evalúa datos de otra cohorte, centro, período o dispositivo. Una división aleatoria puede ser inadecuada cuando existen mediciones repetidas, familias, series temporales o centros que comparten información.",
+        "El conjunto de evaluación no debe influir en selección de variables, escalado, imputación, ajuste de hiperparámetros o elección del modelo. Hacerlo produce fuga de información y una estimación optimista. Todo preprocesamiento aprendido se ajusta en datos de entrenamiento y se aplica después a validación. En proyectos pequeños, pipelines y validación cruzada anidada reducen errores de procedimiento.",
+        "La reproducibilidad requiere datos o generadores de datos, código, entorno, versiones, semillas, parámetros, decisiones de exclusión y salidas esperadas. Un cuaderno debe ejecutarse desde un entorno limpio y en orden. Los resultados intermedios, unidades y metadatos se conservan. La trazabilidad permite auditar por qué una cifra cambió.",
+        "La comunicación final separa desempeño algebraico, incertidumbre, generalización y utilidad. En un modelo clínico también serían necesarias calibración, discriminación, umbrales, subgrupos, validación externa, impacto y seguridad. En este curso no se valida una herramienta clínica; se aprende a no presentar un ajuste matemático como si ya lo fuera."
+      ],
+      "equations": [
+        {"label": "Error relativo de reconstrucción", "latex": "e_{rel}=\\frac{\\|\\mathbf{y}-X\\widehat{\\boldsymbol{\\beta}}\\|_2}{\\|\\mathbf{y}\\|_2}"},
+        {"label": "Separación de datos", "latex": "\\mathcal{D}=\\mathcal{D}_{desarrollo}\\cup\\mathcal{D}_{evaluaci\\acute{o}n},\\qquad\\mathcal{D}_{desarrollo}\\cap\\mathcal{D}_{evaluaci\\acute{o}n}=\\varnothing"}
+      ],
+      "key_points": [
+        "Verificar implementación y validar uso son tareas distintas.",
+        "La partición debe respetar la estructura de dependencia de los datos.",
+        "El preprocesamiento aprendido pertenece al conjunto de desarrollo.",
+        "La reproducibilidad necesita trazabilidad de datos, código y decisiones."
+      ]
+    },
+    {
+      "heading": "6. Integración: del modelo a una conclusión responsable",
+      "paragraphs": [
+        "El flujo completo comienza con una pregunta operacional. Se define qué se pretende estimar, en qué unidades, para qué población o dispositivo y bajo qué rango. Después se construye la matriz de diseño o sensibilidad y se evalúa rango. Si existen direcciones no identificables, se reformula la pregunta, se añaden mediciones informativas o se limita la conclusión.",
+        "La resolución incluye selección del algoritmo y análisis de estabilidad. Para un problema bien condicionado puede bastar QR. Si el rango es incierto, SVD aporta diagnóstico. Si el problema es inestable y existe una justificación, se introduce regularización y se selecciona su intensidad sin usar la evaluación final. Cada decisión se vincula a un riesgo que intenta controlar.",
+        "Los resultados se examinan mediante residuos, predicciones, perturbaciones y casos límite. Una calibración debe revisarse por rango y deriva. Un sistema de desacoplamiento se prueba con señales conocidas y combinaciones no usadas para estimar A. Una transformación de coordenadas se verifica con puntos de referencia y conservación geométrica esperada.",
+        "La conclusión debe incluir qué datos respaldan el resultado, qué supuestos lo sostienen, qué incertidumbres permanecen y dónde no debe usarse. Una frase responsable puede afirmar que el modelo reconstruyó señales simuladas con error bajo dentro del rango de calibración. No debe afirmar que el dispositivo diagnostica una condición sin evidencia clínica.",
+        "El proyecto final del curso reproduce esta arquitectura. La calidad no se mide por la complejidad del algoritmo, sino por la coherencia entre pregunta, datos, método, validación y conclusión. Un modelo simple bien validado puede ser más útil que uno sofisticado opaco y frágil."
+      ],
+      "equations": [
+        {"label": "Flujo de trabajo", "latex": "\\text{pregunta}\\to\\text{datos}\\to\\text{modelo}\\to\\text{soluci\\acute{o}n}\\to\\text{verificaci\\acute{o}n}\\to\\text{validaci\\acute{o}n}\\to\\text{conclusi\\acute{o}n}"}
+      ],
+      "key_points": [
+        "La identificabilidad se evalúa antes de interpretar coeficientes.",
+        "Cada algoritmo responde a una estructura y un riesgo concretos.",
+        "Las pruebas deben corresponder al uso previsto.",
+        "La conclusión se limita por datos, supuestos y validación."
       ]
     }
   ],
   "glossary": [
-    {"term": "Modelo", "definition": "Representación simplificada de un sistema para responder una pregunta."},
-    {"term": "Parámetro", "definition": "Cantidad que caracteriza una relación dentro del modelo."},
-    {"term": "Restricción", "definition": "Condición que limita valores admisibles de variables o parámetros."},
-    {"term": "Homogeneidad dimensional", "definition": "Compatibilidad de unidades entre términos de una ecuación."},
-    {"term": "Residual", "definition": "Diferencia entre una observación y la predicción del modelo."},
-    {"term": "Sensibilidad", "definition": "Cambio de la salida ante perturbaciones de entradas o parámetros."},
-    {"term": "Condicionamiento", "definition": "Grado de amplificación de errores en la solución."},
-    {"term": "Verificación", "definition": "Comprobación de que la implementación resuelve el modelo previsto."},
-    {"term": "Validación", "definition": "Evaluación de si el modelo es adecuado para un uso definido."},
-    {"term": "Identificabilidad", "definition": "Posibilidad de determinar parámetros únicos con los datos disponibles."},
-    {"term": "Reproducibilidad", "definition": "Capacidad de repetir el análisis con métodos y datos documentados."}
+    {"term": "Mínimos cuadrados", "definition": "Criterio que minimiza la suma de residuos al cuadrado."},
+    {"term": "Matriz de diseño", "definition": "Matriz cuyas columnas representan predictores o términos del modelo."},
+    {"term": "Valor ajustado", "definition": "Salida producida por el modelo con parámetros estimados."},
+    {"term": "Residuo", "definition": "Observación menos valor ajustado."},
+    {"term": "Ecuaciones normales", "definition": "Sistema X^TXβ=X^Ty derivado de la ortogonalidad del residuo."},
+    {"term": "Factorización QR", "definition": "Descomposición de una matriz en una base ortonormal Q y una matriz triangular R."},
+    {"term": "Pseudoinversa", "definition": "Operador basado en SVD que produce soluciones de mínimos cuadrados o norma mínima."},
+    {"term": "Regresión lineal", "definition": "Modelo de una respuesta media como combinación lineal de coeficientes."},
+    {"term": "Intercepto", "definition": "Predicción cuando los predictores numéricos valen cero y las categorías están en referencia."},
+    {"term": "Colinealidad", "definition": "Dependencia exacta o aproximada entre columnas de una matriz de diseño."},
+    {"term": "Regularización", "definition": "Modificación del criterio para controlar inestabilidad o complejidad."},
+    {"term": "Ridge", "definition": "Regularización cuadrática de los coeficientes."},
+    {"term": "Sobreajuste", "definition": "Adaptación excesiva a particularidades de los datos de desarrollo que no generalizan."},
+    {"term": "Fuga de información", "definition": "Uso indebido de información de evaluación durante el desarrollo del modelo."},
+    {"term": "Verificación", "definition": "Comprobación de que el método fue implementado correctamente."},
+    {"term": "Validación interna", "definition": "Evaluación del desempeño mediante datos o remuestreo del proceso de desarrollo."},
+    {"term": "Validación externa", "definition": "Evaluación en datos independientes de otra población, centro, tiempo o dispositivo."},
+    {"term": "Reproducibilidad", "definition": "Capacidad de repetir el análisis con datos, código, entorno y decisiones documentadas."},
+    {"term": "Calibración", "definition": "Concordancia entre predicciones y resultados observados o relación entre señal y referencia."},
+    {"term": "Generalización", "definition": "Capacidad de mantener desempeño en datos nuevos pertinentes."
+    }
   ],
-  "worked_example": {
-    "title": "Modelo lineal de calibración de glucosa",
-    "scenario": "Un sensor educativo sigue y=a+bx. Con dos soluciones patrón, x=5 mmol/L produce y=120 unidades y x=10 mmol/L produce y=220 unidades. Se estima la concentración de una muestra con y=170.",
-    "reasoning_steps": [
-      "Plantear 120=a+5b y 220=a+10b.",
-      "Restar ecuaciones: 100=5b, por lo que b=20 unidades de señal por mmol/L.",
-      "Sustituir para obtener a=20 unidades.",
-      "Resolver 170=20+20x, con x=7.5 mmol/L.",
-      "Reconstruir la señal: 20+20·7.5=170.",
-      "Comprobar que la muestra está dentro del intervalo de calibración y no requiere extrapolación."
-    ],
-    "interpretation": "El modelo estima 7.5 mmol/L bajo el supuesto de respuesta lineal entre 5 y 10 mmol/L.",
-    "limitations": [
-      "Dos patrones no permiten evaluar curvatura ni variabilidad.",
-      "No se ha incorporado incertidumbre de las soluciones ni del sensor.",
-      "El resultado educativo no debe usarse para decisiones clínicas."
-    ]
-  },
-  "guided_activity": {
-    "title": "Auditoría de un modelo algebraico",
-    "instructions": [
-      "Define pregunta, variables, parámetros, unidades y restricciones.",
-      "Resuelve mostrando ecuaciones y operaciones.",
-      "Comprueba dimensiones, residuos y plausibilidad.",
-      "Perturba entradas y documenta sensibilidad.",
-      "Redacta una conclusión limitada al uso previsto."
-    ],
-    "problems": [
-      "Construye un modelo de mezcla para obtener 100 mL al 20 % usando soluciones al 10 % y 30 %.",
-      "Identifica las unidades de cada término en una ecuación de velocidad distancia/tiempo.",
-      "Analiza cómo cambia una estimación si una medición aumenta 1 %.",
-      "Propón una prueba de validación independiente para una calibración.",
-      "Distingue qué parte del flujo corresponde a verificación y cuál a validación."
-    ],
-    "checking_criteria": [
-      "Las variables y unidades están declaradas.",
-      "Las restricciones excluyen soluciones imposibles.",
-      "Los resultados se comprueban por sustitución.",
-      "La sensibilidad se cuantifica y no solo se menciona.",
-      "La conclusión reconoce incertidumbre y alcance."
-    ]
-  },
+  "worked_examples": [
+    {
+      "title": "Calibración lineal con cuatro estándares",
+      "scenario": "Cuatro estándares educativos tienen concentraciones x=(0,2,4,6) mmol/L y señales y=(0,2,4,1,7,9,12,2) unidades. Se ajusta y=a+bx por mínimos cuadrados.",
+      "equations": [
+        {"label": "Matriz de diseño", "latex": "X=\\begin{pmatrix}1&0\\\\1&2\\\\1&4\\\\1&6\\end{pmatrix},\\qquad\\mathbf{y}=\\begin{pmatrix}0.2\\\\4.1\\\\7.9\\\\12.2\\end{pmatrix}"},
+        {"label": "Estimación", "latex": "\\widehat{\\boldsymbol{\\beta}}=(X^TX)^{-1}X^T\\mathbf{y}=\\begin{pmatrix}\\widehat{a}\\\\\\widehat{b}\\end{pmatrix}"}
+      ],
+      "reasoning_steps": [
+        "Construir X con una columna de unos y una columna de concentraciones.",
+        "Calcular la media de x, igual a 3, y la media de y, igual a 6,1.",
+        "Calcular b̂=Σ(x_i-x̄)(y_i-ȳ)/Σ(x_i-x̄)²≈1,98.",
+        "Calcular â=ȳ-b̂x̄≈0,16.",
+        "Obtener predicciones aproximadas 0,16; 4,12; 8,08; 12,04.",
+        "Calcular residuos 0,04; -0,02; -0,18; 0,16 y comprobar que suman aproximadamente cero.",
+        "Revisar el gráfico y evitar extrapolar fuera de 0–6 mmol/L sin estándares adicionales."
+      ],
+      "interpretation": "El ajuste educativo estima una pendiente cercana a 1,98 unidades de señal por mmol/L y un intercepto de 0,16 unidades.",
+      "verification": [
+        "Los residuos son ortogonales a las columnas de X dentro del redondeo.",
+        "La suma de residuos es aproximadamente cero por la presencia de intercepto.",
+        "Las unidades de la pendiente y del intercepto son coherentes."
+      ],
+      "limitations": [
+        "Cuatro puntos no caracterizan por completo linealidad, heteroscedasticidad o deriva.",
+        "No se incorporan incertidumbres de los estándares.",
+        "El ejemplo no constituye una calibración clínica validada."
+      ]
+    },
+    {
+      "title": "Comparación entre inversión directa y SVD en un sistema sensible",
+      "scenario": "Una matriz de sensibilidad A=[[1,1],[1,1.001]] relaciona dos señales con dos canales. Se estudia el efecto de una perturbación pequeña en y.",
+      "equations": [
+        {"label": "Modelo", "latex": "A=\\begin{pmatrix}1&1\\\\1&1.001\\end{pmatrix},\\qquad\\mathbf{y}=A\\begin{pmatrix}1\\\\1\\end{pmatrix}"},
+        {"label": "Perturbación", "latex": "\\mathbf{y}_{pert}=\\mathbf{y}+\\begin{pmatrix}0\\\\10^{-3}\\end{pmatrix}"}
+      ],
+      "reasoning_steps": [
+        "Calcular y=(2,2,001).",
+        "Reconocer que las columnas de A son casi paralelas.",
+        "Resolver el sistema original y recuperar x=(1,1).",
+        "Resolver con y perturbada y observar un cambio grande relativo en las componentes.",
+        "Calcular los valores singulares y el número de condición.",
+        "Explorar una pseudoinversa truncada o ridge y comparar sesgo frente a estabilidad.",
+        "Concluir que el problema necesita mejor diseño de medición, no solo un algoritmo diferente."
+      ],
+      "interpretation": "La casi dependencia hace que una perturbación pequeña de la lectura se convierta en una gran variación de las señales estimadas.",
+      "verification": [
+        "El residuo puede ser casi cero en ambos casos.",
+        "La condición es grande por un valor singular pequeño.",
+        "La regularización reduce variación, pero cambia la solución."
+      ],
+      "limitations": [
+        "La tolerancia de truncamiento o λ debe seleccionarse con datos de desarrollo.",
+        "Regularizar no recupera información que el dispositivo no mide.",
+        "El ejemplo utiliza ruido artificial y no caracteriza un sensor real."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Laboratorio de mínimos cuadrados y validación",
+      "purpose": "Construir un pipeline reproducible que compare ecuaciones normales, QR, SVD y ridge en una calibración con ruido y colinealidad controlados.",
+      "instructions": [
+        "Genera un conjunto de calibración con una relación lineal conocida y ruido reproducible.",
+        "Separa desarrollo y evaluación antes de cualquier ajuste.",
+        "Ajusta mediante np.linalg.lstsq y documenta el algoritmo disponible.",
+        "Implementa la solución de ecuaciones normales solo para comparación educativa.",
+        "Calcula QR y SVD, residuos, rango y condición.",
+        "Añade una columna casi colineal y observa los coeficientes.",
+        "Aplica ridge para varios λ seleccionados solo con desarrollo.",
+        "Evalúa error y calibración en datos reservados.",
+        "Entrega código, tabla de resultados y una conclusión limitada."
+      ],
+      "starter_code": "import numpy as np\n\nrng = np.random.default_rng(42)\nx = np.linspace(0.0, 10.0, 60)\ny = 0.5 + 2.0 * x + rng.normal(0.0, 0.6, size=x.size)\ntrain = np.arange(0, 45)\ntest = np.arange(45, 60)\nX = np.column_stack([np.ones_like(x), x])\nbeta, residuals, rank, s = np.linalg.lstsq(X[train], y[train], rcond=None)\npred = X[test] @ beta\nrmse = np.sqrt(np.mean((y[test] - pred) ** 2))\nprint(beta, rank, s, rmse)",
+      "problems": [
+        "Compara coeficientes de ecuaciones normales y lstsq.",
+        "Calcula X^Tr y comprueba ortogonalidad en entrenamiento.",
+        "Introduce una columna x2=x+ruido pequeño y calcula condición.",
+        "Compara coeficientes y predicciones antes y después de la colinealidad.",
+        "Selecciona λ sin usar el conjunto de evaluación.",
+        "Explica por qué un RMSE bajo no demuestra utilidad clínica."
+      ],
+      "checking_criteria": [
+        "La separación de datos ocurre antes del preprocesamiento aprendido.",
+        "Se usan semillas y versiones documentadas.",
+        "Se reportan residuos, rango, condición y desempeño en datos reservados.",
+        "La comparación distingue estabilidad de coeficientes y desempeño predictivo.",
+        "La conclusión evita causalidad y utilidad clínica no demostradas."
+      ]
+    },
+    {
+      "title": "Preparación del proyecto integrador",
+      "purpose": "Aplicar la arquitectura del curso al caso de calibración y desacoplamiento multicanal.",
+      "instructions": [
+        "Define la pregunta y el uso previsto en una página.",
+        "Construye un diccionario de variables, unidades y rangos.",
+        "Representa el sistema mediante una matriz de sensibilidad.",
+        "Analiza rango, valores singulares y condición.",
+        "Selecciona un método y justifica por qué es adecuado.",
+        "Diseña controles de verificación y un conjunto de validación.",
+        "Define criterios de aceptación y limitaciones antes de ver resultados.",
+        "Produce un borrador reproducible para revisión."
+      ],
+      "problems": [
+        "Identifica una dirección no observable, si existe.",
+        "Calcula residuos para estándares de validación.",
+        "Perturba coeficientes de calibración dentro de su incertidumbre.",
+        "Compara inversión, QR, SVD y regularización.",
+        "Redacta una conclusión que distinga reconstrucción de diagnóstico."
+      ],
+      "checking_criteria": [
+        "La pregunta es evaluable y no excesivamente amplia.",
+        "Los criterios se fijan antes de seleccionar el mejor resultado.",
+        "La implementación reproduce un caso manual pequeño.",
+        "Los datos y metadatos permiten repetir el análisis.",
+        "Las limitaciones son específicas del modelo y del uso."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Nivel 1 · Proyección y ajuste",
+      "problems": [
+        {"prompt": "Ajusta una constante c a y=(2,4,6) minimizando Σ(y_i-c)².", "solution": "La condición de ortogonalidad produce c=ȳ=4."},
+        {"prompt": "Explica por qué el residuo de mínimos cuadrados es ortogonal a cada columna de X.", "solution": "En el mínimo, la derivada respecto a β es -2X^T(y-Xβ)=0, por tanto X^Tr=0."},
+        {"prompt": "Una matriz X es 20×3 y tiene rango 3. ¿La solución de mínimos cuadrados es única?", "solution": "Sí, porque las columnas son independientes."},
+        {"prompt": "Distingue residuo de error de medición.", "solution": "El residuo es observado menos ajustado; incluye error, mala especificación y variación no explicada, pero no equivale directamente al error verdadero."
+        }
+      ]
+    },
+    {
+      "title": "Nivel 2 · Algoritmos e interpretación",
+      "problems": [
+        {"prompt": "¿Por qué QR suele ser preferible a formar X^TX?", "solution": "Evita cuadrar aproximadamente la condición y ofrece mejor estabilidad numérica."},
+        {"prompt": "Una columna de X es exactamente la suma de otras dos. ¿Qué ocurre?", "solution": "El rango columna es deficiente y los coeficientes no son únicos, aunque las predicciones puedan serlo."},
+        {"prompt": "Interpreta β1=2,5 mV/(mmol/L) en un modelo de señal.", "solution": "Dentro del modelo y manteniendo otros términos, la señal media cambia 2,5 mV por cada mmol/L adicional en el rango estudiado."},
+        {"prompt": "Explica por qué un intercepto puede carecer de significado.", "solution": "Porque la combinación de predictores iguales a cero puede no existir o quedar fuera del rango observado."
+        }
+      ]
+    },
+    {
+      "title": "Nivel 3 · Regularización y validación",
+      "problems": [
+        {"prompt": "¿Qué efecto tiene aumentar λ en ridge?", "solution": "Reduce la magnitud y variabilidad de coeficientes, aumenta sesgo y puede mejorar generalización hasta cierto punto."},
+        {"prompt": "Diseña una partición para datos con tres mediciones por paciente.", "solution": "Todas las mediciones de un paciente deben permanecer en el mismo grupo; la división se realiza por paciente, no por fila."},
+        {"prompt": "Enumera cuatro ejemplos de fuga de información.", "solution": "Escalar con todos los datos, imputar usando evaluación, seleccionar variables por resultados completos y ajustar λ usando el conjunto final."},
+        {"prompt": "Un modelo tiene R² alto y residuos sesgados en un subgrupo. ¿Está validado?", "solution": "No. El resumen global oculta un fallo sistemático; deben revisarse calibración, subgrupos, representatividad y uso previsto."
+        }
+      ]
+    }
+  ],
   "common_errors": [
-    {"error": "Ajustar ecuaciones antes de definir la pregunta.", "correction": "Especificar sistema, desenlace y uso del modelo primero."},
-    {"error": "Usar números sin unidades.", "correction": "Mantener unidades durante todo el cálculo y convertir explícitamente."},
-    {"error": "Confundir residual pequeño con verdad causal.", "correction": "Interpretarlo solo como concordancia con los datos bajo el modelo."},
-    {"error": "Validar con los mismos datos usados para ajustar.", "correction": "Reservar datos independientes o aplicar evaluación externa adecuada."},
-    {"error": "Ocultar decisiones de limpieza o transformación.", "correction": "Registrar cada paso y conservar resultados intermedios."}
+    {"error": "Forzar una solución exacta en un sistema sobredeterminado ruidoso.", "correction": "Definir un criterio de aproximación y analizar residuos."},
+    {"error": "Formar X^TX sin evaluar condición.", "correction": "Preferir QR o SVD cuando la estabilidad importa."},
+    {"error": "Interpretar coeficientes sin unidades ni rango.", "correction": "Comunicar cambio condicional, escala y dominio de datos."},
+    {"error": "Usar R² como medida única de calidad.", "correction": "Examinar residuos, error en datos nuevos, calibración, subgrupos y finalidad."},
+    {"error": "Confundir predicción con causalidad.", "correction": "La causalidad requiere diseño y supuestos adicionales."},
+    {"error": "Regularizar y declarar resuelta la colinealidad científica.", "correction": "Ridge estabiliza cálculos, pero no crea información ni identifica mecanismos."},
+    {"error": "Preprocesar antes de separar evaluación.", "correction": "Ajustar transformaciones solo con datos de desarrollo."},
+    {"error": "Validar con los mismos datos usados para seleccionar el modelo.", "correction": "Reservar evaluación independiente o usar un esquema anidado."},
+    {"error": "Entregar código que depende del orden previo de un cuaderno.", "correction": "Reiniciar y ejecutar todo desde un entorno limpio con versiones registradas."},
+    {"error": "Presentar un ajuste educativo como herramienta clínica.", "correction": "Limitar la conclusión y exigir validación clínica, seguridad e impacto antes de cualquier uso."}
   ],
   "self_assessment": [
-    {"question": "¿Qué debe definirse antes de formular ecuaciones?", "answer": "La pregunta, el sistema, las variables, sus unidades, supuestos y restricciones."},
-    {"question": "¿Qué comprueba el análisis dimensional?", "answer": "Que los términos comparados o sumados tengan unidades compatibles."},
-    {"question": "¿Qué es un residual?", "answer": "La diferencia entre un valor observado y la predicción del modelo."},
-    {"question": "¿En qué difieren verificación y validación?", "answer": "La verificación revisa la implementación; la validación evalúa adecuación al uso real."},
-    {"question": "¿Por qué se estudia sensibilidad?", "answer": "Para conocer cuánto cambian las conclusiones ante incertidumbre o perturbaciones."},
-    {"question": "¿Qué limita una extrapolación?", "answer": "Que el comportamiento fuera del intervalo observado puede no seguir la misma relación."}
+    {"question": "¿Qué minimiza el método de mínimos cuadrados ordinarios?", "answer": "La suma de cuadrados de los residuos o, equivalentemente, la norma euclídea cuadrada."},
+    {"question": "¿Cuál es la interpretación geométrica de β̂?", "answer": "Xβ̂ es la proyección ortogonal de y sobre el espacio columna de X."},
+    {"question": "¿Qué condición cumplen los residuos óptimos?", "answer": "X^Tr=0."},
+    {"question": "¿Por qué las ecuaciones normales pueden ser inestables?", "answer": "Porque formar X^TX eleva aproximadamente al cuadrado el número de condición."},
+    {"question": "¿Cuándo es única la solución de mínimos cuadrados?", "answer": "Cuando X tiene rango columna completo."},
+    {"question": "¿Qué aporta la SVD?", "answer": "Diagnóstico de rango y condición, pseudoinversa y manejo de direcciones débiles."},
+    {"question": "¿Qué significa un coeficiente de regresión múltiple?", "answer": "El cambio promedio condicional asociado a una unidad del predictor, manteniendo los demás términos fijos dentro del modelo."},
+    {"question": "¿Qué problema intenta controlar ridge?", "answer": "La inestabilidad y complejidad de coeficientes mediante una penalización cuadrática."},
+    {"question": "¿En qué difieren verificación y validación?", "answer": "La verificación comprueba implementación; la validación evalúa adecuación y generalización para un uso."},
+    {"question": "¿Qué es fuga de información?", "answer": "Permitir que información de evaluación influya en cualquier decisión de desarrollo."},
+    {"question": "¿Qué necesita un análisis reproducible?", "answer": "Datos o generadores, código, entorno, versiones, semillas, parámetros, decisiones y resultados esperados."},
+    {"question": "¿Por qué un buen ajuste no demuestra utilidad clínica?", "answer": "Porque faltan validación externa, calibración, umbrales, seguridad, flujo de uso, impacto y comparación con alternativas."
+    }
   ],
   "biomedical_connections": [
-    "Calibración de sensores y ensayos cuantitativos.",
-    "Balances de masa y modelos de mezcla.",
-    "Evaluación de estabilidad en problemas inversos.",
-    "Documentación reproducible de análisis y modelos biomédicos."
+    "Calibración de sensores y ensayos con múltiples estándares.",
+    "Desacoplamiento de señales y solución de sistemas sobredeterminados.",
+    "Regresión matricial de variables biomédicas con interpretación condicionada.",
+    "Diagnóstico de colinealidad y regularización de problemas inestables.",
+    "Diseño de validación y pipelines reproducibles antes de cualquier aplicación."
   ],
   "sources": [
-    {"title": "Introduction to Applied Linear Algebra", "organization": "Stanford University", "url": "https://web.stanford.edu/~boyd/vmls/", "type": "libro abierto"},
-    {"title": "NIST/SEMATECH e-Handbook of Statistical Methods", "organization": "NIST", "url": "https://www.itl.nist.gov/div898/handbook/", "type": "manual técnico"},
-    {"title": "Mathematical Modeling", "organization": "MIT OpenCourseWare", "url": "https://ocw.mit.edu/search/?q=mathematical%20modeling", "type": "cursos abiertos"}
+    {"title": "Introduction to Applied Linear Algebra", "organization": "Stanford University", "url": "https://web.stanford.edu/~boyd/vmls/", "type": "libro abierto", "use": "Mínimos cuadrados, ajuste, validación y aplicaciones."},
+    {"title": "Linear Algebra", "organization": "MIT OpenCourseWare", "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/", "type": "curso abierto", "use": "Proyecciones, QR y mínimos cuadrados."},
+    {"title": "Interactive Linear Algebra — Least Squares", "organization": "Georgia Tech", "url": "https://textbooks.math.gatech.edu/ila/least-squares.html", "type": "libro abierto", "use": "Geometría y ecuaciones normales."},
+    {"title": "Introduction to Mathematics for Computational Biology", "organization": "Springer", "url": "https://doi.org/10.1007/978-3-031-36566-9", "type": "texto universitario", "use": "Regresión matricial y modelado biológico."},
+    {"title": "NIST/SEMATECH e-Handbook of Statistical Methods", "organization": "NIST", "url": "https://www.itl.nist.gov/div898/handbook/", "type": "manual institucional", "use": "Calibración, regresión y diagnóstico."},
+    {"title": "NumPy — lstsq", "organization": "NumPy", "url": "https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html", "type": "documentación oficial", "use": "Resolución numérica de mínimos cuadrados."},
+    {"title": "SciPy Linear Algebra", "organization": "SciPy", "url": "https://docs.scipy.org/doc/scipy/reference/linalg.html", "type": "documentación oficial", "use": "QR, SVD y métodos de ajuste."},
+    {"title": "TRIPOD Statement", "organization": "EQUATOR Network", "url": "https://www.equator-network.org/reporting-guidelines/tripod-statement/", "type": "guía de reporte", "use": "Principios de reporte transparente para modelos predictivos."}
   ],
-  "editorial_notice": "Material educativo para aprendizaje autónomo. Los modelos biomédicos deben validarse para la población, dispositivo y finalidad específicos."
+  "editorial_notice": "Curso educativo abierto. Los modelos y calibraciones de esta unidad no son herramientas clínicas y requieren validación específica antes de cualquier aplicación."
 }
