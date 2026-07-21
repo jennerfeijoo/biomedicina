@@ -58,6 +58,7 @@ jobs:
           python -m json.tool data/generated_courses/algebra.json > /dev/null
           python -m json.tool data/generated_courses/calculo.json > /dev/null
           python -m json.tool data/generated_courses/fisica-i.json > /dev/null
+          python -m json.tool data/generated_courses/probabilidad-estadistica.json > /dev/null
 
       - name: Report semester readiness
         run: python scripts/audit_semester_readiness.py
@@ -99,6 +100,24 @@ jobs:
         if: steps.physics_readiness.outcome != 'success'
         run: |
           cat physics-semester-readiness.txt
+          exit 1
+
+      - name: Audit Probability and Statistics semester readiness
+        id: probability_readiness
+        continue-on-error: true
+        run: python scripts/audit_semester_readiness.py --subject probabilidad-estadistica --strict > probability-semester-readiness.txt 2>&1
+
+      - name: Upload Probability and Statistics semester audit
+        if: steps.probability_readiness.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: probability-semester-readiness
+          path: probability-semester-readiness.txt
+
+      - name: Enforce Probability and Statistics semester readiness
+        if: steps.probability_readiness.outcome != 'success'
+        run: |
+          cat probability-semester-readiness.txt
           exit 1
 
       - name: Validate developed-unit renderer
