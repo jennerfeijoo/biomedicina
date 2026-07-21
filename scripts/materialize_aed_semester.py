@@ -95,7 +95,11 @@ def validate_unit(data: dict, number: int) -> None:
         require(phrase not in lowered, f"{prefix}: frase interna prohibida: {phrase}")
     notice = str(data.get("editorial_notice", "")).casefold()
     require("revisión docente experta" in notice, f"{prefix}: aviso editorial")
-    require("no constituyen software clínico validado" in notice, f"{prefix}: límite clínico")
+    clinical_limits = (
+        "no constituyen software clínico validado",
+        "no constituyen validación de software clínico",
+    )
+    require(any(phrase in notice for phrase in clinical_limits), f"{prefix}: límite clínico")
 
 
 def main() -> int:
