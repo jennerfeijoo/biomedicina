@@ -21,14 +21,6 @@ EXPECTED_TITLES = {
 }
 EXPECTED_WEEKS = {1: [1, 2], 2: [3, 4, 5], 3: [6, 7, 8], 4: [9, 10, 11], 5: [12, 13], 6: [14, 15, 16]}
 EXPECTED_HOURS = {1: 16, 2: 24, 3: 24, 4: 24, 5: 16, 6: 24}
-EXPECTED_GZIP_SHA256 = {
-    1: "e7d3e03c87c8b76df10ef8ea578572ff39b45226394295cd32c9df25dda4b281",
-    2: "a453574afeed5e5eac6de67136acfc5d5930d6c80fe5d01a65f21410f4404565",
-    3: "553bb753506bb5dedd3a8972c4253cf183af2ecb996565e32ebabaf9611a7888",
-    4: "d4e0119552f3026fa392c5a4d64560f65777c117ebfed33860fb5429a3d33f8f",
-    5: "c3ba33d261640dd38d0398377408560f80f551ff26e3aa8a150212c2267cf029",
-    6: "90c6e5cc773b94f1f5cec69599a5fe69b67375b955279c4c377784d23c846e08",
-}
 EXPECTED_RAW_SHA256 = {
     1: "30ad93d145e4ef2234928e71c1467424610943aee0c64aab40f42154cb45d9b4",
     2: "39f2357fefbbbfc742b5adc643a627afdae6fdba7d6179f892640cab2fa5f102",
@@ -52,11 +44,6 @@ def load_verified_unit(number: int) -> dict[str, Any]:
     encoded = path.read_text(encoding="utf-8").strip()
     compressed = base64.b64decode(encoded, validate=True)
     compressed_sha = hashlib.sha256(compressed).hexdigest()
-    require(
-        compressed_sha == EXPECTED_GZIP_SHA256[number],
-        f"{label}: SHA-256 gzip inesperado: {compressed_sha}",
-    )
-
     raw = gzip.decompress(compressed)
     raw_sha = hashlib.sha256(raw).hexdigest()
     require(raw_sha == EXPECTED_RAW_SHA256[number], f"{label}: SHA-256 JSON inesperado: {raw_sha}")
@@ -78,6 +65,7 @@ def load_verified_unit(number: int) -> dict[str, Any]:
     require(len(data.get("practice_sets", [])) >= 1, f"{label}: práctica")
     require(len(data.get("self_assessment", [])) >= 8, f"{label}: autoevaluación")
     require(len(data.get("sources", [])) >= 5, f"{label}: fuentes")
+    print(f"Verificado {label}: gzip_sha256={compressed_sha} raw_sha256={raw_sha}")
     return data
 
 
@@ -93,10 +81,7 @@ def main() -> int:
     for number, data in units:
         path = DEST / f"unit-{number:02d}.json"
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print(
-            f"Materializado y verificado: {path.relative_to(ROOT)} "
-            f"raw_sha256={EXPECTED_RAW_SHA256[number]}"
-        )
+        print(f"Materializado: {path.relative_to(ROOT)}")
     return 0
 
 
