@@ -23,6 +23,20 @@
     return heading;
   }
 
+  function renderEquations(parent, equations) {
+    if (!Array.isArray(equations) || equations.length === 0) return;
+    const group = element("div", "generated-unit-equations");
+    for (const rawEquation of equations) {
+      const equation = typeof rawEquation === "string" ? { latex: rawEquation } : rawEquation;
+      if (!equation || typeof equation.latex !== "string" || !equation.latex.trim()) continue;
+      const block = element("div", "generated-unit-math");
+      if (equation.label) block.appendChild(element("strong", "generated-unit-math-label", equation.label));
+      block.appendChild(element("div", "generated-unit-math-expression", `\\[${equation.latex}\\]`));
+      group.appendChild(block);
+    }
+    if (group.childElementCount) parent.appendChild(group);
+  }
+
   function renderTheory(parent, sections) {
     if (!Array.isArray(sections) || sections.length === 0) return;
     appendHeading(parent, 4, "Desarrollo teórico");
@@ -30,6 +44,7 @@
       const block = element("section", "generated-unit-theory");
       appendHeading(block, 5, section.heading || "Concepto");
       for (const paragraph of section.paragraphs || []) block.appendChild(element("p", "", paragraph));
+      renderEquations(block, section.equations);
       if (section.key_points?.length) {
         const summary = element("div", "generated-unit-key-points");
         summary.appendChild(element("strong", "", "Ideas clave"));
@@ -58,6 +73,7 @@
     const section = element("section", "generated-unit-panel");
     appendHeading(section, 4, `Ejemplo: ${example.title || "Aplicación"}`);
     if (example.scenario) section.appendChild(element("p", "generated-unit-scenario", example.scenario));
+    renderEquations(section, example.equations);
     if (example.pseudocode?.length) {
       section.appendChild(element("strong", "", "Pseudocódigo"));
       appendList(section, example.pseudocode);
@@ -100,6 +116,7 @@
       section.appendChild(element("strong", "", "Instrucciones"));
       appendList(section, activity.instructions);
     }
+    renderEquations(section, activity.equations);
     if (activity.problems?.length) {
       section.appendChild(element("strong", "", "Problemas o tareas"));
       appendList(section, activity.problems);
@@ -179,6 +196,7 @@
     }
 
     renderTheory(article, unit.theory_sections);
+    renderEquations(article, unit.equations);
     renderGlossary(article, unit.glossary);
     renderWorkedExample(article, unit.worked_example);
     renderActivity(article, unit.guided_activity);
@@ -196,6 +214,65 @@
     const heading = article.querySelector("h3");
     const match = heading?.textContent?.match(/Unidad\s+(\d+)/i);
     return match ? Number(match[1]) : null;
+  }
+
+  function unitTitleFromArticle(article) {
+    const heading = article.querySelector("h3");
+    return heading?.textContent?.replace(/^Unidad\s+\d+\.?\s*/i, "").trim() || "Unidad";
+  }
+
+  function scrollToTarget(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    history.pushState(null, "", `#${targetId}`);
+    target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }
+
+  function createUnitSelector(articles) {
+    const unitsLink = document.querySelector('.course-toc a[href="#unidades"]');
+    if (!unitsLink) return;
+
+    const select = element("select", "course-unit-select");
+    select.setAttribute("aria-label", "Ir a una unidad concreta");
+    select.title = "Ir a una unidad concreta";
+
+    const overview = element("option", "", "Unidades");
+    overview.value = "unidades";
+    select.appendChild(overview);
+
+    for (const article of articles) {
+      const number = unitNumberFromArticle(article);
+      if (number === null) continue;
+      const id = `unidad-${number}`;
+      article.id = id;
+      const option = element("option", "", `Unidad ${number} · ${unitTitleFromArticle(article)}`);
+      option.value = id;
+      select.appendChild(option);
+    }
+
+    const syncFromHash = () => {
+      const hash = window.location.hash.slice(1);
+      const exists = [...select.options].some((option) => option.value === hash);
+      select.value = exists ? hash : "unidades";
+    };
+
+    select.addEventListener("change", () => scrollToTarget(select.value));
+    window.addEventListener("hashchange", syncFromHash);
+    unitsLink.replaceWith(select);
+    syncFromHash();
+  }
+
+  async function typesetMath(root) {
+    const mathJax = window.MathJax;
+    if (!mathJax) return;
+    try {
+      if (mathJax.startup?.promise) await mathJax.startup.promise;
+      if (typeof mathJax.typesetClear === "function") mathJax.typesetClear([root]);
+      if (typeof mathJax.typesetPromise === "function") await mathJax.typesetPromise([root]);
+    } catch (error) {
+      console.error("No se pudo renderizar la notación matemática.", error);
+    }
   }
 
   async function fetchUnit(rootUrl, subjectId, unitNumber) {
@@ -229,6 +306,8 @@
     css.href = new URL("assets/css/generated-units.css", rootUrl).href;
     document.head.appendChild(css);
 
+    createUnitSelector(articles);
+
     const total = Math.min(Math.max(articles.length, 1), UNIT_FILE_LIMIT);
     const results = await Promise.all(
       Array.from({ length: total }, (_, index) => fetchUnit(rootUrl, subjectId, index + 1).catch((error) => {
@@ -246,6 +325,8 @@
       const article = articleByUnit.get(Number(unit.unit));
       if (article) renderUnit(article, unit);
     }
+
+    await typesetMath(unitsSection);
   }
 
   if (document.readyState === "loading") {
