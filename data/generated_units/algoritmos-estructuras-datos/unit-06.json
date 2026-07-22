@@ -1,0 +1,446 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "algoritmos-estructuras-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 6,
+  "slug": "diseno-pruebas-reproducibilidad",
+  "title": "Diseño, pruebas y reproducibilidad",
+  "status": "review",
+  "weeks": [
+    14,
+    15,
+    16
+  ],
+  "estimated_hours": 24,
+  "purpose": "Integrar paradigmas de diseño, pruebas multinivel, perfilado, optimización, CI y comunicación para construir artefactos algorítmicos auditables.",
+  "learning_objectives": [
+    "Comparar fuerza bruta, divide y vencerás, greedy y programación dinámica.",
+    "Construir implementaciones de referencia.",
+    "Diseñar pruebas unitarias, integración, sistema y propiedades.",
+    "Manejar errores y salidas parciales.",
+    "Optimizar a partir de perfiles.",
+    "Detectar regresiones de rendimiento.",
+    "Configurar un flujo de CI.",
+    "Documentar entorno, datos, límites y versiones."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Paradigmas de diseño y construcción de referencias",
+      "paragraphs": [
+        "El diseño algorítmico selecciona una estrategia después de especificar el problema. Fuerza bruta enumera posibilidades y suele ser la referencia más clara, aunque escale mal. Divide y vencerás separa subproblemas, resuelve y combina. Los algoritmos voraces toman decisiones locales que solo son correctas si existe una propiedad que lo justifique. La programación dinámica reutiliza subproblemas superpuestos y requiere definir estado, transición y orden de cálculo.",
+        "Una implementación de referencia prioriza claridad y corrección sobre velocidad. Se aplica a entradas pequeñas y sirve como oráculo para una versión optimizada. Por ejemplo, comparar todos los pares para calcular distancias es cuadrático pero simple; una estructura espacial puede acelerar después. El oráculo también puede fallar, por lo que se complementa con propiedades y casos manuales.",
+        "Los algoritmos voraces no se validan porque produzcan buenos resultados en ejemplos. Se necesita argumento de intercambio, optimalidad de prefijos u otra propiedad. Elegir el valor local más alto puede fallar en alineamiento, selección o rutas. Cuando no existe prueba, debe describirse como heurística y evaluarse empíricamente, sin confundir solución aproximada con óptima.",
+        "La programación dinámica cambia tiempo por memoria. Una matriz de alineamiento de longitudes n y m usa O(nm), y la reconstrucción del camino necesita predecesores o recomputación. Algunas tareas permiten reducir memoria a filas, pero pierden reconstrucción completa. El diseño debe decidir qué salida se necesita y qué compromiso es aceptable."
+      ],
+      "key_points": [
+        "Fuerza bruta es útil como referencia.",
+        "Divide y vencerás requiere coste de combinación.",
+        "Greedy exige una propiedad de corrección o se considera heurística.",
+        "Programación dinámica define estado, transición y memoria."
+      ],
+      "equations": [
+        "D[i,j]=\\min\\{D[i-1,j]+1,D[i,j-1]+1,D[i-1,j-1]+[x_i\\ne y_j]\\}$ modela distancia de edición."
+      ]
+    },
+    {
+      "heading": "Pruebas multinivel y robustez",
+      "paragraphs": [
+        "Las pruebas unitarias aíslan funciones; las de integración comprueban interacción entre módulos; las de sistema verifican un flujo completo. Una biblioteca algorítmica necesita las tres. Una función puede ordenar correctamente, pero el pipeline puede perder identificadores al serializar. Las pruebas de contrato aseguran que varias implementaciones cumplen la misma interfaz y permiten comparar referencia y optimizada.",
+        "Las pruebas basadas en propiedades son especialmente valiosas: una distancia debe ser no negativa y simétrica cuando la definición lo exige; el resultado de BFS debe asignar a cada nodo descubierto una distancia no mayor que la de sus hijos más uno; un heap debe conservar la propiedad padre-hijo. Los generadores deben producir casos pequeños, vacíos, repetidos y extremos.",
+        "La robustez incluye entradas inválidas, recursos insuficientes y cancelación. Un algoritmo debe fallar con mensajes útiles, no dejar archivos parciales ni mezclar resultados antiguos. Las operaciones sobre archivos pueden escribirse a una ruta temporal y renombrarse al completar. La validación temprana evita ejecutar horas sobre datos incompatibles.",
+        "La aleatoriedad requiere pruebas estadísticas y deterministas. Se fijan semillas para regresión, pero también se exploran varias semillas. Las comparaciones aproximadas usan tolerancias justificadas y no una igualdad exacta arbitraria. Para floats, la tolerancia debe relacionarse con escala y propagación, no elegirse solo para hacer pasar la prueba."
+      ],
+      "key_points": [
+        "Unitarias, integración y sistema cubren fallos distintos.",
+        "Las propiedades verifican familias de entradas.",
+        "Robustez incluye errores y salidas parciales.",
+        "Semillas reproducibles y variabilidad cumplen funciones distintas."
+      ],
+      "equations": [
+        "|\\hat x-x|\\le atol+rtol\\,|x|$ define una comprobación numérica habitual."
+      ]
+    },
+    {
+      "heading": "Perfilado, optimización y regresión de rendimiento",
+      "paragraphs": [
+        "Optimizar comienza con un perfil y una hipótesis. Se identifica el punto caliente, se propone un cambio y se define una métrica. Después se compara contra la referencia y se ejecuta la suite completa. Una mejora que altera resultados, orden o memoria puede ser inaceptable. El commit debe documentar el motivo, no solo “hacer más rápido”.",
+        "Las microoptimizaciones reducen constantes; los cambios algorítmicos modifican crecimiento. Reemplazar búsqueda lineal repetida por índice hash suele tener más impacto que reescribir un bucle. Vectorizar puede acelerar operaciones numéricas, pero también crear temporales grandes. La memoria máxima y el tiempo total deben medirse.",
+        "Una regresión de rendimiento ocurre cuando una modificación mantiene corrección pero aumenta recursos más allá de un umbral. Las pruebas de rendimiento son sensibles al entorno, por lo que en CI se usan tamaños controlados, razones amplias o tendencias, no límites milimétricos. Los benchmarks completos se ejecutan en entornos estables y guardan resultados versionados.",
+        "El paralelismo no se añade automáticamente. Dividir trabajo tiene costes de coordinación, comunicación y memoria. La ley de Amdahl limita la aceleración por la fracción serial. En Python, procesos, hilos y bibliotecas nativas tienen comportamientos distintos. El curso prioriza selección algorítmica y reproducibilidad antes que optimización paralela."
+      ],
+      "key_points": [
+        "Cada optimización parte de perfil e hipótesis.",
+        "El cambio algorítmico suele dominar a la microoptimización.",
+        "Rendimiento también puede sufrir regresiones.",
+        "El paralelismo tiene costes y límites seriales."
+      ],
+      "equations": [
+        "S(p)=\\frac{1}{(1-f)+f/p}$ es la aceleración ideal de Amdahl para fracción paralela $f$."
+      ]
+    },
+    {
+      "heading": "Reproducibilidad, CI y comunicación técnica",
+      "paragraphs": [
+        "Un repositorio reproducible incluye código, pruebas, entorno, datos de ejemplo, licencia y documentación. Las dependencias se declaran con versiones o rangos razonados. Los datos grandes no se copian sin control; se proporcionan scripts de descarga, hashes y licencias. Un README explica instalación, ejecución, salida y limitaciones desde un entorno limpio.",
+        "La integración continua ejecuta validadores y pruebas en cada cambio. Un pipeline típico formatea o analiza código, ejecuta pruebas, construye documentación y verifica ejemplos. CI no reemplaza la revisión: solo automatiza comprobaciones codificadas. Los secretos no se escriben en el repositorio ni se imprimen en logs.",
+        "La comunicación de un algoritmo separa problema, método, corrección, complejidad, medición y límites. Las tablas de rendimiento incluyen unidades y tamaños; los gráficos muestran dispersión; las conclusiones no extrapolan fuera del rango. En aplicaciones biomédicas, se distingue una métrica computacional de utilidad clínica, y un conjunto abierto o sintético de una población real.",
+        "El mantenimiento exige versiones semánticas, notas de cambio y política de deprecación. Una interfaz pública no se modifica silenciosamente. Las migraciones de formato deben ser probadas y reversibles cuando sea posible. El proyecto final se evalúa por claridad de decisiones, pruebas, reproducibilidad y honestidad sobre limitaciones, no por cantidad de funciones."
+      ],
+      "key_points": [
+        "Reproducibilidad abarca entorno, datos y documentación.",
+        "CI automatiza comprobaciones, no juicio científico.",
+        "El informe separa método, evidencia y utilidad.",
+        "Versionado y deprecación forman parte del diseño."
+      ],
+      "equations": [
+        "\\text{artefacto}=\\text{código}+\\text{datos}+\\text{entorno}+\\text{pruebas}+\\text{documentación}."
+      ]
+    },
+    {
+      "heading": "Liberación, revisión y sostenibilidad del software científico",
+      "paragraphs": [
+        "Una versión publicable debe poder instalarse y ejecutarse desde cero. El proceso de liberación comprueba paquete, dependencias, pruebas, licencia, ejemplos y documentación. Se etiqueta un commit concreto y se genera un changelog que distingue nuevas funciones, correcciones y cambios incompatibles. Publicar un archivo sin asociarlo a código y entorno impide reconstruir resultados.",
+        "La revisión de código examina corrección, legibilidad, seguridad, rendimiento y pruebas. Un revisor necesita una descripción del problema y del cambio, no solo un diff grande. Los cambios pequeños y cohesionados facilitan detectar defectos. Las decisiones discutidas se documentan para evitar repetir debates y para explicar por qué una alternativa fue descartada.",
+        "La sostenibilidad exige evitar dependencias innecesarias y definir responsabilidades. Una biblioteca abandonada puede introducir fallos o incompatibilidades. Se revisan licencias, actividad, estabilidad de API y plan de actualización. Fijar todas las versiones para siempre también tiene costes; se usan entornos reproducibles y actualizaciones controladas con pruebas.",
+        "El final de vida es parte del ciclo. Una función insegura o incorrecta debe deprecarse con advertencia, alternativa y calendario. Los formatos antiguos pueden necesitar migración. En software biomédico educativo, la documentación debe impedir que el prototipo se presente como producto clínico. La honestidad sobre mantenimiento y alcance protege la reproducibilidad futura.",
+        "La continuidad del proyecto también depende de que otra persona pueda comprender las decisiones sin consultar al autor original. Las incidencias, decisiones arquitectónicas y ejemplos mínimos deben quedar enlazados desde la documentación. Una prueba reproducible de instalación en un entorno nuevo es una señal más fuerte de sostenibilidad que la mera existencia del repositorio."
+      ],
+      "key_points": [
+        "Una liberación se vincula a un commit y entorno.",
+        "La revisión necesita cambios cohesionados y contexto.",
+        "La sostenibilidad incluye dependencias y licencias.",
+        "Deprecación y fin de vida deben planificarse."
+      ],
+      "equations": [
+        "\\text{versión reproducible}=\\text{tag}+\\text{hash de datos}+\\text{entorno declarado}."
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Fuerza bruta",
+      "definition": "Enumeración directa de posibilidades."
+    },
+    {
+      "term": "Divide y vencerás",
+      "definition": "División en subproblemas, resolución y combinación."
+    },
+    {
+      "term": "Algoritmo voraz",
+      "definition": "Método que toma decisiones locales irrevocables."
+    },
+    {
+      "term": "Programación dinámica",
+      "definition": "Reutilización sistemática de subproblemas superpuestos."
+    },
+    {
+      "term": "Implementación de referencia",
+      "definition": "Versión clara usada como oráculo."
+    },
+    {
+      "term": "Prueba unitaria",
+      "definition": "Prueba de una unidad aislada."
+    },
+    {
+      "term": "Prueba de integración",
+      "definition": "Prueba de interacción entre componentes."
+    },
+    {
+      "term": "Prueba de sistema",
+      "definition": "Prueba del flujo completo."
+    },
+    {
+      "term": "Prueba basada en propiedades",
+      "definition": "Verificación de relaciones generales sobre múltiples entradas."
+    },
+    {
+      "term": "Perfilado",
+      "definition": "Medición para localizar consumo."
+    },
+    {
+      "term": "Regresión de rendimiento",
+      "definition": "Deterioro medible de recursos tras un cambio."
+    },
+    {
+      "term": "Integración continua",
+      "definition": "Ejecución automatizada de comprobaciones por cambio."
+    },
+    {
+      "term": "Ley de Amdahl",
+      "definition": "Límite de aceleración impuesto por la fracción serial."
+    },
+    {
+      "term": "Deprecación",
+      "definition": "Retirada planificada de una interfaz."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Distancia de edición: referencia y dinámica",
+      "scenario": "Comparar una enumeración recursiva simple con programación dinámica para cadenas cortas.",
+      "reasoning_steps": [
+        "Definir operaciones y coste.",
+        "Implementar referencia recursiva para casos muy pequeños.",
+        "Definir estado D[i,j].",
+        "Inicializar bordes.",
+        "Aplicar transición de inserción, borrado y sustitución.",
+        "Comparar DP con referencia en cadenas generadas pequeñas.",
+        "Medir tiempo y memoria al crecer."
+      ],
+      "interpretation": "La DP reduce repetición exponencial a O(nm), intercambiando memoria.",
+      "limitations": [
+        "No modela puntuaciones biológicas complejas.",
+        "Las cadenas largas requieren optimización de memoria.",
+        "Una distancia baja no implica homología."
+      ]
+    },
+    {
+      "title": "CI para biblioteca algorítmica",
+      "scenario": "Configurar un flujo que valide estilo básico, ejecute pytest y un ejemplo reproducible.",
+      "reasoning_steps": [
+        "Declarar versión de Python.",
+        "Instalar dependencias desde archivo.",
+        "Ejecutar pruebas unitarias y propiedades.",
+        "Ejecutar ejemplo con datos sintéticos.",
+        "Comprobar que la salida coincide con hash o estructura esperada.",
+        "No usar datos sensibles ni secretos.",
+        "Guardar informe de cobertura como artefacto si corresponde."
+      ],
+      "interpretation": "CI detecta fallos reproducibles en cambios, pero no valida utilidad biomédica.",
+      "limitations": [
+        "El entorno CI puede diferir de producción.",
+        "La cobertura no garantiza calidad.",
+        "Benchmarks estrictos pueden ser inestables."
+      ]
+    },
+    {
+      "title": "Liberación reproducible de una biblioteca de grafos",
+      "scenario": "Una biblioteca educativa implementa BFS, componentes y caminos sobre redes sintéticas y debe publicarse como versión 1.0.",
+      "reasoning_steps": [
+        "Congelar el alcance y abrir incidencias para cambios no esenciales.",
+        "Ejecutar pruebas unitarias, propiedades, integración y ejemplos desde un entorno limpio.",
+        "Comparar resultados con NetworkX en grafos pequeños generados.",
+        "Ejecutar benchmarks documentados y revisar regresiones respecto a la versión candidata anterior.",
+        "Construir documentación y comprobar enlaces, instalación y comandos.",
+        "Etiquetar el commit, registrar dependencias y publicar hashes de datos de ejemplo.",
+        "Redactar notas de versión con limitaciones, compatibilidad y ausencia de validación clínica."
+      ],
+      "interpretation": "Una liberación es un conjunto coherente de código, pruebas, documentación y entorno. El número de versión no certifica calidad clínica; solo identifica un estado reproducible del artefacto.",
+      "limitations": [
+        "Las plataformas y dependencias futuras pueden cambiar.",
+        "Los benchmarks no garantizan rendimiento en otros equipos.",
+        "La revisión externa sigue siendo necesaria."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Proyecto integrador algorítmico",
+      "instructions": [
+        "Elige secuencias, registros o red sintética/abierta.",
+        "Define contrato y preguntas.",
+        "Implementa una referencia.",
+        "Selecciona al menos tres estructuras y dos familias algorítmicas.",
+        "Añade pruebas multinivel y propiedades.",
+        "Perfila y optimiza un punto.",
+        "Configura CI y documentación.",
+        "Expón límites y riesgos."
+      ],
+      "problems": [
+        "Indexar k-mers y consultar posiciones.",
+        "Recorrer una red y obtener componentes.",
+        "Ordenar registros con estabilidad.",
+        "Mantener top-k.",
+        "Comparar teoría y benchmarks.",
+        "Crear un fallo controlado y recuperación.",
+        "Publicar README reproducible."
+      ],
+      "checking_criteria": [
+        "Contrato y oráculos completos.",
+        "Decisiones justificadas por operaciones.",
+        "Pruebas cubren fronteras.",
+        "Benchmarks reproducibles.",
+        "No hay datos identificables.",
+        "Límites clínicos explícitos."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Diseño",
+      "problems": [
+        {
+          "question": "¿Por qué conservar fuerza bruta?",
+          "solution": "Sirve como referencia clara sobre casos pequeños."
+        },
+        {
+          "question": "¿Qué necesita un greedy correcto?",
+          "solution": "Una propiedad que justifique decisiones locales."
+        },
+        {
+          "question": "Define estado de distancia de edición.",
+          "solution": "D[i,j] es el coste mínimo para transformar prefijos de longitudes i y j."
+        },
+        {
+          "question": "¿Qué intercambia DP?",
+          "solution": "Más memoria por evitar recomputación y reducir tiempo."
+        }
+      ]
+    },
+    {
+      "title": "Pruebas y robustez",
+      "problems": [
+        {
+          "question": "Distingue unitarias e integración.",
+          "solution": "Unitarias aíslan funciones; integración verifica interacción."
+        },
+        {
+          "question": "Propón propiedad de heap.",
+          "solution": "Cada padre no supera a sus hijos en min-heap."
+        },
+        {
+          "question": "Maneja salida parcial.",
+          "solution": "Escribir temporalmente y publicar mediante renombrado atómico al completar."
+        },
+        {
+          "question": "Prueba floats.",
+          "solution": "Usar tolerancias justificadas por escala y error."
+        }
+      ]
+    },
+    {
+      "title": "Optimización y reproducibilidad",
+      "problems": [
+        {
+          "question": "Orden de optimización.",
+          "solution": "Perfilar, formular hipótesis, cambiar, probar y medir de nuevo."
+        },
+        {
+          "question": "¿Qué es regresión de rendimiento?",
+          "solution": "Aumento no aceptado de tiempo o memoria tras un cambio."
+        },
+        {
+          "question": "¿Qué limita Amdahl?",
+          "solution": "La fracción serial restringe aceleración máxima."
+        },
+        {
+          "question": "Lista artefactos reproducibles.",
+          "solution": "Código, entorno, datos, pruebas, documentación, licencia y comandos."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Optimizar antes de tener referencia.",
+      "correction": "Construir oráculo y pruebas primero."
+    },
+    {
+      "error": "Llamar óptimo a un greedy sin prueba.",
+      "correction": "Demostrar propiedad o declararlo heurística."
+    },
+    {
+      "error": "Usar cobertura como sinónimo de calidad.",
+      "correction": "Diseñar casos y propiedades semánticas."
+    },
+    {
+      "error": "Fijar umbrales de rendimiento demasiado estrictos en CI.",
+      "correction": "Usar entornos controlados y tolerancias amplias."
+    },
+    {
+      "error": "Guardar secretos o datos sensibles en repositorio.",
+      "correction": "Usar secretos gestionados y datos sintéticos."
+    },
+    {
+      "error": "Comunicar velocidad sin entorno ni límites.",
+      "correction": "Reportar protocolo, memoria, variabilidad y alcance."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Para qué sirve una implementación de referencia?",
+      "answer": "Como oráculo claro para versiones optimizadas."
+    },
+    {
+      "question": "¿Qué diferencia greedy de DP?",
+      "answer": "Greedy decide localmente; DP combina estados y subproblemas."
+    },
+    {
+      "question": "¿Qué prueba interacción de módulos?",
+      "answer": "La prueba de integración."
+    },
+    {
+      "question": "¿Qué verifica una propiedad?",
+      "answer": "Una relación general sobre muchas entradas."
+    },
+    {
+      "question": "¿Qué debe ocurrir antes de optimizar?",
+      "answer": "Perfilado y una hipótesis medible."
+    },
+    {
+      "question": "¿Qué es regresión de rendimiento?",
+      "answer": "Deterioro de tiempo o memoria por un cambio."
+    },
+    {
+      "question": "¿Qué limita la aceleración paralela?",
+      "answer": "La fracción serial y costes de coordinación."
+    },
+    {
+      "question": "¿Qué hace CI?",
+      "answer": "Ejecuta comprobaciones automatizadas en cambios."
+    },
+    {
+      "question": "¿Qué contiene un README reproducible?",
+      "answer": "Instalación, ejecución, datos, salida, pruebas y límites."
+    },
+    {
+      "question": "¿Qué no demuestra un prototipo biomédico?",
+      "answer": "Utilidad clínica, seguridad ni validez asistencial."
+    }
+  ],
+  "biomedical_connections": [
+    "Distancia de edición de secuencias como problema algorítmico.",
+    "Pipelines reproducibles con datos sintéticos.",
+    "Validación de índices, grafos y ordenamientos.",
+    "Separación entre benchmark técnico y utilidad clínica."
+  ],
+  "sources": [
+    {
+      "title": "The Turing Way — Reproducible Research",
+      "organization": "The Turing Way Community",
+      "url": "https://book.the-turing-way.org/reproducible-research/reproducible-research",
+      "type": "guía abierta"
+    },
+    {
+      "title": "pytest Documentation",
+      "organization": "pytest Development Team",
+      "url": "https://docs.pytest.org/en/stable/",
+      "type": "documentación"
+    },
+    {
+      "title": "Hypothesis Documentation",
+      "organization": "HypothesisWorks",
+      "url": "https://hypothesis.readthedocs.io/en/latest/",
+      "type": "documentación"
+    },
+    {
+      "title": "GitHub Actions Documentation",
+      "organization": "GitHub",
+      "url": "https://docs.github.com/actions",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "Python Packaging User Guide",
+      "organization": "Python Packaging Authority",
+      "url": "https://packaging.python.org/en/latest/",
+      "type": "guía oficial"
+    },
+    {
+      "title": "Rosalind — Edit Distance",
+      "organization": "Rosalind",
+      "url": "https://rosalind.info/problems/edit/",
+      "type": "problema"
+    }
+  ],
+  "editorial_notice": "Material educativo para aprendizaje autónomo; requiere revisión docente experta. Los datos y casos son sintéticos o abiertos y no constituyen software clínico validado, ni una recomendación diagnóstica, terapéutica o asistencial."
+}
