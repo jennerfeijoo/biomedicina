@@ -20,19 +20,38 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
+      - name: Confirm explicit chunk files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .citonauta/biologia-i/part-00
+          test -f .citonauta/biologia-i/part-01
+          test -f .citonauta/biologia-i/part-02
+          test -f .citonauta/biologia-i/part-03
+          test -f .citonauta/biologia-i/part-04
+          test -f .citonauta/biologia-i/part-05
+
       - name: Build payload from explicit chunks
         shell: bash
         run: |
           set -euo pipefail
-          cat \
-            .citonauta/biologia-i/part-00 \
-            .citonauta/biologia-i/part-01 \
-            .citonauta/biologia-i/part-02 \
-            .citonauta/biologia-i/part-03 \
-            .citonauta/biologia-i/part-04 \
-            .citonauta/biologia-i/part-05 \
-            > /tmp/biologia-i.b64
-          test "$(wc -c < /tmp/biologia-i.b64)" -eq 40716
+          cat .citonauta/biologia-i/part-00 > /tmp/biologia-i.b64
+          cat .citonauta/biologia-i/part-01 >> /tmp/biologia-i.b64
+          cat .citonauta/biologia-i/part-02 >> /tmp/biologia-i.b64
+          cat .citonauta/biologia-i/part-03 >> /tmp/biologia-i.b64
+          cat .citonauta/biologia-i/part-04 >> /tmp/biologia-i.b64
+          cat .citonauta/biologia-i/part-05 >> /tmp/biologia-i.b64
+
+      - name: Check payload size
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          size = len(Path('/tmp/biologia-i.b64').read_bytes())
+          print({'payload_bytes': size})
+          assert size == 40716
+          PY
 
       - name: Check payload digest
         shell: bash
