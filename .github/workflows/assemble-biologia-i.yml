@@ -20,44 +20,25 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Check chunk set
+      - name: Build payload from explicit chunks
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          parts = sorted(Path('.citonauta/biologia-i').glob('part-*'))
-          expected = [f'part-{i:02d}' for i in range(6)]
-          actual = [p.name for p in parts]
-          print({'expected': expected, 'actual': actual})
-          assert actual == expected
-          PY
-
-      - name: Build payload and check size
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          parts = sorted(Path('.citonauta/biologia-i').glob('part-*'))
-          payload = b''.join(p.read_bytes() for p in parts)
-          Path('/tmp/biologia-i.b64').write_bytes(payload)
-          print({'payload_bytes': len(payload)})
-          assert len(payload) == 40716
-          PY
+          cat \
+            .citonauta/biologia-i/part-00 \
+            .citonauta/biologia-i/part-01 \
+            .citonauta/biologia-i/part-02 \
+            .citonauta/biologia-i/part-03 \
+            .citonauta/biologia-i/part-04 \
+            .citonauta/biologia-i/part-05 \
+            > /tmp/biologia-i.b64
+          test "$(wc -c < /tmp/biologia-i.b64)" -eq 40716
 
       - name: Check payload digest
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          payload = Path('/tmp/biologia-i.b64').read_bytes()
-          digest = hashlib.sha256(payload).hexdigest()
-          print({'payload_sha256': digest})
-          assert digest == '70e141c24d981f169841a97072f9b125c3afe37bec240728e70b5d68dd21e8a8'
-          PY
+          echo "70e141c24d981f169841a97072f9b125c3afe37bec240728e70b5d68dd21e8a8  /tmp/biologia-i.b64" | sha256sum --check --strict
 
       - name: Decode payload
         shell: bash
@@ -69,32 +50,19 @@ jobs:
           payload = Path('/tmp/biologia-i.b64').read_bytes()
           archive = base64.b64decode(payload, validate=True)
           Path('/tmp/biologia-i.tar.gz').write_bytes(archive)
-          print({'archive_bytes': len(archive)})
           PY
 
       - name: Check archive digest
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          archive = Path('/tmp/biologia-i.tar.gz').read_bytes()
-          digest = hashlib.sha256(archive).hexdigest()
-          print({'archive_sha256': digest})
-          assert digest == '0ae2cc6a1a3df6545bd2c4ced2f07d0679e2fd0ce79227766bbbb61a1f04171c'
-          PY
+          echo "0ae2cc6a1a3df6545bd2c4ced2f07d0679e2fd0ce79227766bbbb61a1f04171c  /tmp/biologia-i.tar.gz" | sha256sum --check --strict
 
-      - name: Inspect package archive
+      - name: Inspect and extract package archive
         shell: bash
         run: |
           set -euo pipefail
           tar -tzf /tmp/biologia-i.tar.gz
-
-      - name: Extract academic package
-        shell: bash
-        run: |
-          set -euo pipefail
           tar -xzf /tmp/biologia-i.tar.gz -C .
 
       - name: Validate Biología I
