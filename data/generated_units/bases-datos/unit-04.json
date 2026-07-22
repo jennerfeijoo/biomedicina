@@ -1,0 +1,420 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "bases-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 4,
+  "slug": "transacciones-concurrencia",
+  "title": "Transacciones y concurrencia",
+  "status": "review",
+  "weeks": [
+    9,
+    10,
+    11
+  ],
+  "estimated_hours": 24,
+  "purpose": "Comprender cómo una base de datos conserva estados consistentes cuando varias sesiones leen y escriben al mismo tiempo o cuando ocurren fallos. La unidad cubre propiedades ACID, logs, recuperación, niveles de aislamiento, anomalías, bloqueos, control multiversión, deadlocks e idempotencia en flujos biomédicos.",
+  "learning_objectives": [
+    "Delimitar transacciones de acuerdo con invariantes del dominio.",
+    "Explicar atomicidad, consistencia, aislamiento y durabilidad sin tratarlas como eslóganes.",
+    "Reconocer lecturas sucias, no repetibles, fantasmas y write skew.",
+    "Comparar bloqueo y control multiversión.",
+    "Seleccionar un nivel de aislamiento según riesgos y carga.",
+    "Diseñar operaciones idempotentes y reintentables.",
+    "Analizar deadlocks y estrategias de prevención o recuperación.",
+    "Probar escenarios concurrentes y fallos mediante múltiples sesiones."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Transacciones, invariantes y propiedades ACID",
+      "paragraphs": [
+        "Una transacción agrupa operaciones que deben considerarse una unidad lógica. El criterio no es el número de sentencias, sino el invariante que se protege. Registrar una extracción de muestra puede implicar crear el evento, actualizar disponibilidad y escribir procedencia. Si una parte falla y otra queda persistida, el sistema representa un estado imposible. BEGIN, COMMIT y ROLLBACK permiten delimitar esa unidad.",
+        "Atomicidad significa que los efectos de la transacción se aplican por completo o no se hacen visibles. Consistencia no garantiza que toda regla científica sea correcta; indica que la transacción lleva la base desde un estado que cumple las restricciones implementadas a otro que también las cumple. Si una regla no está representada por restricciones o lógica transaccional, ACID no puede protegerla.",
+        "Aislamiento controla cómo interactúan transacciones concurrentes. No implica necesariamente ejecución serial física. El motor puede usar bloqueos, versiones o validación optimista para permitir paralelismo mientras ofrece un comportamiento equivalente a cierto modelo. Durabilidad significa que, una vez confirmado el commit bajo la configuración elegida, los cambios sobreviven a fallos dentro de las garantías del sistema.",
+        "Los límites transaccionales deben ser breves y coherentes. Mantener una transacción abierta mientras un usuario toma decisiones aumenta bloqueos, versiones y riesgo de conflicto. En aplicaciones, suele separarse la interacción humana de la transacción final. También deben evitarse operaciones externas irreversibles dentro de una transacción de base de datos sin un protocolo de coordinación."
+      ],
+      "key_points": [
+        "La transacción protege un invariante del dominio.",
+        "ACID no corrige reglas que nunca se implementaron.",
+        "El aislamiento puede lograrse sin serializar físicamente todo.",
+        "Las transacciones deben ser breves y excluir esperas humanas."
+      ],
+      "equations": [
+        {
+          "latex": "S_0\\xrightarrow{T}S_1,\\quad I(S_0)\\land T\\text{ válida}\\Rightarrow I(S_1)",
+          "meaning": "Una transacción válida debe preservar el invariante I entre estados."
+        }
+      ]
+    },
+    {
+      "heading": "Anomalías de concurrencia y niveles de aislamiento",
+      "paragraphs": [
+        "Una lectura sucia ocurre cuando una transacción observa cambios no confirmados de otra. Si la segunda revierte, la primera actuó sobre un estado que nunca existió. La lectura no repetible aparece cuando una misma fila devuelve valores distintos dentro de una transacción debido a un commit concurrente. Una lectura fantasma ocurre cuando una consulta por condición devuelve un conjunto distinto por inserciones o borrados concurrentes.",
+        "Existen anomalías más sutiles. En write skew, dos transacciones leen el mismo estado, actualizan filas distintas y juntas violan una regla global. Por ejemplo, dos operadores verifican que queda al menos una alícuota disponible y cada uno reserva una diferente; ambas decisiones eran válidas individualmente, pero el resultado puede incumplir una restricción de reserva mínima. Las restricciones entre filas necesitan aislamiento o bloqueo apropiado.",
+        "Los niveles de aislamiento ofrecen compromisos. READ COMMITTED evita lecturas sucias, pero cada sentencia puede ver un snapshot distinto. REPEATABLE READ mantiene una visión más estable, aunque los detalles dependen del motor. SERIALIZABLE busca un resultado equivalente a algún orden serial y puede abortar transacciones para resolver conflictos. Elegir el nivel exige identificar anomalías inaceptables, no seleccionar siempre el máximo por reflejo.",
+        "El aislamiento también afecta análisis reproducibles. Una consulta larga bajo un snapshot consistente observa una versión coherente; bajo snapshots por sentencia, distintas partes pueden ver estados distintos. Para extracciones analíticas deben documentarse el nivel de aislamiento, el tiempo de corte y la política de actualización. La consistencia temporal de un conjunto de datos es parte de su procedencia."
+      ],
+      "key_points": [
+        "Las anomalías dependen de interacciones, no de sentencias aisladas.",
+        "Write skew puede violar reglas entre filas.",
+        "Los niveles de aislamiento son contratos con costes y abortos posibles.",
+        "Las extracciones analíticas necesitan un snapshot definido."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "Bloqueos, MVCC y deadlocks",
+      "paragraphs": [
+        "Los bloqueos coordinan acceso a recursos. Un bloqueo compartido suele permitir lecturas concurrentes y un bloqueo exclusivo protege escrituras. El alcance puede ser fila, página, tabla u otro objeto. Bloquear demasiado reduce concurrencia; bloquear insuficientemente deja reglas expuestas. SELECT ... FOR UPDATE permite proteger filas que serán modificadas después de una decisión.",
+        "El control multiversión, MVCC, conserva versiones para que lectores y escritores interfieran menos. Cada transacción observa un snapshot según reglas del motor. Las versiones antiguas deben limpiarse y las transacciones largas pueden impedir esa limpieza. MVCC no elimina conflictos de escritura ni todas las anomalías; cambia cómo se implementa el aislamiento y qué costes aparecen.",
+        "Un deadlock surge cuando transacciones mantienen recursos y esperan circularmente por otros. Los motores suelen detectarlo y abortar una víctima. La aplicación debe estar preparada para reintentar. Una estrategia preventiva es adquirir recursos en un orden global estable, por ejemplo ordenar identificadores antes de actualizarlos. También conviene mantener transacciones cortas y evitar tocar más filas de las necesarias.",
+        "El diagnóstico requiere observar sesiones, bloqueos, tiempos de espera y consultas. Un timeout no demuestra por sí solo deadlock; puede ser contención prolongada o una consulta lenta. La monitorización debe separar latencia de ejecución, espera por bloqueo y abortos. En sistemas biomédicos, una degradación silenciosa puede retrasar ingestión o análisis, por lo que las métricas operativas forman parte de la calidad."
+      ],
+      "key_points": [
+        "Los bloqueos protegen recursos, pero reducen concurrencia.",
+        "MVCC usa versiones y snapshots; no elimina todos los conflictos.",
+        "Los deadlocks requieren detección, orden consistente y reintentos.",
+        "La observabilidad debe distinguir ejecución, espera y aborto."
+      ],
+      "equations": [
+        {
+          "latex": "W_{total}=W_{ejecucion}+W_{bloqueo}+W_{IO}+W_{red}",
+          "meaning": "Descomponer la latencia ayuda a no atribuir todo retraso a la consulta."
+        }
+      ]
+    },
+    {
+      "heading": "Recuperación, idempotencia y pruebas",
+      "paragraphs": [
+        "Los sistemas usan logs de escritura anticipada para registrar cambios antes de aplicarlos a páginas de datos. Tras un fallo, el motor puede rehacer transacciones confirmadas y deshacer efectos incompletos según su arquitectura. Los checkpoints reducen trabajo de recuperación, pero no sustituyen respaldos. Durabilidad depende también de almacenamiento, replicación y configuración.",
+        "Una operación idempotente produce el mismo estado final al repetirse con la misma identidad. Es esencial cuando una aplicación no sabe si una respuesta se perdió antes o después del commit. Un identificador de solicitud y una restricción UNIQUE permiten reconocer reintentos. Sin idempotencia, un mensaje duplicado puede crear dos resultados o dos reservas.",
+        "Las transacciones distribuidas entre base de datos, cola y servicio externo requieren patrones adicionales. El outbox transaccional escribe el cambio y un evento pendiente en la misma transacción; otro proceso publica el evento. Esto reduce la ventana entre commit y notificación. Aun así, los consumidores deben ser idempotentes porque la entrega puede ser al menos una vez.",
+        "Las pruebas de concurrencia deben usar dos o más sesiones coordinadas. Se escriben secuencias de lectura, espera, actualización, commit y rollback que intenten violar invariantes. También se simulan fallos y reintentos. Una suite únicamente secuencial no demuestra comportamiento concurrente. Los resultados deben registrar versión del motor, aislamiento y tiempos."
+      ],
+      "key_points": [
+        "Logs y checkpoints soportan recuperación, pero no reemplazan respaldos.",
+        "La idempotencia evita duplicados ante reintentos inciertos.",
+        "Outbox coordina cambios y eventos sin suponer entrega exactamente una vez.",
+        "Las anomalías deben probarse con sesiones concurrentes."
+      ],
+      "equations": [
+        {
+          "latex": "f(f(x,k),k)=f(x,k)",
+          "meaning": "Una operación idempotente con clave k deja el mismo estado al repetirse."
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Transacción",
+      "definition": "Unidad lógica de operaciones confirmadas o revertidas juntas."
+    },
+    {
+      "term": "Atomicidad",
+      "definition": "Propiedad de todo o nada para los efectos transaccionales."
+    },
+    {
+      "term": "Consistencia",
+      "definition": "Preservación de invariantes implementados entre estados."
+    },
+    {
+      "term": "Aislamiento",
+      "definition": "Contrato sobre visibilidad e interacción entre transacciones."
+    },
+    {
+      "term": "Durabilidad",
+      "definition": "Persistencia de cambios confirmados bajo las garantías configuradas."
+    },
+    {
+      "term": "Snapshot",
+      "definition": "Vista consistente de versiones observada por una transacción."
+    },
+    {
+      "term": "MVCC",
+      "definition": "Control de concurrencia mediante múltiples versiones."
+    },
+    {
+      "term": "Bloqueo",
+      "definition": "Mecanismo que restringe acceso concurrente a un recurso."
+    },
+    {
+      "term": "Deadlock",
+      "definition": "Espera circular entre transacciones."
+    },
+    {
+      "term": "Write skew",
+      "definition": "Anomalía donde escrituras en filas distintas violan una regla global."
+    },
+    {
+      "term": "WAL",
+      "definition": "Log de escritura anticipada usado para durabilidad y recuperación."
+    },
+    {
+      "term": "Checkpoint",
+      "definition": "Punto que limita el trabajo requerido durante recuperación."
+    },
+    {
+      "term": "Idempotencia",
+      "definition": "Propiedad por la que repetir una operación no cambia el estado final."
+    },
+    {
+      "term": "Outbox transaccional",
+      "definition": "Patrón que registra cambio y evento pendiente en la misma transacción."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Reserva concurrente de alícuotas",
+      "scenario": "Dos procesos reservan alícuotas para estudios distintos. La regla exige conservar al menos una alícuota no reservada para control de calidad.",
+      "reasoning_steps": [
+        "Ambas transacciones cuentan dos alícuotas libres.",
+        "Cada una selecciona una alícuota distinta.",
+        "Con READ COMMITTED, ambas pueden actualizar y confirmar.",
+        "El estado final deja cero alícuotas libres y viola la regla global.",
+        "Bloquear el conjunto relevante o usar SERIALIZABLE evita el write skew.",
+        "La aplicación debe reintentar una transacción abortada.",
+        "Una restricción adicional o tabla de inventario puede hacer la regla más local."
+      ],
+      "solution": "Ejecutar la decisión bajo SERIALIZABLE o bloquear explícitamente una fila de inventario que represente el recurso común. La operación usa una clave de solicitud para ser idempotente.",
+      "interpretation": "Las filas individuales son válidas, pero la combinación viola un invariante entre filas.",
+      "limitations": [
+        "La estrategia exacta depende del motor y la tasa de contención.",
+        "Una regla de negocio real puede requerir prioridades y autorizaciones."
+      ]
+    },
+    {
+      "title": "Ingesta idempotente de un resultado",
+      "scenario": "Un dispositivo envía un resultado con request_id. La red falla después del commit y el dispositivo reintenta.",
+      "reasoning_steps": [
+        "Crear UNIQUE(dispositivo_id, request_id).",
+        "Iniciar transacción.",
+        "Intentar insertar el evento de ingesta.",
+        "Si ya existe, recuperar el resultado asociado y devolver éxito.",
+        "Si no existe, validar, insertar resultado y procedencia.",
+        "Confirmar ambas filas juntas.",
+        "Registrar errores sin crear duplicados."
+      ],
+      "solution": "El identificador de solicitud convierte el reintento en una consulta del estado ya confirmado. La inserción del evento y del resultado ocurre en una sola transacción.",
+      "interpretation": "La idempotencia resuelve incertidumbre de entrega, no validez clínica del valor.",
+      "limitations": [
+        "Requiere que el emisor mantenga request_id estable.",
+        "No evita duplicados semánticos enviados con identificadores distintos."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Laboratorio de anomalías con dos sesiones",
+      "instructions": [
+        "Configura una base de datos local con inventario de muestras.",
+        "Abre dos sesiones y fija un nivel de aislamiento.",
+        "Ejecuta una secuencia que produzca lectura no repetible.",
+        "Construye un escenario de write skew.",
+        "Repite bajo SERIALIZABLE y registra abortos.",
+        "Implementa reintento con límite y backoff.",
+        "Provoca un deadlock adquiriendo filas en orden opuesto.",
+        "Corrige el orden de adquisición y documenta resultados."
+      ],
+      "tasks": [
+        "Comparar READ COMMITTED y SERIALIZABLE.",
+        "Registrar snapshots y tiempos de commit.",
+        "Usar SELECT FOR UPDATE.",
+        "Implementar una clave idempotente.",
+        "Medir espera por bloqueo.",
+        "Escribir una prueba automática del invariante."
+      ],
+      "deliverable": "Scripts de dos sesiones, tabla de resultados, explicación de anomalías y estrategia corregida.",
+      "checking_criteria": [
+        "El escenario reproduce una anomalía real.",
+        "El invariante está escrito antes de la prueba.",
+        "Se registra aislamiento, versión y orden de operaciones.",
+        "Los reintentos son acotados e idempotentes.",
+        "La solución distingue bloqueo, serialización y restricción."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "level": "fundamental",
+      "problems": [
+        {
+          "prompt": "¿Qué diferencia existe entre COMMIT y ROLLBACK?",
+          "solution": "COMMIT confirma los cambios; ROLLBACK revierte la transacción no confirmada."
+        },
+        {
+          "prompt": "Da un ejemplo de atomicidad.",
+          "solution": "Crear una muestra y actualizar su inventario deben ocurrir juntos o no ocurrir."
+        },
+        {
+          "prompt": "¿Qué es una lectura sucia?",
+          "solution": "Leer cambios aún no confirmados que podrían revertirse."
+        },
+        {
+          "prompt": "¿Por qué una transacción no debe esperar interacción humana?",
+          "solution": "Mantiene recursos y versiones durante demasiado tiempo, aumentando conflictos."
+        }
+      ]
+    },
+    {
+      "level": "intermedio",
+      "problems": [
+        {
+          "prompt": "Explica una lectura no repetible.",
+          "solution": "La misma fila cambia entre dos lecturas por un commit concurrente."
+        },
+        {
+          "prompt": "¿Qué aporta SELECT FOR UPDATE?",
+          "solution": "Bloquea filas seleccionadas para proteger una decisión de escritura posterior."
+        },
+        {
+          "prompt": "¿Por qué MVCC no elimina conflictos?",
+          "solution": "Lectores usan versiones, pero escrituras concurrentes y reglas entre filas aún pueden colisionar."
+        },
+        {
+          "prompt": "Propón un orden para evitar deadlocks.",
+          "solution": "Actualizar siempre muestras por identificador ascendente."
+        }
+      ]
+    },
+    {
+      "level": "avanzado",
+      "problems": [
+        {
+          "prompt": "Diseña un reintento para errores de serialización.",
+          "solution": "Repetir toda la transacción con límite, backoff y operación idempotente."
+        },
+        {
+          "prompt": "Explica por qué exactamente una vez es difícil entre sistemas.",
+          "solution": "Un fallo puede ocurrir entre commit y confirmación; se usan entrega al menos una vez e idempotencia."
+        },
+        {
+          "prompt": "Propón un patrón outbox.",
+          "solution": "Guardar dato y evento pendiente en la misma transacción, publicar después y marcar entrega."
+        },
+        {
+          "prompt": "Diseña una prueba de recuperación.",
+          "solution": "Confirmar una transacción, interrumpir el proceso, reiniciar y verificar datos e invariantes junto con respaldos."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Suponer que ACID valida toda regla del dominio.",
+      "correction": "Implementar restricciones e invariantes explícitos."
+    },
+    {
+      "error": "Elegir aislamiento por nombre sin identificar anomalías.",
+      "correction": "Escribir escenarios concurrentes y riesgos."
+    },
+    {
+      "error": "Reintentar solo la última sentencia.",
+      "correction": "Reejecutar la transacción completa desde un estado nuevo."
+    },
+    {
+      "error": "No hacer operaciones idempotentes.",
+      "correction": "Usar claves de solicitud y restricciones de unicidad."
+    },
+    {
+      "error": "Mantener transacciones abiertas durante interacción humana.",
+      "correction": "Recoger datos fuera y confirmar en una transacción breve."
+    },
+    {
+      "error": "Ignorar deadlocks porque son raros.",
+      "correction": "Ordenar recursos y manejar abortos."
+    },
+    {
+      "error": "Confundir checkpoint con respaldo.",
+      "correction": "Mantener estrategia independiente de backup y restauración."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué define el límite de una transacción?",
+      "answer": "El conjunto de operaciones que protege un invariante lógico."
+    },
+    {
+      "question": "¿Qué significa atomicidad?",
+      "answer": "Que los efectos se aplican todos o ninguno."
+    },
+    {
+      "question": "¿Qué limita consistencia en ACID?",
+      "answer": "Solo protege restricciones e invariantes realmente implementados."
+    },
+    {
+      "question": "¿Qué es write skew?",
+      "answer": "Dos transacciones escriben filas distintas y juntas violan una regla global."
+    },
+    {
+      "question": "¿Qué ofrece SERIALIZABLE?",
+      "answer": "Un resultado equivalente a algún orden serial, con posibles abortos."
+    },
+    {
+      "question": "¿Qué es MVCC?",
+      "answer": "Un método de concurrencia basado en versiones y snapshots."
+    },
+    {
+      "question": "¿Cómo se reduce el riesgo de deadlock?",
+      "answer": "Adquiriendo recursos en orden estable y manteniendo transacciones cortas."
+    },
+    {
+      "question": "¿Qué significa idempotencia?",
+      "answer": "Repetir una operación con la misma identidad deja el mismo estado final."
+    },
+    {
+      "question": "¿Para qué sirve WAL?",
+      "answer": "Para durabilidad y recuperación mediante registro previo de cambios."
+    },
+    {
+      "question": "¿Cómo se prueba una anomalía concurrente?",
+      "answer": "Con varias sesiones coordinadas y un invariante verificable."
+    }
+  ],
+  "biomedical_connections": [
+    "Reserva segura de muestras y recursos.",
+    "Ingesta idempotente desde dispositivos y laboratorios.",
+    "Extracciones analíticas con snapshot consistente.",
+    "Auditoría de correcciones y eventos.",
+    "Recuperación ante fallos en repositorios científicos."
+  ],
+  "sources": [
+    {
+      "title": "PostgreSQL Documentation: Transaction Isolation",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "PostgreSQL Documentation: Explicit Locking",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/explicit-locking.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "SQLite Transactions",
+      "organization": "SQLite Consortium",
+      "url": "https://www.sqlite.org/lang_transaction.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "Designing Data-Intensive Applications — Transactions chapter resources",
+      "organization": "Martin Kleppmann",
+      "url": "https://github.com/ept/ddia-references",
+      "type": "bibliografía académica"
+    },
+    {
+      "title": "NIST Contingency Planning Guide",
+      "organization": "National Institute of Standards and Technology",
+      "url": "https://csrc.nist.gov/pubs/sp/800/34/r1/upd1/final",
+      "type": "guía institucional"
+    },
+    {
+      "title": "The Transactional Outbox Pattern",
+      "organization": "microservices.io",
+      "url": "https://microservices.io/patterns/data/transactional-outbox.html",
+      "type": "patrón técnico"
+    }
+  ],
+  "editorial_notice": "Material educativo que requiere revisión docente experta. Los protocolos de concurrencia son demostraciones y no constituyen software clínico validado ni un plan operativo para sistemas asistenciales.",
+  "unit_closure": "La concurrencia convierte una operación correcta de manera aislada en un problema de interacción. La solución no consiste en añadir COMMIT al final, sino en identificar invariantes, anomalías tolerables y fallos esperados. Un diseño robusto combina restricciones, aislamiento, bloqueos selectivos, idempotencia, reintentos y observabilidad, y demuestra su comportamiento mediante sesiones concurrentes reproducibles. El registro de pruebas debe incluir versiones del motor y scripts completos para repetir los intercalados."
+}

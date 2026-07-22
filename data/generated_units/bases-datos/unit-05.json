@@ -1,0 +1,423 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "bases-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 5,
+  "slug": "indices-seguridad-rendimiento",
+  "title": "Índices, seguridad y rendimiento",
+  "status": "review",
+  "weeks": [
+    12,
+    13
+  ],
+  "estimated_hours": 16,
+  "purpose": "Relacionar estructuras de acceso, planes de ejecución, distribución de datos y carga operativa con una estrategia de seguridad y gobierno. La unidad enseña a medir antes de optimizar, seleccionar índices con criterio, aplicar mínimo privilegio, reducir exposición de datos sensibles y diseñar respaldos y observabilidad.",
+  "learning_objectives": [
+    "Explicar cómo un índice modifica las rutas de acceso sin cambiar el resultado lógico.",
+    "Comparar índices B-tree, hash, compuestos, parciales y por expresión.",
+    "Interpretar planes de ejecución y estimaciones de cardinalidad.",
+    "Diseñar benchmarks reproducibles con datos representativos.",
+    "Aplicar mínimo privilegio, separación de funciones y consultas parametrizadas.",
+    "Distinguir seudonimización, anonimización, cifrado y control de acceso.",
+    "Definir auditoría, respaldo, restauración y retención.",
+    "Evaluar compromisos entre latencia, escritura, almacenamiento, seguridad y mantenibilidad."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Índices, selectividad y coste de mantenimiento",
+      "paragraphs": [
+        "Un índice es una estructura auxiliar que permite localizar filas sin recorrer necesariamente toda la tabla. No cambia la semántica de la consulta, pero sí las rutas físicas disponibles. Un B-tree mantiene claves ordenadas y soporta igualdad, rangos y ordenación. La utilidad depende de la condición, el volumen, la distribución y la fracción de filas solicitadas. Un índice no garantiza que el optimizador lo use.",
+        "La selectividad describe cuánto reduce una condición el conjunto de filas. Un índice sobre una columna con pocos valores, como estado activo/inactivo, puede aportar poco si la consulta devuelve gran parte de la tabla. En cambio, un identificador casi único suele ser selectivo. Las estadísticas del motor aproximan distribuciones y cardinalidades; cuando son insuficientes o están desactualizadas, el plan puede elegir rutas costosas.",
+        "Los índices compuestos siguen un orden de columnas. Un índice (persona_id, fecha_evento) suele servir para recuperar eventos de una persona y rangos temporales, pero no necesariamente para consultas solo por fecha. El orden debe reflejar predicados, ordenación y patrón de acceso. Los índices parciales incluyen únicamente filas que cumplen una condición, y los índices por expresión almacenan un cálculo estable utilizado en consultas.",
+        "Cada índice tiene coste. Ocupa almacenamiento, aumenta escrituras, exige mantenimiento y puede generar bloat o fragmentación según el motor. Crear índices para todas las columnas empeora ingestión y complica decisiones del optimizador. La estrategia debe partir de consultas críticas medidas, no de una regla general. Los índices redundantes deben identificarse y retirarse con control de cambios."
+      ],
+      "key_points": [
+        "El índice ofrece una ruta física, no una promesa de uso.",
+        "Selectividad y distribución influyen en su utilidad.",
+        "El orden de un índice compuesto depende del patrón de consulta.",
+        "Cada índice añade costes de escritura, espacio y mantenimiento."
+      ],
+      "equations": [
+        {
+          "latex": "s=\\frac{n_{filas\\ devueltas}}{n_{filas\\ totales}}",
+          "meaning": "Una selectividad baja suele favorecer acceso por índice, aunque el coste real depende del sistema."
+        },
+        {
+          "latex": "C_{total}=C_{lectura}+C_{escritura}+C_{mantenimiento}+C_{almacenamiento}",
+          "meaning": "La optimización debe considerar el coste total, no solo una consulta."
+        }
+      ]
+    },
+    {
+      "heading": "Planes de ejecución, estimaciones y benchmarks",
+      "paragraphs": [
+        "El optimizador compara planes posibles: escaneo secuencial, búsqueda por índice, diferentes órdenes de join, algoritmos de combinación y estrategias de agregación. EXPLAIN muestra el plan estimado; EXPLAIN ANALYZE ejecuta y añade tiempos y filas reales. Debe usarse con precaución sobre consultas que modifican datos. El plan se interpreta como una hipótesis del motor sobre costes y cardinalidades.",
+        "Las diferencias entre filas estimadas y reales son una señal importante. Pueden deberse a estadísticas desactualizadas, correlaciones entre columnas, parámetros, expresiones o distribución sesgada. Una estimación errónea al inicio de un plan se amplifica en joins posteriores. Antes de añadir un índice conviene comprobar si el problema es semántico, de estadísticas, de consulta, de volumen o de configuración.",
+        "Un benchmark necesita una pregunta, una carga representativa y un entorno controlado. Debe declarar hardware, versión del motor, tamaño, distribución, índices, concurrencia, caché, repeticiones y estadístico. Medir una consulta una vez mezcla calentamiento, compilación, E/S y ruido. También debe verificarse que las alternativas devuelvan exactamente el mismo resultado.",
+        "La optimización local puede empeorar el sistema. Un índice que acelera una consulta mensual puede ralentizar millones de inserciones. Una vista materializada reduce cálculo a cambio de frescura y refresco. Particionar puede facilitar mantenimiento y poda, pero no sustituye índices ni corrige consultas. El objetivo debe formularse como un nivel de servicio y una carga global, no como el menor tiempo aislado."
+      ],
+      "key_points": [
+        "El plan refleja estimaciones y decisiones del optimizador.",
+        "Errores de cardinalidad pueden dominar el rendimiento.",
+        "Los benchmarks requieren datos, entorno y repetición controlados.",
+        "Optimizar una consulta puede perjudicar la carga completa."
+      ],
+      "equations": [
+        {
+          "latex": "\\text{speedup}=\\frac{T_{base}}{T_{nuevo}}",
+          "meaning": "La aceleración solo es interpretable si ambas alternativas producen el mismo resultado bajo condiciones comparables."
+        }
+      ]
+    },
+    {
+      "heading": "Seguridad, privacidad y mínimo privilegio",
+      "paragraphs": [
+        "La seguridad de una base de datos combina autenticación, autorización, cifrado, configuración, desarrollo seguro, auditoría y operación. El principio de mínimo privilegio concede únicamente las acciones necesarias. Una aplicación de lectura no necesita crear tablas; un proceso de ingestión no debería administrar usuarios. Separar roles reduce el impacto de errores y credenciales comprometidas.",
+        "Las consultas parametrizadas separan datos de código y son la defensa principal contra inyección SQL. Concatenar entradas en una cadena permite alterar la estructura de la consulta. Validar formato sigue siendo útil, pero no sustituye parámetros. Las cuentas de aplicación deben carecer de privilegios administrativos para limitar daño incluso si existe una vulnerabilidad.",
+        "Seudonimizar sustituye identificadores directos por referencias controladas, pero los datos pueden seguir siendo reidentificables. Anonimizar implica reducir razonablemente la posibilidad de reidentificación para un contexto, una afirmación difícil en conjuntos biomédicos ricos. Cifrar protege datos en tránsito o reposo frente a ciertos riesgos, pero un usuario autorizado que consulta datos descifrados sigue necesitando controles y auditoría.",
+        "La minimización limita campos, filas, resolución y tiempo de retención a lo necesario. Los entornos de desarrollo no deberían usar copias reales por comodidad. Los datos sintéticos o transformados reducen exposición, aunque deben probar su utilidad y riesgo. El control de acceso por filas o vistas puede separar poblaciones, pero requiere pruebas para evitar filtraciones por joins, funciones o metadatos."
+      ],
+      "key_points": [
+        "Seguridad es un sistema de controles, no una contraseña.",
+        "Mínimo privilegio y separación de funciones limitan impacto.",
+        "Las consultas parametrizadas previenen inyección.",
+        "Seudonimización, anonimización y cifrado resuelven riesgos diferentes."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "Auditoría, respaldo, restauración y observabilidad",
+      "paragraphs": [
+        "La auditoría registra eventos relevantes: acceso, cambios de privilegios, modificaciones sensibles y operaciones administrativas. Un log debe ser útil sin convertirse en una copia innecesaria de datos sensibles. Se definen responsables, retención, integridad y revisión. Registrar todo sin capacidad de análisis produce volumen, coste y falsa seguridad.",
+        "Un respaldo solo es confiable si puede restaurarse. La estrategia define objetivo de punto de recuperación, RPO, y objetivo de tiempo de recuperación, RTO. Los respaldos completos, incrementales y logs pueden combinarse para restauración a un punto. Deben protegerse, cifrarse, aislarse y probarse periódicamente. Replicación no sustituye backup porque puede propagar borrados o corrupción.",
+        "Las migraciones de esquema son cambios de producción y necesitan versión, revisión, compatibilidad y rollback o estrategia de avance. Cambiar el tipo de una columna grande puede bloquear o reescribir datos. Las migraciones deben ensayarse con volúmenes representativos. También se documentan dependencias con aplicaciones, vistas y procesos de análisis.",
+        "La observabilidad integra latencia, throughput, errores, bloqueos, conexiones, espacio, checkpoints, replicación y respaldos. Las métricas deben conectarse con objetivos de servicio y riesgos científicos. Un sistema puede responder rápido y devolver datos incompletos por un proceso de ingestión fallido. Rendimiento, disponibilidad, integridad y frescura deben vigilarse conjuntamente."
+      ],
+      "key_points": [
+        "La auditoría necesita propósito, integridad y revisión.",
+        "Un backup no existe operativamente hasta probar restauración.",
+        "Las migraciones requieren compatibilidad y ensayo.",
+        "Observabilidad debe cubrir rendimiento, integridad, disponibilidad y frescura."
+      ],
+      "equations": [
+        {
+          "latex": "RPO=\\text{máxima pérdida temporal aceptable},\\quad RTO=\\text{tiempo máximo de recuperación}",
+          "meaning": "RPO y RTO traducen continuidad en objetivos verificables."
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Índice",
+      "definition": "Estructura auxiliar para localizar filas mediante claves."
+    },
+    {
+      "term": "B-tree",
+      "definition": "Árbol balanceado ordenado usado para igualdad y rangos."
+    },
+    {
+      "term": "Selectividad",
+      "definition": "Fracción de filas devuelta por una condición."
+    },
+    {
+      "term": "Cardinalidad estimada",
+      "definition": "Número de filas que el optimizador predice para una operación."
+    },
+    {
+      "term": "Plan de ejecución",
+      "definition": "Conjunto de operadores físicos elegido para una consulta."
+    },
+    {
+      "term": "Escaneo secuencial",
+      "definition": "Lectura de la tabla siguiendo su almacenamiento."
+    },
+    {
+      "term": "Índice parcial",
+      "definition": "Índice limitado a filas que cumplen una condición."
+    },
+    {
+      "term": "Mínimo privilegio",
+      "definition": "Concesión exclusiva de permisos necesarios."
+    },
+    {
+      "term": "Consulta parametrizada",
+      "definition": "Consulta que separa estructura SQL y valores."
+    },
+    {
+      "term": "Seudonimización",
+      "definition": "Sustitución controlada de identificadores directos."
+    },
+    {
+      "term": "Anonimización",
+      "definition": "Proceso orientado a reducir reidentificación en un contexto."
+    },
+    {
+      "term": "RPO",
+      "definition": "Pérdida temporal máxima aceptable tras un incidente."
+    },
+    {
+      "term": "RTO",
+      "definition": "Tiempo máximo objetivo para restaurar servicio."
+    },
+    {
+      "term": "Observabilidad",
+      "definition": "Capacidad de inferir estado mediante métricas, logs y trazas."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Índice para resultados longitudinales",
+      "scenario": "La consulta crítica recupera resultados válidos de una persona para un analito, ordenados por fecha. La tabla tiene cien millones de filas.",
+      "reasoning_steps": [
+        "Confirmar predicados: persona_id, analito_id, estado y rango temporal.",
+        "Medir plan base y filas estimadas frente a reales.",
+        "Probar índice compuesto (persona_id, analito_id, fecha_evento).",
+        "Evaluar un índice parcial para estado='válido'.",
+        "Comparar tamaño, tiempo de lectura y coste de inserción.",
+        "Repetir con personas de alta y baja frecuencia.",
+        "Verificar igualdad exacta de resultados."
+      ],
+      "solution": "Un índice compuesto alineado con igualdad por persona y analito seguido de rango temporal reduce acceso. Si la mayoría de filas anuladas es pequeña, un índice parcial de válidos puede disminuir tamaño. La decisión se sostiene con planes y benchmark.",
+      "interpretation": "El índice responde a una consulta concreta; no es automáticamente óptimo para búsquedas globales por fecha.",
+      "limitations": [
+        "La distribución real y la caché modifican resultados.",
+        "El diseño puede cambiar con particionamiento o nuevas consultas."
+      ]
+    },
+    {
+      "title": "Rol de aplicación de solo lectura",
+      "scenario": "Un notebook de investigación debe consultar una vista curada sin acceder a identificadores directos ni modificar datos.",
+      "reasoning_steps": [
+        "Crear una vista con columnas mínimas y población autorizada.",
+        "Crear un rol sin LOGIN como conjunto de privilegios.",
+        "Conceder SELECT únicamente sobre la vista.",
+        "Crear cuentas individuales que hereden el rol.",
+        "Revocar acceso por defecto a tablas base.",
+        "Registrar consultas según política sin copiar valores sensibles.",
+        "Probar accesos permitidos y denegados."
+      ],
+      "solution": "La cuenta puede consultar la interfaz curada, pero no tablas base, DDL ni escrituras. Las credenciales son individuales y rotables; el notebook usa consultas parametrizadas.",
+      "interpretation": "El diseño reduce exposición, aunque no elimina riesgo de inferencia o exportación.",
+      "limitations": [
+        "La autorización real depende de políticas y propósito.",
+        "Una vista mal diseñada puede filtrar información indirecta."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría de rendimiento y seguridad",
+      "instructions": [
+        "Selecciona tres consultas representativas sobre datos sintéticos.",
+        "Registra planes, tiempos, filas y tamaño antes de cambios.",
+        "Propón dos índices y una alternativa sin índice.",
+        "Ejecuta un benchmark con repeticiones y datos sesgados.",
+        "Evalúa impacto en inserciones.",
+        "Construye roles de lectura, ingestión y administración.",
+        "Prueba consultas parametrizadas y accesos denegados.",
+        "Define RPO, RTO y una prueba de restauración."
+      ],
+      "tasks": [
+        "Detectar una estimación de cardinalidad deficiente.",
+        "Comparar índice simple y compuesto.",
+        "Identificar un índice redundante.",
+        "Demostrar un intento de inyección neutralizado por parámetros.",
+        "Probar mínimo privilegio.",
+        "Restaurar un respaldo en una base separada."
+      ],
+      "deliverable": "Informe con planes, benchmark, matriz de permisos, pruebas de seguridad y evidencia de restauración.",
+      "checking_criteria": [
+        "Las alternativas devuelven resultados idénticos.",
+        "El benchmark declara entorno, datos y variabilidad.",
+        "Los permisos siguen mínimo privilegio.",
+        "No se incluyen datos reales ni secretos.",
+        "El respaldo se valida mediante restauración y comprobaciones."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "level": "fundamental",
+      "problems": [
+        {
+          "prompt": "¿Qué tipo de consulta favorece un B-tree?",
+          "solution": "Igualdad, rangos y ordenación sobre sus claves."
+        },
+        {
+          "prompt": "¿Por qué no crear índices en todas las columnas?",
+          "solution": "Aumentan espacio, escrituras y mantenimiento y pueden ser inútiles."
+        },
+        {
+          "prompt": "¿Qué diferencia hay entre EXPLAIN y EXPLAIN ANALYZE?",
+          "solution": "El segundo ejecuta y muestra mediciones reales además de estimaciones."
+        },
+        {
+          "prompt": "¿Qué es mínimo privilegio?",
+          "solution": "Conceder solo permisos necesarios para una función."
+        }
+      ]
+    },
+    {
+      "level": "intermedio",
+      "problems": [
+        {
+          "prompt": "Ordena columnas para consultas por persona y fecha.",
+          "solution": "Un índice (persona_id, fecha) suele apoyar igualdad por persona y rango temporal."
+        },
+        {
+          "prompt": "¿Qué revela una gran diferencia entre filas estimadas y reales?",
+          "solution": "Posible problema de estadísticas, correlación, distribución o expresión."
+        },
+        {
+          "prompt": "Distingue seudonimización y anonimización.",
+          "solution": "La primera mantiene una referencia controlada; la segunda busca reducir reidentificación en un contexto."
+        },
+        {
+          "prompt": "¿Por qué replicación no es backup?",
+          "solution": "Puede propagar errores y borrados y no ofrece necesariamente versiones históricas aisladas."
+        }
+      ]
+    },
+    {
+      "level": "avanzado",
+      "problems": [
+        {
+          "prompt": "Diseña un índice parcial para resultados vigentes.",
+          "solution": "CREATE INDEX ... WHERE estado='vigente', verificando que la consulta use la misma condición."
+        },
+        {
+          "prompt": "Propón un benchmark que incluya coste de escritura.",
+          "solution": "Medir consultas e ingestión con y sin índice sobre el mismo conjunto y entorno."
+        },
+        {
+          "prompt": "Diseña una matriz de roles.",
+          "solution": "Separar lectura curada, ingestión limitada, migraciones y administración con cuentas individuales."
+        },
+        {
+          "prompt": "Formula una prueba de restauración.",
+          "solution": "Restaurar en entorno aislado, ejecutar checksums, conteos, restricciones y consultas críticas."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Añadir índices sin medir planes y carga.",
+      "correction": "Establecer línea base y consulta objetivo."
+    },
+    {
+      "error": "Interpretar menor tiempo de una ejecución como mejora.",
+      "correction": "Repetir, controlar caché y reportar variabilidad."
+    },
+    {
+      "error": "Conceder permisos directamente a cuentas compartidas.",
+      "correction": "Usar roles y cuentas individuales."
+    },
+    {
+      "error": "Construir SQL concatenando entrada.",
+      "correction": "Usar parámetros del controlador."
+    },
+    {
+      "error": "Llamar anónimos a datos solo seudonimizados.",
+      "correction": "Evaluar reidentificación y usar terminología precisa."
+    },
+    {
+      "error": "Guardar backups sin probar restauración.",
+      "correction": "Automatizar ensayos y verificar integridad."
+    },
+    {
+      "error": "Optimizar latencia ignorando frescura o integridad.",
+      "correction": "Vigilar objetivos operativos y científicos juntos."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué cambia un índice?",
+      "answer": "Las rutas físicas de acceso, no el resultado lógico."
+    },
+    {
+      "question": "¿Qué es selectividad?",
+      "answer": "La fracción de filas que satisface una condición."
+    },
+    {
+      "question": "¿Por qué importa el orden de un índice compuesto?",
+      "answer": "Determina qué prefijos y rangos pueden aprovecharse eficientemente."
+    },
+    {
+      "question": "¿Qué compara EXPLAIN ANALYZE?",
+      "answer": "Estimaciones del plan con ejecución y filas reales."
+    },
+    {
+      "question": "¿Qué previene una consulta parametrizada?",
+      "answer": "Que entradas alteren la estructura SQL, reduciendo inyección."
+    },
+    {
+      "question": "¿Qué exige mínimo privilegio?",
+      "answer": "Permisos mínimos por función y separación de responsabilidades."
+    },
+    {
+      "question": "¿Cifrar hace anónimos los datos?",
+      "answer": "No; protege frente a ciertos accesos, pero los usuarios autorizados pueden descifrarlos."
+    },
+    {
+      "question": "¿Qué significa RPO?",
+      "answer": "La pérdida temporal máxima aceptable."
+    },
+    {
+      "question": "¿Qué demuestra una restauración probada?",
+      "answer": "Que el respaldo puede convertirse en un estado utilizable e íntegro."
+    },
+    {
+      "question": "¿Por qué rendimiento y seguridad deben evaluarse juntos?",
+      "answer": "Controles, índices y operación interactúan y una mejora local puede aumentar otro riesgo."
+    }
+  ],
+  "biomedical_connections": [
+    "Consultas longitudinales sobre grandes volúmenes.",
+    "Separación de identidades y capas curadas de investigación.",
+    "Auditoría de accesos a datos sensibles.",
+    "Continuidad de repositorios de muestras y resultados.",
+    "Benchmarks reproducibles para pipelines biomédicos."
+  ],
+  "sources": [
+    {
+      "title": "PostgreSQL Documentation: Indexes",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/indexes.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "PostgreSQL Documentation: Using EXPLAIN",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/using-explain.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "SQLite Query Planning",
+      "organization": "SQLite Consortium",
+      "url": "https://www.sqlite.org/queryplanner.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "OWASP SQL Injection Prevention Cheat Sheet",
+      "organization": "OWASP Foundation",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html",
+      "type": "guía de seguridad"
+    },
+    {
+      "title": "NIST Privacy Framework",
+      "organization": "National Institute of Standards and Technology",
+      "url": "https://www.nist.gov/privacy-framework",
+      "type": "marco institucional"
+    },
+    {
+      "title": "NIST Contingency Planning Guide",
+      "organization": "National Institute of Standards and Technology",
+      "url": "https://csrc.nist.gov/pubs/sp/800/34/r1/upd1/final",
+      "type": "guía institucional"
+    }
+  ],
+  "editorial_notice": "Material educativo que requiere revisión docente experta. Los ejemplos de seguridad y rendimiento no constituyen software clínico validado, evaluación legal ni autorización para almacenar datos personales reales.",
+  "unit_closure": "Rendimiento y seguridad deben evaluarse como propiedades operativas del sistema completo. Un índice útil se justifica con consultas y carga; un permiso se justifica con una función; un respaldo se justifica con una restauración. Las mejoras que no conservan resultados, procedencia o controles pueden acelerar una respuesta mientras aumentan el riesgo científico y operativo. La documentación final debe vincular cada cambio con una métrica, un riesgo y una forma de reversión."
+}

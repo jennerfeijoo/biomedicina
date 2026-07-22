@@ -1,0 +1,420 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "bases-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 3,
+  "slug": "sql-consulta-analisis",
+  "title": "SQL para consulta y análisis",
+  "status": "review",
+  "weeks": [
+    6,
+    7,
+    8
+  ],
+  "estimated_hours": 24,
+  "purpose": "Dominar SQL como lenguaje declarativo para recuperar, combinar, resumir y verificar datos biomédicos relacionales. La unidad enfatiza semántica de NULL, joins, agregación, subconsultas, expresiones de tabla comunes, ventanas, vistas y construcción reproducible de cohortes.",
+  "learning_objectives": [
+    "Explicar el orden lógico de evaluación de una consulta SQL.",
+    "Escribir filtros correctos considerando tipos, fechas y valores NULL.",
+    "Combinar tablas mediante joins con claves y cardinalidades explícitas.",
+    "Construir agregaciones con GROUP BY y HAVING sin duplicar observaciones.",
+    "Utilizar subconsultas y CTE para descomponer preguntas complejas.",
+    "Aplicar funciones de ventana a secuencias longitudinales.",
+    "Crear vistas y consultas parametrizadas reproducibles.",
+    "Verificar resultados mediante conteos, anti-joins, casos manuales y consultas alternativas."
+  ],
+  "theory_sections": [
+    {
+      "heading": "SQL declarativo, tipos y lógica de tres valores",
+      "paragraphs": [
+        "SQL describe qué conjunto de resultados se desea, mientras el motor decide cómo obtenerlo. Esta naturaleza declarativa separa la lógica de la consulta del plan físico. Una consulta puede expresar selección, proyección, combinación y agregación sin fijar el orden exacto de acceso. Sin embargo, declarar no significa improvisar: la semántica debe ser precisa, especialmente cuando existen duplicados, ausencias y relaciones uno a muchos.",
+        "El orden escrito de una consulta no coincide completamente con su evaluación lógica. De forma conceptual, FROM y JOIN construyen el conjunto de filas, WHERE filtra, GROUP BY forma grupos, HAVING filtra grupos, SELECT calcula la proyección y ORDER BY ordena el resultado. Comprender este orden explica por qué un alias definido en SELECT no siempre puede usarse en WHERE y por qué filtrar antes o después de una agregación cambia la pregunta.",
+        "Los tipos importan. Comparar fechas como texto, mezclar unidades o convertir números implícitamente puede producir resultados incorrectos o impedir el uso de índices. Los literales deben ser inequívocos y las zonas horarias explícitas cuando correspondan. En datos biomédicos longitudinales, distinguir fecha, timestamp, intervalo y período evita errores como asignar una medición al día equivocado o calcular una edad con aproximaciones inconsistentes.",
+        "NULL participa en una lógica de tres valores: verdadero, falso y desconocido. La expresión columna = NULL no devuelve verdadero; debe usarse IS NULL. Además, NOT IN puede comportarse de manera inesperada si la subconsulta contiene NULL. Las consultas deben definir si la ausencia significa excluir, conservar, imputar, clasificar aparte o declarar que la pregunta no puede responderse."
+      ],
+      "key_points": [
+        "SQL expresa resultados, no un algoritmo físico fijo.",
+        "El orden lógico explica el alcance de filtros y agregaciones.",
+        "Los tipos y zonas horarias forman parte de la semántica.",
+        "NULL requiere lógica de tres valores y pruebas específicas."
+      ],
+      "equations": [
+        {
+          "latex": "\\sigma_{condicion}(R)",
+          "meaning": "En álgebra relacional, la selección conserva las tuplas de R que satisfacen una condición."
+        }
+      ]
+    },
+    {
+      "heading": "Joins, cardinalidad y duplicación",
+      "paragraphs": [
+        "Un join combina filas mediante una condición. INNER JOIN conserva coincidencias; LEFT JOIN conserva todas las filas del lado izquierdo y añade coincidencias o NULL; otros joins responden preguntas diferentes. La elección debe derivarse de la población de interés. Para listar todas las visitas aunque no tengan muestras se necesita un LEFT JOIN desde Visita a Muestra; usar INNER JOIN excluiría silenciosamente las visitas sin muestra.",
+        "El principal riesgo no es la sintaxis sino la cardinalidad. Unir Persona con Visita multiplica filas según el número de visitas. Si después se calcula COUNT(*) como número de personas, el resultado será incorrecto. Antes de cada join debe formularse la granularidad del conjunto de entrada y salida. También conviene inspeccionar claves, unicidad y conteos por identificador para detectar relaciones inesperadamente muchos a muchos.",
+        "Un join no debe repararse con DISTINCT sin comprender la causa de los duplicados. DISTINCT puede ocultar una condición incompleta, una tabla de versiones o una relación legítimamente repetible. La solución consiste en definir qué fila debe elegirse, agregar primero, filtrar por versión o corregir la condición. Eliminar duplicados al final puede borrar eventos distintos que comparten los atributos proyectados.",
+        "Los anti-joins permiten encontrar ausencia de relación, por ejemplo visitas sin resultados. Pueden expresarse con NOT EXISTS o LEFT JOIN seguido de IS NULL. NOT EXISTS suele comunicar mejor la intención y evita algunos problemas de NULL. Los semi-joins, representados mediante EXISTS, prueban existencia sin multiplicar filas. Son útiles para seleccionar personas que cumplen una condición sin arrastrar todos los eventos relacionados."
+      ],
+      "key_points": [
+        "El tipo de join define qué población se conserva.",
+        "La granularidad debe revisarse antes y después de combinar.",
+        "DISTINCT no sustituye el análisis de duplicación.",
+        "EXISTS y NOT EXISTS expresan presencia o ausencia sin multiplicación."
+      ],
+      "equations": [
+        {
+          "latex": "|R\\bowtie S|\\leq |R|\\cdot|S|",
+          "meaning": "El tamaño de una reunión puede crecer hasta el producto cartesiano si la condición no limita adecuadamente."
+        }
+      ]
+    },
+    {
+      "heading": "Agregación, cohortes y consultas composables",
+      "paragraphs": [
+        "GROUP BY transforma filas en grupos y permite calcular conteos, sumas, promedios y otros resúmenes. La unidad estadística debe permanecer explícita. Promediar todas las mediciones puede ponderar más a personas con mayor seguimiento. A veces se necesita primero resumir por persona y después resumir la cohorte. SQL permite ambas operaciones, pero la consulta debe reflejar el diseño analítico, no solo producir un número.",
+        "WHERE filtra filas antes de agrupar; HAVING filtra grupos después de calcular agregaciones. Esta distinción permite preguntas como seleccionar resultados dentro de un período y después conservar personas con al menos tres mediciones. Mezclar ambos niveles puede excluir observaciones necesarias o aplicar umbrales a la unidad incorrecta. Los aliases y CTE ayudan a hacer visible cada etapa.",
+        "Las expresiones de tabla comunes, introducidas con WITH, permiten nombrar subresultados y construir una consulta por capas: población elegible, eventos válidos, resumen por persona y resultado final. Una CTE no garantiza por sí sola mejor rendimiento; su valor principal es estructurar razonamiento. Cada bloque debe tener una granularidad definida y poder probarse de forma independiente.",
+        "Las cohortes reproducibles requieren criterios explícitos de inclusión, exclusión, índice temporal y seguimiento. Debe registrarse la versión de la consulta, los parámetros y la fecha de extracción. También se necesitan conteos en cada etapa. Una consulta que devuelve 842 personas sin explicar cuántas fueron excluidas por cada regla dificulta detectar cambios y auditar resultados."
+      ],
+      "key_points": [
+        "La agregación debe respetar la unidad estadística.",
+        "WHERE y HAVING operan en niveles diferentes.",
+        "Las CTE hacen explícitas etapas y granularidades.",
+        "Una cohorte requiere criterios, parámetros, versiones y conteos."
+      ],
+      "equations": [
+        {
+          "latex": "\\bar{x}_{persona}=\\frac{1}{n_i}\\sum_{j=1}^{n_i}x_{ij}",
+          "meaning": "Un resumen por persona evita que quienes tienen más mediciones dominen un promedio de filas."
+        }
+      ]
+    },
+    {
+      "heading": "Ventanas, vistas y verificación",
+      "paragraphs": [
+        "Las funciones de ventana calculan valores sobre un conjunto relacionado sin colapsar filas. ROW_NUMBER puede numerar observaciones por persona, LAG recuperar el valor previo y SUM acumular eventos. La cláusula PARTITION BY define grupos y ORDER BY establece secuencia. Si el orden no es único, deben añadirse criterios de desempate; de lo contrario la asignación puede variar entre ejecuciones.",
+        "Las ventanas son adecuadas para elegir la primera medición, calcular intervalos entre visitas o comparar con el valor anterior. Sin embargo, «primera» debe definirse: tiempo de ocurrencia, registro o validación. También debe decidirse cómo tratar empates. La consulta puede ser sintácticamente correcta y científicamente ambigua si omite esas decisiones.",
+        "Una vista encapsula una consulta y puede ofrecer una interfaz estable. Una vista materializada almacena el resultado y requiere refresco. Las vistas ayudan a separar una capa curada de las tablas operativas, pero no sustituyen documentación ni seguridad. Deben definir columnas, granularidad, filtros, versiones y propietario. Una vista que oculta exclusiones puede dificultar la interpretación tanto como una consulta opaca.",
+        "La verificación combina varios métodos: construir casos pequeños con resultado conocido, comparar conteos antes y después de joins, usar anti-joins para pérdidas, revisar duplicados por clave, contrastar con una implementación alternativa y mantener pruebas de regresión. También conviene inspeccionar distribuciones y valores extremos. Ejecutarse sin error demuestra compatibilidad sintáctica, no corrección analítica."
+      ],
+      "key_points": [
+        "Las ventanas conservan filas y calculan contexto.",
+        "El orden debe ser determinista y semánticamente definido.",
+        "Las vistas necesitan contratos y procedencia.",
+        "Las consultas deben probarse con oráculos, invariantes y regresión."
+      ],
+      "equations": []
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Consulta declarativa",
+      "definition": "Expresión del resultado deseado sin fijar todos los pasos físicos."
+    },
+    {
+      "term": "Selección",
+      "definition": "Operación que filtra filas por una condición."
+    },
+    {
+      "term": "Proyección",
+      "definition": "Operación que elige o calcula columnas."
+    },
+    {
+      "term": "Join",
+      "definition": "Combinación de relaciones mediante una condición."
+    },
+    {
+      "term": "Granularidad",
+      "definition": "Significado y unidad representada por cada fila."
+    },
+    {
+      "term": "Agregación",
+      "definition": "Cálculo de un resumen sobre un conjunto de filas."
+    },
+    {
+      "term": "CTE",
+      "definition": "Subconsulta nombrada mediante WITH."
+    },
+    {
+      "term": "Subconsulta correlacionada",
+      "definition": "Subconsulta que referencia valores de la consulta externa."
+    },
+    {
+      "term": "Función de ventana",
+      "definition": "Cálculo sobre filas relacionadas sin colapsarlas."
+    },
+    {
+      "term": "Partición",
+      "definition": "Grupo de filas sobre el que opera una ventana."
+    },
+    {
+      "term": "Vista",
+      "definition": "Consulta almacenada que actúa como relación virtual."
+    },
+    {
+      "term": "Vista materializada",
+      "definition": "Resultado persistido de una consulta que debe refrescarse."
+    },
+    {
+      "term": "Anti-join",
+      "definition": "Operación que encuentra filas sin coincidencia."
+    },
+    {
+      "term": "Cohorte",
+      "definition": "Población definida por criterios, índice temporal y seguimiento."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Cohorte de personas con tres mediciones válidas",
+      "scenario": "Se requieren personas ficticias con al menos tres mediciones de un analito durante los 90 días posteriores a una visita índice. Las mediciones anuladas o sin unidad compatible deben excluirse.",
+      "reasoning_steps": [
+        "Definir una visita índice única por persona mediante ROW_NUMBER y desempate.",
+        "Unir resultados por persona y filtrar el intervalo temporal.",
+        "Filtrar estado válido y unidad compatible antes de agrupar.",
+        "Agrupar por persona y contar mediciones distintas.",
+        "Aplicar HAVING COUNT(*) >= 3.",
+        "Registrar conteos de personas tras cada etapa.",
+        "Verificar manualmente una persona incluida y una excluida."
+      ],
+      "solution": "Una consulta con CTE separa visita_indice, mediciones_validas y resumen_persona. El resultado final conserva persona_id, fecha_indice, número de mediciones y rango temporal. Se evita unir directamente todas las visitas, lo que multiplicaría resultados.",
+      "interpretation": "La consulta define población, tiempo cero, ventana de seguimiento y criterios de calidad de manera auditable.",
+      "limitations": [
+        "No resuelve si múltiples analitos son clínicamente equivalentes.",
+        "La validez de unidades requiere un mapeo externo probado."
+      ]
+    },
+    {
+      "title": "Cambio respecto a la medición previa",
+      "scenario": "Para cada persona se desea calcular la diferencia entre una medición y la anterior del mismo analito.",
+      "reasoning_steps": [
+        "Filtrar resultados válidos del analito.",
+        "Particionar por persona_id y analito_id.",
+        "Ordenar por tiempo_ocurrencia y resultado_id como desempate.",
+        "Usar LAG(valor) para recuperar valor previo.",
+        "Calcular valor - valor_previo.",
+        "Conservar NULL en la primera fila de cada partición.",
+        "Probar empates y resultados corregidos."
+      ],
+      "solution": "La ventana evita un auto-join complejo y conserva cada observación. El desempate con resultado_id hace determinista el orden cuando los tiempos coinciden.",
+      "interpretation": "La diferencia representa cambio entre observaciones consecutivas según el orden elegido, no necesariamente cambio causal.",
+      "limitations": [
+        "Intervalos irregulares afectan la interpretación.",
+        "No ajusta por error de medición ni tratamiento."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Construcción reproducible de una cohorte SQL",
+      "instructions": [
+        "Carga un esquema sintético de personas, visitas, muestras y resultados.",
+        "Define por escrito población, índice temporal y criterios de calidad.",
+        "Construye la consulta en CTE sucesivas.",
+        "Anota granularidad y clave esperada de cada CTE.",
+        "Añade conteos e indicadores de exclusión.",
+        "Escribe pruebas con casos manuales.",
+        "Compara una versión con EXISTS frente a otra con JOIN.",
+        "Documenta parámetros y versión."
+      ],
+      "tasks": [
+        "Encontrar visitas sin muestras mediante NOT EXISTS.",
+        "Seleccionar la primera visita por persona con desempate.",
+        "Calcular recuentos por persona sin duplicación.",
+        "Construir una tabla de exclusiones por motivo.",
+        "Usar LAG para tiempo desde visita previa.",
+        "Crear una vista documentada para resultados válidos."
+      ],
+      "deliverable": "Archivo SQL, datos sintéticos, pruebas, tabla de conteos y breve informe de semántica.",
+      "checking_criteria": [
+        "Cada etapa tiene granularidad y claves explícitas.",
+        "NULL y joins se manejan de forma intencional.",
+        "Los resultados coinciden con casos manuales.",
+        "Los conteos permiten auditar pérdidas y multiplicación.",
+        "La consulta es legible, parametrizada y versionada."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "level": "fundamental",
+      "problems": [
+        {
+          "prompt": "¿Qué diferencia existe entre WHERE y HAVING?",
+          "solution": "WHERE filtra filas antes de agrupar; HAVING filtra grupos después de agregaciones."
+        },
+        {
+          "prompt": "Escribe la intención de un LEFT JOIN desde Visita a Muestra.",
+          "solution": "Conservar todas las visitas y añadir muestras cuando existan."
+        },
+        {
+          "prompt": "¿Cómo se prueba NULL?",
+          "solution": "Con IS NULL o IS NOT NULL, no con igualdad ordinaria."
+        },
+        {
+          "prompt": "¿Qué riesgo tiene COUNT(*) después de Persona JOIN Visita?",
+          "solution": "Cuenta filas de visitas, no necesariamente personas."
+        }
+      ]
+    },
+    {
+      "level": "intermedio",
+      "problems": [
+        {
+          "prompt": "Explica por qué DISTINCT puede ocultar un error.",
+          "solution": "Puede eliminar multiplicación causada por condición incompleta sin resolver la semántica."
+        },
+        {
+          "prompt": "Elige EXISTS o JOIN para seleccionar personas con una muestra.",
+          "solution": "EXISTS expresa presencia y evita multiplicar personas por el número de muestras."
+        },
+        {
+          "prompt": "Diseña un desempate para la primera visita.",
+          "solution": "ORDER BY fecha_visita, visita_id dentro de ROW_NUMBER."
+        },
+        {
+          "prompt": "Calcula promedio por persona y luego promedio de la cohorte.",
+          "solution": "Primero GROUP BY persona_id en una CTE y después AVG(promedio_persona)."
+        }
+      ]
+    },
+    {
+      "level": "avanzado",
+      "problems": [
+        {
+          "prompt": "Analiza NOT IN cuando la subconsulta contiene NULL.",
+          "solution": "La comparación puede volverse desconocida y excluir todo; NOT EXISTS suele ser más seguro."
+        },
+        {
+          "prompt": "Propón pruebas para un join de resultados con catálogo versionado.",
+          "solution": "Casos con misma prueba en versiones distintas, códigos ausentes y múltiples coincidencias inesperadas."
+        },
+        {
+          "prompt": "Diseña una tabla de flujo de cohorte.",
+          "solution": "Registrar etapa, criterio, n_entrada, n_excluidos, n_salida, parámetros y versión."
+        },
+        {
+          "prompt": "Explica por qué una vista no garantiza reproducibilidad.",
+          "solution": "Puede cambiar sin versionado y ocultar filtros; necesita contrato, control de cambios y fecha de ejecución."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Usar INNER JOIN cuando se necesitan filas sin relación.",
+      "correction": "Definir población y elegir LEFT JOIN o NOT EXISTS."
+    },
+    {
+      "error": "Contar filas después de un join uno a muchos.",
+      "correction": "Revisar granularidad y agregar al nivel correcto."
+    },
+    {
+      "error": "Añadir DISTINCT para eliminar duplicados sin investigar.",
+      "correction": "Examinar claves, condiciones y versiones."
+    },
+    {
+      "error": "Comparar NULL con = o <>.",
+      "correction": "Usar IS NULL y considerar lógica de tres valores."
+    },
+    {
+      "error": "Ordenar una ventana con una columna no única.",
+      "correction": "Añadir desempates deterministas."
+    },
+    {
+      "error": "Construir una consulta monolítica.",
+      "correction": "Separar etapas con CTE y probar cada una."
+    },
+    {
+      "error": "Reportar solo el tamaño final de la cohorte.",
+      "correction": "Conservar conteos y motivos por etapa."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué significa que SQL sea declarativo?",
+      "answer": "Que expresa el resultado deseado y deja al motor elegir el plan físico."
+    },
+    {
+      "question": "¿Qué cláusula filtra filas antes de agrupar?",
+      "answer": "WHERE."
+    },
+    {
+      "question": "¿Qué población conserva un LEFT JOIN?",
+      "answer": "Todas las filas del lado izquierdo."
+    },
+    {
+      "question": "¿Por qué un join puede multiplicar filas?",
+      "answer": "Porque una fila puede coincidir con varias del otro lado."
+    },
+    {
+      "question": "¿Para qué sirve EXISTS?",
+      "answer": "Para probar que existe al menos una coincidencia sin devolver todas las filas relacionadas."
+    },
+    {
+      "question": "¿Qué hace una función de ventana?",
+      "answer": "Calcula contexto sobre filas relacionadas sin colapsarlas."
+    },
+    {
+      "question": "¿Qué debe definir PARTITION BY y ORDER BY?",
+      "answer": "El grupo y la secuencia de la ventana."
+    },
+    {
+      "question": "¿Qué aporta una CTE?",
+      "answer": "Permite nombrar y probar etapas con granularidad explícita."
+    },
+    {
+      "question": "¿Cómo se verifica una consulta?",
+      "answer": "Con casos conocidos, conteos, claves, anti-joins, alternativas y regresión."
+    },
+    {
+      "question": "¿Por qué una consulta ejecutable puede ser incorrecta?",
+      "answer": "Puede usar población, unidad estadística, tiempos, joins o ausencias de manera equivocada."
+    }
+  ],
+  "biomedical_connections": [
+    "Construcción reproducible de cohortes.",
+    "Análisis longitudinal con ventanas y tiempos explícitos.",
+    "Auditoría de exclusiones y calidad de resultados.",
+    "Integración de visitas, muestras, pruebas y catálogos.",
+    "Preparación de conjuntos analíticos con procedencia."
+  ],
+  "sources": [
+    {
+      "title": "PostgreSQL Documentation: Queries",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/queries.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "PostgreSQL Documentation: Window Functions",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/tutorial-window.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "SQLite SELECT",
+      "organization": "SQLite Consortium",
+      "url": "https://www.sqlite.org/lang_select.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "OMOP Standardized Clinical Data Tables",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/cdm54.html#Clinical_Data_Tables",
+      "type": "modelo de datos"
+    },
+    {
+      "title": "FHIR Search",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/search.html",
+      "type": "estándar"
+    },
+    {
+      "title": "The Turing Way: Reproducible Research",
+      "organization": "The Turing Way Community",
+      "url": "https://book.the-turing-way.org/reproducible-research/reproducible-research",
+      "type": "guía abierta"
+    }
+  ],
+  "editorial_notice": "Material educativo que requiere revisión docente experta. Las cohortes y consultas usan datos sintéticos y no constituyen software clínico validado ni criterios asistenciales.",
+  "unit_closure": "Una consulta SQL fiable incluye una definición de población, granularidad, tiempos, tratamiento de ausencias y estrategia de verificación. El resultado numérico es solo la última etapa. El estudiante debe conservar la consulta, sus parámetros, el esquema, los conteos intermedios y los casos de prueba para que otra persona pueda reconstruir por qué esas filas —y no otras— formaron el resultado. Una revisión por pares debe intentar romper la consulta con duplicados, empates, NULL y eventos fuera de ventana."
+}

@@ -1,1 +1,408 @@
-{"schema_version":"1.0","subject_id":"bases-datos","area_id":"ciencias-basicas","unit":1,"slug":"modelado-datos","title":"Modelado de datos","status":"complete","purpose":"Diseñar modelos conceptuales claros para representar pacientes, muestras, visitas, mediciones y resultados, definiendo entidades, atributos, relaciones, claves y reglas de integridad antes de implementar una base de datos.","learning_objectives":["Identificar entidades, atributos y relaciones a partir de requisitos narrativos.","Distinguir identificadores, claves naturales, claves sustitutas y datos descriptivos.","Representar cardinalidad, opcionalidad y participación en un modelo entidad-relación.","Formular reglas de integridad y restricciones de negocio verificables.","Separar identidad de una persona, episodio, muestra y observación.","Evaluar un modelo por claridad, ausencia de ambigüedad y capacidad de responder preguntas."],"theory_sections":[{"heading":"Del dominio a entidades y atributos","paragraphs":["El modelado de datos traduce un dominio real en una estructura explícita. Una entidad representa una clase de objetos con identidad propia, como Paciente, Visita, Muestra o Resultado. Un atributo describe una propiedad de una entidad, como fecha de nacimiento o tipo de muestra. La decisión no es puramente gramatical: una dirección puede ser un atributo simple en un sistema pequeño o una entidad si necesita historial, validación y múltiples componentes.","Una entidad debe corresponder a algo que el sistema necesita distinguir y seguir a lo largo del tiempo. Confundir categorías produce modelos frágiles. Paciente no es lo mismo que Visita: una persona puede tener muchas visitas. Muestra no es equivalente a Resultado: una muestra puede generar varios análisis y un análisis puede repetir mediciones. Separar conceptos permite conservar historia y evitar sobrescribir datos.","Los requisitos se obtienen mediante preguntas: qué eventos ocurren, qué información se registra, quién la usa, qué debe conservarse, qué cambia y qué preguntas debe responder el sistema. El modelo conceptual debe mantenerse independiente de detalles técnicos como tipos SQL o índices. Primero se representa el significado; después se decide cómo implementarlo."],"key_points":["Las entidades representan conceptos con identidad propia.","Los atributos describen propiedades, pero pueden convertirse en entidades si tienen estructura e historia.","Separar conceptos evita sobrescritura y pérdida de contexto.","El modelo conceptual precede a las decisiones de implementación."]},{"heading":"Claves, relaciones, cardinalidad y opcionalidad","paragraphs":["Una clave candidata identifica de forma única cada instancia. Una clave natural usa un valor del dominio, mientras una clave sustituta es un identificador técnico sin significado externo. Las claves naturales pueden cambiar, contener errores o estar reguladas; las sustitutas facilitan relaciones internas, pero no eliminan la necesidad de restricciones de unicidad sobre identificadores relevantes.","Una relación expresa asociación entre entidades. La cardinalidad indica cuántas instancias pueden participar: uno a uno, uno a muchos o muchos a muchos. La opcionalidad indica si la participación mínima es cero o uno. Un Paciente puede tener cero o muchas Visitas; cada Visita debe pertenecer a un Paciente. Estas afirmaciones deben derivarse de reglas del dominio, no de preferencias del desarrollador.","Las relaciones muchos a muchos suelen necesitar una entidad asociativa cuando se implementan en un modelo relacional. Si una muestra puede participar en varios estudios y un estudio utiliza muchas muestras, una entidad Participación puede conservar fecha, rol y estado. Convertir la relación en entidad permite representar atributos que pertenecen al vínculo, no a ninguno de los extremos."],"key_points":["Una clave identifica; un atributo descriptivo no debe usarse como identificador por comodidad.","Cardinalidad máxima y participación mínima responden a preguntas distintas.","Las relaciones muchos a muchos suelen requerir una entidad asociativa.","Las restricciones deben expresar reglas del dominio."]},{"heading":"Integridad, temporalidad y calidad del modelo","paragraphs":["La integridad de entidad exige identificadores únicos y no nulos. La integridad referencial evita relaciones hacia registros inexistentes. Las restricciones de dominio limitan tipos, rangos y valores permitidos. También existen reglas de negocio, como que una fecha de resultado no preceda a la toma de muestra. Las restricciones deben implementarse en la capa más fiable posible y documentarse para usuarios y procesos.","Los datos biomédicos cambian y tienen temporalidad. Sobrescribir un diagnóstico, una dirección o un estado puede destruir historia. Un modelo debe distinguir fecha de ocurrencia, fecha de registro y período de validez cuando sean relevantes. También debe separar corrección de un dato de eliminación de evidencia: una enmienda puede necesitar conservar el valor anterior, autor y motivo.","Un buen modelo se valida con escenarios y consultas. Se crean ejemplos normales y excepcionales: múltiples visitas el mismo día, muestras divididas, resultados corregidos o pacientes con identificadores incompletos. Después se pregunta si el modelo puede representar esos casos sin duplicación ni campos ambiguos. También se comprueba si responde preguntas previstas sin inferencias imposibles."],"key_points":["Integridad incluye identidad, referencias, dominios y reglas de negocio.","La temporalidad requiere conservar eventos y cambios.","Corregir datos no siempre significa borrar el valor anterior.","Los escenarios y consultas sirven como pruebas del modelo."]}],"glossary":[{"term":"Entidad","definition":"Clase de objetos o eventos con identidad propia en el dominio."},{"term":"Atributo","definition":"Propiedad registrada sobre una entidad o relación."},{"term":"Relación","definition":"Asociación semántica entre entidades."},{"term":"Clave candidata","definition":"Conjunto mínimo de atributos capaz de identificar de manera única."},{"term":"Clave natural","definition":"Identificador derivado de un valor con significado en el dominio."},{"term":"Clave sustituta","definition":"Identificador técnico creado para la base de datos."},{"term":"Cardinalidad","definition":"Número máximo de instancias que pueden participar en una relación."},{"term":"Opcionalidad","definition":"Número mínimo de participaciones exigidas en una relación."},{"term":"Integridad referencial","definition":"Regla que exige que una referencia apunte a una instancia existente."},{"term":"Entidad asociativa","definition":"Entidad que representa una relación muchos a muchos y sus atributos."},{"term":"Temporalidad","definition":"Representación de ocurrencia, registro y validez de datos en el tiempo."},{"term":"Procedencia","definition":"Información sobre origen, transformación y responsabilidad de un dato."}],"worked_example":{"title":"Modelo conceptual para visitas y muestras","scenario":"Un sistema educativo debe registrar pacientes, sus visitas, muestras tomadas durante una visita y resultados producidos a partir de cada muestra. Una visita puede no generar muestras y una muestra puede producir varios resultados.","reasoning_steps":["Identificar entidades: Paciente, Visita, Muestra y Resultado.","Definir identificadores internos únicos para cada entidad.","Establecer Paciente 1:N Visita; cada visita pertenece a exactamente un paciente.","Establecer Visita 1:N Muestra con participación opcional desde Visita.","Establecer Muestra 1:N Resultado; cada resultado referencia una muestra.","Añadir reglas temporales: toma dentro del episodio y resultado no anterior a la toma.","Probar el modelo con una visita sin muestra y una muestra con repetición analítica."],"interpretation":"El modelo separa persona, encuentro, material biológico y observación, lo que permite conservar historia y representar múltiples resultados sin duplicar datos del paciente.","limitations":["No incluye personal, dispositivos, consentimiento ni terminologías.","No resuelve por sí solo privacidad y control de acceso.","Los requisitos reales pueden exigir episodios y órdenes adicionales."]},"guided_activity":{"title":"Modelar un pequeño biobanco","instructions":["Extrae sustantivos, eventos y reglas desde el enunciado.","Clasifica cada candidato como entidad, atributo o relación.","Define claves, cardinalidad y opcionalidad.","Añade al menos cinco reglas de integridad.","Valida el modelo con escenarios y consultas."],"problems":["Representa donantes, consentimientos, muestras, alícuotas y ubicaciones de almacenamiento.","Decide dónde registrar fecha de congelación y motivo de descarte.","Modela que una muestra pueda dividirse en varias alícuotas.","Formula una consulta que liste alícuotas disponibles con consentimiento válido.","Explica qué información histórica se perdería al sobrescribir ubicaciones."],"checking_criteria":["Cada entidad tiene identidad y propósito claros.","Cardinalidades y opcionalidades están justificadas.","Las reglas temporales y de integridad son verificables.","Las consultas previstas pueden responderse sin datos duplicados."]},"common_errors":[{"error":"Crear una tabla única con todos los conceptos.","correction":"Separar entidades con identidad y ciclos de vida diferentes."},{"error":"Usar nombre o fecha como identificador único.","correction":"Definir claves robustas y restricciones de unicidad apropiadas."},{"error":"Omitir opcionalidad.","correction":"Declarar si la participación mínima es cero o uno."},{"error":"Guardar listas dentro de un atributo sin justificar.","correction":"Modelar elementos repetibles como entidades relacionadas."},{"error":"Sobrescribir valores históricos.","correction":"Representar eventos, versiones o períodos de validez."},{"error":"Diseñar sin consultas de prueba.","correction":"Validar el modelo con preguntas y escenarios representativos."}],"self_assessment":[{"question":"¿Qué diferencia existe entre entidad y atributo?","answer":"La entidad tiene identidad y ciclo de vida; el atributo describe una propiedad de esa entidad."},{"question":"¿Por qué una clave sustituta no elimina claves naturales?","answer":"Porque aún deben imponerse reglas de unicidad sobre identificadores relevantes del dominio."},{"question":"¿Qué expresa una relación uno a muchos?","answer":"Que una instancia del lado uno puede asociarse con varias del otro, mientras cada una de estas se asocia con una del primero."},{"question":"¿Qué es una entidad asociativa?","answer":"Una entidad que materializa una relación muchos a muchos y permite guardar atributos del vínculo."},{"question":"¿Qué protege la integridad referencial?","answer":"Evita referencias a entidades inexistentes."},{"question":"¿Cómo se valida un modelo conceptual?","answer":"Con reglas del dominio, escenarios normales y excepcionales, y consultas que el sistema debe responder."}],"biomedical_connections":["Representación separada de pacientes, episodios, muestras y resultados.","Conservación de procedencia e historia de datos.","Diseño de biobancos y repositorios experimentales.","Preparación para modelo relacional, normalización y SQL."],"sources":[{"title":"Database Design — 2nd Edition","organization":"BCcampus Open Education","url":"https://opentextbc.ca/dbdesign01/","type":"libro abierto"},{"title":"PostgreSQL Documentation — Data Definition","organization":"PostgreSQL Global Development Group","url":"https://www.postgresql.org/docs/current/ddl.html","type":"documentación oficial"},{"title":"HL7 FHIR — Resource Model","organization":"HL7 International","url":"https://hl7.org/fhir/resource.html","type":"estándar sanitario"},{"title":"FAIR Guiding Principles","organization":"GO FAIR","url":"https://www.go-fair.org/fair-principles/","type":"principios de datos"}],"editorial_notice":"Material educativo. Un modelo real de datos de salud requiere análisis de privacidad, seguridad, regulación, interoperabilidad y gobernanza."}
+{
+  "schema_version": "2.0",
+  "subject_id": "bases-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 1,
+  "slug": "modelado-datos",
+  "title": "Modelado de datos",
+  "status": "review",
+  "weeks": [
+    1,
+    2
+  ],
+  "estimated_hours": 16,
+  "purpose": "Construir modelos conceptuales auditables para representar personas, episodios, muestras, procedimientos, observaciones y resultados antes de elegir tablas o tecnologías. La unidad enfatiza identidad, cardinalidad, temporalidad, procedencia y reglas de integridad para evitar que una estructura técnicamente válida distorsione el significado biomédico.",
+  "learning_objectives": [
+    "Extraer entidades, atributos, eventos y reglas a partir de requisitos narrativos.",
+    "Distinguir identidad, descripción, clasificación y medición dentro de un dominio.",
+    "Representar relaciones, cardinalidades, opcionalidad y participación en un modelo entidad-relación.",
+    "Seleccionar claves naturales y sustitutas sin perder restricciones de unicidad del dominio.",
+    "Modelar tiempo de ocurrencia, tiempo de registro, vigencia y correcciones.",
+    "Formular reglas de integridad verificables y casos de prueba del modelo.",
+    "Separar datos clínicos, experimentales, administrativos y de procedencia.",
+    "Evaluar si un modelo responde preguntas previstas sin duplicación ni ambigüedad."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Del dominio narrativo a un modelo explícito",
+      "paragraphs": [
+        "El modelado de datos comienza con el dominio, no con las tablas. Una historia como «una persona acude a una visita, se obtiene una muestra y el laboratorio emite resultados» contiene varias unidades de observación: persona, encuentro, material biológico, procedimiento analítico y resultado. Convertir todo en una sola estructura mezclaría identidades y escalas temporales. El primer trabajo consiste en identificar qué objetos o eventos deben conservar una identidad estable y qué propiedades describen a cada uno.",
+        "Una entidad no se decide únicamente por la presencia de un sustantivo. Debe representar algo que el sistema necesita distinguir, relacionar y seguir en el tiempo. «Dirección» puede ser un atributo simple en una aplicación pequeña, pero puede convertirse en entidad si se requiere historial, validación geográfica, múltiples tipos o procedencia. De manera similar, «diagnóstico» puede ser un código dentro de una observación o una entidad con autor, estado, evidencia y fechas, según las preguntas del sistema.",
+        "Los requisitos deben traducirse en afirmaciones comprobables. En lugar de «guardar información de pacientes», conviene declarar quién registra qué, en qué momento, con qué unidad, bajo qué identificador y durante cuánto tiempo. También deben definirse preguntas de uso: recuperar todas las muestras de una visita, reconstruir la secuencia de mediciones o identificar resultados corregidos. Estas consultas anticipadas funcionan como pruebas del modelo conceptual.",
+        "El modelado conceptual debe mantenerse independiente de una tecnología concreta. Elegir PostgreSQL, un almacén documental o archivos columnares es una decisión posterior. Primero se representa el significado mediante entidades, relaciones y restricciones. Esta separación permite discutir el dominio con personal científico y clínico sin depender de sintaxis SQL y evita que una limitación técnica temprana se convierta en una regla falsa sobre la realidad."
+      ],
+      "key_points": [
+        "El modelo parte de unidades de observación y preguntas, no de nombres de tablas.",
+        "Una entidad necesita identidad y ciclo de vida, no solo un sustantivo.",
+        "Los requisitos deben transformarse en reglas y consultas verificables.",
+        "El modelo conceptual debe preceder a la implementación."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "Identidad, claves y relaciones",
+      "paragraphs": [
+        "Una clave candidata es un conjunto mínimo de atributos que identifica de manera única una instancia. Puede existir más de una. Una clave natural usa un valor del dominio, como un código de muestra emitido por un laboratorio; una clave sustituta introduce un identificador técnico. Las claves sustitutas simplifican referencias internas, pero no eliminan la obligación de imponer unicidad sobre los identificadores significativos. De lo contrario, la base podría aceptar dos filas para la misma muestra.",
+        "Los identificadores del mundo real no siempre son universales ni estables. Un número de historia puede ser único solo dentro de una institución; un código de muestra puede reutilizarse por año; un identificador nacional puede faltar, cambiar de formato o estar restringido. Por eso conviene modelar el ámbito emisor, el tipo y el período de validez. La identidad interna y los identificadores externos deben separarse para evitar acoplar toda la base a una convención local.",
+        "Las relaciones expresan asociaciones semánticas. La cardinalidad máxima responde cuántas instancias pueden relacionarse, mientras la participación mínima expresa si la relación es obligatoria. Una persona puede tener cero o muchas visitas; cada visita debe pertenecer a una persona. Una visita puede no producir muestras; cada muestra obtenida durante una visita debe referenciarla. Estas afirmaciones provienen del dominio y deben validarse con excepciones reales.",
+        "Las relaciones muchos a muchos suelen convertirse en entidades asociativas cuando se implementan en el modelo relacional. Si una muestra puede participar en varios estudios y cada estudio incluye muchas muestras, la relación Participación puede registrar fecha, rol, consentimiento aplicable y estado. Esos atributos pertenecen al vínculo, no exclusivamente a Muestra ni a Estudio. Reconocer esta situación evita listas incrustadas y columnas repetidas."
+      ],
+      "key_points": [
+        "Una clave sustituta no sustituye las restricciones de unicidad del dominio.",
+        "Los identificadores externos necesitan ámbito, emisor y vigencia.",
+        "Cardinalidad máxima y participación mínima representan reglas diferentes.",
+        "Las relaciones con atributos propios deben modelarse explícitamente."
+      ],
+      "equations": [
+        {
+          "latex": "\\text{unicidad}(K) \\Rightarrow \\forall r_i,r_j:\\ K(r_i)=K(r_j)\\Rightarrow r_i=r_j",
+          "meaning": "Una clave K no puede identificar dos registros distintos."
+        }
+      ]
+    },
+    {
+      "heading": "Temporalidad, procedencia y corrección",
+      "paragraphs": [
+        "En datos biomédicos, «cuándo» puede significar varias cosas. El tiempo de ocurrencia indica cuándo sucedió el evento; el tiempo de registro, cuándo fue incorporado al sistema; el período de validez, durante qué intervalo se consideró cierto; y el tiempo de sistema, cuándo una versión estuvo almacenada. Mezclar estas dimensiones impide reconstruir la historia. Un resultado puede corresponder a una muestra tomada ayer, validarse hoy y corregirse mañana.",
+        "Sobrescribir un valor puede borrar evidencia necesaria. Cuando cambia una dirección administrativa quizá baste conservar la nueva, pero una corrección de laboratorio puede requerir el valor anterior, el nuevo, el autor, el motivo y la fecha. El modelo debe distinguir actualización ordinaria, enmienda, anulación y nueva observación. Esta diferencia es esencial para auditoría y para evitar que análisis retrospectivos utilicen información que aún no existía en el momento estudiado.",
+        "La procedencia describe de dónde proviene un dato y qué transformaciones sufrió. Puede incluir instrumento, método, versión de software, operador, archivo fuente, lote y reglas de limpieza. No toda procedencia debe almacenarse en la misma tabla del dato principal, pero debe existir una ruta para reconstruirla. Un valor sin unidad, método ni contexto puede parecer preciso y ser científicamente inutilizable.",
+        "El consentimiento, las restricciones de uso y el estado de calidad también tienen temporalidad. Una muestra puede existir físicamente, pero no estar disponible para un estudio concreto. Modelar únicamente «consentimiento = sí/no» puede ocultar alcance, versión, revocación y propósito. El modelo conceptual debe reconocer que disponibilidad técnica, permiso de uso y validez científica son propiedades distintas."
+      ],
+      "key_points": [
+        "Ocurrencia, registro, vigencia y tiempo de sistema no son equivalentes.",
+        "Una corrección puede necesitar conservar versiones y motivos.",
+        "La procedencia permite reconstruir origen y transformaciones.",
+        "Disponibilidad, autorización y calidad deben modelarse por separado."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "Integridad y validación del modelo",
+      "paragraphs": [
+        "La integridad de entidad exige que cada instancia tenga una identidad única. La integridad referencial impide relaciones hacia entidades inexistentes. Las restricciones de dominio limitan tipos, unidades, rangos o conjuntos de valores. Además existen reglas de negocio, como que una fecha de resultado no preceda a la toma de muestra o que una alícuota no tenga más volumen disponible que el volumen inicial. Estas reglas deben escribirse como afirmaciones comprobables.",
+        "No todas las reglas pueden imponerse con una sola restricción declarativa. Algunas requieren varias filas, eventos temporales o conocimiento externo. Aun así, deben documentarse y asignarse a una capa responsable: base de datos, servicio de aplicación, proceso de validación o revisión humana. Una regla no implementada ni asignada se convierte en una expectativa informal y difícil de auditar.",
+        "El modelo se valida con escenarios normales, límites y excepciones. Debe representar una visita sin muestra, una muestra dividida en alícuotas, una medición repetida, una persona con identificador incompleto y un resultado corregido. También se prueban preguntas: qué versión era válida en una fecha, qué datos proceden de un instrumento y qué muestras pueden usarse bajo cierto consentimiento. Si responder exige interpretar columnas ambiguas, el modelo necesita revisión.",
+        "Un diagrama visual no garantiza calidad. La documentación debe incluir definiciones, ejemplos, reglas, decisiones descartadas y supuestos. También conviene registrar conflictos de vocabulario entre equipos. En biomedicina, términos aparentemente equivalentes pueden tener alcances distintos. El modelo funciona como contrato semántico: reduce ambigüedad, pero no reemplaza la gobernanza ni la revisión con expertos del dominio."
+      ],
+      "key_points": [
+        "Integridad incluye identidad, referencias, dominios y reglas de negocio.",
+        "Cada regla debe tener una capa responsable.",
+        "Los casos excepcionales revelan supuestos ocultos.",
+        "El modelo es un contrato semántico, no solo un diagrama."
+      ],
+      "equations": []
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Entidad",
+      "definition": "Clase de objetos o eventos con identidad propia."
+    },
+    {
+      "term": "Atributo",
+      "definition": "Propiedad registrada sobre una entidad o relación."
+    },
+    {
+      "term": "Relación",
+      "definition": "Asociación semántica entre entidades."
+    },
+    {
+      "term": "Clave candidata",
+      "definition": "Conjunto mínimo de atributos que identifica una instancia."
+    },
+    {
+      "term": "Clave natural",
+      "definition": "Identificador con significado en el dominio."
+    },
+    {
+      "term": "Clave sustituta",
+      "definition": "Identificador técnico creado para referencias internas."
+    },
+    {
+      "term": "Cardinalidad",
+      "definition": "Número máximo de instancias que pueden participar en una relación."
+    },
+    {
+      "term": "Opcionalidad",
+      "definition": "Participación mínima exigida en una relación."
+    },
+    {
+      "term": "Entidad asociativa",
+      "definition": "Entidad que representa una relación y sus atributos."
+    },
+    {
+      "term": "Integridad referencial",
+      "definition": "Regla que exige que una referencia apunte a una instancia existente."
+    },
+    {
+      "term": "Temporalidad",
+      "definition": "Representación de ocurrencia, registro, vigencia y versiones en el tiempo."
+    },
+    {
+      "term": "Procedencia",
+      "definition": "Información sobre origen, método, transformación y responsabilidad del dato."
+    },
+    {
+      "term": "Diccionario de datos",
+      "definition": "Catálogo de elementos, definiciones, tipos, unidades y reglas."
+    },
+    {
+      "term": "Regla de negocio",
+      "definition": "Restricción derivada del funcionamiento del dominio."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Visitas, muestras y resultados",
+      "scenario": "Un repositorio educativo registra personas ficticias, visitas, muestras obtenidas durante una visita y resultados de laboratorio. Una visita puede no generar muestras y una muestra puede producir resultados repetidos o corregidos.",
+      "reasoning_steps": [
+        "Definir Persona, Visita, Muestra, Análisis y Resultado como entidades distintas.",
+        "Asignar identificadores internos y conservar identificadores externos con emisor.",
+        "Relacionar Persona 1:N Visita y Visita 1:N Muestra con participación opcional desde Visita.",
+        "Relacionar Muestra 1:N Análisis y Análisis 1:N Resultado para representar repeticiones y versiones.",
+        "Registrar tiempo de toma, ejecución, validación y corrección por separado.",
+        "Definir que un Resultado corregido referencia la versión anterior y conserva motivo.",
+        "Probar una visita sin muestra, una muestra con dos análisis y un resultado anulado."
+      ],
+      "solution": "El modelo evita duplicar datos de la persona y preserva la historia de cada medición. Resultado no se identifica únicamente por muestra y analito, porque pueden existir repeticiones, métodos distintos y correcciones. Una entidad Análisis separa la orden o ejecución del valor observado.",
+      "interpretation": "La separación entre evento, material y observación permite reconstruir qué ocurrió, qué se midió y qué versión era válida.",
+      "limitations": [
+        "No incluye facturación, personal, dispositivos completos ni interoperabilidad FHIR.",
+        "Las reglas reales requieren terminologías y políticas institucionales."
+      ]
+    },
+    {
+      "title": "Biobanco con alícuotas y consentimiento",
+      "scenario": "Una muestra primaria puede dividirse en varias alícuotas almacenadas en ubicaciones diferentes. El permiso de uso depende de un consentimiento versionado y de un propósito de investigación.",
+      "reasoning_steps": [
+        "Modelar Donante, Consentimiento, Muestra, Alícuota, Ubicación y UsoPropuesto.",
+        "Relacionar una Muestra con muchas Alícuotas y conservar volumen inicial y disponible.",
+        "Representar Consentimiento como entidad versionada, no como booleano.",
+        "Crear una relación Autorización entre Consentimiento y categorías de uso.",
+        "Registrar movimientos de alícuotas como eventos en lugar de sobrescribir ubicación.",
+        "Definir reglas que impidan volumen negativo y uso posterior a una revocación.",
+        "Probar una alícuota agotada, una revocación y un traslado."
+      ],
+      "solution": "La disponibilidad física se calcula a partir de estado y volumen, mientras la autorización se determina desde consentimiento, propósito y vigencia. Ninguna columna única resume correctamente ambas dimensiones.",
+      "interpretation": "El modelo muestra que poder localizar una muestra no implica poder utilizarla.",
+      "limitations": [
+        "No representa requisitos legales específicos ni decisiones de un comité de ética.",
+        "La compatibilidad de propósitos requiere gobernanza externa."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Construcción y revisión de un modelo de cohorte",
+      "instructions": [
+        "Lee un enunciado sobre personas ficticias, visitas, diagnósticos, medicación y muestras.",
+        "Identifica unidades de observación, eventos y conceptos con identidad.",
+        "Construye un diccionario de datos inicial con definiciones y ejemplos.",
+        "Dibuja entidades, relaciones, cardinalidades y opcionalidad.",
+        "Formula al menos ocho reglas de integridad y asigna una capa responsable.",
+        "Prueba el modelo con cinco escenarios excepcionales.",
+        "Escribe seis preguntas que el sistema debe responder y verifica que el modelo contenga la información necesaria."
+      ],
+      "tasks": [
+        "Separar Persona, Visita y Episodio cuando corresponda.",
+        "Modelar identificadores externos con emisor y vigencia.",
+        "Representar una corrección de resultado sin borrar la versión anterior.",
+        "Registrar unidades y métodos de medición.",
+        "Modelar consentimiento, propósito y revocación.",
+        "Documentar dos alternativas descartadas y su motivo."
+      ],
+      "deliverable": "Diagrama entidad-relación, diccionario de datos, reglas, escenarios de prueba y memoria de decisiones.",
+      "checking_criteria": [
+        "Cada entidad tiene identidad, propósito y ciclo de vida claros.",
+        "Las cardinalidades proceden de reglas del dominio.",
+        "Tiempo y procedencia no están mezclados en campos ambiguos.",
+        "Las consultas previstas pueden responderse sin duplicación sustantiva.",
+        "Las limitaciones y decisiones pendientes están documentadas."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "level": "fundamental",
+      "problems": [
+        {
+          "prompt": "Clasifica Paciente, fecha_de_nacimiento, Visita y presión_sistólica como entidad, atributo o medición.",
+          "solution": "Paciente y Visita son entidades; fecha_de_nacimiento es atributo de Persona; presión_sistólica es una observación con valor, unidad, tiempo y método."
+        },
+        {
+          "prompt": "Explica por qué nombre completo no es una clave adecuada.",
+          "solution": "No garantiza unicidad, puede cambiar, contener errores y depender de convenciones culturales."
+        },
+        {
+          "prompt": "Representa una relación una persona a muchas visitas.",
+          "solution": "Persona tiene cardinalidad máxima muchas Visitas; cada Visita referencia exactamente una Persona."
+        },
+        {
+          "prompt": "Propón una regla de integridad temporal.",
+          "solution": "La fecha de validación de un resultado no puede preceder a la ejecución del análisis."
+        }
+      ]
+    },
+    {
+      "level": "intermedio",
+      "problems": [
+        {
+          "prompt": "Modela una muestra que se divide en alícuotas.",
+          "solution": "Muestra 1:N Alícuota; cada alícuota tiene identidad, volumen, estado y eventos de ubicación."
+        },
+        {
+          "prompt": "Distingue tiempo de ocurrencia y tiempo de registro con un ejemplo.",
+          "solution": "La muestra se toma el lunes, pero el dato se ingresa el martes; ambos tiempos deben conservarse."
+        },
+        {
+          "prompt": "Diseña identificadores externos para dos hospitales.",
+          "solution": "Guardar tipo, valor, emisor y vigencia con una restricción de unicidad por emisor y tipo."
+        },
+        {
+          "prompt": "Explica cómo representar un resultado corregido.",
+          "solution": "Crear una nueva versión o registro enlazado al anterior con estado, autor, motivo y tiempo."
+        }
+      ]
+    },
+    {
+      "level": "avanzado",
+      "problems": [
+        {
+          "prompt": "Analiza el riesgo de guardar diagnósticos como columnas diagnostico1, diagnostico2 y diagnostico3.",
+          "solution": "Impone un máximo arbitrario, dificulta consultas, mezcla orden con identidad y produce campos vacíos; debe usarse una entidad relacionada."
+        },
+        {
+          "prompt": "Propón escenarios para validar un modelo de consentimiento.",
+          "solution": "Consentimiento vigente, revocado, sustituido, limitado a un propósito y ausente."
+        },
+        {
+          "prompt": "Decide si UnidadDeMedida debe ser atributo o entidad.",
+          "solution": "Puede ser código referenciado a un vocabulario; la elección depende de validación, conversiones, versiones y metadatos requeridos."
+        },
+        {
+          "prompt": "Explica por qué un modelo técnicamente consistente puede ser científicamente incorrecto.",
+          "solution": "Puede imponer identidades, escalas temporales o relaciones que no corresponden al fenómeno, aunque todas las claves sean válidas."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Diseñar directamente tablas desde una hoja de cálculo.",
+      "correction": "Identificar primero unidades de observación, identidades y reglas."
+    },
+    {
+      "error": "Usar una clave sustituta sin restricción sobre identificadores externos.",
+      "correction": "Mantener unicidad y ámbito de las claves del dominio."
+    },
+    {
+      "error": "Representar eventos repetibles como columnas numeradas.",
+      "correction": "Crear entidades relacionadas con cardinalidad apropiada."
+    },
+    {
+      "error": "Confundir dato ausente con cero, falso o cadena vacía.",
+      "correction": "Definir semántica de ausencia y estados de calidad."
+    },
+    {
+      "error": "Sobrescribir correcciones e historia.",
+      "correction": "Modelar versiones, eventos o períodos de validez."
+    },
+    {
+      "error": "Guardar procedencia en texto libre no estructurado.",
+      "correction": "Definir campos o entidades para método, instrumento, archivo, lote y versión."
+    },
+    {
+      "error": "Validar solo el caso ideal.",
+      "correction": "Probar límites, contradicciones, duplicados, revocaciones y datos incompletos."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué distingue una entidad de un atributo?",
+      "answer": "La entidad tiene identidad y ciclo de vida; el atributo describe una propiedad de esa entidad."
+    },
+    {
+      "question": "¿Por qué una clave sustituta no reemplaza una regla de unicidad del dominio?",
+      "answer": "Porque dos filas podrían representar el mismo objeto externo aunque tengan identificadores técnicos diferentes."
+    },
+    {
+      "question": "¿Qué diferencia existe entre cardinalidad y opcionalidad?",
+      "answer": "La cardinalidad expresa el máximo de participaciones; la opcionalidad, el mínimo."
+    },
+    {
+      "question": "¿Cuándo conviene una entidad asociativa?",
+      "answer": "Cuando una relación muchos a muchos debe implementarse o cuando el vínculo tiene atributos propios."
+    },
+    {
+      "question": "¿Por qué deben separarse tiempo de ocurrencia y tiempo de registro?",
+      "answer": "Porque un evento puede registrarse después y los análisis retrospectivos necesitan saber qué se conocía en cada momento."
+    },
+    {
+      "question": "¿Qué protege la integridad referencial?",
+      "answer": "Evita referencias a entidades inexistentes."
+    },
+    {
+      "question": "¿Cómo se valida un modelo conceptual?",
+      "answer": "Con reglas del dominio, escenarios normales y excepcionales y consultas que debe responder."
+    },
+    {
+      "question": "¿Qué es procedencia?",
+      "answer": "El linaje sobre origen, método, transformaciones, versiones y responsabilidad de un dato."
+    },
+    {
+      "question": "¿Por qué consentimiento no debería reducirse siempre a sí o no?",
+      "answer": "Puede tener alcance, versión, propósito, vigencia y revocación."
+    },
+    {
+      "question": "¿Qué indica que una columna quizá representa otra entidad?",
+      "answer": "Que tiene estructura propia, se repite, cambia independientemente o necesita identidad e historia."
+    }
+  ],
+  "biomedical_connections": [
+    "Modelado separado de personas, episodios, muestras, análisis y resultados.",
+    "Biobancos con alícuotas, ubicaciones, consentimiento y trazabilidad.",
+    "Datos longitudinales con ocurrencia, registro, vigencia y correcciones.",
+    "Procedencia de instrumentos, métodos, lotes y software.",
+    "Preparación para normalización, SQL e interoperabilidad."
+  ],
+  "sources": [
+    {
+      "title": "Database Design — 2nd Edition",
+      "organization": "BCcampus Open Education",
+      "url": "https://opentextbc.ca/dbdesign01/",
+      "type": "texto abierto"
+    },
+    {
+      "title": "PostgreSQL Documentation: Data Definition",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/ddl.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "FHIR Resource",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/resource.html",
+      "type": "estándar"
+    },
+    {
+      "title": "W3C PROV Overview",
+      "organization": "World Wide Web Consortium",
+      "url": "https://www.w3.org/TR/prov-overview/",
+      "type": "recomendación"
+    },
+    {
+      "title": "FAIR Guiding Principles",
+      "organization": "Scientific Data",
+      "url": "https://doi.org/10.1038/sdata.2016.18",
+      "type": "artículo"
+    },
+    {
+      "title": "OMOP Common Data Model",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/",
+      "type": "modelo de datos"
+    }
+  ],
+  "editorial_notice": "Material educativo que requiere revisión docente experta. Los escenarios usan datos ficticios y los modelos no constituyen software clínico validado, asesoría jurídica ni autorización para tratar datos reales.",
+  "unit_closure": "El resultado de esta unidad no es un conjunto definitivo de tablas, sino un contrato conceptual revisable. Antes de avanzar, el estudiante debe poder explicar qué representa cada entidad, qué identifica cada clave, cuándo ocurre cada evento y cómo se reconstruye la procedencia. Las decisiones que dependen de regulación, práctica clínica o gobernanza institucional deben quedar marcadas como pendientes de validación externa, no resolverse mediante supuestos técnicos. El diagrama final debe acompañarse de ejemplos positivos y negativos, porque una regla que no puede probarse todavía no está suficientemente especificada."
+}
