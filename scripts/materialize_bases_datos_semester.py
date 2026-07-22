@@ -43,18 +43,26 @@ def read_encoded_payload(number: int) -> str:
         CHUNK_DIR / f"unit-{number:02d}-part-02.txt",
     ]
     if all(path.exists() for path in part_paths):
+        print(f"{number}: usando payload fragmentado v2")
         return "".join(path.read_text(encoding="utf-8").strip() for path in part_paths)
     legacy = LEGACY_PAYLOAD_DIR / f"unit-{number:02d}.json.gz.b64"
     require(legacy.exists(), f"unit-{number:02d}: falta payload")
+    print(f"{number}: usando payload gzip histórico")
     return legacy.read_text(encoding="utf-8").strip()
 
 
 def load_verified_unit(number: int) -> dict[str, Any]:
     label = f"unit-{number:02d}"
     encoded = read_encoded_payload(number)
-    compressed = base64.b64decode(encoded, validate=True)
+    try:
+        compressed = base64.b64decode(encoded, validate=True)
+    except Exception as error:
+        raise ValueError(f"{label}: base64 inválido: {error}") from error
     compressed_sha = hashlib.sha256(compressed).hexdigest()
-    raw = gzip.decompress(compressed)
+    try:
+        raw = gzip.decompress(compressed)
+    except Exception as error:
+        raise ValueError(f"{label}: gzip inválido: {error}; gzip_sha256={compressed_sha}") from error
     raw_sha = hashlib.sha256(raw).hexdigest()
     require(raw_sha == EXPECTED_RAW_SHA256[number], f"{label}: SHA-256 JSON inesperado: {raw_sha}")
     data = json.loads(raw.decode("utf-8"))
@@ -80,7 +88,9 @@ def load_verified_unit(number: int) -> dict[str, Any]:
 
 
 def main() -> int:
-    units = [(number, load_verified_unit(number)) for number in range(1, 7)]
+    units: list[tuple[int, dict[str, Any]]] = []
+    for number in range(1, 7):
+        units.append((number, load_verified_unit(number)))
     require(sum(data["estimated_hours"] for _, data in units) == 128, "horas totales")
     require(sorted(week for _, data in units for week in data["weeks"]) == list(range(1, 17)), "cobertura semanal")
 
