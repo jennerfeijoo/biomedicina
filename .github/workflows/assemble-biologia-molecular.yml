@@ -34,16 +34,21 @@ jobs:
           import tarfile
 
           root = Path('.citonauta/biologia-molecular')
-          parts = [root / f'part-{index:02d}' for index in range(9)]
+          parts = [root / f'pre-{index:02d}' for index in range(16)]
+          parts += [root / f'part-{index:02d}' for index in range(4, 9)]
           assert all(path.is_file() for path in parts), [str(path) for path in parts if not path.is_file()]
 
           payload = b''.join(path.read_bytes() for path in parts)
+          payload_hash = hashlib.sha256(payload).hexdigest()
+          print(f'payload_bytes={len(payload)} payload_sha256={payload_hash}')
           assert len(payload) == 62240, len(payload)
-          assert hashlib.sha256(payload).hexdigest() == 'ef95cc3f92537040382b4cf4dfc8baac1894b9076ca35b3a9602ee7146315fd1'
+          assert payload_hash == 'ef95cc3f92537040382b4cf4dfc8baac1894b9076ca35b3a9602ee7146315fd1'
 
           archive = base64.b64decode(payload, validate=True)
+          archive_hash = hashlib.sha256(archive).hexdigest()
+          print(f'archive_bytes={len(archive)} archive_sha256={archive_hash}')
           assert len(archive) == 46679, len(archive)
-          assert hashlib.sha256(archive).hexdigest() == 'bd6eedd4bd56edb436e06e117d03d67fee6e5eb1d67cdd3a951dbb0e1535b702'
+          assert archive_hash == 'bd6eedd4bd56edb436e06e117d03d67fee6e5eb1d67cdd3a951dbb0e1535b702'
           archive_path = Path('/tmp/biologia-molecular.tar.gz')
           archive_path.write_bytes(archive)
 
