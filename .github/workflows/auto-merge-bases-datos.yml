@@ -1,0 +1,86 @@
+name: Validate and Merge Databases Course
+
+on:
+  push:
+    branches:
+      - content/bases-datos-semester-course
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  actions: read
+
+jobs:
+  validate-clean-merge:
+    if: ${{ !contains(github.event.head_commit.message, '[skip databases-auto-merge]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout course branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/bases-datos-semester-course
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate if the deterministic source is still present
+        run: |
+          if [ -f scripts/generate_bases_datos_units.py ]; then
+            python scripts/generate_bases_datos_units.py
+          fi
+
+      - name: Require and validate the six academic units
+        run: |
+          for unit in data/generated_units/bases-datos/unit-{01..06}.json; do
+            test -s "$unit"
+          done
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject bases-datos --strict
+
+      - name: Remove all temporary Databases infrastructure
+        run: |
+          rm -rf .citonauta-agent/payloads/bases-datos
+          rm -rf .citonauta-agent/payloads/bases-datos-v2
+          rm -rf .citonauta-agent/payloads/bases-datos-v3
+          rm -rf .citonauta-agent/payloads/bases-datos-v4
+          rm -rf .citonauta-agent/payloads/bases-datos-chunks
+          rm -f .citonauta-agent/payloads/bases-datos-semester.b64
+          rm -f scripts/materialize_bases_datos_semester.py
+          rm -f scripts/generate_bases_datos_units.py
+          rm -f databases-materialization.log databases-finalization.log
+          rm -f .github/workflows/materialize-bases-datos-semester.yml
+          rm -f .github/workflows/generate-bases-datos-semester.yml
+          rm -f .github/workflows/finalize-bases-datos-semester.yml
+          rm -f .github/workflows/auto-merge-bases-datos.yml
+
+      - name: Commit final clean package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Finalize complete Databases semester course [skip databases-auto-merge]' || true
+          git push origin HEAD:content/bases-datos-semester-course
+
+      - name: Mark pull request ready
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr ready 54 --repo jennerfeijoo/biomedicina || true
+
+      - name: Wait for checks on the clean head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sleep 15
+          gh pr checks 54 --repo jennerfeijoo/biomedicina --watch --fail-fast
+
+      - name: Merge validated course
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge 54 --repo jennerfeijoo/biomedicina --squash --delete-branch

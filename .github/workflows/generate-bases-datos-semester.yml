@@ -1,0 +1,41 @@
+name: Generate Databases Semester
+
+on:
+  push:
+    branches:
+      - content/bases-datos-semester-course
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    if: ${{ !contains(github.event.head_commit.message, '[skip databases-generator]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout course branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/bases-datos-semester-course
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate six semester units
+        run: python scripts/generate_bases_datos_units.py
+
+      - name: Validate generated units
+        run: |
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject bases-datos --strict
+
+      - name: Commit generated academic content
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/generated_units/bases-datos
+          git commit -m 'Generate complete Databases semester units [skip databases-generator]' || exit 0
+          git push origin HEAD:content/bases-datos-semester-course
