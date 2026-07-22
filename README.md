@@ -7,20 +7,24 @@ las ciencias basicas hasta las aplicaciones tecnologicas y eticas mas actuales.
 ## Estado actual
 
 - 84 asignaturas distribuidas en cuatro áreas académicas.
-- Todas las asignaturas incluyen prerrequisitos, competencias, objetivos, resultados evaluables, seis o más unidades, prácticas, evaluación, conceptos clave, conexiones curriculares y recursos abiertos.
+- 508 unidades navegables: 497 generadas con el estándar lectivo común y 11 unidades editoriales extensas conservadas.
+- Cada unidad incluye resultados, desarrollo conceptual, caso de integración, práctica segura, autoevaluación con respuestas, glosario y cinco o más recursos abiertos.
+- Todas las asignaturas incluyen prerrequisitos, competencias, objetivos, evaluación, conceptos clave y conexiones curriculares.
 - Las páginas se generan de forma reproducible desde `data/citonauta_curriculum.json`, `data/course_outlines.json` y los contenidos especializados de `data/subjects/`.
 - Los índices de área y las páginas de curso se mantienen sincronizados con las plantillas de `templates/`.
+- Estado editorial: contenido lectivo disponible y pendiente de revisión experta; no equivale a acreditación ni a consejo clínico.
 
 ## Generación y validación
 
 ```bash
 python scripts/validate_curriculum.py
-python scripts/generate_site.py --force
+python scripts/generate_site.py --force --with-units
 python scripts/check_generated_preview.py --limit 84
+python scripts/validate_units.py
 python scripts/validate_links.py --quiet
 ```
 
-El generador conserva el modo seguro por defecto: solo sobrescribe páginas existentes cuando se usa `--force`.
+El generador conserva el modo seguro por defecto. Las unidades redactadas manualmente no se sobrescriben ni siquiera con `--force`; solo se reemplazan si se solicita además `--force-authored-units`.
 
 ---
 ## Proposito
