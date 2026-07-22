@@ -1,0 +1,421 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "algoritmos-estructuras-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 3,
+  "slug": "estructuras-lineales",
+  "title": "Estructuras lineales",
+  "status": "review",
+  "weeks": [
+    6,
+    7,
+    8
+  ],
+  "estimated_hours": 24,
+  "purpose": "Seleccionar, implementar y validar secuencias, pilas, colas, deques y tablas hash según operaciones, memoria y semántica.",
+  "learning_objectives": [
+    "Comparar arreglos dinámicos y listas enlazadas.",
+    "Explicar costes amortizados de expansión.",
+    "Implementar contratos LIFO y FIFO.",
+    "Usar deques para ventanas y colas.",
+    "Razonar sobre hashing, colisiones y factor de carga.",
+    "Distinguir set, dict y multiconjunto.",
+    "Detectar aliasing y mantener invariantes compuestos.",
+    "Elegir estructuras para datos biomédicos sin perder orden o duplicados."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Arreglos, listas y secuencias",
+      "paragraphs": [
+        "Una estructura de datos combina una representación con operaciones y garantías. Un arreglo almacena elementos en posiciones contiguas y permite acceso por índice en tiempo constante bajo un modelo idealizado. Una lista enlazada almacena nodos conectados y permite insertar o eliminar con referencias locales, pero acceder a la posición i requiere recorrer desde un extremo. En Python, list es un arreglo dinámico de referencias, no una lista enlazada; esta distinción evita trasladar costes de un concepto a otro.",
+        "El arreglo dinámico reserva capacidad adicional para que append sea O(1) amortizado. Cuando se agota, asigna un bloque mayor y copia referencias. Insertar al principio desplaza elementos y cuesta Θ(n). Estas propiedades orientan el diseño: acumular al final es eficiente, mientras usar pop(0) repetidamente es una mala implementación de cola. El coste semántico también importa: una secuencia conserva orden y duplicados, propiedades esenciales para series temporales o lecturas.",
+        "Una lista enlazada facilita inserciones cuando ya se posee una referencia al nodo, pero cada nodo añade punteros y dispersión de memoria. En lenguajes con gestión automática, una implementación manual rara vez supera a colecciones optimizadas, aunque sirve para comprender enlaces y invariantes. El invariante de una lista doblemente enlazada exige coherencia entre next y previous, extremos correctamente marcados y tamaño igual al número de nodos alcanzables.",
+        "Los iteradores separan la secuencia lógica del almacenamiento. Permiten procesar datos sin cargar toda la colección y resultan útiles para archivos o flujos. Sin embargo, un iterador puede consumirse una sola vez y no permite acceso aleatorio. Elegir entre materializar y transmitir depende de memoria, necesidad de revisitar datos y operaciones. La interfaz debe comunicar si preserva orden, si admite múltiples recorridos y qué ocurre ante modificaciones."
+      ],
+      "key_points": [
+        "Python list es un arreglo dinámico de referencias.",
+        "Acceso, inserción y recorrido tienen costes diferentes.",
+        "Las listas enlazadas intercambian localidad por enlaces flexibles.",
+        "Los iteradores reducen memoria, pero limitan revisita y acceso."
+      ],
+      "equations": [
+        "$\\text{append}$ en un arreglo dinámico es $O(1)$ amortizado; insertar al inicio es $\\Theta(n)$."
+      ]
+    },
+    {
+      "heading": "Pilas, colas, deques y procesamiento de eventos",
+      "paragraphs": [
+        "Una pila aplica LIFO: el último elemento insertado es el primero en salir. Modela llamadas, deshacer operaciones y recorridos en profundidad. Su contrato incluye push, pop y consulta del extremo, normalmente O(1). La propiedad LIFO debe ser visible en pruebas: insertar a, b, c y extraer debe producir c, b, a. Una pila vacía requiere un error controlado o un valor explícito, nunca comportamiento accidental.",
+        "Una cola aplica FIFO: el primer elemento insertado es el primero en salir. Modela eventos, tareas y recorridos en anchura. Implementarla con list y pop(0) desplaza referencias; collections.deque ofrece append y popleft eficientes en ambos extremos. La cola no garantiza por sí sola prioridad, persistencia ni procesamiento exactamente una vez. Esas propiedades requieren estructuras y protocolos adicionales.",
+        "Un deque permite insertar y retirar en ambos extremos. Se usa como ventana deslizante, buffer acotado o cola de trabajo. Con maxlen puede descartar automáticamente el elemento más antiguo, comportamiento útil pero que debe documentarse para no perder datos silenciosamente. Una ventana móvil de tamaño k mantiene un invariante sobre los últimos k eventos y puede actualizar estadísticas sin recalcular toda la historia.",
+        "El procesamiento de eventos necesita identidad y semántica temporal. El orden de llegada no siempre coincide con el tiempo de ocurrencia; eventos tardíos pueden modificar resultados. Una estructura en memoria no resuelve persistencia ni recuperación ante fallos. En ejercicios educativos se distinguen orden FIFO, prioridad y tiempo del evento, preparando la transición hacia sistemas de colas y bases de datos sin afirmar garantías que no se implementan."
+      ],
+      "key_points": [
+        "La pila conserva LIFO y la cola FIFO.",
+        "deque evita desplazamientos costosos en los extremos.",
+        "Una ventana deslizante mantiene solo contexto reciente.",
+        "Orden de llegada y tiempo de ocurrencia son conceptos distintos."
+      ],
+      "equations": [
+        "$W_t=\\{x_{\\max(0,t-k+1)},\\ldots,x_t\\}$ define una ventana de tamaño máximo $k$."
+      ]
+    },
+    {
+      "heading": "Tablas hash, conjuntos y diccionarios",
+      "paragraphs": [
+        "Una tabla hash transforma una clave mediante una función hash y usa el resultado para localizar una posición. Como múltiples claves pueden producir el mismo índice, la implementación resuelve colisiones mediante encadenamiento u otras estrategias. Bajo supuestos razonables, búsqueda, inserción y borrado tienen coste esperado O(1); el peor caso es O(n). La garantía depende de la distribución del hash y del factor de carga.",
+        "Las claves deben tener igualdad estable y hash coherente. Si a==b, sus hashes deben coincidir. Una clave mutable puede cambiar después de insertarse y quedar inaccesible. En Python, cadenas y tuplas de elementos inmutables son claves habituales; listas no lo son. El hash no es cifrado ni anonimización. Usarlo sobre identificadores sensibles no protege la identidad, porque puede ser reversible por diccionario o correlación.",
+        "Un set representa pertenencia sin duplicados; un dict asocia claves únicas con valores. Eliminar duplicados mediante set cambia orden y puede ocultar errores de procedencia. Si la primera aparición debe conservarse, el algoritmo necesita una estructura vista y una salida ordenada. Para conteos, un diccionario o Counter conserva frecuencia. La elección expresa semántica: pertenencia, asociación, multiconjunto u orden no son equivalentes.",
+        "El factor de carga relaciona elementos y capacidad. Cuando crece, aumentan colisiones y se redimensiona la tabla. Estos cambios explican picos de coste amortizado. En un índice de k-mers, el número de claves posibles crece como |Σ|^k, pero solo se almacenan las observadas. La memoria depende de cantidad de claves, objetos y listas de posiciones, no únicamente del número teórico de patrones."
+      ],
+      "key_points": [
+        "Las operaciones hash son esperadas, no peores casos constantes.",
+        "Igualdad y hash deben permanecer coherentes.",
+        "set, dict y Counter representan semánticas diferentes.",
+        "Hashing no equivale a seguridad ni seudonimización."
+      ],
+      "equations": [
+        "$\\alpha=\\frac{n}{m}$ es el factor de carga para $n$ entradas y $m$ posiciones."
+      ]
+    },
+    {
+      "heading": "Selección de estructura por operaciones y significado",
+      "paragraphs": [
+        "No existe una estructura universalmente mejor. La selección comienza con un mapa de operaciones: frecuencia de acceso por índice, inserción en extremos, búsqueda por clave, recorrido ordenado, top-k y actualización. Después se añaden restricciones de memoria, escala, persistencia y semántica. Una tabla de costes ayuda, pero no reemplaza el significado: usar set para acelerar pertenencia puede ser incorrecto si los duplicados representan mediciones repetidas.",
+        "Los datos biomédicos suelen tener identidades y relaciones. Un diccionario puede indexar muestra por identificador, mientras una lista conserva el orden de adquisición y un deque mantiene eventos recientes. Combinar estructuras es habitual: un diccionario de listas puede mapear una variante a todas sus observaciones. La composición debe definir quién posee los datos y cómo se mantienen invariantes entre vistas para evitar inconsistencias.",
+        "La mutabilidad introduce aliasing: dos referencias pueden apuntar al mismo objeto y una modificación afecta a ambas. Copiar superficialmente una colección anidada no duplica sus elementos internos. Los defectos aparecen cuando un índice y una colección principal divergen. Una estrategia es encapsular las actualizaciones en métodos que modifican ambas estructuras y validar invariantes después de cada operación.",
+        "La serialización limita qué estructuras pueden persistirse y cómo se recuperan tipos. JSON no representa sets ni claves no textuales de forma directa; pickle no debe cargarse desde fuentes no confiables. Una estructura eficiente en memoria puede requerir un formato diferente en disco. El curso distingue estructura algorítmica, representación del lenguaje y almacenamiento persistente para evitar que se mezclen garantías."
+      ],
+      "key_points": [
+        "La selección parte de operaciones dominantes y semántica.",
+        "Combinar estructuras exige invariantes entre vistas.",
+        "Aliasing y copias superficiales pueden romper consistencia.",
+        "Persistencia y estructura en memoria tienen garantías distintas."
+      ],
+      "equations": [
+        "$C(S)=\\sum_i f_i\\,c_i(S)$ aproxima el coste de una estructura $S$ según frecuencia $f_i$ y coste $c_i$."
+      ]
+    },
+    {
+      "heading": "Localidad, memoria y procesamiento por bloques",
+      "paragraphs": [
+        "La disposición en memoria afecta el rendimiento incluso cuando dos estructuras comparten la misma complejidad asintótica. Los arreglos contiguos aprovechan la caché al recorrer elementos próximos, mientras nodos enlazados pueden dispersarse. En Python, cada objeto y referencia añade sobrecarga; para grandes volúmenes, arrays tipados o bibliotecas numéricas reducen memoria. La elección debe medirse con el tipo real de dato, no con una intuición abstracta.",
+        "Cuando el conjunto no cabe en memoria, se procesa por bloques o streaming. Un generador puede leer líneas, validar y acumular resúmenes sin materializar todo. Sin embargo, operaciones como ordenar globalmente, calcular una mediana exacta o revisitar datos requieren almacenamiento adicional o algoritmos externos. El contrato debe indicar si la salida es exacta, aproximada o dependiente del orden.",
+        "Los buffers deben tener una política explícita de presión. Si el productor genera más rápido que el consumidor, una cola crece, bloquea o descarta. Cada opción cambia el comportamiento. En sistemas educativos se puede modelar backpressure con una cola acotada y registrar cuántos eventos esperan o se descartan. La estructura por sí sola no ofrece entrega exactamente una vez ni recuperación.",
+        "Las estructuras compactas pueden reducir expresividad. Codificar nucleótidos en dos bits ahorra memoria, pero requiere política para N y símbolos ambiguos. Comprimir identificadores puede dificultar trazabilidad. Toda optimización de representación necesita funciones de codificación y decodificación probadas, metadatos de versión y un caso de referencia que confirme conservación del significado."
+      ],
+      "key_points": [
+        "La localidad puede cambiar constantes de manera sustantiva.",
+        "Streaming evita materialización, pero limita operaciones globales.",
+        "Las colas acotadas necesitan política de presión.",
+        "Compresión exige codificación reversible y metadatos."
+      ],
+      "equations": [
+        "\\text{memoria aproximada}=n\\,(\\text{payload}+\\text{sobrecarga por elemento})."
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Arreglo dinámico",
+      "definition": "Secuencia contigua que amplía capacidad cuando es necesario."
+    },
+    {
+      "term": "Lista enlazada",
+      "definition": "Colección de nodos conectados mediante referencias."
+    },
+    {
+      "term": "Iterador",
+      "definition": "Objeto que produce elementos secuencialmente."
+    },
+    {
+      "term": "Pila",
+      "definition": "Estructura LIFO."
+    },
+    {
+      "term": "Cola",
+      "definition": "Estructura FIFO."
+    },
+    {
+      "term": "Deque",
+      "definition": "Cola de doble extremo."
+    },
+    {
+      "term": "Ventana deslizante",
+      "definition": "Subconjunto reciente de tamaño acotado."
+    },
+    {
+      "term": "Tabla hash",
+      "definition": "Estructura que localiza claves mediante una función hash."
+    },
+    {
+      "term": "Colisión",
+      "definition": "Situación en la que claves distintas comparten posición hash."
+    },
+    {
+      "term": "Factor de carga",
+      "definition": "Relación entre entradas y capacidad de una tabla hash."
+    },
+    {
+      "term": "Conjunto",
+      "definition": "Colección de elementos únicos orientada a pertenencia."
+    },
+    {
+      "term": "Diccionario",
+      "definition": "Asociación entre claves únicas y valores."
+    },
+    {
+      "term": "Aliasing",
+      "definition": "Existencia de varias referencias al mismo objeto mutable."
+    },
+    {
+      "term": "Copia superficial",
+      "definition": "Copia de la colección exterior que comparte objetos internos."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Índice de k-mers con posiciones",
+      "scenario": "Construir un diccionario que asocie cada k-mer observado en una secuencia con todas sus posiciones de inicio.",
+      "reasoning_steps": [
+        "Validar k positivo y alfabeto.",
+        "Recorrer n-k+1 ventanas.",
+        "Usar dict[str,list[int]].",
+        "Crear la lista al observar una clave nueva.",
+        "Añadir posiciones en orden creciente.",
+        "Comprobar que la suma de longitudes es n-k+1.",
+        "Comparar consultas con búsqueda lineal."
+      ],
+      "interpretation": "El índice acelera consultas repetidas a costa de memoria; conserva duplicados como múltiples posiciones.",
+      "limitations": [
+        "Coincidencias exactas solamente.",
+        "La memoria puede crecer mucho.",
+        "No protege secuencias sensibles."
+      ]
+    },
+    {
+      "title": "Buffer de eventos con deque",
+      "scenario": "Mantener los últimos 100 eventos de un sensor sintético y calcular una media móvil.",
+      "reasoning_steps": [
+        "Crear deque con maxlen=100.",
+        "Añadir cada valor validado.",
+        "Actualizar suma restando el elemento que saldrá antes de insertar cuando esté lleno.",
+        "Mantener invariante entre suma y contenido.",
+        "Emitir media solo si la ventana no está vacía.",
+        "Registrar eventos descartados o aceptar explícitamente la pérdida."
+      ],
+      "interpretation": "El deque permite coste constante por actualización; maxlen implica descarte deliberado.",
+      "limitations": [
+        "No persiste tras fallo.",
+        "No maneja eventos tardíos.",
+        "La media no detecta artefactos."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Biblioteca de colecciones biomédicas",
+      "instructions": [
+        "Implementa una pila, una cola y un índice hash con contratos claros.",
+        "Usa colecciones estándar como oráculos.",
+        "Añade invariantes de tamaño y orden.",
+        "Genera datos sintéticos con duplicados y ausencias.",
+        "Mide operaciones dominantes.",
+        "Documenta semántica de orden y duplicación."
+      ],
+      "problems": [
+        "Pila de transformaciones reversibles.",
+        "Cola de muestras por orden de llegada.",
+        "Ventana deslizante de señales.",
+        "Índice de identificadores únicos.",
+        "Contador de k-mers.",
+        "Deduplicación estable sin perder la primera aparición."
+      ],
+      "checking_criteria": [
+        "Operaciones coinciden con contratos.",
+        "Casos vacíos generan comportamiento controlado.",
+        "Invariantes se prueban.",
+        "No se confunde hash con privacidad.",
+        "Benchmarks usan mismas entradas."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Secuencias y extremos",
+      "problems": [
+        {
+          "question": "Compara list.append y list.insert(0,x).",
+          "solution": "append es O(1) amortizado; insertar al inicio desplaza elementos y es Θ(n)."
+        },
+        {
+          "question": "¿Cuándo usar iterador?",
+          "solution": "Cuando se procesa secuencialmente y se quiere limitar memoria."
+        },
+        {
+          "question": "Prueba una pila con tres elementos.",
+          "solution": "Tras push a,b,c, los pop deben devolver c,b,a."
+        },
+        {
+          "question": "Implementa FIFO con deque.",
+          "solution": "append para ingresar y popleft para retirar."
+        }
+      ]
+    },
+    {
+      "title": "Hashing y semántica",
+      "problems": [
+        {
+          "question": "¿Por qué una lista no puede ser clave dict?",
+          "solution": "Es mutable y no tiene hash estable."
+        },
+        {
+          "question": "Explica el peor caso de tabla hash.",
+          "solution": "Muchas colisiones pueden convertir búsqueda en recorrido lineal."
+        },
+        {
+          "question": "Deduplica de forma estable.",
+          "solution": "Mantener set de vistos y lista de salida; añadir solo la primera aparición."
+        },
+        {
+          "question": "Distingue set y Counter.",
+          "solution": "set conserva presencia única; Counter conserva multiplicidad."
+        }
+      ]
+    },
+    {
+      "title": "Diseño compuesto",
+      "problems": [
+        {
+          "question": "Diseña un diccionario de listas por paciente ficticio.",
+          "solution": "Clave estable a lista ordenada de visitas, con actualización encapsulada."
+        },
+        {
+          "question": "Detecta aliasing en una matriz creada con [[0]*m]*n.",
+          "solution": "Las filas comparten referencia; usar comprensión independiente."
+        },
+        {
+          "question": "Serializa un set en JSON.",
+          "solution": "Convertirlo a lista con orden definido y documentar reconstrucción."
+        },
+        {
+          "question": "Audita maxlen de deque.",
+          "solution": "Confirmar que el descarte automático es deseado y reportado."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Usar list.pop(0) como cola intensiva.",
+      "correction": "Usar deque.popleft."
+    },
+    {
+      "error": "Eliminar duplicados con set sin analizar significado.",
+      "correction": "Definir si duplicados y orden son datos."
+    },
+    {
+      "error": "Suponer O(1) hash en peor caso.",
+      "correction": "Hablar de coste esperado y colisiones."
+    },
+    {
+      "error": "Usar claves mutables.",
+      "correction": "Elegir representaciones inmutables y estables."
+    },
+    {
+      "error": "Crear estructuras anidadas con referencias compartidas.",
+      "correction": "Construir cada objeto interno por separado."
+    },
+    {
+      "error": "Confundir estructura en memoria con persistencia.",
+      "correction": "Definir formato, seguridad y reconstrucción."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué representa Python list?",
+      "answer": "Un arreglo dinámico de referencias."
+    },
+    {
+      "question": "¿Por qué append es amortizado?",
+      "answer": "Algunas expansiones son caras, pero se distribuyen sobre muchas inserciones."
+    },
+    {
+      "question": "¿Qué contrato tiene una pila?",
+      "answer": "LIFO."
+    },
+    {
+      "question": "¿Qué contrato tiene una cola?",
+      "answer": "FIFO."
+    },
+    {
+      "question": "¿Qué ventaja ofrece deque?",
+      "answer": "Operaciones eficientes en ambos extremos."
+    },
+    {
+      "question": "¿Qué causa una colisión hash?",
+      "answer": "Claves distintas mapeadas a la misma posición."
+    },
+    {
+      "question": "¿Por qué hash no anonimiza?",
+      "answer": "No es una transformación secreta ni resistente a ataques de diccionario."
+    },
+    {
+      "question": "¿Qué pierde un set?",
+      "answer": "Multiplicidad y, semánticamente, el orden requerido."
+    },
+    {
+      "question": "¿Qué es aliasing?",
+      "answer": "Varias referencias al mismo objeto mutable."
+    },
+    {
+      "question": "¿Cómo elegir estructura?",
+      "answer": "Por operaciones, frecuencia, memoria, escala y semántica."
+    }
+  ],
+  "biomedical_connections": [
+    "Índices de k-mers y variantes.",
+    "Buffers de señales y eventos.",
+    "Conteo de observaciones repetidas.",
+    "Organización de visitas y muestras sintéticas."
+  ],
+  "sources": [
+    {
+      "title": "Python Data Structures",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/tutorial/datastructures.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "collections — deque and Counter",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/collections.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "OpenDSA — Lists",
+      "organization": "Virginia Tech",
+      "url": "https://opendsa-server.cs.vt.edu/ODSA/Books/Everything/html/ListIntro.html",
+      "type": "libro interactivo"
+    },
+    {
+      "title": "OpenDSA — Hashing",
+      "organization": "Virginia Tech",
+      "url": "https://opendsa-server.cs.vt.edu/ODSA/Books/Everything/html/HashIntro.html",
+      "type": "libro interactivo"
+    },
+    {
+      "title": "MIT 6.006 — Data Structures",
+      "organization": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/",
+      "type": "curso abierto"
+    },
+    {
+      "title": "Rosalind — Counting DNA Nucleotides",
+      "organization": "Rosalind",
+      "url": "https://rosalind.info/problems/dna/",
+      "type": "problema"
+    }
+  ],
+  "editorial_notice": "Material educativo para aprendizaje autónomo; requiere revisión docente experta. Los datos y casos son sintéticos o abiertos y no constituyen software clínico validado, ni una recomendación diagnóstica, terapéutica o asistencial."
+}

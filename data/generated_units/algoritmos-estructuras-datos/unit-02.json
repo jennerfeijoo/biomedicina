@@ -1,0 +1,423 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "algoritmos-estructuras-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 2,
+  "slug": "complejidad-eficiencia",
+  "title": "Complejidad y eficiencia",
+  "status": "review",
+  "weeks": [
+    3,
+    4,
+    5
+  ],
+  "estimated_hours": 24,
+  "purpose": "Analizar crecimiento temporal y espacial, recurrencias, amortización y rendimiento empírico para seleccionar implementaciones justificadas.",
+  "learning_objectives": [
+    "Definir tamaños de entrada y modelos de coste.",
+    "Usar O, Ω y Θ con cuantificadores y contexto.",
+    "Derivar costes de bucles, sumatorias y recorridos.",
+    "Resolver recurrencias elementales mediante expansión o árboles.",
+    "Explicar coste amortizado sin confundirlo con promedio probabilístico.",
+    "Diseñar benchmarks reproducibles.",
+    "Interpretar perfiles de tiempo y memoria.",
+    "Relacionar eficiencia con semántica y escala biomédica."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Modelos de coste y notación asintótica",
+      "paragraphs": [
+        "El análisis de complejidad aproxima cómo crecen tiempo y memoria cuando aumenta el tamaño de la entrada. Primero debe definirse qué representa n: número de registros, longitud de una secuencia, cantidad de nodos o total de aristas. Sin esa definición, una cota carece de significado. El modelo de coste decide qué operaciones se consideran constantes; comparar, indexar o sumar suelen tratarse como O(1) en un modelo RAM idealizado, aunque en hardware real su coste depende de tipos, caché y representación.",
+        "La notación O proporciona una cota superior asintótica; Ω expresa una cota inferior y Θ una cota ajustada. Decir que una búsqueda lineal es O(n) no afirma que siempre examine n elementos, sino que su crecimiento queda acotado por una función lineal para entradas suficientemente grandes. El mejor, promedio y peor caso son dimensiones distintas. Para una búsqueda, el mejor caso puede ser constante, mientras el peor es lineal. El promedio requiere una distribución de entradas explícita.",
+        "Los términos de menor orden y las constantes se omiten en el análisis asintótico porque el objetivo es el crecimiento. Sin embargo, no desaparecen de la ejecución real. Un algoritmo Θ(n log n) con una constante grande puede ser más lento que uno Θ(n²) en tamaños pequeños. La notación asintótica orienta selección y escalabilidad; la medición determina el rendimiento en un entorno concreto. Ambas evidencias deben interpretarse juntas.",
+        "El análisis espacial incluye la memoria de entrada, la memoria auxiliar y la profundidad de pila. Un algoritmo “in place” usa memoria adicional acotada o pequeña respecto al tamaño, pero puede modificar datos y afectar trazabilidad. Copiar una tabla evita efectos laterales, aunque duplica memoria. En biomedicina computacional, la memoria puede ser la restricción dominante para matrices, imágenes o cohortes extensas, por lo que tiempo y espacio deben documentarse separadamente."
+      ],
+      "key_points": [
+        "El tamaño de entrada n debe definirse desde el problema.",
+        "O, Ω y Θ expresan cotas distintas.",
+        "Mejor, promedio y peor caso requieren condiciones explícitas.",
+        "Tiempo asintótico y memoria auxiliar son dimensiones separadas."
+      ],
+      "equations": [
+        "$T(n)\\in O(g(n))$ si existen $c>0$ y $n_0$ tales que $T(n)\\le c\\,g(n)$ para todo $n\\ge n_0$."
+      ]
+    },
+    {
+      "heading": "Conteo de operaciones, sumatorias y recurrencias",
+      "paragraphs": [
+        "El conteo comienza identificando la operación dominante y cuántas veces se ejecuta. Un bucle de n iteraciones con trabajo constante produce una suma de n términos y coste Θ(n). Dos bucles anidados no implican automáticamente Θ(n²): si el segundo recorre solo hasta i, el total es 1+2+…+n, que también es Θ(n²), pero si el índice se duplica cada vez, el número de pasos es Θ(log n). La estructura de los límites importa más que el aspecto visual del código.",
+        "Las sumatorias permiten transformar recorridos variables en expresiones analizables. La suma de una constante es lineal; la suma de los primeros n enteros es cuadrática; la suma geométrica 1+2+4+…+n es lineal en su último término y contiene log n niveles. Estas relaciones aparecen en expansión dinámica de arreglos, árboles y algoritmos de divide y vencerás. El objetivo no es memorizar fórmulas aisladas, sino reconocer patrones de crecimiento.",
+        "Un algoritmo recursivo se describe mediante una recurrencia. La búsqueda binaria satisface T(n)=T(n/2)+Θ(1), mientras merge sort satisface T(n)=2T(n/2)+Θ(n). Un árbol de recursión muestra el coste por nivel y el número de niveles. El teorema maestro ofrece atajos para ciertas recurrencias de la forma aT(n/b)+f(n), pero no sustituye la derivación del subproblema ni se aplica a cualquier relación.",
+        "El análisis amortizado distribuye el coste de operaciones ocasionalmente caras sobre una secuencia completa. Añadir a un arreglo dinámico suele ser O(1) amortizado aunque algunas inserciones requieran copiar todos los elementos. El método agregado suma el coste total; el método contable asigna créditos y el potencial representa trabajo almacenado. Amortizado no significa promedio probabilístico: la garantía se refiere a cualquier secuencia de operaciones bajo el modelo."
+      ],
+      "key_points": [
+        "Los límites de los bucles determinan la sumatoria.",
+        "Las recurrencias modelan subproblemas y trabajo de combinación.",
+        "El árbol de recursión revela coste por nivel.",
+        "El coste amortizado distribuye eventos caros sobre una secuencia."
+      ],
+      "equations": [
+        "$1+2+\\cdots+n=\\frac{n(n+1)}{2}$ y por tanto pertenece a $\\Theta(n^2)$.",
+        "$T(n)=2T(n/2)+cn\\in\\Theta(n\\log n)$ para tamaños compatibles."
+      ]
+    },
+    {
+      "heading": "Benchmarks, perfiles y variabilidad",
+      "paragraphs": [
+        "Un benchmark responde una pregunta operacional concreta: cuánto tarda una implementación, cuánta memoria usa o cómo cambia con n en un entorno definido. Debe separar generación de datos, preparación y región medida. Medir una sola vez con el reloj del sistema mezcla calentamiento, planificación del sistema operativo y ruido. Herramientas como timeit repiten ejecuciones y seleccionan estadísticos robustos; para tareas largas conviene reportar distribución, no solo el mínimo.",
+        "Los tamaños deben cubrir varios órdenes de magnitud y las entradas deben representar casos relevantes. Comparar algoritmos con datos distintos invalida el contraste. Para ordenamiento se controla longitud, distribución, duplicados y grado de orden previo. Para grafos se controlan vértices, aristas y densidad. Un gráfico log-log puede sugerir una pendiente compatible con una potencia, pero no demuestra una cota; la teoría y el benchmark responden preguntas relacionadas pero diferentes.",
+        "El perfilado identifica dónde se consume tiempo o memoria. Un perfil por función revela puntos calientes; uno por línea ayuda a localizar operaciones; los contadores de asignaciones o memoria muestran presión del recolector y copias. Optimizar sin perfilar suele atacar código visible pero irrelevante. Después de cambiar una implementación, deben repetirse pruebas de corrección y benchmarks bajo el mismo protocolo.",
+        "El hardware rompe simplificaciones del modelo RAM. Cachés, predicción de saltos, vectorización, representación de objetos y recolección de basura influyen en tiempos. Una lista de enteros de Python almacena referencias a objetos y no equivale a un arreglo compacto de enteros. Por ello, una discrepancia entre la curva teórica y la medición no se atribuye automáticamente a la complejidad; primero se examinan constantes, memoria, entradas, compilación y entorno."
+      ],
+      "key_points": [
+        "El benchmark controla preparación, repeticiones y entradas.",
+        "Las curvas empíricas complementan, no sustituyen, las cotas.",
+        "El perfilado localiza consumo antes de optimizar.",
+        "Memoria y arquitectura explican parte de la diferencia teoría-medición."
+      ],
+      "equations": [
+        "$\\hat t(n)=\\operatorname{mediana}\\{t_1(n),\\ldots,t_r(n)\\}$ resume repeticiones con robustez."
+      ]
+    },
+    {
+      "heading": "Eficiencia responsable en datos biomédicos",
+      "paragraphs": [
+        "Elegir una solución eficiente requiere identificar operaciones dominantes. Si una aplicación consulta millones de veces por identificador y actualiza poco, un diccionario puede ser preferible a una lista. Si necesita recorrer en orden y conservar duplicados, otra estructura será necesaria. La cota de una operación aislada no decide todo: construcción, serialización, memoria y mantenimiento forman parte del coste total.",
+        "Los límites de escala deben relacionarse con recursos disponibles. Un algoritmo cuadrático puede ser aceptable para 500 muestras y prohibitivo para 500.000. Estimar órdenes de magnitud antes de ejecutar evita desperdicio. También conviene construir una implementación de referencia sencilla sobre una muestra pequeña y una versión optimizada sobre el conjunto grande; la primera funciona como oráculo y facilita detectar desviaciones.",
+        "La optimización puede cambiar la semántica. Sustituir una lista estable por un conjunto elimina duplicados y orden; usar aproximaciones reduce exactitud; paralelizar puede alterar desempates; convertir a menor precisión puede afectar acumulaciones. Cada mejora debe declarar qué propiedades conserva y cuáles modifica. En aplicaciones biomédicas, estas decisiones pueden cambiar cohortes o conteos, aunque el tiempo mejore.",
+        "Una comparación honesta incluye incertidumbre y reproducibilidad. Debe versionarse el generador de datos, guardar parámetros y repetir el análisis. No se generaliza desde un portátil a un clúster, ni desde datos sintéticos uniformes a secuencias reales. El resultado final debe separar cota teórica, rendimiento observado, consumo de memoria y utilidad para la pregunta científica."
+      ],
+      "key_points": [
+        "Las operaciones dominantes guían la selección.",
+        "Una estimación de orden de magnitud precede a la optimización.",
+        "Mejorar tiempo puede alterar orden, duplicados o precisión.",
+        "El informe separa teoría, medición, memoria y utilidad."
+      ],
+      "equations": [
+        "$\\text{coste total}=\\text{construcción}+q\\cdot\\text{consulta}+u\\cdot\\text{actualización}$ para $q$ consultas y $u$ actualizaciones."
+      ]
+    },
+    {
+      "heading": "Análisis probabilístico, cotas y decisiones bajo incertidumbre",
+      "paragraphs": [
+        "El caso promedio solo es significativo cuando se especifica una distribución sobre las entradas. En hashing se supone con frecuencia una dispersión aproximadamente uniforme; en quicksort se analiza un pivote aleatorio; en búsquedas se puede modelar la probabilidad de encontrar el objetivo en cada posición. Sin esta distribución, “promedio” se convierte en una etiqueta vaga. En datos reales, las distribuciones suelen ser sesgadas, correlacionadas y cambiantes, por lo que el análisis esperado debe contrastarse con escenarios observados y adversariales.",
+        "Las cotas inferiores indican que ningún algoritmo dentro de un modelo puede superar cierto crecimiento. La cota Ω(n log n) para ordenar por comparaciones surge porque existen n! órdenes posibles y cada comparación binaria aporta una cantidad limitada de información. Estas cotas no impiden algoritmos lineales cuando se explota estructura adicional, como claves enteras acotadas. Por ello, antes de aplicar una cota hay que declarar el modelo de acceso y las operaciones permitidas.",
+        "El rendimiento también puede expresarse como riesgo de exceder un presupuesto. En lugar de reportar solo una mediana, se puede estimar percentiles y frecuencia de ejecuciones lentas. Para pipelines, la cola larga puede importar más que el promedio si una etapa bloquea las demás. La variabilidad debe separarse por fuente: datos, sistema operativo, almacenamiento o aleatoriedad del algoritmo. Repetir sin registrar estas condiciones produce números abundantes pero poco interpretables.",
+        "Una decisión de ingeniería combina teoría, medición y margen operativo. Si el tamaño esperado es n pero puede duplicarse, conviene evaluar ambos escenarios. Si la memoria disponible es limitada, una solución ligeramente más lenta puede ser preferible. La conclusión debe declarar qué alternativa se eligió, qué evidencia la sustenta, qué supuestos podrían romperla y qué señal activaría una revisión futura."
+      ],
+      "key_points": [
+        "El caso promedio exige una distribución explícita.",
+        "Las cotas inferiores dependen del modelo computacional.",
+        "Percentiles y colas complementan promedios.",
+        "La decisión incluye márgenes y criterios de revisión."
+      ],
+      "equations": [
+        "\\mathbb{E}[T(X)]=\\sum_x T(x)P(X=x)$ define coste esperado bajo una distribución especificada."
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Complejidad temporal",
+      "definition": "Crecimiento del número de operaciones con el tamaño de entrada."
+    },
+    {
+      "term": "Complejidad espacial",
+      "definition": "Crecimiento de la memoria requerida."
+    },
+    {
+      "term": "Cota superior",
+      "definition": "Función que limita asintóticamente el crecimiento por arriba."
+    },
+    {
+      "term": "Cota inferior",
+      "definition": "Función que limita el crecimiento por abajo."
+    },
+    {
+      "term": "Cota ajustada",
+      "definition": "Orden asintótico simultáneamente superior e inferior."
+    },
+    {
+      "term": "Recurrencia",
+      "definition": "Ecuación que expresa el coste mediante instancias más pequeñas."
+    },
+    {
+      "term": "Amortización",
+      "definition": "Distribución del coste total sobre una secuencia de operaciones."
+    },
+    {
+      "term": "Benchmark",
+      "definition": "Protocolo controlado para medir rendimiento."
+    },
+    {
+      "term": "Perfilado",
+      "definition": "Medición destinada a localizar consumo de recursos."
+    },
+    {
+      "term": "Caso adversarial",
+      "definition": "Entrada que fuerza comportamiento desfavorable."
+    },
+    {
+      "term": "Memoria auxiliar",
+      "definition": "Espacio adicional excluyendo la entrada."
+    },
+    {
+      "term": "Selectividad",
+      "definition": "Proporción de elementos que satisfacen una condición."
+    },
+    {
+      "term": "Constante oculta",
+      "definition": "Factor multiplicativo omitido por la notación asintótica."
+    },
+    {
+      "term": "Escalabilidad",
+      "definition": "Capacidad de mantener viabilidad al crecer el problema."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Comparar búsqueda lineal y diccionario",
+      "scenario": "Se consultan identificadores de muestras en una colección. Se compara recorrer una lista en cada consulta con construir un diccionario una vez.",
+      "reasoning_steps": [
+        "Definir n como número de muestras y q como número de consultas.",
+        "La lista cuesta Θ(n) por consulta y Θ(qn) en total.",
+        "Construir el diccionario cuesta Θ(n) esperado.",
+        "Cada consulta hash cuesta O(1) esperado, total Θ(n+q).",
+        "Incluir memoria adicional Θ(n).",
+        "Medir con los mismos identificadores y varias relaciones q/n.",
+        "Comprobar resultados contra la lista como referencia."
+      ],
+      "interpretation": "El diccionario domina cuando hay muchas consultas y memoria suficiente; para una sola consulta y conjuntos pequeños, la construcción puede no compensar.",
+      "limitations": [
+        "El peor caso hash puede degradarse.",
+        "La clave debe ser estable e inmutable.",
+        "No se incluyen costes de persistencia."
+      ]
+    },
+    {
+      "title": "Recurrencia de merge sort",
+      "scenario": "Se divide una colección de registros en dos mitades, se ordena cada mitad y se fusiona de manera estable.",
+      "reasoning_steps": [
+        "Plantear T(n)=2T(n/2)+cn.",
+        "En cada nivel, el trabajo de fusión suma cn.",
+        "Hay log2 n niveles hasta tamaños unitarios.",
+        "El coste total es cn log2 n más trabajo de hojas.",
+        "La memoria auxiliar es Θ(n) para la fusión típica.",
+        "La estabilidad depende de elegir primero el elemento izquierdo en empates."
+      ],
+      "interpretation": "El análisis explica el crecimiento; un benchmark debe controlar claves, duplicados y asignaciones.",
+      "limitations": [
+        "Asume divisiones equilibradas.",
+        "La implementación real puede crear copias adicionales.",
+        "No predice constantes de Python."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Informe de complejidad y benchmark",
+      "instructions": [
+        "Selecciona dos implementaciones correctas del mismo contrato.",
+        "Deriva tiempo y memoria teóricos.",
+        "Construye entradas reproducibles de tamaños crecientes.",
+        "Separa preparación y región medida.",
+        "Ejecuta repeticiones y reporta mediana y dispersión.",
+        "Perfila el tamaño mayor.",
+        "Explica discrepancias sin sobreinterpretar."
+      ],
+      "problems": [
+        "Compara pertenencia en lista y conjunto.",
+        "Compara concatenación repetida y acumulación en lista.",
+        "Mide búsqueda binaria frente a lineal sobre datos ordenados.",
+        "Explora un caso con muchos duplicados.",
+        "Registra versión de Python y hardware.",
+        "Añade pruebas de equivalencia de salidas."
+      ],
+      "checking_criteria": [
+        "Mismas entradas y contrato.",
+        "Cotas derivadas, no memorizadas.",
+        "Mediciones repetidas con unidad.",
+        "Gráfico con ejes y tamaño definido.",
+        "Conclusiones limitadas al entorno."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Análisis asintótico",
+      "problems": [
+        {
+          "question": "Analiza un bucle que duplica i desde 1 hasta n.",
+          "solution": "Ejecuta aproximadamente floor(log2 n)+1 veces: Θ(log n)."
+        },
+        {
+          "question": "Analiza dos bucles independientes de n iteraciones.",
+          "solution": "Los costes se suman: Θ(n)+Θ(n)=Θ(n), no Θ(n²)."
+        },
+        {
+          "question": "Analiza un bucle triangular.",
+          "solution": "La suma 1+...+n produce Θ(n²)."
+        },
+        {
+          "question": "Distingue O(n) de Θ(n).",
+          "solution": "O(n) es cota superior; Θ(n) indica crecimiento ajustado lineal."
+        }
+      ]
+    },
+    {
+      "title": "Recurrencias y amortización",
+      "problems": [
+        {
+          "question": "Resuelve T(n)=T(n/2)+1.",
+          "solution": "Hay log2 n niveles, por tanto Θ(log n)."
+        },
+        {
+          "question": "Resuelve T(n)=2T(n/2)+n.",
+          "solution": "Cada nivel cuesta n y hay log n niveles: Θ(n log n)."
+        },
+        {
+          "question": "Explica inserción amortizada en arreglo dinámico.",
+          "solution": "Las copias ocasionales se distribuyen sobre muchas inserciones, dando O(1) amortizado."
+        },
+        {
+          "question": "Distingue amortizado de promedio.",
+          "solution": "Amortizado garantiza coste por secuencia sin distribución probabilística; promedio depende de una distribución."
+        }
+      ]
+    },
+    {
+      "title": "Medición y decisión",
+      "problems": [
+        {
+          "question": "Diseña tamaños para distinguir lineal de cuadrático.",
+          "solution": "Usar progresión geométrica, repetir y comparar cómo cambia t al duplicar n."
+        },
+        {
+          "question": "Explica por qué medir una vez es insuficiente.",
+          "solution": "No estima variabilidad ni controla calentamiento y ruido."
+        },
+        {
+          "question": "Identifica una optimización que cambie semántica.",
+          "solution": "Reemplazar lista por conjunto elimina orden y duplicados."
+        },
+        {
+          "question": "Propón un informe mínimo de benchmark.",
+          "solution": "Contrato, datos, n, entorno, repeticiones, estadístico, memoria, resultados y límites."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Usar n sin definirlo.",
+      "correction": "Vincular n con una dimensión observable."
+    },
+    {
+      "error": "Multiplicar costes por ver bucles cercanos.",
+      "correction": "Derivar límites y dependencias de cada bucle."
+    },
+    {
+      "error": "Confundir peor caso con caso típico.",
+      "correction": "Declarar escenario y distribución."
+    },
+    {
+      "error": "Ignorar memoria y copias.",
+      "correction": "Analizar espacio auxiliar y representación."
+    },
+    {
+      "error": "Medir generación de datos junto con el algoritmo.",
+      "correction": "Separar preparación de la región cronometrada."
+    },
+    {
+      "error": "Optimizar sin pruebas de equivalencia.",
+      "correction": "Mantener oráculo y regresiones."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué debe definirse antes de usar n?",
+      "answer": "La dimensión de entrada que n representa."
+    },
+    {
+      "question": "¿Qué expresa Θ?",
+      "answer": "Una cota asintótica ajustada superior e inferior."
+    },
+    {
+      "question": "¿Por qué dos bucles secuenciales no se multiplican?",
+      "answer": "Sus costes se suman."
+    },
+    {
+      "question": "¿Qué modela una recurrencia?",
+      "answer": "El coste de un problema mediante costes de subproblemas y combinación."
+    },
+    {
+      "question": "¿Qué significa coste amortizado?",
+      "answer": "Coste promedio por operación sobre cualquier secuencia, sin asumir probabilidades."
+    },
+    {
+      "question": "¿Qué controla un benchmark?",
+      "answer": "Entrada, preparación, entorno, repeticiones y estadístico."
+    },
+    {
+      "question": "¿Para qué sirve perfilar?",
+      "answer": "Para localizar consumo antes de optimizar."
+    },
+    {
+      "question": "¿Por qué teoría y medición pueden diferir?",
+      "answer": "Constantes, memoria, caché, lenguaje, entrada y entorno."
+    },
+    {
+      "question": "¿Qué riesgo tiene cambiar lista por conjunto?",
+      "answer": "Perder orden y duplicados."
+    },
+    {
+      "question": "¿Qué debe acompañar una afirmación de rendimiento?",
+      "answer": "Protocolo, entorno, datos, resultados y límites."
+    }
+  ],
+  "biomedical_connections": [
+    "Indexación de identificadores de muestras.",
+    "Conteo de patrones en genomas.",
+    "Escalado de pipelines sobre cohortes.",
+    "Selección de representaciones para matrices y redes."
+  ],
+  "sources": [
+    {
+      "title": "MIT 6.006 — Asymptotic Complexity",
+      "organization": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/pages/lecture-notes/",
+      "type": "curso abierto"
+    },
+    {
+      "title": "OpenDSA — Algorithm Analysis",
+      "organization": "Virginia Tech",
+      "url": "https://opendsa-server.cs.vt.edu/ODSA/Books/Everything/html/AnalPrelim.html",
+      "type": "libro interactivo"
+    },
+    {
+      "title": "Python timeit",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/timeit.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "Python Profilers",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/profile.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "The Turing Way — Reproducible Research",
+      "organization": "The Turing Way Community",
+      "url": "https://book.the-turing-way.org/reproducible-research/reproducible-research",
+      "type": "guía abierta"
+    },
+    {
+      "title": "Bioinformatics Algorithms — Big-O Detour",
+      "organization": "Active Learning Publishers",
+      "url": "https://www.bioinformaticsalgorithms.org/",
+      "type": "texto de apoyo"
+    }
+  ],
+  "editorial_notice": "Material educativo para aprendizaje autónomo; requiere revisión docente experta. Los datos y casos son sintéticos o abiertos y no constituyen software clínico validado, ni una recomendación diagnóstica, terapéutica o asistencial."
+}
