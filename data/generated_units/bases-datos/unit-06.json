@@ -1,0 +1,424 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "bases-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 6,
+  "slug": "datos-biomedicos-heterogeneos",
+  "title": "Datos biomédicos heterogéneos",
+  "status": "review",
+  "weeks": [
+    14,
+    15,
+    16
+  ],
+  "estimated_hours": 24,
+  "purpose": "Integrar datos relacionales, documentos, archivos, imágenes, señales y estándares biomédicos sin reducir interoperabilidad a una simple conversión de formato. La unidad enfatiza semántica, identificadores, terminologías, procedencia, ETL/ELT, validación, versionado y diseño de capas para investigación reproducible.",
+  "learning_objectives": [
+    "Distinguir heterogeneidad estructural, semántica, temporal y de calidad.",
+    "Seleccionar almacenamiento relacional, documental, grafo, series temporales u objetos según operaciones dominantes.",
+    "Explicar recursos y referencias de FHIR, tablas estandarizadas de OMOP y objetos DICOM.",
+    "Diseñar pipelines ETL o ELT con zonas, contratos y pruebas.",
+    "Mapear identificadores, códigos, unidades y tiempos entre fuentes.",
+    "Conservar procedencia y versiones de transformaciones.",
+    "Evaluar calidad mediante completitud, validez, consistencia, unicidad y oportunidad.",
+    "Construir una capa analítica sin afirmar equivalencia clínica no demostrada."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Formas de heterogeneidad y elección de representación",
+      "paragraphs": [
+        "Los datos biomédicos son heterogéneos porque combinan estructuras, escalas y significados. Una tabla de visitas, un archivo VCF, una imagen DICOM, una señal de ECG, un documento clínico y una matriz de expresión no comparten la misma unidad de observación ni el mismo ciclo de vida. Forzarlos a una tabla universal puede destruir contexto; almacenarlos sin integración impide responder preguntas conjuntas.",
+        "La heterogeneidad estructural se refiere a formatos y esquemas; la semántica, a diferencias de significado; la temporal, a relojes, zonas, intervalos y frecuencias; y la de calidad, a ausencia, precisión, resolución y procedencia. Convertir JSON a columnas resuelve una parte estructural, pero no demuestra que dos códigos, unidades o eventos sean equivalentes. La integración debe identificar qué dimensión se transforma y cuál permanece incierta.",
+        "El modelo relacional es adecuado para datos estructurados con integridad, relaciones y consultas declarativas. Los documentos pueden conservar estructuras variables o jerárquicas; los grafos facilitan recorridos sobre relaciones; las bases de series temporales optimizan señales y eventos; el almacenamiento de objetos conserva archivos grandes. Elegir una tecnología depende de operaciones, consistencia, volumen, latencia, gobierno y habilidades, no de tendencias.",
+        "Una arquitectura frecuente conserva archivos originales en almacenamiento de objetos, metadatos e índices en una base relacional y derivados analíticos en formatos columnares. Esta separación evita introducir binarios grandes en tablas sin necesidad y permite versionar transformaciones. Sin embargo, aumenta coordinación y exige identificadores, catálogos y políticas de ciclo de vida que conecten cada capa."
+      ],
+      "key_points": [
+        "La heterogeneidad incluye estructura, semántica, tiempo y calidad.",
+        "Convertir formato no garantiza equivalencia de significado.",
+        "Cada modelo de almacenamiento favorece operaciones diferentes.",
+        "Las arquitecturas híbridas necesitan identificadores y gobierno comunes."
+      ],
+      "equations": [
+        {
+          "latex": "D_{integrado}=f(D_1,D_2,\\ldots,D_n;M,V,Q)",
+          "meaning": "La integración depende de datos, mapeos M, versiones V y reglas de calidad Q."
+        }
+      ]
+    },
+    {
+      "heading": "Interoperabilidad: FHIR, OMOP, DICOM y vocabularios",
+      "paragraphs": [
+        "FHIR organiza información sanitaria en recursos con elementos, referencias, perfiles y terminologías. Un recurso Observation puede representar una medición, pero su interpretación depende de código, sujeto, tiempo, método, unidad, estado y perfil. Guardar el JSON completo conserva estructura, aunque las consultas analíticas suelen requerir extracción a tablas. El perfil y la versión deben acompañar cada transformación.",
+        "OMOP Common Data Model estandariza tablas y vocabularios para análisis observacional. Su fortaleza es ofrecer convenciones y conceptos comunes para cohortes y métodos reproducibles. Mapear una fuente a OMOP implica decisiones: qué evento corresponde a qué dominio, qué concepto estándar representa el código local y qué información queda en campos fuente. Un mapeo es una hipótesis versionada y debe evaluarse.",
+        "DICOM combina archivos, metadatos y una red de servicios para imágenes médicas. Los identificadores de paciente, estudio, serie e instancia forman una jerarquía, pero los metadatos pueden contener información sensible y variaciones de fabricantes. Extraer píxeles sin metadatos puede perder orientación y adquisición; conservar todo sin control aumenta exposición. La desidentificación necesita perfiles, pruebas y revisión.",
+        "Los vocabularios controlados como LOINC, SNOMED CT, RxNorm u ontologías de investigación aportan identificadores y relaciones. Un código no es solo una etiqueta; tiene sistema, versión, estado y alcance. El mapeo uno a uno no siempre existe. Deben representarse equivalencias exactas, más amplias, más estrechas o inciertas y conservar el código fuente para auditoría."
+      ],
+      "key_points": [
+        "FHIR necesita perfiles, terminologías y versión para interpretación.",
+        "OMOP estandariza análisis, pero el mapeo sigue siendo una decisión científica.",
+        "DICOM integra píxeles y metadatos con riesgos de privacidad.",
+        "Los códigos requieren sistema, versión y tipo de equivalencia."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "ETL, ELT, contratos y procedencia",
+      "paragraphs": [
+        "ETL extrae, transforma y carga; ELT carga primero y transforma después dentro de una plataforma analítica. La elección depende de seguridad, volumen, capacidad y necesidad de conservar originales. En ambos casos conviene separar zonas: recepción inmutable, validación, estandarización, curación y publicación. Cada transición debe producir evidencia y no sobrescribir silenciosamente la fuente.",
+        "Un contrato de datos define esquema, tipos, obligatoriedad, claves, unidades, códigos, frecuencia y expectativas de calidad. Cuando una fuente cambia una columna o significado, el pipeline debe detectarlo antes de generar resultados incorrectos. La evolución de esquema necesita compatibilidad, versiones y comunicación. Aceptar cualquier campo adicional sin control puede ocultar cambios semánticos.",
+        "La procedencia enlaza cada derivado con archivos, consultas, código, parámetros y versiones. Un identificador de ejecución permite reconstruir qué insumos produjeron una tabla. Las transformaciones deben ser deterministas cuando sea posible y registrar semillas cuando no. Los checksums ayudan a detectar cambios de archivos, aunque no prueban validez científica.",
+        "Los pipelines deben ser idempotentes y reanudables. Reprocesar el mismo lote no debería duplicar eventos. Las cargas incrementales necesitan una estrategia de watermark, log de cambios o particiones, y deben manejar llegadas tardías y correcciones. El tiempo de extracción no sustituye al tiempo del evento. La reconciliación compara conteos, claves y totales entre etapas."
+      ],
+      "key_points": [
+        "ETL y ELT necesitan zonas y estados explícitos.",
+        "Los contratos detectan cambios estructurales y semánticos.",
+        "La procedencia conecta derivados con insumos y código.",
+        "Las cargas deben ser idempotentes, incrementales y reconciliables."
+      ],
+      "equations": [
+        {
+          "latex": "n_{entrada}=n_{aceptados}+n_{rechazados}+n_{cuarentena}",
+          "meaning": "Una reconciliación básica exige explicar el destino de todos los registros."
+        },
+        {
+          "latex": "checksum(D)=h(D)",
+          "meaning": "Un hash detecta cambios de bytes, no calidad ni significado."
+        }
+      ]
+    },
+    {
+      "heading": "Calidad, integración analítica y límites",
+      "paragraphs": [
+        "La calidad de datos es multidimensional. Completitud mide presencia; validez, cumplimiento de reglas; consistencia, ausencia de contradicciones; unicidad, control de duplicados; oportunidad, disponibilidad temporal; y plausibilidad, compatibilidad con conocimiento del dominio. Un conjunto puede estar completo y ser incorrecto. Las métricas deben calcularse por fuente, período y subgrupo para detectar degradación localizada.",
+        "Las reglas automáticas se clasifican por severidad y acción. Un código desconocido puede ir a cuarentena; una unidad convertible puede normalizarse conservando el original; una fecha imposible puede bloquear carga. Las reglas deben evitar límites clínicos universales no justificados. La plausibilidad depende de población, método, unidad y contexto, y requiere revisión de expertos.",
+        "Una capa analítica combina hechos, dimensiones y derivados para responder preguntas. Debe conservar identificadores de procedencia y fechas de corte. Los datos longitudinales necesitan ventanas, eventos índice y políticas para correcciones tardías. Los conjuntos destinados a aprendizaje automático requieren evitar fugas temporales y separar variables disponibles antes y después del resultado.",
+        "La integración técnica no establece utilidad clínica. Un modelo que combina FHIR, OMOP e imágenes puede apoyar investigación, pero necesita validación de mapeos, representatividad, sesgo, seguridad y rendimiento. Los datos son una representación parcial del proceso real. La documentación debe declarar qué se perdió, qué se transformó y qué preguntas no pueden responderse."
+      ],
+      "key_points": [
+        "La calidad tiene dimensiones diferentes y debe estratificarse.",
+        "Las reglas automáticas necesitan severidad, acción y contexto.",
+        "Las capas analíticas deben preservar procedencia y temporalidad.",
+        "Integración técnica no equivale a validez clínica."
+      ],
+      "equations": [
+        {
+          "latex": "completitud=\\frac{n_{valores\\ presentes}}{n_{valores\\ esperados}}",
+          "meaning": "La completitud mide presencia, no exactitud."
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Heterogeneidad estructural",
+      "definition": "Diferencias de formato, esquema y organización."
+    },
+    {
+      "term": "Heterogeneidad semántica",
+      "definition": "Diferencias en significado y alcance de conceptos."
+    },
+    {
+      "term": "FHIR",
+      "definition": "Estándar de intercambio basado en recursos sanitarios."
+    },
+    {
+      "term": "OMOP CDM",
+      "definition": "Modelo común para datos observacionales y análisis."
+    },
+    {
+      "term": "DICOM",
+      "definition": "Estándar para imágenes médicas, metadatos y servicios."
+    },
+    {
+      "term": "Vocabulario controlado",
+      "definition": "Conjunto gobernado de conceptos y códigos."
+    },
+    {
+      "term": "ETL",
+      "definition": "Extracción, transformación y carga."
+    },
+    {
+      "term": "ELT",
+      "definition": "Extracción, carga y transformación posterior."
+    },
+    {
+      "term": "Contrato de datos",
+      "definition": "Especificación de estructura, semántica y calidad esperadas."
+    },
+    {
+      "term": "Procedencia",
+      "definition": "Linaje de insumos, procesos, versiones y responsables."
+    },
+    {
+      "term": "Watermark",
+      "definition": "Marca utilizada para identificar datos incrementales procesados."
+    },
+    {
+      "term": "Cuarentena",
+      "definition": "Zona para registros que requieren revisión."
+    },
+    {
+      "term": "Reconciliación",
+      "definition": "Comprobación de que los registros y totales se explican entre etapas."
+    },
+    {
+      "term": "Fuga temporal",
+      "definition": "Uso de información futura respecto al momento de predicción."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Integración de resultados FHIR en un esquema analítico",
+      "scenario": "Un servidor FHIR entrega recursos Observation y DiagnosticReport. Se necesita una tabla analítica longitudinal para investigación.",
+      "reasoning_steps": [
+        "Conservar el recurso original, versión y fecha de recepción.",
+        "Validar perfil, estado, sujeto, código, tiempo y valor.",
+        "Resolver referencias de sujeto y encuentro mediante identificadores controlados.",
+        "Mapear código y unidad a vocabularios internos conservando valores fuente.",
+        "Separar observaciones válidas, rechazadas y en cuarentena.",
+        "Cargar tabla de hechos con execution_id y source_resource_id.",
+        "Reconciliar conteos y probar correcciones de recursos."
+      ],
+      "solution": "La capa de recepción mantiene JSON inmutable; una transformación versionada produce Persona, Encuentro y Observacion. Los códigos fuente y mapeados coexisten, y cada fila enlaza el recurso y ejecución.",
+      "interpretation": "El resultado facilita SQL sin perder la posibilidad de auditar el mensaje original.",
+      "limitations": [
+        "La equivalencia de códigos necesita validación de dominio.",
+        "Los perfiles FHIR varían entre implementaciones."
+      ]
+    },
+    {
+      "title": "Cohorte OMOP con imágenes DICOM",
+      "scenario": "Se desea enlazar una cohorte OMOP con estudios de imagen DICOM para un proyecto educativo.",
+      "reasoning_steps": [
+        "Definir una tabla puente entre person_id, visit_occurrence_id y StudyInstanceUID seudonimizado.",
+        "Conservar sistema emisor y proceso de enlace.",
+        "Extraer metadatos mínimos necesarios de DICOM.",
+        "Almacenar archivos en objetos y referencias en la base relacional.",
+        "Versionar reglas de inclusión y desidentificación.",
+        "Comprobar uno a muchos entre visitas y estudios.",
+        "Crear un conjunto analítico con fecha de corte y procedencia."
+      ],
+      "solution": "La base relacional contiene metadatos, enlaces y control; los archivos permanecen en almacenamiento de objetos. El puente documenta confianza y método de enlace.",
+      "interpretation": "La arquitectura evita tratar imágenes como celdas y mantiene trazabilidad entre cohortes y estudios.",
+      "limitations": [
+        "La desidentificación requiere revisión especializada.",
+        "Los enlaces probabilísticos pueden contener errores."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Pipeline reproducible de integración multimodal",
+      "instructions": [
+        "Selecciona dos fuentes sintéticas: una tabular y una FHIR, DICOM o VCF.",
+        "Define unidades de observación, identificadores y tiempos.",
+        "Diseña zonas de recepción, validación, curación y publicación.",
+        "Escribe contratos de datos para ambas fuentes.",
+        "Implementa transformaciones idempotentes.",
+        "Registra execution_id, checksums y versiones.",
+        "Calcula métricas de calidad y reconciliación.",
+        "Construye una consulta o conjunto analítico final."
+      ],
+      "tasks": [
+        "Detectar un cambio de esquema.",
+        "Mapear un código local conservando el original.",
+        "Convertir unidades con registro de fórmula.",
+        "Gestionar un registro tardío.",
+        "Enviar un error a cuarentena.",
+        "Reconstruir una fila analítica hasta el archivo fuente."
+      ],
+      "deliverable": "Arquitectura, contratos, scripts, datos sintéticos, informe de calidad, linaje y consulta final.",
+      "checking_criteria": [
+        "Los originales permanecen inmutables.",
+        "Los identificadores y tiempos están definidos.",
+        "Cada transformación tiene versión y pruebas.",
+        "Los conteos se reconcilian.",
+        "Las limitaciones semánticas y de privacidad son explícitas."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "level": "fundamental",
+      "problems": [
+        {
+          "prompt": "Distingue heterogeneidad estructural y semántica.",
+          "solution": "La primera trata formatos y esquemas; la segunda, significado y alcance."
+        },
+        {
+          "prompt": "¿Qué conserva un recurso FHIR además del valor?",
+          "solution": "Código, sujeto, tiempo, estado, método, unidad, referencias y metadatos."
+        },
+        {
+          "prompt": "¿Por qué almacenar imágenes en objetos?",
+          "solution": "Los binarios grandes se gestionan mejor fuera de filas, manteniendo metadatos y referencias en la base."
+        },
+        {
+          "prompt": "¿Qué es un contrato de datos?",
+          "solution": "Una especificación de esquema, semántica, frecuencia y calidad esperada."
+        }
+      ]
+    },
+    {
+      "level": "intermedio",
+      "problems": [
+        {
+          "prompt": "Diseña zonas para un pipeline.",
+          "solution": "Recepción inmutable, validación, estandarización, curación y publicación."
+        },
+        {
+          "prompt": "¿Por qué conservar código fuente y estándar?",
+          "solution": "Permite auditoría, remapeo y revisión de equivalencia."
+        },
+        {
+          "prompt": "Propón una reconciliación.",
+          "solution": "Comparar entrada con aceptados, rechazados y cuarentena por lote."
+        },
+        {
+          "prompt": "¿Qué riesgo tiene usar fecha de carga como fecha clínica?",
+          "solution": "Confunde ocurrencia con disponibilidad y puede introducir sesgo temporal."
+        }
+      ]
+    },
+    {
+      "level": "avanzado",
+      "problems": [
+        {
+          "prompt": "Diseña una carga incremental con llegadas tardías.",
+          "solution": "Usar watermark y una ventana de reproceso, además de claves idempotentes y versiones."
+        },
+        {
+          "prompt": "Explica una fuga temporal.",
+          "solution": "Una variable incluye información registrada después del momento en que el modelo debería predecir."
+        },
+        {
+          "prompt": "Propón métricas de calidad estratificadas.",
+          "solution": "Completitud y validez por fuente, mes, dispositivo y subgrupo relevante."
+        },
+        {
+          "prompt": "Evalúa un mapeo muchos a uno de códigos.",
+          "solution": "Puede perder especificidad; conservar fuente, tipo de equivalencia y versión."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Confundir conversión de formato con interoperabilidad.",
+      "correction": "Validar significado, códigos, unidades y contexto."
+    },
+    {
+      "error": "Eliminar el dato fuente tras transformar.",
+      "correction": "Conservar original, versión y procedencia según política."
+    },
+    {
+      "error": "Usar identificadores locales sin emisor.",
+      "correction": "Guardar ámbito y reglas de enlace."
+    },
+    {
+      "error": "Sobrescribir mapeos y vocabularios.",
+      "correction": "Versionar y conservar código fuente."
+    },
+    {
+      "error": "Aceptar cambios de esquema silenciosamente.",
+      "correction": "Aplicar contratos y alertas."
+    },
+    {
+      "error": "Medir calidad solo de forma global.",
+      "correction": "Estratificar por fuente, tiempo y subgrupo."
+    },
+    {
+      "error": "Usar datos futuros en una cohorte predictiva.",
+      "correction": "Definir tiempo índice y disponibilidad de variables."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué dimensiones de heterogeneidad existen?",
+      "answer": "Estructural, semántica, temporal y de calidad, entre otras."
+    },
+    {
+      "question": "¿Qué problema resuelve FHIR?",
+      "answer": "Intercambio estructurado mediante recursos, perfiles, referencias y terminologías."
+    },
+    {
+      "question": "¿Qué aporta OMOP?",
+      "answer": "Un modelo y vocabularios comunes para análisis observacional."
+    },
+    {
+      "question": "¿Qué contiene DICOM?",
+      "answer": "Imágenes, metadatos y servicios organizados por paciente, estudio, serie e instancia."
+    },
+    {
+      "question": "¿Qué diferencia existe entre ETL y ELT?",
+      "answer": "En ETL se transforma antes de cargar; en ELT se carga y transforma después."
+    },
+    {
+      "question": "¿Por qué debe conservarse procedencia?",
+      "answer": "Para reconstruir insumos, transformaciones, versiones y decisiones."
+    },
+    {
+      "question": "¿Qué es reconciliación?",
+      "answer": "Comprobar que todos los registros y totales se explican entre etapas."
+    },
+    {
+      "question": "¿Qué mide completitud?",
+      "answer": "La proporción de valores presentes, no su exactitud."
+    },
+    {
+      "question": "¿Qué es una fuga temporal?",
+      "answer": "Usar información futura respecto al momento de análisis o predicción."
+    },
+    {
+      "question": "¿Por qué integración no implica utilidad clínica?",
+      "answer": "Aún requiere validación semántica, representatividad, seguridad y evaluación externa."
+    }
+  ],
+  "biomedical_connections": [
+    "Intercambio de observaciones y encuentros mediante FHIR.",
+    "Estandarización de cohortes con OMOP.",
+    "Enlace de imágenes DICOM con datos longitudinales.",
+    "Integración de ómicas, señales y metadatos experimentales.",
+    "Control de calidad, procedencia y fugas temporales."
+  ],
+  "sources": [
+    {
+      "title": "FHIR Overview",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/overview.html",
+      "type": "estándar"
+    },
+    {
+      "title": "OMOP Common Data Model",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/",
+      "type": "modelo de datos"
+    },
+    {
+      "title": "DICOM Standard",
+      "organization": "DICOM Standards Committee",
+      "url": "https://www.dicomstandard.org/current",
+      "type": "estándar"
+    },
+    {
+      "title": "FAIR Guiding Principles",
+      "organization": "Scientific Data",
+      "url": "https://doi.org/10.1038/sdata.2016.18",
+      "type": "artículo"
+    },
+    {
+      "title": "W3C PROV Overview",
+      "organization": "World Wide Web Consortium",
+      "url": "https://www.w3.org/TR/prov-overview/",
+      "type": "recomendación"
+    },
+    {
+      "title": "GA4GH Data Use Ontology",
+      "organization": "Global Alliance for Genomics and Health",
+      "url": "https://www.ga4gh.org/product/data-use-ontology-duo/",
+      "type": "estándar de gobernanza"
+    }
+  ],
+  "editorial_notice": "Material educativo que requiere revisión docente experta. Los ejemplos de interoperabilidad usan datos sintéticos y no constituyen software clínico validado, certificación de conformidad ni autorización para integrar sistemas reales.",
+  "unit_closure": "La integración biomédica responsable conserva la diferencia entre formato, significado y evidencia. El pipeline debe permitir regresar desde una fila analítica hasta su fuente, versión y transformación. También debe registrar incertidumbres de mapeo y datos excluidos. Un conjunto técnicamente unificado sigue siendo una representación parcial y necesita validación antes de sustentar decisiones de investigación o clínica. La publicación de derivados debe incluir fecha de corte, licencia, restricciones de uso y responsable del mapeo."
+}
