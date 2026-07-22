@@ -1,0 +1,293 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "arquitectura-computadores",
+  "area_id": "ciencias-basicas",
+  "unit": 5,
+  "slug": "paralelismo-aceleracion",
+  "title": "Paralelismo y aceleración",
+  "status": "review",
+  "weeks": [11, 12, 13],
+  "estimated_hours": 24,
+  "purpose": "Analizar paralelismo a nivel de instrucciones, datos, hilos y dispositivos; seleccionar CPU, SIMD, multinúcleo o GPU según dependencias, movimiento de datos, precisión y escalabilidad; y construir comparaciones reproducibles que incluyan coordinación, transferencia y validez numérica.",
+  "learning_objectives": [
+    "Distinguir concurrencia, paralelismo, latencia y throughput.",
+    "Identificar dependencias que limitan vectorización o ejecución simultánea.",
+    "Aplicar la ley de Amdahl y calcular eficiencia paralela.",
+    "Explicar diferencias entre SIMD, multithreading, multinúcleo y GPU.",
+    "Relacionar intensidad aritmética y movimiento de datos con el acelerador adecuado.",
+    "Evaluar costes de sincronización, transferencia, lanzamiento y balance de carga.",
+    "Comparar precisión y reproducibilidad de reducciones paralelas.",
+    "Diseñar benchmarks de escalado fuerte y débil con resultados funcionalmente equivalentes."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Formas de paralelismo y dependencias",
+      "paragraphs": [
+        "Paralelismo significa realizar trabajo simultáneamente; concurrencia significa gestionar tareas que progresan durante intervalos solapados y no exige ejecución física simultánea. Un sistema puede ser concurrente en un solo núcleo y paralelo en varios. La distinción importa porque hilos adicionales pueden mejorar capacidad de respuesta sin reducir el tiempo de una operación, y pueden incluso añadir overhead.",
+        "El paralelismo de instrucciones explota operaciones independientes dentro de un flujo; SIMD aplica una instrucción a varios elementos; multithreading mantiene varios flujos; multinúcleo replica núcleos; una GPU organiza miles de hilos ligeros. Estas capas pueden combinarse. Un programa en ocho núcleos puede usar SIMD dentro de cada núcleo y bibliotecas que delegan kernels a una GPU.",
+        "Las dependencias determinan qué operaciones pueden reordenarse. Una dependencia verdadera aparece cuando una tarea consume un valor producido por otra. Las dependencias por nombre pueden eliminarse mediante renombrado o buffers separados. En un bucle, escribir y leer la misma posición entre iteraciones puede impedir vectorización. Antes de añadir hilos debe construirse un grafo de tareas y datos.",
+        "La granularidad expresa cuánto trabajo realiza una tarea antes de coordinar. Tareas demasiado pequeñas gastan más en planificación y sincronización que en cómputo; tareas enormes producen desbalance. El tamaño óptimo depende de hardware, biblioteca, datos y variación entre elementos. En imágenes, dividir por bloques puede favorecer localidad; en secuencias, longitudes variables pueden requerir planificación dinámica."
+      ],
+      "equations": [
+        {"label": "Trabajo total", "latex": "W=\\sum_i w_i"},
+        {"label": "Camino crítico", "latex": "T_\\infty=\\max_{ruta}\\sum_{i\\in ruta}t_i"},
+        {"label": "Paralelismo medio", "latex": "P_{avg}=\\frac{T_1}{T_\\infty}"}
+      ],
+      "key_points": [
+        "Concurrencia y paralelismo no son sinónimos.",
+        "Varias capas de paralelismo pueden coexistir.",
+        "Las dependencias, no el número de núcleos, delimitan simultaneidad.",
+        "La granularidad equilibra overhead y balance de carga."
+      ]
+    },
+    {
+      "heading": "Amdahl, escalabilidad y eficiencia",
+      "paragraphs": [
+        "La ley de Amdahl separa una fracción acelerable y otra que permanece sin acelerar. Aunque se usen infinitos procesadores, la parte serial limita la aceleración. Una aplicación con 10% estrictamente serial no puede superar una aceleración de diez bajo ese modelo. El resultado obliga a optimizar el pipeline completo y no únicamente el kernel más visible.",
+        "La aceleración observada compara tiempos para la misma tarea, datos y criterio de salida. La eficiencia divide aceleración por número de recursos y revela cuánto rendimiento adicional aporta cada unidad. Una eficiencia decreciente no implica automáticamente un defecto: puede reflejar comunicación, sincronización, menor trabajo por hilo o límites de memoria. Debe interpretarse con perfiles y contadores.",
+        "Escalado fuerte mantiene el problema fijo y aumenta recursos; escalado débil aumenta problema y recursos proporcionalmente. El primero pregunta cuánto se reduce el tiempo de una carga; el segundo si puede mantenerse el tiempo al crecer el volumen. Ambos requieren declarar tamaño, distribución, precisión, configuración, política de hilos y si se incluye preparación o transferencia.",
+        "La ley de Gustafson muestra que, cuando el problema crece, la fracción paralela puede dominar y justificar más recursos. No contradice Amdahl: responde a otra pregunta. En biomedicina computacional, cohortes, resoluciones y modelos pueden crecer, pero no debe aumentarse artificialmente el problema para ocultar ineficiencia ni asumir que todo volumen adicional aporta valor científico."
+      ],
+      "equations": [
+        {"label": "Ley de Amdahl", "latex": "S(p)=\\frac{1}{(1-f)+f/p}"},
+        {"label": "Eficiencia", "latex": "E(p)=\\frac{S(p)}{p}"},
+        {"label": "Gustafson", "latex": "S_G(p)=p-(1-f)(p-1)"}
+      ],
+      "key_points": [
+        "La fracción no acelerada fija un techo.",
+        "La eficiencia cuantifica el aprovechamiento de recursos.",
+        "Escalado fuerte y débil responden a preguntas diferentes.",
+        "Cambiar el tamaño del problema cambia la interpretación."
+      ]
+    },
+    {
+      "heading": "SIMD, multinúcleo y organización de datos",
+      "paragraphs": [
+        "SIMD empaqueta varios elementos en un registro ancho y ejecuta una operación común. Funciona bien en bucles regulares, datos contiguos y ramas uniformes. La anchura vectorial no garantiza una aceleración igual: cargas, stores, conversiones, máscaras y colas del pipeline también consumen recursos. El compilador necesita demostrar que las iteraciones son independientes o recibir información segura sobre alias y alineación.",
+        "Una rama dentro de un bucle vectorizado puede convertirse en máscaras. Si pocos elementos siguen una ruta costosa, se ejecuta trabajo inútil; si la divergencia es alta, reorganizar datos por categoría puede ayudar. Sin embargo, ordenar tiene coste y puede alterar trazabilidad. La transformación se justifica mediante el número de reutilizaciones y pruebas que preserven el orden cuando sea semánticamente importante.",
+        "En multinúcleo, dividir un arreglo por bloques suele ser sencillo, pero las escrituras compartidas requieren sincronización. Locks protegen regiones críticas; operaciones atómicas actualizan valores concretos; reducciones mantienen acumuladores privados y los combinan. Reducir la frecuencia de sincronización mejora throughput, aunque aumenta memoria y puede modificar el orden numérico.",
+        "La organización de datos influye en SIMD y caché. Structure of arrays agrupa el mismo campo y facilita cargas vectoriales cuando se procesa una variable; array of structures mantiene juntas las propiedades de cada entidad. Padding y alineación pueden mejorar accesos y aumentar memoria. La decisión debe seguir las operaciones dominantes y verificarse con diferentes tamaños."
+      ],
+      "equations": [
+        {"label": "Speedup SIMD ideal", "latex": "S_{SIMD}\\leq w"},
+        {"label": "Coste paralelo", "latex": "T_p\\approx\\frac{W}{p}+T_{sync}+T_{imbalance}"},
+        {"label": "Desbalance", "latex": "I_b=\\frac{\\max_i T_i}{\\bar{T}}"}
+      ],
+      "key_points": [
+        "SIMD requiere independencia y regularidad.",
+        "Las máscaras gestionan ramas, pero no eliminan su coste.",
+        "Sincronización y desbalance reducen escalabilidad.",
+        "La disposición de datos puede habilitar o bloquear vectorización."
+      ]
+    },
+    {
+      "heading": "GPU, transferencias y precisión",
+      "paragraphs": [
+        "Una GPU está diseñada para throughput masivo mediante muchos hilos y cambio rápido entre grupos. Es adecuada cuando existen numerosos elementos independientes y suficiente trabajo por dato. Las jerarquías de hilos, bloques y grids organizan el kernel. La ocupación mide recursos activos, pero maximizarla no siempre maximiza rendimiento si el kernel está limitado por memoria o dependencias.",
+        "La memoria global de GPU ofrece capacidad y ancho de banda, pero acceso con mayor latencia. Accesos coalescentes agrupan direcciones contiguas de hilos cercanos; memoria compartida permite reutilización dentro de un bloque; registros son privados y limitados. Usar demasiados registros reduce grupos residentes. El diseño debe considerar tráfico y reutilización, no solo operaciones aritméticas.",
+        "Mover datos entre host y dispositivo puede dominar cargas pequeñas. El tiempo total incluye preparación, asignación, transferencia, lanzamiento, sincronización y devolución. Mantener datos en el dispositivo y fusionar kernels puede reducir transferencias, pero aumenta complejidad y memoria. La comparación CPU-GPU debe incluir todos los pasos necesarios para producir la salida requerida.",
+        "Las GPU suelen ofrecer alto rendimiento en precisiones reducidas. Tensor cores y formatos como float16 o bfloat16 aceleran aprendizaje, pero modifican rango y redondeo. Acumular en mayor precisión puede mitigar error. La equivalencia debe definirse con métricas relevantes: error absoluto, relativo, conservación de propiedades, estabilidad del entrenamiento o concordancia con una referencia."
+      ],
+      "equations": [
+        {"label": "Tiempo GPU total", "latex": "T=T_{H2D}+T_{kernel}+T_{D2H}+T_{sync}"},
+        {"label": "Aceleración extremo a extremo", "latex": "S=\\frac{T_{CPU,total}}{T_{GPU,total}}"},
+        {"label": "Intensidad aritmética", "latex": "I=\\frac{operations}{bytes\\ moved}"}
+      ],
+      "key_points": [
+        "La GPU favorece muchas tareas regulares con suficiente trabajo.",
+        "Acceso coalescente y reutilización condicionan el rendimiento.",
+        "Transferencias y lanzamiento pertenecen al tiempo total.",
+        "La precisión reducida requiere validación numérica explícita."
+      ]
+    },
+    {
+      "heading": "Comunicación, partición y sistemas heterogéneos",
+      "paragraphs": [
+        "Cuando los recursos no comparten memoria, el trabajo requiere mensajes. El coste de comunicación combina latencia inicial y tiempo proporcional al tamaño. Enviar muchos mensajes pequeños puede ser peor que agruparlos; mensajes grandes pueden bloquear el pipeline o exigir buffers. La partición debe minimizar fronteras y equilibrar trabajo, especialmente en grafos, volúmenes y simulaciones.",
+        "La descomposición de dominio asigna regiones de datos a procesos y comunica halos. Aumentar procesos reduce el interior por proceso y eleva la relación frontera-volumen, por lo que el escalado fuerte termina deteriorándose. En redes biológicas irregulares, el número de vecinos y aristas puede variar; balancear nodos no garantiza balancear computación o comunicación.",
+        "Un sistema heterogéneo distribuye etapas entre CPU, GPU, aceleradores y almacenamiento. La CPU puede organizar E/S y lógica irregular; la GPU ejecutar matrices; una biblioteca especializada usar instrucciones vectoriales. La mejor arquitectura no acelera cada etapa por separado, sino que minimiza tiempo, energía y transferencia del flujo completo. A veces una etapa ligeramente más lenta evita una conversión costosa.",
+        "La portabilidad exige capas y pruebas. Un kernel específico puede quedar obsoleto o comportarse distinto en otro dispositivo. Bibliotecas de alto nivel facilitan mantenimiento, aunque pueden ocultar decisiones. Registrar backend, versión, dispositivo, drivers y flags permite interpretar resultados. La reproducibilidad entre plataformas se define mediante tolerancias y propiedades, no siempre mediante identidad bit a bit."
+      ],
+      "equations": [
+        {"label": "Coste de mensaje", "latex": "T_{msg}=\\alpha+\\beta n"},
+        {"label": "Relación superficie-volumen", "latex": "r\\propto\\frac{L^{d-1}}{L^d}=\\frac{1}{L}"},
+        {"label": "Tiempo heterogéneo", "latex": "T=\\sum_i T_{compute,i}+\\sum_j T_{transfer,j}"}
+      ],
+      "key_points": [
+        "La comunicación tiene latencia y coste por byte.",
+        "El escalado fuerte aumenta la proporción de fronteras.",
+        "La optimización heterogénea debe abarcar el flujo completo.",
+        "Portabilidad y reproducibilidad requieren versiones y tolerancias."
+      ]
+    },
+    {
+      "heading": "Reproducibilidad numérica y carreras de datos",
+      "paragraphs": [
+        "Una carrera de datos ocurre cuando varios hilos acceden concurrentemente a una ubicación, al menos uno escribe y no existe sincronización adecuada. El resultado puede depender del interleaving y cambiar entre ejecuciones. Los síntomas intermitentes son difíciles de reproducir. La ausencia de un fallo observado no demuestra ausencia de carrera; se requieren diseño, herramientas y pruebas bajo diferentes planificaciones.",
+        "Las operaciones atómicas garantizan indivisibilidad de una actualización concreta, pero no convierten una secuencia completa en transacción. Un contador atómico puede ser correcto mientras dos estructuras relacionadas quedan inconsistentes. Locks, colas y propiedad exclusiva expresan invariantes más amplias. Debe preferirse una arquitectura que minimice estado compartido mutable.",
+        "Las reducciones paralelas cambian el orden de suma y, en coma flotante, pueden cambiar los últimos bits. Diferencias pequeñas no significan necesariamente carrera. Para distinguir, se repite con semillas y números de hilos, se compara con una referencia y se aplican sanitizers. Si la ciencia depende de diferencias menores que el error numérico, el algoritmo o la precisión deben revisarse.",
+        "La reproducibilidad puede buscar identidad bit a bit, estabilidad estadística o equivalencia dentro de tolerancias. La primera es necesaria en ciertos pipelines auditables, pero puede costar rendimiento. La segunda puede bastar en simulaciones estocásticas si se registran semillas y distribución. El criterio debe declararse antes del benchmark y conectarse con la pregunta científica."
+      ],
+      "equations": [
+        {"label": "Reducción", "latex": "s=\\bigoplus_{i=1}^{n}x_i"},
+        {"label": "Tolerancia mixta", "latex": "|x-y|\\leq atol+rtol\\,|y|"},
+        {"label": "Variabilidad entre ejecuciones", "latex": "CV=\\frac{s_T}{\\bar{T}}"}
+      ],
+      "key_points": [
+        "Una carrera depende de acceso compartido y falta de sincronización.",
+        "Atomicidad local no garantiza invariantes globales.",
+        "Diferencias flotantes no implican automáticamente una carrera.",
+        "La reproducibilidad debe definirse según el propósito."
+      ]
+    },
+    {
+      "heading": "Diseño de experimentos de escalabilidad",
+      "paragraphs": [
+        "Un experimento paralelo comienza con una referencia serial correcta. Se fija una carga, se varía un recurso y se mide tiempo total, tiempo por etapa, precisión y consumo cuando esté disponible. Deben controlarse afinidad, número de hilos de bibliotecas, calentamiento y frecuencia. Ejecutar una aplicación sobre un nodo compartido sin registrar competencia limita la interpretación.",
+        "La curva de escalado debe incluir uno o pocos recursos como base y mostrar aceleración y eficiencia. Reportar únicamente el mejor punto oculta degradación. También deben incluirse tamaños pequeños, donde el overhead domina, y tamaños representativos, donde el dispositivo se utiliza. Los intervalos o distribuciones revelan inestabilidad y permiten detectar throttling o interferencia.",
+        "Para aislar transferencia, se miden variantes que incluyen y excluyen copia, preparación y compilación inicial. Excluir una etapa es válido para responder una pregunta concreta, pero el resultado debe etiquetarse como kernel-only. Las decisiones de producción requieren extremo a extremo. En aprendizaje automático, cargar datos y preprocesar puede limitar más que el entrenamiento.",
+        "La conclusión debe relacionar la carga con el mecanismo. Un speedup de cuatro en ocho núcleos no demuestra que la aplicación use exactamente cuatro núcleos; puede reflejar memoria, serialización o desbalance. Los perfiles permiten proponer una explicación, y un segundo experimento debe intentar refutarla. Este ciclo evita convertir una correlación de tiempo en una causa arquitectónica no comprobada."
+      ],
+      "equations": [
+        {"label": "Speedup", "latex": "S_p=\\frac{T_1}{T_p}"},
+        {"label": "Eficiencia", "latex": "E_p=\\frac{T_1}{pT_p}"},
+        {"label": "Coste paralelo", "latex": "C_p=pT_p"}
+      ],
+      "key_points": [
+        "La referencia serial debe ser correcta y comparable.",
+        "La curva completa es más informativa que el mejor punto.",
+        "Kernel-only y extremo a extremo responden preguntas distintas.",
+        "Un perfil sugiere mecanismos; un experimento los contrasta."
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Concurrencia", "definition": "Progreso solapado de varias tareas."},
+    {"term": "Paralelismo", "definition": "Ejecución simultánea de trabajo."},
+    {"term": "SIMD", "definition": "Una instrucción aplicada a múltiples elementos."},
+    {"term": "Multithreading", "definition": "Ejecución de varios flujos de instrucciones."},
+    {"term": "Granularidad", "definition": "Cantidad de trabajo por tarea o coordinación."},
+    {"term": "Speedup", "definition": "Relación entre tiempo de referencia y tiempo acelerado."},
+    {"term": "Eficiencia paralela", "definition": "Speedup dividido para recursos utilizados."},
+    {"term": "Escalado fuerte", "definition": "Problema fijo con más recursos."},
+    {"term": "Escalado débil", "definition": "Problema creciente proporcional a los recursos."},
+    {"term": "Divergencia", "definition": "Hilos de un grupo siguen rutas diferentes."},
+    {"term": "Coalescencia", "definition": "Agrupación eficiente de accesos contiguos en GPU."},
+    {"term": "Race condition", "definition": "Resultado dependiente del orden de eventos concurrentes."},
+    {"term": "Operación atómica", "definition": "Actualización observada como indivisible."},
+    {"term": "Reducción", "definition": "Combinación de múltiples valores en uno."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Límite por Amdahl",
+      "scenario": "El 92% de una aplicación es paralelizable y se utilizan 16 núcleos.",
+      "equations": [
+        {"label": "Aceleración", "latex": "S=1/(0.08+0.92/16)\\approx7.27"},
+        {"label": "Eficiencia", "latex": "E=7.27/16\\approx0.454"}
+      ],
+      "reasoning_steps": [
+        "Separar fracción serial y paralela.",
+        "Aplicar Amdahl con el mismo problema.",
+        "Calcular eficiencia.",
+        "Comparar con el límite de 12,5 al usar recursos infinitos."
+      ],
+      "interpretation": "Dieciséis núcleos no producen speedup 16 porque el 8% serial y el overhead limitan el resultado.",
+      "limitations": ["El modelo no incluye memoria, desbalance ni cambios de frecuencia."]
+    },
+    {
+      "title": "Comparación CPU-GPU extremo a extremo",
+      "scenario": "La CPU completa una carga en 80 ms. La GPU usa 18 ms de transferencia, 25 ms de kernel y 17 ms de devolución y sincronización.",
+      "equations": [
+        {"label": "Tiempo GPU", "latex": "T_{GPU}=18+25+17=60\\ ms"},
+        {"label": "Aceleración", "latex": "S=80/60=1.33"}
+      ],
+      "reasoning_steps": [
+        "Sumar todas las etapas necesarias.",
+        "Evitar comparar 80 ms con 25 ms de kernel.",
+        "Verificar equivalencia numérica y funcional."
+      ],
+      "interpretation": "La aceleración real es 1,33, no 3,2.",
+      "limitations": ["Cambiar el tamaño puede amortizar transferencias de otra manera."]
+    }
+  ],
+  "guided_activity": {
+    "title": "Benchmark paralelo de una carga biomédica",
+    "instructions": [
+      "Elige un filtro, reducción o transformación sobre datos sintéticos.",
+      "Construye una referencia serial verificada.",
+      "Implementa una versión multinúcleo, SIMD o GPU.",
+      "Mide 1, 2, 4 y 8 recursos o configuraciones equivalentes.",
+      "Incluye transferencia, sincronización y preparación.",
+      "Compara salida con tolerancias justificadas.",
+      "Reporta speedup, eficiencia, variabilidad y límites."
+    ],
+    "problems": [
+      "Distingue concurrencia y paralelismo con un ejemplo.",
+      "Dibuja dependencias de un bucle acumulativo.",
+      "Calcula Amdahl para tres fracciones paralelas.",
+      "Calcula eficiencia para 2, 4 y 8 recursos.",
+      "Explica una causa de false sharing.",
+      "Propón un layout que favorezca SIMD.",
+      "Calcula tiempo GPU con transferencias.",
+      "Diseña escalado fuerte y débil.",
+      "Define una tolerancia para una reducción flotante.",
+      "Propón un experimento para separar memoria de sincronización."
+    ],
+    "checking_criteria": [
+      "La referencia y la versión paralela producen resultados equivalentes.",
+      "El tiempo incluye las etapas declaradas.",
+      "La curva contiene varios recursos y repeticiones.",
+      "Las conclusiones no exceden la carga y plataforma evaluadas."
+    ]
+  },
+  "practice_sets": [
+    {
+      "title": "Práctica graduada de la unidad",
+      "problems": [
+        "Distingue concurrencia y paralelismo con un ejemplo.",
+        "Dibuja dependencias de un bucle acumulativo.",
+        "Calcula Amdahl para tres fracciones paralelas.",
+        "Calcula eficiencia para 2, 4 y 8 recursos.",
+        "Explica una causa de false sharing.",
+        "Propón un layout que favorezca SIMD.",
+        "Calcula tiempo GPU con transferencias.",
+        "Diseña escalado fuerte y débil.",
+        "Define una tolerancia para una reducción flotante.",
+        "Propón un experimento para separar memoria de sincronización."
+      ]
+    }
+  ],
+  "common_errors": [
+    {"error": "Suponer que p recursos producen speedup p.", "correction": "Aplicar Amdahl y medir overhead, memoria y desbalance."},
+    {"error": "Comparar CPU total con kernel GPU.", "correction": "Usar tiempos extremo a extremo o etiquetar claramente kernel-only."},
+    {"error": "Añadir hilos sin analizar dependencias.", "correction": "Construir el grafo de datos y tareas antes de paralelizar."},
+    {"error": "Interpretar diferencias flotantes como carrera.", "correction": "Comprobar orden de reducción, referencia y herramientas de detección."},
+    {"error": "Medir un único tamaño favorable.", "correction": "Evaluar tamaños pequeños, representativos y grandes."},
+    {"error": "Ignorar variables de entorno.", "correction": "Registrar afinidad, hilos de bibliotecas, drivers y frecuencia."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué diferencia existe entre concurrencia y paralelismo?", "answer": "Concurrencia gestiona progreso solapado; paralelismo ejecuta simultáneamente."},
+    {"question": "¿Qué limita Amdahl?", "answer": "La aceleración de un problema fijo cuando una fracción no se acelera."},
+    {"question": "¿Cómo se calcula eficiencia paralela?", "answer": "Speedup dividido para el número de recursos."},
+    {"question": "¿Qué necesita SIMD?", "answer": "Operaciones similares sobre datos con independencia y disposición adecuada."},
+    {"question": "¿Qué es divergencia en GPU?", "answer": "Hilos del mismo grupo ejecutan rutas de control diferentes."},
+    {"question": "¿Por qué incluir transferencias?", "answer": "Porque son necesarias para completar la salida y pueden dominar el tiempo."},
+    {"question": "¿Qué es escalado fuerte?", "answer": "Aumentar recursos manteniendo fijo el problema."},
+    {"question": "¿Por qué una suma paralela puede cambiar?", "answer": "El orden de redondeo cambia y la suma flotante no es asociativa."}
+  ],
+  "biomedical_connections": [
+    "Reconstrucción y segmentación de imágenes.",
+    "Procesamiento de señales multicanal.",
+    "Análisis de matrices ómicas y single-cell.",
+    "Entrenamiento e inferencia de modelos biomédicos."
+  ],
+  "sources": [
+    {"title": "OpenMP API Specification", "organization": "OpenMP ARB", "url": "https://www.openmp.org/specifications/", "type": "especificación oficial"},
+    {"title": "CUDA C++ Programming Guide", "organization": "NVIDIA", "url": "https://docs.nvidia.com/cuda/cuda-c-programming-guide/", "type": "documentación oficial"},
+    {"title": "CPU/SIMD optimizations", "organization": "NumPy", "url": "https://numpy.org/doc/stable/reference/simd/index.html", "type": "documentación oficial"},
+    {"title": "Performance and scaling best practices", "organization": "NERSC", "url": "https://docs.nersc.gov/development/performance-debugging-tools/", "type": "guía técnica"},
+    {"title": "Introduction to High Performance Computing for Scientists and Engineers", "organization": "CRC Press", "url": "https://www.routledge.com/Introduction-to-High-Performance-Computing-for-Scientists-and-Engineers/Hager-Wellein/p/book/9781439811924", "type": "libro"},
+    {"title": "Numerical accuracy", "organization": "PyTorch", "url": "https://docs.pytorch.org/docs/stable/notes/numerical_accuracy.html", "type": "documentación oficial"}
+  ],
+  "editorial_notice": "Material educativo. El rendimiento de un prototipo o modelo no demuestra seguridad, eficacia ni utilidad clínica."
+}
