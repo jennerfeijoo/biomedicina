@@ -1,0 +1,40 @@
+name: Apply Clean Algorithms Semester
+
+on:
+  push:
+    branches:
+      - content/algoritmos-estructuras-datos-semester-v2
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: ${{ !contains(github.event.head_commit.message, '[skip aed-clean]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout clean course branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/algoritmos-estructuras-datos-semester-v2
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Materialize verified academic package
+        run: python scripts/materialize_aed_clean.py
+
+      - name: Validate units and semester readiness
+        run: |
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject algoritmos-estructuras-datos --strict
+
+      - name: Commit six definitive units
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated_units/algoritmos-estructuras-datos/unit-{01..06}.json
+          if git diff --cached --quiet; then
+            echo "No academic changes to commit"
+            exit 0
+          fi
+          git commit -m "Add complete Algorithms semester units [skip aed-clean]"
+          git push origin HEAD:content/algoritmos-estructuras-datos-semester-v2
