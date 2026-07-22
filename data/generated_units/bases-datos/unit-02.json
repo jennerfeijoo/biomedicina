@@ -1,0 +1,424 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "bases-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 2,
+  "slug": "modelo-relacional-normalizacion",
+  "title": "Modelo relacional y normalización",
+  "status": "review",
+  "weeks": [
+    3,
+    4,
+    5
+  ],
+  "estimated_hours": 24,
+  "purpose": "Transformar modelos conceptuales en esquemas relacionales con claves, dominios y restricciones explícitas, y utilizar dependencias funcionales y formas normales para prevenir anomalías sin desnormalizar por intuición. La unidad conecta teoría relacional con datos longitudinales, catálogos, muestras y resultados biomédicos.",
+  "learning_objectives": [
+    "Convertir entidades y relaciones en tablas, claves primarias y claves foráneas.",
+    "Distinguir filas, atributos, dominios, relaciones y restricciones del modelo relacional.",
+    "Identificar dependencias funcionales a partir de reglas del dominio.",
+    "Calcular cierres de atributos y evaluar claves candidatas.",
+    "Reconocer anomalías de inserción, actualización y borrado.",
+    "Aplicar 1FN, 2FN, 3FN y BCNF con descomposiciones justificadas.",
+    "Evaluar preservación de dependencias y reunión sin pérdida.",
+    "Justificar una desnormalización mediante carga, medición y controles de consistencia."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Del modelo conceptual al esquema relacional",
+      "paragraphs": [
+        "El modelo relacional representa datos mediante relaciones, que en una implementación suelen visualizarse como tablas. Cada fila corresponde a una tupla y cada columna a un atributo definido sobre un dominio. Esta representación parece simple, pero exige precisión: una tabla no es solo un rectángulo de celdas. Debe tener significado, identidad, restricciones y una interpretación consistente de cada fila. La granularidad de la fila determina qué hecho afirma la relación.",
+        "Transformar un modelo entidad-relación requiere mapear entidades fuertes a tablas y propagar sus identificadores mediante claves foráneas. Una relación uno a muchos se representa normalmente colocando la clave del lado uno en la tabla del lado muchos. Una relación muchos a muchos genera una tabla asociativa cuya clave puede combinar ambas referencias o usar una clave sustituta acompañada de unicidad. Los atributos del vínculo se almacenan en esa relación.",
+        "Las claves primarias identifican filas; las claves foráneas expresan referencias y permiten imponer integridad referencial. Las restricciones UNIQUE protegen claves candidatas alternativas, CHECK limita dominios y NOT NULL indica obligatoriedad cuando la ausencia no es válida. Estas restricciones no son decoración. Constituyen una parte ejecutable del modelo y reducen la distancia entre la semántica documentada y los estados que la base acepta.",
+        "El valor NULL introduce lógica de tres valores y debe usarse con intención. Puede representar desconocido, no aplicable o no registrado, significados que no siempre son equivalentes. Una columna opcional puede ser correcta, pero una tabla con numerosos nulos heterogéneos puede indicar que se mezclaron subtipos o eventos distintos. Antes de aceptar NULL, debe definirse qué pregunta responde su ausencia y cómo se comportarán consultas y restricciones."
+      ],
+      "key_points": [
+        "La granularidad de cada fila debe formularse como un hecho preciso.",
+        "Las relaciones conceptuales se convierten en claves foráneas o tablas asociativas.",
+        "Las restricciones ejecutan parte del contrato del modelo.",
+        "NULL requiere semántica explícita y lógica de tres valores."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "Dependencias funcionales, claves y anomalías",
+      "paragraphs": [
+        "Una dependencia funcional X → Y afirma que dos filas que coinciden en X deben coincidir también en Y. No se deduce de una muestra de datos pequeña, sino de una regla estable del dominio. En una tabla de códigos de analito, codigo_analito puede determinar nombre y unidad_canónica. En cambio, paciente_id no determina presión_sistólica porque una persona puede tener múltiples mediciones. Confundir coincidencia accidental con dependencia produce esquemas incorrectos.",
+        "El cierre de atributos X+ contiene todos los atributos que pueden determinarse desde X usando un conjunto de dependencias. Si X+ cubre todos los atributos de la relación, X es superclave; si ningún subconjunto propio también lo hace, es clave candidata. El cálculo de cierres permite justificar claves compuestas y detectar atributos que dependen solo de una parte. Esta formalización evita seleccionar claves por conveniencia visual.",
+        "Las anomalías aparecen cuando una tabla representa varios hechos independientes. Una anomalía de inserción impide registrar un concepto sin inventar otro; una de actualización obliga a repetir un cambio en varias filas; una de borrado elimina información no relacionada con el hecho que se quería borrar. Por ejemplo, si los datos del instrumento se repiten en cada resultado, borrar el último resultado podría eliminar la única evidencia de que el instrumento existía.",
+        "Las dependencias deben escribirse con el contexto correcto. codigo_prueba puede determinar unidad dentro de una versión de catálogo, pero no necesariamente a través de todos los años o instituciones. Añadir version_catalogo o institucion_id al determinante puede ser necesario. El análisis relacional exige distinguir reglas universales, locales y temporales; de otro modo una normalización formalmente limpia puede borrar variación legítima."
+      ],
+      "key_points": [
+        "Las dependencias funcionales provienen de reglas, no de coincidencias observadas.",
+        "El cierre permite encontrar superclaves y claves candidatas.",
+        "Las anomalías revelan hechos independientes mezclados.",
+        "El contexto institucional y temporal puede formar parte del determinante."
+      ],
+      "equations": [
+        {
+          "latex": "X^{+}_{F}=\\{A\\mid F\\models X\\rightarrow A\\}",
+          "meaning": "El cierre de X bajo F reúne los atributos determinados por X."
+        },
+        {
+          "latex": "X\\text{ es clave candidata}\\iff X^{+}_{F}=R\\ \\land\\ \\nexists Y\\subset X: Y^{+}_{F}=R",
+          "meaning": "Una clave candidata determina toda la relación y es mínima."
+        }
+      ]
+    },
+    {
+      "heading": "Formas normales y descomposición",
+      "paragraphs": [
+        "La primera forma normal exige atributos con valores atómicos respecto al modelo elegido y elimina grupos repetidos como prueba1, prueba2 y prueba3. «Atómico» no significa indivisible en sentido físico; significa que el sistema trata el valor como una unidad. Una dirección completa podría ser atómica para una etiqueta postal, pero no para análisis geográfico. La decisión depende de las operaciones y reglas requeridas.",
+        "La segunda forma normal es relevante cuando una clave candidata es compuesta. Prohíbe que un atributo no primo dependa solo de una parte de esa clave. En una relación Participacion(estudio_id, muestra_id, nombre_estudio), nombre_estudio depende únicamente de estudio_id, por lo que debe moverse a Estudio. La descomposición reduce repetición y permite registrar el estudio sin asociarlo todavía con una muestra.",
+        "La tercera forma normal elimina dependencias transitivas problemáticas de atributos no clave, mientras BCNF exige que todo determinante no trivial sea superclave. BCNF es más estricta y puede sacrificar preservación directa de alguna dependencia. El objetivo no es recitar niveles, sino identificar qué hechos independientes se han mezclado. Cada descomposición debe indicar dependencias, claves, anomalías resueltas y nuevas referencias.",
+        "Una descomposición debe evaluarse por reunión sin pérdida: al unir las relaciones resultantes no deben aparecer combinaciones espurias ni perderse filas válidas. También interesa preservar dependencias para que las reglas puedan verificarse sin joins complejos. En ocasiones existe tensión entre BCNF y preservación. La elección debe documentarse, implementar restricciones adicionales y mantenerse alineada con las consultas del dominio."
+      ],
+      "key_points": [
+        "Atomicidad depende de las operaciones requeridas.",
+        "2FN elimina dependencias parciales de claves compuestas.",
+        "3FN y BCNF separan determinantes que no identifican toda la fila.",
+        "La descomposición debe ser sin pérdida y, cuando sea posible, preservar dependencias."
+      ],
+      "equations": [
+        {
+          "latex": "R_1\\bowtie R_2=R",
+          "meaning": "Una descomposición sin pérdida permite reconstruir la relación original mediante reunión bajo las dependencias válidas."
+        }
+      ]
+    },
+    {
+      "heading": "Desnormalización, esquemas analíticos y validación",
+      "paragraphs": [
+        "La normalización favorece integridad y mantenimiento, pero algunas cargas analíticas requieren muchas reuniones o agregaciones repetidas. Desnormalizar significa introducir redundancia controlada, no abandonar el modelo. Puede usarse una vista materializada, tabla de resumen o esquema en estrella. La decisión debe partir de consultas medidas, frecuencia de actualización, tolerancia a latencia y mecanismo para reconstruir el dato derivado.",
+        "Un esquema transaccional y uno analítico optimizan preguntas diferentes. El primero conserva eventos y reglas con actualizaciones pequeñas y consistentes; el segundo facilita lecturas amplias, históricos y agregaciones. En biomedicina, una capa de investigación puede derivarse de un repositorio operativo, pero debe conservar procedencia, fecha de extracción y transformaciones. Copiar datos sin linaje produce resultados difíciles de reproducir.",
+        "La normalización tampoco resuelve semántica, calidad ni terminologías. Separar Analito y Resultado evita repetición, pero no garantiza que códigos de dos laboratorios representen exactamente la misma prueba. Las claves y dependencias son necesarias, no suficientes. Deben complementarse con vocabularios, unidades, versiones, reglas de mapeo y validación científica.",
+        "El esquema se valida ejecutando casos de inserción, actualización y borrado, además de consultas representativas. Se comprueba que las restricciones rechacen duplicados y referencias inválidas, y que permitan estados legítimos como visitas sin muestras. También se prueban migraciones y datos históricos. Una forma normal declarada sin estas pruebas es una afirmación incompleta."
+      ],
+      "key_points": [
+        "La desnormalización debe ser derivada, medible y reconstruible.",
+        "Las cargas transaccionales y analíticas necesitan estructuras distintas.",
+        "La normalización no sustituye terminologías ni calidad científica.",
+        "Las restricciones y migraciones deben probarse con casos concretos."
+      ],
+      "equations": [
+        {
+          "latex": "T_{consulta}=T_{acceso}+T_{joins}+T_{agregacion}+T_{transferencia}",
+          "meaning": "Modelo simplificado para discutir dónde una estructura derivada podría reducir coste."
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Relación",
+      "definition": "Conjunto de tuplas con el mismo conjunto de atributos."
+    },
+    {
+      "term": "Tupla",
+      "definition": "Fila que representa una instancia del hecho definido por la relación."
+    },
+    {
+      "term": "Dominio",
+      "definition": "Conjunto de valores válidos para un atributo."
+    },
+    {
+      "term": "Clave primaria",
+      "definition": "Clave candidata elegida como identificador principal."
+    },
+    {
+      "term": "Clave foránea",
+      "definition": "Atributo que referencia una clave de otra relación."
+    },
+    {
+      "term": "Dependencia funcional",
+      "definition": "Regla X → Y por la que X determina unívocamente Y."
+    },
+    {
+      "term": "Cierre de atributos",
+      "definition": "Conjunto de atributos derivables desde un conjunto dado."
+    },
+    {
+      "term": "Superclave",
+      "definition": "Conjunto de atributos que determina toda la relación."
+    },
+    {
+      "term": "Atributo primo",
+      "definition": "Atributo que pertenece a alguna clave candidata."
+    },
+    {
+      "term": "Anomalía de actualización",
+      "definition": "Inconsistencia causada por repetir el mismo hecho en varias filas."
+    },
+    {
+      "term": "Forma normal",
+      "definition": "Condición estructural basada en dependencias y claves."
+    },
+    {
+      "term": "Reunión sin pérdida",
+      "definition": "Propiedad que permite reconstruir la relación sin filas espurias."
+    },
+    {
+      "term": "Preservación de dependencias",
+      "definition": "Capacidad de verificar dependencias en las relaciones descompuestas."
+    },
+    {
+      "term": "Desnormalización",
+      "definition": "Introducción controlada de redundancia para una necesidad medida."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Normalización de resultados de laboratorio",
+      "scenario": "Una hoja contiene paciente_id, nombre_paciente, visita_id, fecha_visita, codigo_prueba, nombre_prueba, unidad, valor e instrumento_modelo. Una persona y una prueba aparecen en muchas filas.",
+      "reasoning_steps": [
+        "Definir el hecho de la fila: un resultado de una prueba en una visita.",
+        "Identificar paciente_id → nombre_paciente y visita_id → paciente_id, fecha_visita.",
+        "Identificar codigo_prueba → nombre_prueba, unidad bajo una versión de catálogo.",
+        "Separar Persona, Visita, Prueba, Instrumento y Resultado.",
+        "Relacionar Resultado con visita_id, prueba_id e instrumento_id.",
+        "Definir una clave para Resultado que permita repeticiones, por ejemplo resultado_id y metadatos de ejecución.",
+        "Probar que cambiar el nombre de una prueba requiere una sola actualización."
+      ],
+      "solution": "Persona(persona_id, nombre), Visita(visita_id, persona_id, fecha), Prueba(prueba_id, codigo, nombre, unidad, version), Instrumento(instrumento_id, modelo) y Resultado(resultado_id, visita_id, prueba_id, instrumento_id, valor, tiempo). Las restricciones de unicidad se asignan según el dominio.",
+      "interpretation": "La descomposición separa hechos sobre personas, encuentros, catálogos, equipos y observaciones.",
+      "limitations": [
+        "La unidad canónica puede depender del método o versión.",
+        "La repetición analítica requiere más atributos que visita y prueba."
+      ]
+    },
+    {
+      "title": "Administraciones de medicación",
+      "scenario": "Una tabla usa como clave (persona_id, medicamento_codigo, fecha_hora) e incluye nombre_medicamento, via_codigo, nombre_via y dosis.",
+      "reasoning_steps": [
+        "Reconocer medicamento_codigo → nombre_medicamento.",
+        "Reconocer via_codigo → nombre_via.",
+        "Verificar que la clave compuesta identifica una administración solo si no hay eventos simultáneos duplicados.",
+        "Separar catálogos Medicamento y ViaAdministracion.",
+        "Crear Administracion con un identificador propio, referencias, dosis, unidad y tiempo.",
+        "Conservar versión de catálogo y estado del evento.",
+        "Probar cancelación y corrección sin borrar la administración original."
+      ],
+      "solution": "Los nombres de catálogos se almacenan una vez y Administracion registra el evento. Una clave sustituta evita depender de una combinación que podría no ser única; se añaden restricciones de negocio y auditoría.",
+      "interpretation": "La normalización elimina repetición, pero el significado de una administración requiere estado, unidad y procedencia.",
+      "limitations": [
+        "No modela prescripción, dispensación ni conciliación.",
+        "No define terminologías clínicas obligatorias."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría y normalización de una tabla longitudinal",
+      "instructions": [
+        "Recibe una tabla plana de personas, visitas, muestras, pruebas y resultados.",
+        "Define con una frase el hecho representado por cada fila.",
+        "Lista dependencias funcionales respaldadas por reglas.",
+        "Calcula cierres para al menos tres conjuntos de atributos.",
+        "Identifica claves candidatas y anomalías.",
+        "Descompón hasta 3FN o BCNF y justifica cada paso.",
+        "Escribe DDL con claves y restricciones.",
+        "Prueba la carga con datos válidos e inválidos."
+      ],
+      "tasks": [
+        "Detectar una dependencia parcial.",
+        "Detectar una dependencia transitiva.",
+        "Demostrar una clave mediante cierre.",
+        "Explicar si la descomposición es sin pérdida.",
+        "Proponer una dependencia que necesita versión de catálogo.",
+        "Crear pruebas para duplicados y referencias inexistentes."
+      ],
+      "deliverable": "Informe de dependencias, diagrama relacional, DDL, datos de prueba y justificación de normalización.",
+      "checking_criteria": [
+        "Las dependencias proceden del dominio y no solo de los datos observados.",
+        "Las claves son mínimas y están justificadas.",
+        "Cada tabla representa un hecho coherente.",
+        "Las restricciones rechazan estados inválidos sin impedir casos legítimos.",
+        "La desnormalización, si existe, se documenta como dato derivado."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "level": "fundamental",
+      "problems": [
+        {
+          "prompt": "Dada F={A→B, B→C}, calcula A+.",
+          "solution": "A+={A,B,C} aplicando primero A→B y luego B→C."
+        },
+        {
+          "prompt": "Explica una anomalía de borrado en una tabla que repite datos de instrumentos.",
+          "solution": "Borrar el último resultado de un instrumento podría eliminar la única fila con su modelo y fabricante."
+        },
+        {
+          "prompt": "¿Qué restricción evita dos códigos de muestra iguales dentro del mismo laboratorio?",
+          "solution": "UNIQUE(laboratorio_id, codigo_muestra)."
+        },
+        {
+          "prompt": "¿Por qué una lista de analitos separada por comas viola el diseño relacional esperado?",
+          "solution": "Oculta múltiples valores, dificulta integridad, joins y consultas por analito."
+        }
+      ]
+    },
+    {
+      "level": "intermedio",
+      "problems": [
+        {
+          "prompt": "Identifica la violación en Participacion(estudio_id,muestra_id,nombre_estudio).",
+          "solution": "nombre_estudio depende solo de estudio_id, parte de la clave compuesta; debe separarse en Estudio."
+        },
+        {
+          "prompt": "Distingue 3FN y BCNF.",
+          "solution": "3FN admite ciertas dependencias cuyo lado derecho es atributo primo; BCNF exige que todo determinante sea superclave."
+        },
+        {
+          "prompt": "Propón una clave para Resultado que admite repeticiones.",
+          "solution": "Un resultado_id sustituto más restricciones sobre análisis, secuencia o versión según las reglas."
+        },
+        {
+          "prompt": "Explica por qué NULL no debe sustituir una tabla de subtipos cuando hay muchos campos exclusivos.",
+          "solution": "Mezcla estructuras diferentes, crea combinaciones inválidas y vuelve ambiguas las restricciones."
+        }
+      ]
+    },
+    {
+      "level": "avanzado",
+      "problems": [
+        {
+          "prompt": "Evalúa si codigo_prueba→unidad es universal.",
+          "solution": "No necesariamente; puede requerir institución, método o versión de catálogo en el determinante."
+        },
+        {
+          "prompt": "Diseña una vista materializada para conteos diarios y su estrategia de refresco.",
+          "solution": "Definir consulta fuente, clave temporal, frecuencia, transacción de refresco y prueba de reconciliación con datos base."
+        },
+        {
+          "prompt": "Explica el riesgo de desnormalizar nombres en una tabla analítica.",
+          "solution": "Puede mejorar lectura, pero exige versión, procedencia y reconstrucción para evitar divergencia con el catálogo."
+        },
+        {
+          "prompt": "Propón una prueba de reunión sin pérdida para una descomposición pequeña.",
+          "solution": "Cargar una instancia controlada, unir las tablas y comprobar igualdad de filas y ausencia de combinaciones espurias, apoyándose en el criterio teórico."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Inferir dependencias porque los valores coinciden en una muestra pequeña.",
+      "correction": "Confirmar la regla con el dominio y su contexto temporal."
+    },
+    {
+      "error": "Elegir toda la fila como clave sin buscar minimalidad.",
+      "correction": "Calcular cierres y claves candidatas."
+    },
+    {
+      "error": "Normalizar por intuición sin documentar anomalías.",
+      "correction": "Relacionar cada descomposición con dependencias y problemas concretos."
+    },
+    {
+      "error": "Eliminar restricciones al usar claves sustitutas.",
+      "correction": "Mantener UNIQUE sobre claves naturales relevantes."
+    },
+    {
+      "error": "Aplicar BCNF sin evaluar preservación y operación.",
+      "correction": "Comprobar reunión sin pérdida, dependencias y consultas."
+    },
+    {
+      "error": "Desnormalizar antes de medir.",
+      "correction": "Usar planes y benchmarks, preferir vistas o derivados reconstruibles."
+    },
+    {
+      "error": "Confundir normalización con interoperabilidad.",
+      "correction": "Añadir terminologías, versiones, unidades y mapeos semánticos."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué representa una tupla?",
+      "answer": "Una instancia del hecho definido por la relación."
+    },
+    {
+      "question": "¿De dónde proviene una dependencia funcional válida?",
+      "answer": "De una regla estable del dominio dentro de un contexto definido."
+    },
+    {
+      "question": "¿Qué contiene X+?",
+      "answer": "Los atributos que pueden derivarse desde X mediante las dependencias."
+    },
+    {
+      "question": "¿Cuándo X es clave candidata?",
+      "answer": "Cuando determina toda la relación y ningún subconjunto propio también lo hace."
+    },
+    {
+      "question": "¿Qué anomalía resuelve separar datos de un catálogo?",
+      "answer": "Evita repetir y actualizar nombres o unidades en muchas filas."
+    },
+    {
+      "question": "¿Qué exige 2FN?",
+      "answer": "Que atributos no primos no dependan parcialmente de una clave compuesta."
+    },
+    {
+      "question": "¿Qué exige BCNF?",
+      "answer": "Que todo determinante de una dependencia no trivial sea superclave."
+    },
+    {
+      "question": "¿Qué significa reunión sin pérdida?",
+      "answer": "Que las relaciones descompuestas pueden unirse sin perder hechos ni crear combinaciones espurias."
+    },
+    {
+      "question": "¿Cuándo puede justificarse desnormalizar?",
+      "answer": "Ante una necesidad medida, con redundancia controlada, reconstrucción y pruebas de consistencia."
+    },
+    {
+      "question": "¿Por qué normalización no garantiza calidad científica?",
+      "answer": "Porque no valida terminologías, métodos, unidades, sesgos ni significado biomédico."
+    }
+  ],
+  "biomedical_connections": [
+    "Esquemas longitudinales para personas, visitas y observaciones.",
+    "Catálogos versionados de pruebas, dispositivos y unidades.",
+    "Biobancos con muestras, alícuotas y ubicaciones.",
+    "Capas transaccionales y analíticas con procedencia.",
+    "Prevención de duplicados e inconsistencias en resultados."
+  ],
+  "sources": [
+    {
+      "title": "Database Design — Normalization",
+      "organization": "BCcampus Open Education",
+      "url": "https://opentextbc.ca/dbdesign01/chapter/chapter-12-normalization/",
+      "type": "texto abierto"
+    },
+    {
+      "title": "PostgreSQL Documentation: Constraints",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/ddl-constraints.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "SQLite Foreign Key Support",
+      "organization": "SQLite Consortium",
+      "url": "https://www.sqlite.org/foreignkeys.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "Relational Database Design",
+      "organization": "University of Wisconsin Computer Sciences",
+      "url": "https://pages.cs.wisc.edu/~dbbook/openAccess/thirdEdition/slides/slides3ed-english/Ch15.pdf",
+      "type": "material académico"
+    },
+    {
+      "title": "OMOP Common Data Model Conventions",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/cdm54.html",
+      "type": "modelo de datos"
+    },
+    {
+      "title": "FHIR Datatypes",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/datatypes.html",
+      "type": "estándar"
+    }
+  ],
+  "editorial_notice": "Material educativo que requiere revisión docente experta. Los ejemplos de esquemas no constituyen software clínico validado ni sustituyen requisitos regulatorios, institucionales o terminológicos.",
+  "unit_closure": "Normalizar no significa fragmentar mecánicamente una tabla hasta alcanzar una etiqueta. Significa separar hechos independientes, conservar dependencias y construir restricciones que hagan visibles los errores. La decisión final debe equilibrar integridad, consultas y mantenimiento. Cualquier redundancia añadida para análisis o rendimiento debe ser derivable, versionada y comprobada contra las relaciones fuente. La revisión debe incluir datos históricos, claves compuestas y cambios de catálogo, no solo una instantánea ideal."
+}
