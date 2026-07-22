@@ -2,9 +2,9 @@
 
 ## Estado de ejecución — julio de 2026
 
-La fábrica editorial y el inventario curricular ya están operativos. Las 84 asignaturas cuentan con un temario específico de seis o más unidades y se enriquecen automáticamente con objetivos, resultados evaluables, actividades, evaluación, conceptos, relaciones y recursos. Las páginas de asignatura y los cuatro índices de área se generan desde datos estructurados y pasan validación curricular, de plantilla y de enlaces.
+La fábrica editorial y el inventario curricular ya están operativos. Las 84 asignaturas reúnen 508 unidades: 497 lecciones producidas con el estándar común y 11 unidades editoriales conservadas. Cada lección generada ofrece teoría, caso, práctica, respuestas, glosario y recursos; las páginas de curso, unidades y cuatro índices de área se construyen desde datos estructurados.
 
-Las fases 1 a 5 se consideran implementadas a nivel de plataforma y contenido base. La revisión experta continua, la ampliación de bibliografía específica, los ejercicios resueltos y la sección de investigación permanecen como trabajo editorial evolutivo; ya no bloquean que las asignaturas funcionen como guías abiertas completas.
+Las fases 1 a 5 se consideran implementadas a nivel de plataforma y cobertura lectiva. El estado visible es `generated`, no `complete`: la revisión por especialistas, las referencias específicas por afirmación, los ejemplos cuantitativos y la ampliación de figuras continúan como trabajo editorial antes de certificar rigor académico final.
 
 ## 1. Lectura estratégica del proyecto
 
