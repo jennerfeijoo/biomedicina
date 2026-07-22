@@ -12,10 +12,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_DIR = ROOT / ".citonauta-agent" / "aed-clean"
 DEST = ROOT / "data" / "generated_units" / "algoritmos-estructuras-datos"
-EXPECTED_SHA256 = "86b63ed48edb2d68f77b9b4cfcb91804e78f4ecf8a33bcae560451051c292de8"
 EXPECTED_ENCODED_LENGTH = 61_880
 EXPECTED_PAYLOAD_LENGTH = 46_408
 EXPECTED_CHUNK_LENGTHS = [6_000] * 10 + [1_880]
+EXPECTED_UNIT_SHA256 = {
+    1: "d518e968ca6a3e9c8f40e0c4191fcf2eb678b4bf8a60532b254c88e89df91672",
+    2: "6bd54a0996b4f56c58f4f694e20151a1c5a7a8b3da62b6e800b13b7404d1bf0d",
+    3: "322d1e35f0cd0b8a1a560f6c0150497e0ebf1b9c9c972aa4a7a4aeb5b68f9752",
+    4: "455085ea06ce6e9263ff260392a6682dab85d62536da4a5e18fc099c23e7acd3",
+    5: "3c31f00f8c23542d32dedabbf3fc5604cc9cf0d4dd242cdbacebd396acf18680",
+    6: "20fa67501e32232bbefb94be5dcee1e443eb53b47767e18c77a164311eac33cd",
+}
 EXPECTED = {
     f"data/generated_units/algoritmos-estructuras-datos/unit-{number:02d}.json"
     for number in range(1, 7)
@@ -50,15 +57,13 @@ def run() -> None:
     except (binascii.Error, ValueError) as error:
         raise ValueError(f"base64 inválido: {error}") from error
 
-    digest = hashlib.sha256(payload).hexdigest()
+    container_digest = hashlib.sha256(payload).hexdigest()
     print(f"diagnostic.payload_length={len(payload)}")
-    print(f"diagnostic.actual_sha256={digest}")
-    print(f"diagnostic.expected_sha256={EXPECTED_SHA256}")
+    print(f"diagnostic.container_sha256={container_digest}")
     require(
         len(payload) == EXPECTED_PAYLOAD_LENGTH,
         f"tamaño de ZIP inesperado: {len(payload)}",
     )
-    require(digest == EXPECTED_SHA256, f"SHA-256 inesperado: {digest}")
 
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
         require(archive.testzip() is None, "el ZIP contiene un miembro con CRC inválido")
@@ -66,7 +71,14 @@ def run() -> None:
         units: list[tuple[int, dict]] = []
         for number in range(1, 7):
             member = f"data/generated_units/algoritmos-estructuras-datos/unit-{number:02d}.json"
-            data = json.loads(archive.read(member).decode("utf-8"))
+            raw = archive.read(member)
+            unit_digest = hashlib.sha256(raw).hexdigest()
+            print(f"diagnostic.unit_{number:02d}_sha256={unit_digest}")
+            require(
+                unit_digest == EXPECTED_UNIT_SHA256[number],
+                f"unit-{number:02d}: SHA-256 de contenido inesperado: {unit_digest}",
+            )
+            data = json.loads(raw.decode("utf-8"))
             require(isinstance(data, dict), f"unit-{number:02d}: raíz no es objeto")
             require(data.get("schema_version") == "2.0", f"unit-{number:02d}: esquema")
             require(data.get("subject_id") == "algoritmos-estructuras-datos", f"unit-{number:02d}: subject_id")
@@ -84,7 +96,7 @@ def run() -> None:
         path = DEST / f"unit-{number:02d}.json"
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"Materializada: {path.relative_to(ROOT)}")
-    print(f"Paquete verificado: {digest}")
+    print(f"Paquete verificado por contenido: {container_digest}")
 
 
 if __name__ == "__main__":
