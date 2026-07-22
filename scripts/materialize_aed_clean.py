@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import gzip
 import hashlib
 import io
 import json
@@ -11,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_DIR = ROOT / ".citonauta-agent" / "aed-clean"
+FALLBACK_UNIT_05 = CHUNK_DIR / "unit-05.json.gz.b64"
 DEST = ROOT / "data" / "generated_units" / "algoritmos-estructuras-datos"
 EXPECTED_ENCODED_LENGTH = 61_880
 EXPECTED_PAYLOAD_LENGTH = 46_408
@@ -32,6 +34,16 @@ EXPECTED = {
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def read_fallback_unit_05() -> bytes:
+    encoded = FALLBACK_UNIT_05.read_text(encoding="utf-8").strip()
+    raw = gzip.decompress(base64.b64decode(encoded, validate=True))
+    require(
+        hashlib.sha256(raw).hexdigest() == EXPECTED_UNIT_SHA256[5],
+        "unit-05: la copia de respaldo no coincide con el contenido validado",
+    )
+    return raw
 
 
 def run() -> None:
@@ -59,12 +71,16 @@ def run() -> None:
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
         bad_member = archive.testzip()
         print(f"diagnostic.bad_member={bad_member}")
-        require(bad_member is None, f"CRC inválido en {bad_member}")
+        require(
+            bad_member in {None, "data/generated_units/algoritmos-estructuras-datos/unit-05.json"},
+            f"corrupción inesperada fuera de unit-05: {bad_member}",
+        )
         require(set(archive.namelist()) == EXPECTED, "el ZIP no contiene exactamente las seis unidades esperadas")
+        fallback_unit_05 = read_fallback_unit_05()
         units: list[tuple[int, dict]] = []
         for number in range(1, 7):
             member = f"data/generated_units/algoritmos-estructuras-datos/unit-{number:02d}.json"
-            raw = archive.read(member)
+            raw = fallback_unit_05 if number == 5 else archive.read(member)
             unit_digest = hashlib.sha256(raw).hexdigest()
             print(f"diagnostic.unit_{number:02d}_sha256={unit_digest}")
             require(unit_digest == EXPECTED_UNIT_SHA256[number], f"unit-{number:02d}: SHA-256 de contenido inesperado: {unit_digest}")
