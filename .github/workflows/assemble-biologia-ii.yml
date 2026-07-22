@@ -46,15 +46,22 @@ jobs:
           archive_path = Path('/tmp/biologia-ii.tar.gz')
           archive_path.write_bytes(archive)
 
-          expected = {
+          expected_files = {
               'data/generated_courses/biologia-ii.json',
               *{f'data/generated_units/biologia-ii/unit-{index:02d}.json' for index in range(1, 7)},
           }
+          allowed_directories = {'data/generated_units/biologia-ii'}
           with tarfile.open(archive_path, 'r:gz') as package:
               members = package.getmembers()
-              names = {member.name for member in members}
-              assert names == expected, {'missing': sorted(expected - names), 'extra': sorted(names - expected)}
-              assert all(member.isfile() for member in members)
+              file_names = {member.name for member in members if member.isfile()}
+              directory_names = {member.name for member in members if member.isdir()}
+              other_names = {member.name for member in members if not member.isfile() and not member.isdir()}
+              assert file_names == expected_files, {
+                  'missing': sorted(expected_files - file_names),
+                  'extra_files': sorted(file_names - expected_files),
+              }
+              assert directory_names <= allowed_directories, {'extra_directories': sorted(directory_names - allowed_directories)}
+              assert not other_names, {'unsupported_members': sorted(other_names)}
               package.extractall('.', filter='data')
           PY
 
