@@ -24,18 +24,29 @@ jobs:
           ref: agent/biologia-i-semester-course
           fetch-depth: 0
 
-      - name: Decode package
+      - name: Verify and decode payload
         shell: bash
         run: |
           set -euo pipefail
-          cat .citonauta/biologia-i/part-* > /tmp/biologia-i.b64
-          base64 --decode /tmp/biologia-i.b64 > /tmp/biologia-i.tar.gz
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          import hashlib
+
+          parts = sorted(Path('.citonauta/biologia-i').glob('part-*'))
+          assert [p.name for p in parts] == [f'part-{i:02d}' for i in range(6)], parts
+          payload = b''.join(p.read_bytes() for p in parts)
+          assert len(payload) == 40716, len(payload)
+          assert hashlib.sha256(payload).hexdigest() == '70e141c24d981f169841a97072f9b125c3afe37bec240728e70b5d68dd21e8a8'
+          archive = base64.b64decode(payload, validate=True)
+          assert hashlib.sha256(archive).hexdigest() == '0ae2cc6a1a3df6545bd2c4ced2f07d0679e2fd0ce79227766bbbb61a1f04171c'
+          Path('/tmp/biologia-i.tar.gz').write_bytes(archive)
+          PY
 
       - name: Verify package archive
         shell: bash
         run: |
           set -euo pipefail
-          echo "0ae2cc6a1a3df6545bd2c4ced2f07d0679e2fd0ce79227766bbbb61a1f04171c  /tmp/biologia-i.tar.gz" | sha256sum --check --strict
           tar -tzf /tmp/biologia-i.tar.gz
 
       - name: Extract academic package
