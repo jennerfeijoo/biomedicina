@@ -38,41 +38,52 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
-def read_encoded_payload(number: int) -> str:
+def candidate_payloads(number: int) -> list[tuple[str, str]]:
+    candidates: list[tuple[str, str]] = []
     if number == 2:
         v4_parts = [V4_DIR / f"unit-02-part-{part:02d}.txt" for part in range(1, 6)]
         if all(path.exists() for path in v4_parts):
-            print("2: usando payload corregido v4")
-            return "".join(path.read_text(encoding="utf-8").strip() for path in v4_parts)
+            candidates.append(("v4", "".join(path.read_text(encoding="utf-8").strip() for path in v4_parts)))
 
-    part_paths = [
+    v2_parts = [
         CHUNK_DIR / f"unit-{number:02d}-part-01.txt",
         CHUNK_DIR / f"unit-{number:02d}-part-02.txt",
     ]
-    if all(path.exists() for path in part_paths):
-        print(f"{number}: usando payload fragmentado v2")
-        return "".join(path.read_text(encoding="utf-8").strip() for path in part_paths)
+    if all(path.exists() for path in v2_parts):
+        candidates.append(("v2", "".join(path.read_text(encoding="utf-8").strip() for path in v2_parts)))
 
     legacy = LEGACY_PAYLOAD_DIR / f"unit-{number:02d}.json.gz.b64"
-    require(legacy.exists(), f"unit-{number:02d}: falta payload")
-    print(f"{number}: usando payload gzip histórico")
-    return legacy.read_text(encoding="utf-8").strip()
+    if legacy.exists():
+        candidates.append(("legacy", legacy.read_text(encoding="utf-8").strip()))
+
+    require(candidates, f"unit-{number:02d}: no existen revisiones disponibles")
+    return candidates
 
 
 def load_verified_unit(number: int) -> dict[str, Any]:
     label = f"unit-{number:02d}"
-    encoded = read_encoded_payload(number)
-    try:
-        compressed = base64.b64decode(encoded, validate=True)
-    except Exception as error:
-        raise ValueError(f"{label}: base64 inválido: {error}") from error
-    compressed_sha = hashlib.sha256(compressed).hexdigest()
-    try:
-        raw = gzip.decompress(compressed)
-    except Exception as error:
-        raise ValueError(f"{label}: gzip inválido: {error}; gzip_sha256={compressed_sha}") from error
+    diagnostics: list[str] = []
+    selected: tuple[str, bytes, str] | None = None
+
+    for revision, encoded in candidate_payloads(number):
+        try:
+            compressed = base64.b64decode(encoded, validate=True)
+            compressed_sha = hashlib.sha256(compressed).hexdigest()
+            raw = gzip.decompress(compressed)
+            raw_sha = hashlib.sha256(raw).hexdigest()
+            diagnostics.append(f"{revision}: raw_sha256={raw_sha}")
+            if raw_sha == EXPECTED_RAW_SHA256[number]:
+                selected = (revision, raw, compressed_sha)
+                break
+        except Exception as error:
+            diagnostics.append(f"{revision}: inválido ({error})")
+
+    require(
+        selected is not None,
+        f"{label}: ninguna revisión coincide con el SHA esperado; " + " | ".join(diagnostics),
+    )
+    revision, raw, compressed_sha = selected
     raw_sha = hashlib.sha256(raw).hexdigest()
-    require(raw_sha == EXPECTED_RAW_SHA256[number], f"{label}: SHA-256 JSON inesperado: {raw_sha}")
     data = json.loads(raw.decode("utf-8"))
     require(isinstance(data, dict), f"{label}: la raíz debe ser un objeto")
 
@@ -91,14 +102,12 @@ def load_verified_unit(number: int) -> dict[str, Any]:
     require(len(data.get("practice_sets", [])) >= 1, f"{label}: práctica")
     require(len(data.get("self_assessment", [])) >= 8, f"{label}: autoevaluación")
     require(len(data.get("sources", [])) >= 5, f"{label}: fuentes")
-    print(f"Verificado {label}: gzip_sha256={compressed_sha} raw_sha256={raw_sha}")
+    print(f"Verificado {label} con {revision}: gzip_sha256={compressed_sha} raw_sha256={raw_sha}")
     return data
 
 
 def main() -> int:
-    units: list[tuple[int, dict[str, Any]]] = []
-    for number in range(1, 7):
-        units.append((number, load_verified_unit(number)))
+    units = [(number, load_verified_unit(number)) for number in range(1, 7)]
     require(sum(data["estimated_hours"] for _, data in units) == 128, "horas totales")
     require(sorted(week for _, data in units for week in data["weeks"]) == list(range(1, 17)), "cobertura semanal")
 
