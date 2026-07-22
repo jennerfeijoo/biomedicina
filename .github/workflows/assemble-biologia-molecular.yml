@@ -32,44 +32,60 @@ jobs:
           import base64
           import hashlib
           import tarfile
+          import traceback
 
-          root = Path('.citonauta/biologia-molecular')
-          paths = [root / f'pre-{index:02d}' for index in range(16)]
-          paths += [root / f'part-{index:02d}' for index in range(4, 9)]
-          assert all(path.is_file() for path in paths), [str(path) for path in paths if not path.is_file()]
+          stage = 'initialize'
+          try:
+              root = Path('.citonauta/biologia-molecular')
+              paths = [root / f'pre-{index:02d}' for index in range(16)]
+              paths += [root / f'part-{index:02d}' for index in range(4, 9)]
+              stage = 'check paths'
+              assert all(path.is_file() for path in paths), [str(path) for path in paths if not path.is_file()]
 
-          chunks = []
-          for path in paths:
-              data = path.read_bytes()
-              if path.name == 'pre-00':
-                  assert len(data) == 3001 and data.endswith(b'\n')
-                  data = data[:-1]
-              chunks.append(data)
+              stage = 'read chunks'
+              chunks = []
+              for path in paths:
+                  data = path.read_bytes()
+                  if path.name == 'pre-00':
+                      assert len(data) == 3001 and data.endswith(b'\n'), (len(data), data[:4], data[-4:])
+                      data = data[:-1]
+                  chunks.append(data)
 
-          payload = b''.join(chunks)
-          payload_hash = hashlib.sha256(payload).hexdigest()
-          print(f'payload_bytes={len(payload)} payload_sha256={payload_hash}')
-          assert len(payload) == 62240
-          assert payload_hash == 'ef95cc3f92537040382b4cf4dfc8baac1894b9076ca35b3a9602ee7146315fd1'
+              stage = 'verify payload'
+              payload = b''.join(chunks)
+              payload_hash = hashlib.sha256(payload).hexdigest()
+              assert len(payload) == 62240, len(payload)
+              assert payload_hash == 'ef95cc3f92537040382b4cf4dfc8baac1894b9076ca35b3a9602ee7146315fd1', payload_hash
 
-          archive = base64.b64decode(payload, validate=True)
-          archive_hash = hashlib.sha256(archive).hexdigest()
-          print(f'archive_bytes={len(archive)} archive_sha256={archive_hash}')
-          assert len(archive) == 46679
-          assert archive_hash == 'bd6eedd4bd56edb436e06e117d03d67fee6e5eb1d67cdd3a951dbb0e1535b702'
+              stage = 'decode archive'
+              archive = base64.b64decode(payload, validate=True)
+              archive_hash = hashlib.sha256(archive).hexdigest()
+              assert len(archive) == 46679, len(archive)
+              assert archive_hash == 'bd6eedd4bd56edb436e06e117d03d67fee6e5eb1d67cdd3a951dbb0e1535b702', archive_hash
+              archive_path = Path('/tmp/biologia-molecular.tar.gz')
+              archive_path.write_bytes(archive)
 
-          archive_path = Path('/tmp/biologia-molecular.tar.gz')
-          archive_path.write_bytes(archive)
-          expected = {
-              'data/generated_courses/biologia-molecular.json',
-              *{f'data/generated_units/biologia-molecular/unit-{index:02d}.json' for index in range(1, 7)},
-          }
-          with tarfile.open(archive_path, 'r:gz') as package:
-              members = package.getmembers()
-              names = {member.name for member in members}
-              assert names == expected, {'missing': sorted(expected - names), 'extra': sorted(names - expected)}
-              assert all(member.isfile() for member in members)
-              package.extractall('.', filter='data')
+              stage = 'inspect archive'
+              expected = {
+                  'data/generated_courses/biologia-molecular.json',
+                  *{f'data/generated_units/biologia-molecular/unit-{index:02d}.json' for index in range(1, 7)},
+              }
+              with tarfile.open(archive_path, 'r:gz') as package:
+                  members = package.getmembers()
+                  names = {member.name for member in members}
+                  assert names == expected, {'missing': sorted(expected - names), 'extra': sorted(names - expected)}
+                  assert all(member.isfile() for member in members)
+                  stage = 'extract archive'
+                  package.extractall('.')
+
+              stage = 'verify extracted files'
+              assert all(Path(path).is_file() for path in expected)
+              Path('.citonauta/assembly-success.txt').write_text('verified\n', encoding='utf-8')
+          except Exception:
+              Path('.citonauta/assembly-error.txt').write_text(
+                  f'stage={stage}\n{traceback.format_exc()}', encoding='utf-8'
+              )
+              raise
           PY
 
       - name: Validate complete course
@@ -88,7 +104,22 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm -r .citonauta/biologia-molecular
           git rm .citonauta/biologia-molecular-diagnostic.txt
+          git rm .citonauta/assembly-success.txt
           git rm .github/workflows/assemble-biologia-molecular.yml
           git add data/generated_courses/biologia-molecular.json data/generated_units/biologia-molecular
           git commit -m "Assemble and validate Molecular Biology course"
+          git push origin HEAD:agent/biologia-molecular-semester-course
+
+      - name: Persist reconstruction failure
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test ! -f .citonauta/assembly-error.txt; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .citonauta/assembly-error.txt
+          git commit -m "Record Molecular Biology assembly failure"
           git push origin HEAD:agent/biologia-molecular-semester-course
