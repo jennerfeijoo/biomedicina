@@ -1,0 +1,45 @@
+name: Finalize Cell Biology semester course
+
+on:
+  push:
+    branches:
+      - agent/biologia-celular-semester-course
+    paths:
+      - .github/workflows/finalize-biologia-celular.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout course branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/biologia-celular-semester-course
+
+      - name: Reconstruct and validate academic package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat tmp/biologia-celular-v2.part0{0..4} > /tmp/biologia-celular.b64
+          base64 --decode /tmp/biologia-celular.b64 > /tmp/biologia-celular.tar.bz2
+          echo "7658db6eb0cfff3f26303ce77273082a56e0dcc2373652422062d3382fe3223b  /tmp/biologia-celular.tar.bz2" | sha256sum --check
+          tar -xjf /tmp/biologia-celular.tar.bz2 -C .
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject biologia-celular-tisular --strict
+          test "$(find data/generated_units/biologia-celular-tisular -maxdepth 1 -name 'unit-*.json' | wc -l)" -eq 10
+          test -f data/generated_courses/biologia-celular-tisular.json
+
+      - name: Publish clean academic commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf tmp
+          rm -f .github/workflows/finalize-biologia-celular.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build Cell Biology as a complete semester course"
+          git push origin HEAD:agent/biologia-celular-semester-course
