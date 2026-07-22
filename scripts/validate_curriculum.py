@@ -18,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "citonauta_curriculum.json"
 TEMPLATE_PATH = ROOT / "templates" / "asignatura.html"
 AREA_TEMPLATE_PATH = ROOT / "templates" / "area.html"
+UNIT_TEMPLATE_PATH = ROOT / "templates" / "unidad.html"
+UNITS_TEMPLATE_PATH = ROOT / "templates" / "unidades.html"
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 REQUIRED_SUBJECT_FIELDS = {
     "id",
@@ -99,6 +101,16 @@ def validate_template(errors: list[str]) -> None:
         generate_site.validate_area_template(AREA_TEMPLATE_PATH.read_text(encoding="utf-8"))
     except ValueError as exc:
         add_error(errors, str(exc))
+    if not UNIT_TEMPLATE_PATH.exists() or not UNITS_TEMPLATE_PATH.exists():
+        add_error(errors, "Faltan las plantillas de unidad o índice de unidades")
+    else:
+        try:
+            generate_site.validate_unit_templates(
+                UNIT_TEMPLATE_PATH.read_text(encoding="utf-8"),
+                UNITS_TEMPLATE_PATH.read_text(encoding="utf-8"),
+            )
+        except ValueError as exc:
+            add_error(errors, str(exc))
 
 
 def validate_subject(area_id: str, subject: dict[str, Any], index: int, errors: list[str]) -> None:
@@ -140,8 +152,8 @@ def validate_complete_course(area: dict[str, Any], subject: dict[str, Any], erro
         add_error(errors, f"No se pudo construir el curso {key}: {exc}")
         return
 
-    if course.get("status") not in {"review", "complete"}:
-        add_error(errors, f"{key} debe quedar en estado review o complete")
+    if course.get("status") not in {"generated", "complete"}:
+        add_error(errors, f"{key} debe quedar en estado generated o complete")
 
     minimums = {
         "prerequisites": 3,
