@@ -1,0 +1,248 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "arquitectura-computadores",
+  "area_id": "ciencias-basicas",
+  "unit": 4,
+  "slug": "entrada-salida-interrupciones",
+  "title": "Entrada, salida e interrupciones",
+  "status": "review",
+  "weeks": [9, 10],
+  "estimated_hours": 16,
+  "purpose": "Comprender cómo sensores, buses, controladores, interrupciones, DMA y buffers convierten eventos físicos en datos disponibles para software, y diseñar una adquisición que registre tiempo, pérdidas, errores y procedencia sin confundir integridad digital con validez biomédica.",
+  "learning_objectives": [
+    "Distinguir dispositivo, controlador, bus, registro y driver.",
+    "Explicar entrada/salida mapeada en memoria y secuencias de control.",
+    "Comparar polling, interrupciones y DMA según tasa, latencia y carga de CPU.",
+    "Calcular tasas de datos, ocupación de buffers y tiempo hasta overflow.",
+    "Diseñar timestamps y sincronización para múltiples fuentes.",
+    "Identificar pérdida, jitter, backpressure y errores de transmisión.",
+    "Definir pruebas de adquisición con datos sintéticos y contadores observables."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Del fenómeno físico a la memoria",
+      "paragraphs": [
+        "Una cadena de entrada y salida incluye transductor, acondicionamiento analógico, convertidor, interfaz, controlador, driver, sistema operativo y aplicación. Cada etapa transforma representación y tiempo. El arreglo que recibe un programa no es el fenómeno original: contiene efectos de calibración, cuantización, filtros, latencia y buffering. Describir la cadena completa permite localizar artefactos y evita atribuir al algoritmo un problema originado en el sensor o en la interfaz.",
+        "Los dispositivos suelen exponer registros de control, estado y datos. En entrada/salida mapeada en memoria, determinadas direcciones acceden a esos registros. Leer puede limpiar una bandera y escribir puede iniciar una conversión, reiniciar un contador o cambiar la ganancia. Por ello el mapa de registros es un contrato hardware-software: orden, campos reservados, anchura y efectos secundarios deben respetarse explícitamente.",
+        "Los buses especifican señales, temporización, arbitraje y transferencia. I2C comparte dos líneas y direcciona varios dispositivos; SPI utiliza reloj y líneas separadas y suele ofrecer mayor throughput; USB y PCIe incorporan protocolos y capas más complejas. La selección depende de distancia, tasa útil, determinismo, energía, aislamiento, número de dispositivos y disponibilidad de controladores, no únicamente de una cifra máxima de megabits por segundo.",
+        "Un driver traduce operaciones del sistema en secuencias del dispositivo, configura DMA, atiende interrupciones y reporta errores. La aplicación no debe asumir que una lectura corresponde al instante físico en que se tomó la muestra. Debe distinguirse el timestamp de muestreo del de llegada, copia y procesamiento. Esa separación es crítica al sincronizar ECG, fuerza, vídeo o movimiento."
+      ],
+      "equations": [
+        {"label": "Tasa bruta", "latex": "R=f_s\\,n\\,c"},
+        {"label": "Eficiencia de bus", "latex": "\\eta=\\frac{bits\\ útiles}{bits\\ transferidos}"},
+        {"label": "Latencia extremo a extremo", "latex": "L=\\sum_i L_i+L_{colas}"}
+      ],
+      "key_points": [
+        "La adquisición es una cadena de transformaciones físicas y digitales.",
+        "Los registros de dispositivo pueden tener efectos secundarios.",
+        "La tasa nominal del bus no equivale a tasa útil.",
+        "Un timestamp debe indicar qué evento temporal representa."
+      ]
+    },
+    {
+      "heading": "Polling, interrupciones y DMA",
+      "paragraphs": [
+        "En polling, la CPU consulta repetidamente el estado del dispositivo. El método es simple y puede ofrecer comportamiento predecible a tasas bajas, pero consume ciclos y puede perder eventos si el intervalo entre consultas es grande. Dormir entre consultas reduce carga, aunque aumenta latencia. La elección debe considerar frecuencia del evento, duración, prioridad y trabajo concurrente.",
+        "Una interrupción notifica a la CPU cuando ocurre un evento. El procesador conserva contexto suficiente, ejecuta un manejador y retorna. El manejador debe ser breve: reconocer la causa, preservar datos mínimos y diferir procesamiento pesado. Una tasa excesiva genera tormentas de interrupciones; agrupar muestras reduce overhead, pero incrementa latencia y tamaño de los bloques.",
+        "DMA permite que un controlador transfiera bloques entre dispositivo y memoria sin que la CPU copie cada palabra mediante instrucciones. La CPU configura dirección, tamaño, permisos y recibe una notificación al completar. DMA libera capacidad de cómputo, pero no elimina tráfico de memoria, coherencia ni necesidad de gestionar el ciclo de vida del buffer. Un buffer liberado antes de tiempo puede corromper datos.",
+        "Las técnicas pueden combinarse. Un ADC puede usar DMA para llenar dos buffers alternos y generar una interrupción por bloque; una interfaz de red puede despertar mediante interrupción y pasar temporalmente a polling bajo carga. No existe una regla universal: el diseño se deriva de tasas, latencia máxima, pérdida tolerable, energía y capacidad de procesamiento."
+      ],
+      "equations": [
+        {"label": "Carga de polling", "latex": "U\\approx\\frac{t_{consulta}}{T_{consulta}}"},
+        {"label": "Interrupciones por segundo", "latex": "r_{irq}=\\frac{f_s}{muestras\\ por\\ interrupcion}"},
+        {"label": "Transferencia DMA", "latex": "t_{DMA}\\approx L_0+\\frac{B}{BW}"}
+      ],
+      "key_points": [
+        "Polling intercambia CPU por simplicidad y control temporal.",
+        "Las interrupciones reducen consultas, pero tienen overhead.",
+        "DMA transfiere bloques sin instrucciones por cada palabra.",
+        "Polling, interrupciones y DMA pueden coexistir."
+      ]
+    },
+    {
+      "heading": "Buffers, colas y control de flujo",
+      "paragraphs": [
+        "Un buffer desacopla productor y consumidor. Si la tasa media de producción supera de forma sostenida a la de consumo, cualquier buffer finito terminará lleno. El tamaño cubre ráfagas o pausas temporales; no corrige un desequilibrio permanente. Dimensionar exige convertir la tasa a bytes por segundo, estimar la pausa máxima y añadir margen por encabezados, alineación, jitter y variación operativa.",
+        "Un buffer circular reutiliza posiciones mediante índices de lectura y escritura. Debe definirse qué ocurre al llenarse: bloquear, descartar la muestra nueva, sobrescribir la antigua o pasar a modo degradado. Cada política cambia el significado de los datos. Sobrescribir sin contador puede producir una serie aparentemente continua que contiene intervalos ausentes y conduce a inferencias falsas.",
+        "Backpressure permite que el consumidor frene al productor cuando el protocolo lo admite. Un sensor físico puede no detenerse, por lo que se requiere procesamiento en línea, reducción de tasa o almacenamiento suficiente. El jitter describe variación de latencia o de intervalos; puede alterar la reconstrucción temporal aunque no se pierda ninguna muestra. Los timestamps permiten evaluar ese problema solo si su reloj es conocido.",
+        "Los errores de transmisión incluyen CRC fallido, timeout, framing, pérdida de secuencia, duplicación y desconexión. La aplicación debe registrar contadores y distinguir ausencia de cero. Reintentar puede duplicar mensajes cuando no existe identidad. Números de secuencia, identificadores de sesión e idempotencia permiten detectar discontinuidades y recuperar sin concatenar fragmentos incompatibles."
+      ],
+      "equations": [
+        {"label": "Crecimiento de cola", "latex": "\\frac{dQ}{dt}=r_p-r_c"},
+        {"label": "Tiempo hasta overflow", "latex": "t_{ov}=\\frac{B_{libre}}{R_p-R_c}"},
+        {"label": "Índice circular", "latex": "Q=(w-r)\\bmod N"}
+      ],
+      "key_points": [
+        "Un buffer absorbe ráfagas, no desequilibrio permanente.",
+        "La política de overflow debe ser explícita.",
+        "Jitter altera el tiempo aun sin pérdida de muestras.",
+        "Secuencia y contadores hacen observables pérdidas y duplicados."
+      ]
+    },
+    {
+      "heading": "Relojes, timestamps y sincronización",
+      "paragraphs": [
+        "Dos dispositivos pueden tener relojes con offset inicial y velocidades ligeramente distintas. Sin sincronización, señales nominalmente simultáneas se separan progresivamente. Sincronizar puede significar compartir reloj, usar un pulso de disparo, intercambiar mensajes o estimar una transformación entre escalas temporales. El método y su incertidumbre deben registrarse junto con los datos.",
+        "El timestamp más informativo suele ser el más cercano al muestreo. Marcar en la aplicación incluye colas, interrupciones y planificación. Cuando un dispositivo entrega un contador propio, puede mapearse al reloj del host y detectar saltos. Los relojes monotónicos sirven para intervalos; la hora civil puede corregirse o saltar, por lo que no debe usarse sin cautela para medir duraciones.",
+        "Validar una adquisición requiere una fuente controlada. Se inyectan patrones, frecuencias, amplitudes o secuencias conocidas y se comprueban orden, tasa, latencia, pérdida, saturación y timestamps. Un loopback digital prueba una parte de la cadena, pero no valida transductor, acoplamiento ni fisiología. Cada ensayo debe indicar exactamente qué tramo estimula y observa.",
+        "La calidad temporal debe resumirse mediante distribución, no solo media. Percentiles de latencia, desviación de intervalos, máximo observado, discontinuidades y drift aportan información diferente. Un valor medio pequeño puede ocultar eventos extremos incompatibles con el plazo. En sistemas biomédicos, los plazos se derivan del propósito técnico y requieren validación específica antes de cualquier uso asistencial."
+      ],
+      "equations": [
+        {"label": "Modelo de reloj", "latex": "t_h=a\\,t_d+b"},
+        {"label": "Drift relativo", "latex": "\\rho=\\frac{\\Delta t_h-\\Delta t_d}{\\Delta t_d}"},
+        {"label": "Pérdidas", "latex": "N_{lost}=N_{expected}-N_{received}"}
+      ],
+      "key_points": [
+        "Los relojes independientes acumulan offset y drift.",
+        "Timestamp de llegada no equivale a tiempo de muestreo.",
+        "Una prueba cubre solo el tramo estimulado y observado.",
+        "Percentiles y extremos complementan la latencia media."
+      ]
+    },
+    {
+      "heading": "Integridad, observabilidad y recuperación",
+      "paragraphs": [
+        "Una adquisición robusta necesita un contrato de integridad. Debe definir frecuencia nominal, tolerancia temporal, numeración de secuencia, rangos permitidos, códigos de estado y comportamiento ante reinicio. El contrato no prueba que la señal sea clínicamente válida; establece propiedades técnicas observables que permiten decidir si el flujo digital está completo, ordenado y trazable.",
+        "Los metadatos de sesión registran dispositivo, firmware, configuración, calibración, reloj, fecha, inicio, fin y causas de interrupción. Si cambia la ganancia o el firmware, los datos posteriores requieren una marca explícita. La procedencia permite relacionar una discontinuidad con actualización, batería, reconexión o saturación y evita mezclar segmentos que no comparten condiciones.",
+        "La monitorización en línea puede calcular ocupación del buffer, tasa efectiva, latencia percentil y contadores de error. Los umbrales deben generar eventos y preservar evidencia; no borrar datos silenciosamente. Un sistema puede continuar en modo degradado si lo declara y marca calidad. Detener, degradar o descartar es una decisión de requisitos que debe probarse mediante inyección de fallos.",
+        "La recuperación se diseña como una máquina de estados. Tras desconexión, el sistema puede reintentar, esperar intervención o cerrar de forma segura. Las transiciones deberían ser idempotentes para que repetir una orden no duplique una sesión. Los segmentos parciales pueden conservarse si un manifiesto identifica intervalos válidos, ausencias y causas; inventar muestras o concatenar reinicios es inaceptable."
+      ],
+      "equations": [
+        {"label": "Completitud", "latex": "C=\\frac{N_{received}}{N_{expected}}"},
+        {"label": "Tasa de error", "latex": "e=\\frac{N_{invalid}}{N_{received}}"},
+        {"label": "Disponibilidad de segmento", "latex": "A_s=\\frac{T_{valido}}{T_{sesion}}"}
+      ],
+      "key_points": [
+        "El contrato de integridad define propiedades técnicas observables.",
+        "Configuración y versión forman parte de la procedencia.",
+        "El modo degradado debe ser explícito y comprobable.",
+        "Integridad digital no equivale a validez biomédica."
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Dispositivo", "definition": "Componente que intercambia datos o control con el sistema."},
+    {"term": "Controlador", "definition": "Lógica que administra un dispositivo o bus."},
+    {"term": "Driver", "definition": "Software que expone el dispositivo al sistema operativo."},
+    {"term": "MMIO", "definition": "Acceso a registros de dispositivo mediante direcciones de memoria."},
+    {"term": "Polling", "definition": "Consulta periódica del estado por software."},
+    {"term": "Interrupción", "definition": "Evento que transfiere temporalmente el control a un manejador."},
+    {"term": "DMA", "definition": "Transferencia directa entre dispositivo y memoria."},
+    {"term": "Buffer", "definition": "Memoria temporal que desacopla productor y consumidor."},
+    {"term": "Buffer circular", "definition": "Cola implementada sobre un arreglo reutilizable."},
+    {"term": "Overflow", "definition": "Llegada de datos cuando no existe espacio disponible."},
+    {"term": "Backpressure", "definition": "Mecanismo para frenar al productor."},
+    {"term": "Jitter", "definition": "Variación de latencia o intervalos temporales."},
+    {"term": "Timestamp", "definition": "Marca temporal asociada a un evento definido."},
+    {"term": "Drift", "definition": "Cambio relativo acumulado entre relojes."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Dimensionamiento de un buffer",
+      "scenario": "Un sensor produce cuatro canales de 16 bits a 5 kHz. El consumidor puede detenerse 200 ms.",
+      "equations": [
+        {"label": "Tasa", "latex": "R=4\\cdot16\\cdot5000=320\\ kbit/s=40\\ kB/s"},
+        {"label": "Buffer ideal", "latex": "B=40\\ kB/s\\cdot0.2\\ s=8\\ kB"}
+      ],
+      "reasoning_steps": [
+        "Convertir la tasa a bytes por segundo.",
+        "Multiplicar por la pausa máxima.",
+        "Añadir margen para encabezados, alineación y jitter.",
+        "Definir qué sucede si la pausa supera el supuesto."
+      ],
+      "interpretation": "Ocho kilobytes cubren exactamente la pausa ideal; no constituyen una garantía operativa.",
+      "limitations": ["No incluye eficiencia del bus, doble buffering ni variación del consumidor."]
+    },
+    {
+      "title": "Detección de pérdida mediante secuencia",
+      "scenario": "Los paquetes contienen una secuencia de 16 bits y se observan 1023, 1024 y 1027.",
+      "reasoning_steps": [
+        "Aplicar aritmética modular.",
+        "Determinar que se esperaban 1025 y 1026.",
+        "Registrar dos pérdidas.",
+        "Distinguir pérdida de reordenamiento si el protocolo lo permite."
+      ],
+      "interpretation": "La secuencia hace observable una discontinuidad que el contenido por sí solo no revelaría.",
+      "limitations": ["No identifica en qué etapa ocurrió la pérdida."]
+    }
+  ],
+  "guided_activity": {
+    "title": "Simulador de adquisición productor-consumidor",
+    "instructions": [
+      "Genera muestras a una tasa configurable.",
+      "Introduce pausas y jitter del consumidor.",
+      "Implementa un buffer circular y contador de overflow.",
+      "Añade números de secuencia y timestamps.",
+      "Compara polling simulado e interrupciones agrupadas.",
+      "Reporta ocupación, pérdidas y latencia."
+    ],
+    "problems": [
+      "Calcula tasa útil y bruta de una interfaz.",
+      "Dimensiona un buffer para una pausa dada.",
+      "Calcula tiempo hasta overflow si productor supera consumidor.",
+      "Compara polling cada 1 ms con eventos cada 5 ms.",
+      "Calcula interrupciones por segundo al agrupar 32 muestras.",
+      "Explica qué trabajo debe evitar un ISR.",
+      "Diseña una transferencia DMA de doble buffer.",
+      "Propón una política de overflow para una señal continua.",
+      "Modela offset y drift de dos relojes.",
+      "Diseña una prueba de loopback y declara su alcance."
+    ],
+    "checking_criteria": [
+      "Las tasas usan unidades coherentes.",
+      "La política de pérdida es explícita.",
+      "El simulador conserva secuencias y tiempo.",
+      "El informe separa integridad digital de validez fisiológica."
+    ]
+  },
+  "practice_sets": [
+    {
+      "title": "Práctica graduada de la unidad",
+      "problems": [
+        "Calcula tasa útil y bruta de una interfaz.",
+        "Dimensiona un buffer para una pausa dada.",
+        "Calcula tiempo hasta overflow si productor supera consumidor.",
+        "Compara polling cada 1 ms con eventos cada 5 ms.",
+        "Calcula interrupciones por segundo al agrupar 32 muestras.",
+        "Explica qué trabajo debe evitar un ISR.",
+        "Diseña una transferencia DMA de doble buffer.",
+        "Propón una política de overflow para una señal continua.",
+        "Modela offset y drift de dos relojes.",
+        "Diseña una prueba de loopback y declara su alcance."
+      ]
+    }
+  ],
+  "common_errors": [
+    {"error": "Usar la tasa nominal del bus como tasa útil.", "correction": "Incluir protocolo, encabezados, pausas y eficiencia."},
+    {"error": "Creer que un buffer evita cualquier pérdida.", "correction": "Comparar tasas y analizar duración de ráfagas."},
+    {"error": "Procesar demasiado dentro de una interrupción.", "correction": "Reconocer la causa y diferir trabajo pesado."},
+    {"error": "Marcar únicamente el tiempo de llegada.", "correction": "Registrar o estimar el tiempo de muestreo."},
+    {"error": "Representar pérdida como cero.", "correction": "Usar estado ausente y contadores explícitos."},
+    {"error": "Validar toda la cadena con un loopback digital.", "correction": "Declarar el tramo cubierto y probar el transductor por separado."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué es MMIO?", "answer": "Acceso a registros de dispositivo a través del espacio de direcciones."},
+    {"question": "¿Cuándo es útil polling?", "answer": "Cuando la tasa y duración permiten que simplicidad y control temporal justifiquen el coste."},
+    {"question": "¿Qué aporta DMA?", "answer": "Transfiere bloques entre dispositivo y memoria con menor intervención por palabra."},
+    {"question": "¿Qué no resuelve un buffer?", "answer": "Un productor permanentemente más rápido que el consumidor."},
+    {"question": "¿Qué es backpressure?", "answer": "Una señal para reducir o detener la producción."},
+    {"question": "¿Qué mide jitter?", "answer": "La variación temporal de latencia o intervalos."},
+    {"question": "¿Por qué usar números de secuencia?", "answer": "Para detectar pérdidas, duplicados o reordenamiento."},
+    {"question": "¿Qué diferencia hay entre timestamp de muestreo y llegada?", "answer": "El primero marca adquisición física; el segundo incluye transporte y colas."}
+  ],
+  "biomedical_connections": [
+    "Adquisición de ECG, EEG y EMG.",
+    "Sensores wearables y telemetría.",
+    "Microscopía automatizada y cámaras.",
+    "Sincronización multimodal de movimiento y fuerza."
+  ],
+  "sources": [
+    {"title": "DMA-API-HOWTO", "organization": "Linux kernel project", "url": "https://www.kernel.org/doc/html/latest/core-api/dma-api-howto.html", "type": "documentación oficial"},
+    {"title": "I2C-bus specification and user manual", "organization": "NXP", "url": "https://www.nxp.com/docs/en/user-guide/UM10204.pdf", "type": "especificación técnica"},
+    {"title": "USB 2.0 Specification", "organization": "USB-IF", "url": "https://www.usb.org/document-library/usb-20-specification", "type": "especificación técnica"},
+    {"title": "Zephyr device driver model", "organization": "Zephyr Project", "url": "https://docs.zephyrproject.org/latest/kernel/drivers/index.html", "type": "documentación oficial"},
+    {"title": "Linux timestamping", "organization": "Linux kernel project", "url": "https://www.kernel.org/doc/html/latest/networking/timestamping.html", "type": "documentación oficial"},
+    {"title": "FreeRTOS interrupt management", "organization": "FreeRTOS", "url": "https://www.freertos.org/Documentation/02-Kernel/02-Kernel-features/02-Interrupt-management", "type": "documentación oficial"}
+  ],
+  "editorial_notice": "Material educativo. Los ejemplos no constituyen diseño certificado, validación de dispositivo médico ni autorización para uso clínico."
+}
