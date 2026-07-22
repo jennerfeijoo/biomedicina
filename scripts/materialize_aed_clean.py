@@ -40,17 +40,11 @@ def run() -> None:
     print(f"diagnostic.chunk_count={len(chunks)}")
     print(f"diagnostic.chunk_lengths={chunk_lengths}")
     require(len(chunks) == 11, f"se esperaban 11 fragmentos y se encontraron {len(chunks)}")
-    require(
-        chunk_lengths == EXPECTED_CHUNK_LENGTHS,
-        f"longitudes de fragmentos inesperadas: {chunk_lengths}",
-    )
+    require(chunk_lengths == EXPECTED_CHUNK_LENGTHS, f"longitudes de fragmentos inesperadas: {chunk_lengths}")
 
     encoded = "".join(path.read_text(encoding="utf-8").strip() for path in chunks)
     print(f"diagnostic.encoded_length={len(encoded)}")
-    require(
-        len(encoded) == EXPECTED_ENCODED_LENGTH,
-        f"longitud base64 inesperada: {len(encoded)}",
-    )
+    require(len(encoded) == EXPECTED_ENCODED_LENGTH, f"longitud base64 inesperada: {len(encoded)}")
 
     try:
         payload = base64.b64decode(encoded, validate=True)
@@ -60,13 +54,12 @@ def run() -> None:
     container_digest = hashlib.sha256(payload).hexdigest()
     print(f"diagnostic.payload_length={len(payload)}")
     print(f"diagnostic.container_sha256={container_digest}")
-    require(
-        len(payload) == EXPECTED_PAYLOAD_LENGTH,
-        f"tamaño de ZIP inesperado: {len(payload)}",
-    )
+    require(len(payload) == EXPECTED_PAYLOAD_LENGTH, f"tamaño de ZIP inesperado: {len(payload)}")
 
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-        require(archive.testzip() is None, "el ZIP contiene un miembro con CRC inválido")
+        bad_member = archive.testzip()
+        print(f"diagnostic.bad_member={bad_member}")
+        require(bad_member is None, f"CRC inválido en {bad_member}")
         require(set(archive.namelist()) == EXPECTED, "el ZIP no contiene exactamente las seis unidades esperadas")
         units: list[tuple[int, dict]] = []
         for number in range(1, 7):
@@ -74,10 +67,7 @@ def run() -> None:
             raw = archive.read(member)
             unit_digest = hashlib.sha256(raw).hexdigest()
             print(f"diagnostic.unit_{number:02d}_sha256={unit_digest}")
-            require(
-                unit_digest == EXPECTED_UNIT_SHA256[number],
-                f"unit-{number:02d}: SHA-256 de contenido inesperado: {unit_digest}",
-            )
+            require(unit_digest == EXPECTED_UNIT_SHA256[number], f"unit-{number:02d}: SHA-256 de contenido inesperado: {unit_digest}")
             data = json.loads(raw.decode("utf-8"))
             require(isinstance(data, dict), f"unit-{number:02d}: raíz no es objeto")
             require(data.get("schema_version") == "2.0", f"unit-{number:02d}: esquema")
@@ -87,10 +77,7 @@ def run() -> None:
             units.append((number, data))
 
     require(sum(int(data["estimated_hours"]) for _, data in units) == 128, "las horas de las unidades no suman 128")
-    require(
-        sorted(week for _, data in units for week in data["weeks"]) == list(range(1, 17)),
-        "cobertura semanal incorrecta",
-    )
+    require(sorted(week for _, data in units for week in data["weeks"]) == list(range(1, 17)), "cobertura semanal incorrecta")
     DEST.mkdir(parents=True, exist_ok=True)
     for number, data in units:
         path = DEST / f"unit-{number:02d}.json"
