@@ -11,6 +11,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_PAYLOAD_DIR = ROOT / ".citonauta-agent" / "payloads" / "bases-datos"
 CHUNK_DIR = ROOT / ".citonauta-agent" / "payloads" / "bases-datos-v2"
+V4_DIR = ROOT / ".citonauta-agent" / "payloads" / "bases-datos-v4"
 DEST = ROOT / "data" / "generated_units" / "bases-datos"
 EXPECTED_TITLES = {
     1: "Modelado de datos",
@@ -38,6 +39,12 @@ def require(condition: bool, message: str) -> None:
 
 
 def read_encoded_payload(number: int) -> str:
+    if number == 2:
+        v4_parts = [V4_DIR / f"unit-02-part-{part:02d}.txt" for part in range(1, 6)]
+        if all(path.exists() for path in v4_parts):
+            print("2: usando payload corregido v4")
+            return "".join(path.read_text(encoding="utf-8").strip() for path in v4_parts)
+
     part_paths = [
         CHUNK_DIR / f"unit-{number:02d}-part-01.txt",
         CHUNK_DIR / f"unit-{number:02d}-part-02.txt",
@@ -45,6 +52,7 @@ def read_encoded_payload(number: int) -> str:
     if all(path.exists() for path in part_paths):
         print(f"{number}: usando payload fragmentado v2")
         return "".join(path.read_text(encoding="utf-8").strip() for path in part_paths)
+
     legacy = LEGACY_PAYLOAD_DIR / f"unit-{number:02d}.json.gz.b64"
     require(legacy.exists(), f"unit-{number:02d}: falta payload")
     print(f"{number}: usando payload gzip histórico")
