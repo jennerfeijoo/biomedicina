@@ -6,6 +6,10 @@ on:
       - main
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: assemble-biologia-i
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -14,22 +18,24 @@ jobs:
     if: github.head_ref == 'agent/biologia-i-semester-course'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout exact PR head
+      - name: Checkout current course branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: agent/biologia-i-semester-course
           fetch-depth: 0
 
-      - name: Confirm explicit chunk files
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f .citonauta/biologia-i/part-00
-          test -f .citonauta/biologia-i/part-01
-          test -f .citonauta/biologia-i/part-02
-          test -f .citonauta/biologia-i/part-03
-          test -f .citonauta/biologia-i/part-04
-          test -f .citonauta/biologia-i/part-05
+      - name: Check part 00
+        run: test -f .citonauta/biologia-i/part-00
+      - name: Check part 01
+        run: test -f .citonauta/biologia-i/part-01
+      - name: Check part 02
+        run: test -f .citonauta/biologia-i/part-02
+      - name: Check part 03
+        run: test -f .citonauta/biologia-i/part-03
+      - name: Check part 04
+        run: test -f .citonauta/biologia-i/part-04
+      - name: Check part 05
+        run: test -f .citonauta/biologia-i/part-05
 
       - name: Build payload from explicit chunks
         shell: bash
@@ -46,12 +52,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          size = len(Path('/tmp/biologia-i.b64').read_bytes())
-          print({'payload_bytes': size})
-          assert size == 40716
-          PY
+          test "$(wc -c < /tmp/biologia-i.b64)" -eq 40716
 
       - name: Check payload digest
         shell: bash
@@ -66,9 +67,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import base64
-          payload = Path('/tmp/biologia-i.b64').read_bytes()
-          archive = base64.b64decode(payload, validate=True)
-          Path('/tmp/biologia-i.tar.gz').write_bytes(archive)
+          Path('/tmp/biologia-i.tar.gz').write_bytes(base64.b64decode(Path('/tmp/biologia-i.b64').read_bytes(), validate=True))
           PY
 
       - name: Check archive digest
