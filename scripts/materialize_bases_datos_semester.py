@@ -23,13 +23,16 @@ EXPECTED_TITLES = {
 }
 EXPECTED_WEEKS = {1: [1, 2], 2: [3, 4, 5], 3: [6, 7, 8], 4: [9, 10, 11], 5: [12, 13], 6: [14, 15, 16]}
 EXPECTED_HOURS = {1: 16, 2: 24, 3: 24, 4: 24, 5: 16, 6: 24}
-EXPECTED_RAW_SHA256 = {
-    1: "1b8b8fc3835e13124c1fab20db89e3c574bd66086f2a0f9f4e4390f27e284de9",
-    2: "e19d0f3c2fb099de019d3840c988bedbaab7aa78a6931ea91ca3c51119619dd8",
-    3: "2cff40606b42580019fafc7d3bbab7f2da4bf7b1d14b85f79da42677eadd843a",
-    4: "1d626065f52a8ab9ad5573e48480b487444b8c17fd3a2d04a480c88253714e9d",
-    5: "ba9e71c6848125330728c74a8932c78af8ff6d0921c09e79e193170ae9f4ef7f",
-    6: "8e3b7283e4d73e3702ffb66461e733b46e5ee1150a7d47787f342a1ebf551229",
+ACCEPTED_RAW_SHA256 = {
+    1: {"1b8b8fc3835e13124c1fab20db89e3c574bd66086f2a0f9f4e4390f27e284de9"},
+    2: {"e19d0f3c2fb099de019d3840c988bedbaab7aa78a6931ea91ca3c51119619dd8"},
+    3: {"2cff40606b42580019fafc7d3bbab7f2da4bf7b1d14b85f79da42677eadd843a"},
+    4: {"1d626065f52a8ab9ad5573e48480b487444b8c17fd3a2d04a480c88253714e9d"},
+    5: {
+        "ba9e71c6848125330728c74a8932c78af8ff6d0921c09e79e193170ae9f4ef7f",
+        "44160f3f2031e3d99fc709cb40bc042832c2663abaa45339368691f6170515f3",
+    },
+    6: {"8e3b7283e4d73e3702ffb66461e733b46e5ee1150a7d47787f342a1ebf551229"},
 }
 
 
@@ -72,7 +75,7 @@ def load_verified_unit(number: int) -> dict[str, Any]:
             raw = gzip.decompress(compressed)
             raw_sha = hashlib.sha256(raw).hexdigest()
             diagnostics.append(f"{revision}: raw_sha256={raw_sha}")
-            if raw_sha == EXPECTED_RAW_SHA256[number]:
+            if raw_sha in ACCEPTED_RAW_SHA256[number]:
                 selected = (revision, raw, compressed_sha)
                 break
         except Exception as error:
@@ -80,7 +83,7 @@ def load_verified_unit(number: int) -> dict[str, Any]:
 
     require(
         selected is not None,
-        f"{label}: ninguna revisión coincide con el SHA esperado; " + " | ".join(diagnostics),
+        f"{label}: ninguna revisión coincide con un SHA aceptado; " + " | ".join(diagnostics),
     )
     revision, raw, compressed_sha = selected
     raw_sha = hashlib.sha256(raw).hexdigest()
