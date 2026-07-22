@@ -42,13 +42,26 @@ jobs:
               stage = 'check paths'
               assert all(path.is_file() for path in paths), [str(path) for path in paths if not path.is_file()]
 
-              stage = 'read chunks'
+              expected_chunk_hashes = {
+                  'pre-00': '25e55bfba49241784e22d94e8fc27cabf49be430fc98d761ef783bd20ace3057',
+              }
+              stage = 'read and repair chunks'
               chunks = []
               for path in paths:
                   data = path.read_bytes()
-                  if path.name == 'pre-00':
-                      assert len(data) == 3001 and data.endswith(b'\n'), (len(data), data[:4], data[-4:])
-                      data = data[:-1]
+                  expected_hash = expected_chunk_hashes.get(path.name)
+                  if expected_hash and hashlib.sha256(data).hexdigest() != expected_hash:
+                      repaired = None
+                      removed_at = None
+                      for index in range(len(data)):
+                          candidate = data[:index] + data[index + 1:]
+                          if hashlib.sha256(candidate).hexdigest() == expected_hash:
+                              repaired = candidate
+                              removed_at = index
+                              break
+                      assert repaired is not None, (path.name, len(data), hashlib.sha256(data).hexdigest())
+                      print(f'repaired {path.name}: removed one byte at offset {removed_at}')
+                      data = repaired
                   chunks.append(data)
 
               stage = 'verify payload'
@@ -104,6 +117,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm -r .citonauta/biologia-molecular
           git rm .citonauta/biologia-molecular-diagnostic.txt
+          git rm .citonauta/assembly-error.txt
           git rm .citonauta/assembly-success.txt
           git rm .github/workflows/assemble-biologia-molecular.yml
           git add data/generated_courses/biologia-molecular.json data/generated_units/biologia-molecular
@@ -121,5 +135,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .citonauta/assembly-error.txt
+          if git diff --cached --quiet; then
+            exit 0
+          fi
           git commit -m "Record Molecular Biology assembly failure"
           git push origin HEAD:agent/biologia-molecular-semester-course
