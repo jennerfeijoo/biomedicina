@@ -7,6 +7,32 @@ on:
       - main
 
 jobs:
+  validate-generated-units:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          show-progress: false
+
+      - name: Run generated-unit validation
+        id: unit_validation
+        continue-on-error: true
+        run: python3 scripts/validate_generated_units.py > generated-unit-validation.txt 2>&1
+
+      - name: Upload generated-unit validation report
+        if: steps.unit_validation.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-unit-validation
+          path: generated-unit-validation.txt
+
+      - name: Enforce generated-unit validation
+        if: steps.unit_validation.outcome != 'success'
+        run: |
+          cat generated-unit-validation.txt
+          exit 1
+
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -21,8 +47,64 @@ jobs:
       - name: Validate curriculum data
         run: python scripts/validate_curriculum.py
 
+      - name: Validate incremental course plans
+        run: python scripts/validate_course_plan_packages.py
+
+      - name: Validate generated units
+        run: python scripts/validate_generated_units.py
+
+      - name: Validate every semester course architecture
+        run: |
+          set -euo pipefail
+          for course in data/generated_courses/*.json; do
+            python -m json.tool "$course" > /dev/null
+          done
+
+      - name: Enforce semester readiness for every course
+        run: |
+          set -euo pipefail
+          for course in data/generated_courses/*.json; do
+            subject="$(basename "$course" .json)"
+            python scripts/audit_semester_readiness.py --subject "$subject" --strict
+          done
+
+      - name: Run cross-course portfolio audit
+        id: portfolio_audit
+        continue-on-error: true
+        run: |
+          mkdir -p audit-artifacts
+          python scripts/audit_semester_portfolio.py \
+            --strict \
+            --json-output audit-artifacts/semester-portfolio-audit.json \
+            > audit-artifacts/semester-portfolio-audit.txt 2>&1
+
+      - name: Upload semester portfolio audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semester-portfolio-audit
+          path: audit-artifacts/
+
+      - name: Enforce semester portfolio audit
+        if: steps.portfolio_audit.outcome != 'success'
+        run: |
+          cat audit-artifacts/semester-portfolio-audit.txt
+          exit 1
+
+      - name: Validate developed-unit renderer
+        run: node --check assets/js/generated-units.js
+
+      - name: Validate semester-course renderer
+        run: node --check assets/js/semester-course.js
+
+      - name: Validate autonomous course content
+        run: python scripts/validate_agent_content.py
+
       - name: Check generated preview
         run: python scripts/check_generated_preview.py --limit 8
+
+      - name: Check enriched HTML synchronization
+        run: python scripts/enrich_generated_pages.py --check
 
       - name: Check generator dry run
         run: python scripts/generate_site.py --dry-run --with-units
