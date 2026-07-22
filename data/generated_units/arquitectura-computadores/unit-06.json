@@ -1,0 +1,294 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "arquitectura-computadores",
+  "area_id": "ciencias-basicas",
+  "unit": 6,
+  "slug": "sistemas-embebidos-confiabilidad",
+  "title": "Sistemas embebidos y confiabilidad",
+  "status": "review",
+  "weeks": [14, 15, 16],
+  "estimated_hours": 24,
+  "purpose": "Integrar procesador, memoria, entrada/salida, tiempo, energía y fallos para seleccionar una arquitectura embebida educativa y construir evidencia verificable sobre su comportamiento, mantenimiento y límites sin presentar un prototipo como dispositivo médico validado.",
+  "learning_objectives": [
+    "Traducir requisitos funcionales y no funcionales en recursos de hardware y software.",
+    "Distinguir microcontrolador, microprocesador, SoC y computador de propósito general.",
+    "Analizar tareas periódicas, deadlines, latencia de peor caso y utilización.",
+    "Calcular potencia media, energía por ciclo y autonomía idealizada.",
+    "Diseñar watchdogs, brownout detection, checksums y estados seguros.",
+    "Aplicar análisis de riesgos técnicos, inyección de fallos y trazabilidad de requisitos.",
+    "Planificar logging, actualización, mantenimiento y reproducibilidad del prototipo.",
+    "Defender una selección arquitectónica mediante mediciones y límites explícitos."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Plataformas embebidas y selección por requisitos",
+      "paragraphs": [
+        "Un sistema embebido integra cómputo dentro de una función específica y opera con restricciones de tiempo, energía, memoria, tamaño, coste o ambiente. Un microcontrolador reúne CPU, memoria y periféricos en un chip y favorece control determinista y bajo consumo. Un microprocesador requiere más componentes externos y suele ejecutar sistemas operativos complejos. Un SoC puede integrar CPU, GPU, aceleradores, radio y controladores.",
+        "La selección comienza con requisitos, no con una placa popular. Deben definirse señales, canales, resolución, frecuencia, interfaces, latencia, almacenamiento, conectividad, autonomía, temperatura y comportamiento ante fallo. También importan disponibilidad a largo plazo, documentación, herramientas, licencia y capacidad de actualización. Una plataforma sobredimensionada puede consumir más y dificultar validación; una insuficiente oculta pérdidas.",
+        "Los recursos se presupuestan. RAM debe cubrir código, pila, heap, buffers y margen; flash incluye firmware, constantes y actualización; temporizadores y canales DMA deben asignarse; el ancho de bus debe sostener la tasa útil. Los picos, no solo promedios, determinan capacidad. Una tarea que ocasionalmente duplica memoria puede fallar aunque el uso habitual parezca pequeño.",
+        "La arquitectura también separa dominios. Adquisición crítica puede ejecutarse en un microcontrolador mientras una computadora realiza visualización; un coprocesador de seguridad almacena claves; un acelerador procesa inferencia. Dividir aumenta interfaces y modos de fallo, por lo que solo se justifica cuando mejora aislamiento, tiempo, energía o mantenimiento de forma demostrable."
+      ],
+      "equations": [
+        {"label": "Presupuesto de RAM", "latex": "M_{total}=M_{code}+M_{stack}+M_{heap}+M_{buffers}+M_{margin}"},
+        {"label": "Tasa requerida", "latex": "R_{req}=f_s\\,n\\,c/\\eta"},
+        {"label": "Margen", "latex": "m=1-\\frac{uso_{max}}{capacidad}"}
+      ],
+      "key_points": [
+        "La plataforma se selecciona desde requisitos medibles.",
+        "Promedios pueden ocultar picos de memoria, tiempo o corriente.",
+        "Disponibilidad y herramientas forman parte de la arquitectura.",
+        "Separar dominios añade interfaces y modos de fallo."
+      ]
+    },
+    {
+      "heading": "Tiempo real, tareas y planificación",
+      "paragraphs": [
+        "Tiempo real no significa simplemente rápido. Un sistema de tiempo real produce resultados dentro de plazos definidos. En tiempo real duro, incumplir el deadline se considera inaceptable para el requisito; en tiempo real blando, degrada calidad. La clasificación depende del sistema y su análisis de riesgos, no del nombre de la aplicación ni de la frecuencia del procesador.",
+        "Una tarea periódica se caracteriza por periodo, tiempo de cómputo y deadline. La utilización suma C_i/T_i y ofrece una comprobación inicial. Una utilización menor que uno no garantiza planificabilidad porque existen prioridades, bloqueos, interrupciones y variación del peor caso. Se necesitan tiempos de ejecución de peor caso razonados o medidos bajo condiciones adversas.",
+        "Los sistemas operativos de tiempo real ofrecen tareas, prioridades, colas, semáforos, temporizadores y manejo de interrupciones. Una prioridad elevada no vuelve correcto al código; puede impedir que otras tareas progresen. La inversión de prioridades aparece cuando una tarea alta espera un recurso retenido por una baja mientras una intermedia la desplaza. Protocolos de herencia o techo mitigan el problema.",
+        "La arquitectura debe reducir trabajo no acotado en rutas temporales. Asignación dinámica, almacenamiento, red o logging pueden tener latencia variable. Se usan buffers preasignados, colas acotadas y tareas separadas. El plazo debe medirse desde el evento relevante hasta la salida requerida, incluyendo interrupción, espera, procesamiento y comunicación, no únicamente el kernel."
+      ],
+      "equations": [
+        {"label": "Utilización", "latex": "U=\\sum_i\\frac{C_i}{T_i}"},
+        {"label": "Tiempo de respuesta", "latex": "R_i=C_i+B_i+I_i"},
+        {"label": "Holgura", "latex": "S_i=D_i-R_i"}
+      ],
+      "key_points": [
+        "Tiempo real se define por deadlines, no por velocidad media.",
+        "Utilización es necesaria, pero no suficiente para planificabilidad.",
+        "Prioridades y recursos compartidos pueden causar inversión.",
+        "El plazo extremo a extremo incluye todas las esperas."
+      ]
+    },
+    {
+      "heading": "Energía, potencia y autonomía",
+      "paragraphs": [
+        "Potencia es energía por tiempo. Un sistema alimentado por batería alterna estados de actividad, espera, radio, adquisición y procesamiento. La corriente media pondera cada estado por su fracción temporal. El consumo de pico importa para regulador y caída de tensión; el promedio aproxima autonomía. Ambos deben medirse porque una batería puede tener capacidad suficiente y fallar ante un pico.",
+        "Duty cycling apaga o reduce frecuencia cuando no existe trabajo. Dormir ahorra energía si el tiempo de transición y la energía de despertar son pequeños respecto al intervalo. Despertar con excesiva frecuencia puede consumir más. Agrupar muestras o transmisiones reduce activaciones, aunque aumenta latencia y memoria. El diseño equilibra plazo, pérdida y autonomía.",
+        "La energía por operación permite comparar configuraciones. Una versión más rápida puede usar mayor potencia y menor energía total si termina antes; otra puede reducir frecuencia y consumir menos potencia durante más tiempo. Dynamic voltage and frequency scaling modifica rendimiento y energía, pero el comportamiento depende del punto operativo, memoria y periféricos. Medir solo CPU ignora radio, sensores y reguladores.",
+        "La autonomía estimada con mAh es idealizada. Capacidad útil depende de temperatura, tasa de descarga, envejecimiento, eficiencia del regulador y voltaje de corte. Para un prototipo se construye un presupuesto y se valida con perfiles de corriente y ciclos representativos. Las afirmaciones deben separar cálculo nominal, ensayo de banco y operación en condiciones reales."
+      ],
+      "equations": [
+        {"label": "Potencia", "latex": "P=VI"},
+        {"label": "Corriente media", "latex": "I_{avg}=\\sum_k d_k I_k"},
+        {"label": "Autonomía ideal", "latex": "t\\approx\\frac{C_{bateria}}{I_{avg}}"}
+      ],
+      "key_points": [
+        "Pico y promedio responden a preguntas distintas.",
+        "Dormir compensa si transiciones y despertares son eficientes.",
+        "Menor potencia no implica automáticamente menor energía.",
+        "La autonomía nominal requiere validación con perfiles reales."
+      ]
+    },
+    {
+      "heading": "Fallos, watchdogs y estados seguros",
+      "paragraphs": [
+        "Los fallos pueden originarse en software, alimentación, reloj, memoria, comunicación, sensor, ambiente o uso. Un sistema confiable no presupone ausencia de fallos: detecta, contiene, registra y recupera según requisitos. La estrategia depende de severidad y detectabilidad. Reiniciar puede ser apropiado para un bloqueo y peligroso si activa una salida sin inicialización segura.",
+        "Un watchdog espera una señal periódica de software y reinicia o genera una excepción si no llega. Alimentarlo desde un timer independiente sin comprobar el estado interno lo vuelve inútil. La señal debe emitirse solo cuando las tareas críticas completaron condiciones definidas. Ventanas de watchdog también detectan ejecución anormalmente rápida o bucles que lo alimentan demasiado pronto.",
+        "Brownout detection actúa cuando la tensión cae; CRC o checksums detectan corrupción; ECC puede corregir algunos errores de memoria; números de secuencia revelan pérdidas; redundancia compara fuentes. Ninguna técnica cubre todos los fallos. La cobertura se documenta mediante una matriz que conecta modo de fallo, mecanismo de detección, reacción, evidencia y riesgo residual.",
+        "Un estado seguro minimiza consecuencias según el sistema. Puede significar detener actuadores, conservar datos, deshabilitar radio o solicitar intervención. No es universal y debe derivarse del análisis de riesgos. Las salidas deben inicializarse antes de habilitar periféricos y el arranque debe distinguir reinicio normal, watchdog, brownout y actualización para preservar trazabilidad."
+      ],
+      "equations": [
+        {"label": "Tasa de fallos observada", "latex": "\\lambda=\\frac{N_{fallos}}{T_{operacion}}"},
+        {"label": "Cobertura de detección", "latex": "C_d=\\frac{fallos\\ detectados}{fallos\\ inyectados}"},
+        {"label": "Disponibilidad simple", "latex": "A=\\frac{MTBF}{MTBF+MTTR}"}
+      ],
+      "key_points": [
+        "Confiabilidad incluye detección, contención y recuperación.",
+        "El watchdog debe reflejar progreso real, no un pulso ciego.",
+        "Cada mecanismo cubre modos de fallo concretos.",
+        "El estado seguro se deriva del riesgo y del sistema."
+      ]
+    },
+    {
+      "heading": "Trazabilidad, verificación y gestión del cambio",
+      "paragraphs": [
+        "La trazabilidad enlaza necesidad, requisito, diseño, implementación, prueba y resultado. Un requisito verificable especifica magnitud y criterio: “registrar ocho canales a 1 kHz sin más de una pérdida por 10^7 muestras bajo la carga definida” es comprobable; “ser fiable” no lo es. Las matrices de trazabilidad permiten saber qué prueba aporta evidencia para cada requisito y qué cambios requieren repetición.",
+        "Verificación pregunta si el sistema se construyó conforme a especificación; validación pregunta si satisface necesidades en el contexto de uso. Un curso puede verificar un prototipo contra requisitos educativos, pero no validar un dispositivo médico. La validación clínica, de usabilidad, eléctrica, biocompatibilidad o regulatoria requiere procesos, expertos y evidencia fuera del alcance del proyecto.",
+        "La gestión de configuración registra hardware, PCB, componentes, firmware, toolchain, bibliotecas, parámetros y datos de prueba. Un resultado sin versión no puede reconstruirse. Las releases deben ser identificables y los artefactos generados, firmados o hasheados cuando corresponda. Cambiar el compilador o una biblioteca puede modificar tiempo, memoria y precisión aunque el código fuente permanezca igual.",
+        "La gestión del cambio evalúa impacto antes de integrar. Una modificación de buffer puede alterar memoria y latencia; un nuevo sensor modifica alimentación y calibración; una optimización cambia orden flotante. Se ejecutan pruebas de regresión y se actualizan riesgos y documentación. La automatización ayuda, pero no decide por sí sola si el conjunto de pruebas cubre los peligros relevantes."
+      ],
+      "equations": [
+        {"label": "Cobertura de requisitos", "latex": "C_r=\\frac{requisitos\\ con\\ evidencia}{requisitos\\ totales}"},
+        {"label": "Tasa de aprobación", "latex": "P=\\frac{pruebas\\ aprobadas}{pruebas\\ ejecutadas}"},
+        {"label": "Riesgo conceptual", "latex": "R=Severidad\\times Probabilidad"}
+      ],
+      "key_points": [
+        "Los requisitos deben ser medibles y verificables.",
+        "Verificación y validación responden a preguntas diferentes.",
+        "Hardware, firmware y toolchain pertenecen a la configuración.",
+        "Cada cambio requiere análisis de impacto y regresión."
+      ]
+    },
+    {
+      "heading": "Caso integrador: monitor portátil educativo",
+      "paragraphs": [
+        "Considérese un monitor educativo que adquiere dos señales sintéticas a 1 kHz, calcula características básicas, almacena bloques y transmite resúmenes. Los requisitos iniciales incluyen resolución, tasa, latencia, autonomía, tamaño de buffer, pérdidas y capacidad de actualización. La primera decisión es separar lo esencial de lo deseable y asignar un criterio de aceptación a cada elemento.",
+        "La arquitectura puede usar un microcontrolador con ADC, DMA, temporizadores, memoria externa y radio. DMA llena buffers alternos; una tarea procesa el bloque; otra escribe o transmite; el watchdog observa progreso. El diseño debe calcular tasas y RAM, probar el peor tiempo de procesamiento y decidir qué ocurre cuando el enlace está ausente. La radio no debe bloquear adquisición.",
+        "El presupuesto de energía pondera adquisición continua, procesamiento por bloque, transmisión periódica y sueño. Se prueban perfiles con radio normal, desconectada y reintentos. Una autonomía calculada no sustituye ensayo. La capacidad de batería, corriente de pico y temperatura se documentan. El prototipo utiliza señales sintéticas y no interpreta estados de salud.",
+        "La campaña de fallos desconecta el sensor, llena almacenamiento, retrasa el consumidor, corrompe un bloque, reduce tensión y fuerza reinicio. Se espera que los contadores, logs y estados coincidan con el fallo introducido. Las sesiones parciales se delimitan. La defensa final explica qué evidencia existe, qué riesgos permanecen y qué procesos adicionales serían necesarios para un producto real."
+      ],
+      "equations": [
+        {"label": "RAM de doble buffer", "latex": "M_b=2\\,f_s\\,c\\,bytes\\,T_b"},
+        {"label": "Presupuesto temporal", "latex": "T_{proc}+T_{queue}+T_{store}<T_b"},
+        {"label": "Energía por ciclo", "latex": "E_{cycle}=\\sum_k P_k t_k"}
+      ],
+      "key_points": [
+        "El caso comienza con requisitos y criterios de aceptación.",
+        "Adquisición no debe depender de una radio disponible.",
+        "Autonomía requiere perfiles y ensayo, no solo cálculo.",
+        "La inyección de fallos debe producir evidencia observable."
+      ]
+    },
+    {
+      "heading": "Observabilidad, mantenimiento y ciclo de vida",
+      "paragraphs": [
+        "Un sistema mantenible expone suficiente estado para diagnosticar sin alterar excesivamente su operación. Contadores de reinicio, causa de reset, ocupación máxima, errores de bus, versión y tiempo activo son señales útiles. El logging debe ser acotado y priorizado; registrar cada muestra puede saturar almacenamiento y cambiar los plazos. Se prefieren eventos estructurados y resúmenes con niveles.",
+        "Las actualizaciones requieren autenticidad, integridad, compatibilidad y recuperación. Un esquema de dos imágenes puede conservar una versión anterior si falla la nueva; el bootloader verifica antes de activar. Interrumpir alimentación durante actualización debe incluirse en pruebas. La capacidad de actualizar no autoriza cambios sin control: cada versión requiere trazabilidad y criterios de aceptación.",
+        "El mantenimiento incluye componentes obsoletos, baterías degradadas, certificados, librerías y vulnerabilidades. La arquitectura debe permitir reemplazar partes sin rehacer todo el sistema. Interfaces estables, abstracciones pequeñas y pruebas de hardware-in-the-loop reducen riesgo. La documentación debe sobrevivir al autor original e incluir procedimientos de construcción, programación, calibración y recuperación.",
+        "El ciclo de vida termina con retirada y tratamiento de datos. Las claves y datos sensibles deben borrarse de manera apropiada; el dispositivo no debe quedar operativo de forma insegura. En el proyecto educativo se documenta cómo se desactiva, archiva y reproduce el prototipo. Diseñar el final desde el inicio evita que el repositorio sea la única fuente de conocimiento y que hardware abandonado conserve información."
+      ],
+      "equations": [
+        {"label": "Densidad de eventos", "latex": "r_{log}=\\frac{N_{eventos}}{T}"},
+        {"label": "Presupuesto de almacenamiento", "latex": "M_{log}=r_{log}\\,b_{evento}\\,T_{retencion}"},
+        {"label": "Disponibilidad de actualización", "latex": "A_u=1-\\frac{T_{indisponible}}{T_{observado}}"}
+      ],
+      "key_points": [
+        "La observabilidad debe ser suficiente y acotada.",
+        "Una actualización debe poder verificarse y recuperarse.",
+        "Obsolescencia y mantenimiento pertenecen al diseño.",
+        "La retirada incluye hardware, software y datos."
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Sistema embebido", "definition": "Sistema de cómputo integrado en una función específica."},
+    {"term": "Microcontrolador", "definition": "Chip con CPU, memoria y periféricos integrados."},
+    {"term": "SoC", "definition": "Sistema en chip que integra múltiples subsistemas."},
+    {"term": "Deadline", "definition": "Instante límite para completar una respuesta."},
+    {"term": "WCET", "definition": "Tiempo de ejecución de peor caso considerado."},
+    {"term": "RTOS", "definition": "Sistema operativo orientado a tareas con requisitos temporales."},
+    {"term": "Duty cycle", "definition": "Fracción de tiempo que un componente permanece activo."},
+    {"term": "Watchdog", "definition": "Temporizador que detecta ausencia de progreso esperado."},
+    {"term": "Brownout", "definition": "Caída de alimentación por debajo del nivel operativo."},
+    {"term": "Estado seguro", "definition": "Configuración que minimiza consecuencias de un fallo."},
+    {"term": "Fault injection", "definition": "Introducción controlada de fallos para evaluar respuesta."},
+    {"term": "Trazabilidad", "definition": "Vínculo entre requisitos, diseño, implementación y pruebas."},
+    {"term": "Verificación", "definition": "Comprobación de conformidad con especificaciones."},
+    {"term": "Gestión de configuración", "definition": "Control de versiones y composición del sistema."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Utilización de tareas periódicas",
+      "scenario": "Tres tareas tienen C/T de 2/10 ms, 1/20 ms y 5/100 ms.",
+      "equations": [
+        {"label": "Utilización", "latex": "U=2/10+1/20+5/100=0.30"}
+      ],
+      "reasoning_steps": [
+        "Expresar tiempos en la misma unidad.",
+        "Sumar utilizaciones.",
+        "Reconocer que U=0,30 deja capacidad nominal.",
+        "Analizar bloqueos, interrupciones y peor caso antes de declarar planificabilidad."
+      ],
+      "interpretation": "La carga media parece viable, pero la ecuación por sí sola no garantiza todos los deadlines.",
+      "limitations": ["No incluye prioridades, jitter, bloqueos ni variación de ejecución."]
+    },
+    {
+      "title": "Autonomía idealizada",
+      "scenario": "El sistema consume 12 mA durante 5% del tiempo, 3 mA durante 20% y 0,5 mA durante 75%. La batería nominal es 500 mAh.",
+      "equations": [
+        {"label": "Corriente media", "latex": "I_{avg}=0.05(12)+0.20(3)+0.75(0.5)=1.575\\ mA"},
+        {"label": "Autonomía", "latex": "t=500/1.575\\approx317\\ h"}
+      ],
+      "reasoning_steps": [
+        "Ponderar cada estado por su duty cycle.",
+        "Verificar que las fracciones sumen uno.",
+        "Dividir capacidad nominal por corriente media.",
+        "Aplicar margen y validar mediante medición."
+      ],
+      "interpretation": "El resultado es un techo nominal aproximado, no una autonomía garantizada.",
+      "limitations": ["Ignora regulador, picos, temperatura, envejecimiento y voltaje de corte."]
+    }
+  ],
+  "guided_activity": {
+    "title": "Diseño de una arquitectura embebida educativa",
+    "instructions": [
+      "Define una carga de adquisición o procesamiento con datos sintéticos.",
+      "Especifica tasas, memoria, deadlines, autonomía y fallos.",
+      "Compara al menos dos plataformas mediante una matriz de decisión.",
+      "Construye presupuestos de RAM, tiempo y energía.",
+      "Implementa o simula buffers, tareas y watchdog.",
+      "Inyecta desconexión, overflow y reinicio.",
+      "Conserva logs, versiones, datos y resultados brutos.",
+      "Defiende límites y trabajo adicional para un sistema real."
+    ],
+    "problems": [
+      "Distingue microcontrolador y microprocesador.",
+      "Calcula RAM para doble buffer.",
+      "Calcula utilización de cuatro tareas.",
+      "Explica por qué U menor que uno no garantiza deadlines.",
+      "Calcula corriente media y autonomía nominal.",
+      "Diseña la condición correcta para alimentar un watchdog.",
+      "Propón un estado seguro para un registrador educativo.",
+      "Construye una matriz de fallos y mecanismos.",
+      "Define cinco requisitos verificables.",
+      "Diseña una prueba de actualización interrumpida."
+    ],
+    "checking_criteria": [
+      "Los requisitos son medibles y trazables.",
+      "Los presupuestos usan unidades y márgenes explícitos.",
+      "Los fallos inyectados producen contadores y estados observables.",
+      "El informe separa prototipo educativo de dispositivo validado."
+    ]
+  },
+  "practice_sets": [
+    {
+      "title": "Práctica graduada de la unidad",
+      "problems": [
+        "Distingue microcontrolador y microprocesador.",
+        "Calcula RAM para doble buffer.",
+        "Calcula utilización de cuatro tareas.",
+        "Explica por qué U menor que uno no garantiza deadlines.",
+        "Calcula corriente media y autonomía nominal.",
+        "Diseña la condición correcta para alimentar un watchdog.",
+        "Propón un estado seguro para un registrador educativo.",
+        "Construye una matriz de fallos y mecanismos.",
+        "Define cinco requisitos verificables.",
+        "Diseña una prueba de actualización interrumpida."
+      ]
+    }
+  ],
+  "common_errors": [
+    {"error": "Elegir una placa antes de definir requisitos.", "correction": "Cuantificar señales, memoria, tiempo, energía y mantenimiento."},
+    {"error": "Confundir tiempo real con alta velocidad media.", "correction": "Definir deadlines y analizar el peor caso extremo a extremo."},
+    {"error": "Calcular autonomía solo con consumo de CPU.", "correction": "Incluir sensores, radio, reguladores, picos y duty cycle."},
+    {"error": "Alimentar el watchdog desde un timer ciego.", "correction": "Vincularlo con progreso real de tareas críticas."},
+    {"error": "Tratar reinicio como recuperación universal.", "correction": "Definir estado seguro, procedencia y efectos del reinicio."},
+    {"error": "Presentar verificación educativa como validación médica.", "correction": "Delimitar evidencia y procesos adicionales requeridos."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué distingue a un microcontrolador?", "answer": "Integra CPU, memoria y periféricos para funciones embebidas."},
+    {"question": "¿Qué define un sistema de tiempo real?", "answer": "La obligación de producir resultados dentro de plazos especificados."},
+    {"question": "¿Cómo se calcula utilización periódica?", "answer": "Sumando C_i/T_i para las tareas."},
+    {"question": "¿Qué es duty cycle?", "answer": "La fracción de tiempo que un estado está activo."},
+    {"question": "¿Qué debe comprobar un watchdog útil?", "answer": "Que el sistema realizó progreso crítico esperado."},
+    {"question": "¿Qué es fault injection?", "answer": "Introducir fallos controlados para evaluar detección y recuperación."},
+    {"question": "¿Qué diferencia hay entre verificación y validación?", "answer": "Verificación comprueba especificación; validación comprueba necesidades de uso."},
+    {"question": "¿Por qué versionar toolchain?", "answer": "Porque puede modificar código, tiempo, memoria y comportamiento numérico."}
+  ],
+  "biomedical_connections": [
+    "Registradores portátiles de señales fisiológicas.",
+    "Sensores wearables y nodos de telemetría.",
+    "Control de instrumentación de laboratorio.",
+    "Prototipos de rehabilitación e interfaces de adquisición."
+  ],
+  "sources": [
+    {"title": "FreeRTOS Kernel Book", "organization": "FreeRTOS", "url": "https://www.freertos.org/Documentation/RTOS_book.html", "type": "documentación oficial"},
+    {"title": "Zephyr kernel services", "organization": "Zephyr Project", "url": "https://docs.zephyrproject.org/latest/kernel/services/index.html", "type": "documentación oficial"},
+    {"title": "Cortex-M resources", "organization": "Arm", "url": "https://developer.arm.com/Processors/Cortex-M", "type": "documentación oficial"},
+    {"title": "Medical device software life cycle processes overview", "organization": "IEC", "url": "https://www.iec.ch/standards-development", "type": "referencia institucional"},
+    {"title": "Automated Combinatorial Testing for Software", "organization": "NIST", "url": "https://csrc.nist.gov/projects/automated-combinatorial-testing-for-software", "type": "recurso técnico"},
+    {"title": "NASA Software Engineering Handbook", "organization": "NASA", "url": "https://swehb.nasa.gov/", "type": "manual técnico"}
+  ],
+  "editorial_notice": "Material educativo. El diseño y las pruebas descritas no certifican hardware, software ni dispositivo médico y no autorizan uso clínico."
+}
