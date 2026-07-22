@@ -1,85 +1,46 @@
-name: Assemble Biología Molecular
+name: Diagnose Biología Molecular chunks
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
-
-concurrency:
-  group: assemble-biologia-molecular-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+    types: [synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
-  assemble:
+  diagnose:
     if: github.head_ref == 'agent/biologia-molecular-semester-course'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout exact PR head
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-
-      - name: Reconstruct and verify academic package
+      - name: Record exact chunk diagnostics
         shell: bash
         run: |
           set -euo pipefail
+          if test -f .citonauta/biologia-molecular-diagnostic.txt; then
+            cat .citonauta/biologia-molecular-diagnostic.txt
+            exit 0
+          fi
           python - <<'PY'
           from pathlib import Path
-          import base64
           import hashlib
-          import tarfile
-
           root = Path('.citonauta/biologia-molecular')
-          parts = [root / f'pre-{index:02d}' for index in range(16)]
-          parts += [root / f'part-{index:02d}' for index in range(4, 9)]
-          assert all(path.is_file() for path in parts), [str(path) for path in parts if not path.is_file()]
-
-          payload = b''.join(path.read_bytes() for path in parts)
-          payload_hash = hashlib.sha256(payload).hexdigest()
-          print(f'payload_bytes={len(payload)} payload_sha256={payload_hash}')
-          assert len(payload) == 62240, len(payload)
-          assert payload_hash == 'ef95cc3f92537040382b4cf4dfc8baac1894b9076ca35b3a9602ee7146315fd1'
-
-          archive = base64.b64decode(payload, validate=True)
-          archive_hash = hashlib.sha256(archive).hexdigest()
-          print(f'archive_bytes={len(archive)} archive_sha256={archive_hash}')
-          assert len(archive) == 46679, len(archive)
-          assert archive_hash == 'bd6eedd4bd56edb436e06e117d03d67fee6e5eb1d67cdd3a951dbb0e1535b702'
-          archive_path = Path('/tmp/biologia-molecular.tar.gz')
-          archive_path.write_bytes(archive)
-
-          expected = {
-              'data/generated_courses/biologia-molecular.json',
-              *{f'data/generated_units/biologia-molecular/unit-{index:02d}.json' for index in range(1, 7)},
-          }
-          with tarfile.open(archive_path, 'r:gz') as package:
-              members = package.getmembers()
-              names = {member.name for member in members}
-              assert names == expected, {'missing': sorted(expected - names), 'extra': sorted(names - expected)}
-              assert all(member.isfile() for member in members)
-              package.extractall('.', filter='data')
+          paths = [root / f'pre-{i:02d}' for i in range(16)]
+          paths += [root / f'part-{i:02d}' for i in range(4, 9)]
+          lines = []
+          for path in paths:
+              data = path.read_bytes()
+              lines.append(f'{path.name} {len(data)} {hashlib.sha256(data).hexdigest()}')
+          payload = b''.join(path.read_bytes() for path in paths)
+          lines.append(f'payload {len(payload)} {hashlib.sha256(payload).hexdigest()}')
+          Path('.citonauta/biologia-molecular-diagnostic.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
-
-      - name: Validate Biología Molecular
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/validate_generated_units.py
-          python scripts/audit_semester_readiness.py --subject biologia-molecular --strict
-          python scripts/audit_semester_portfolio.py --strict
-
-      - name: Commit clean academic package
-        shell: bash
-        run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -r .citonauta/biologia-molecular
-          git rm .github/workflows/assemble-biologia-molecular.yml
-          git add data/generated_courses/biologia-molecular.json data/generated_units/biologia-molecular
-          git commit -m "Assemble and validate Molecular Biology course"
+          git add .citonauta/biologia-molecular-diagnostic.txt
+          git commit -m "Record Molecular Biology chunk diagnostics"
           git push origin HEAD:agent/biologia-molecular-semester-course
