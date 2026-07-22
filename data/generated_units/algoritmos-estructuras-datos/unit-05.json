@@ -1,0 +1,440 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "algoritmos-estructuras-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 5,
+  "slug": "ordenamiento-busqueda",
+  "title": "Ordenamiento y búsqueda",
+  "status": "review",
+  "weeks": [
+    12,
+    13
+  ],
+  "estimated_hours": 16,
+  "purpose": "Seleccionar y verificar algoritmos de ordenamiento, búsqueda, selección e indexación según estabilidad, memoria, consultas y semántica.",
+  "learning_objectives": [
+    "Definir contratos de orden total y desempate.",
+    "Comparar insertion, merge y quicksort.",
+    "Explicar estabilidad y sus usos.",
+    "Implementar búsqueda binaria con invariantes.",
+    "Usar bisect para rangos y repetidos.",
+    "Comparar ordenar, indexar y recorrer.",
+    "Aplicar selección y top-k.",
+    "Verificar propiedades y preservar procedencia."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Ordenamiento: contrato, estabilidad y claves",
+      "paragraphs": [
+        "Ordenar significa producir una permutación que respeta una relación de orden. El contrato debe definir clave, dirección, tratamiento de ausencias y desempate. Una relación total permite comparar cualquier par; una relación parcial puede dejar elementos incomparables. En registros biomédicos, ordenar por fecha requiere decidir zona horaria y precisión; ordenar por puntuación requiere definir qué ocurre con NaN.",
+        "Un algoritmo estable conserva el orden relativo de elementos con la misma clave. La estabilidad permite ordenar por varias claves mediante pasadas sucesivas o preservar el orden de adquisición dentro de un grupo. Python sorted y list.sort son estables. La estabilidad no garantiza un desempate semántico si la entrada llega en orden no determinista; para resultados reproducibles conviene usar una clave compuesta explícita.",
+        "Insertion sort desplaza elementos hasta insertar cada posición y cuesta Θ(n²) en peor caso, pero es simple y eficiente para colecciones pequeñas o casi ordenadas. Merge sort divide, ordena y fusiona en Θ(n log n), es estable y requiere memoria auxiliar. Quicksort particiona alrededor de un pivote, tiene promedio Θ(n log n) y peor Θ(n²), aunque implementaciones cuidadosas evitan patrones simples.",
+        "Los límites de comparación establecen una cota Ω(n log n) para ordenamientos generales basados únicamente en comparaciones. Si las claves pertenecen a un dominio entero acotado, counting sort puede alcanzar O(n+k), intercambiando memoria y restricciones. Elegir algoritmo exige reconocer el modelo: comparar cadenas largas, acceder a disco o construir claves puede dominar el coste que se atribuye al ordenamiento."
+      ],
+      "key_points": [
+        "El contrato de orden incluye clave, ausencias y desempate.",
+        "Estabilidad conserva orden relativo de claves iguales.",
+        "Los algoritmos difieren en tiempo, memoria y sensibilidad a entrada.",
+        "La cota n log n aplica al modelo de comparaciones."
+      ],
+      "equations": [
+        "\\Omega(n\\log n)$ comparaciones son necesarias en el peor caso para ordenar $n$ elementos distintos por comparaciones."
+      ]
+    },
+    {
+      "heading": "Búsqueda lineal, binaria e índices",
+      "paragraphs": [
+        "La búsqueda lineal examina elementos hasta encontrar una coincidencia y cuesta O(n). No requiere orden y puede devolver la primera, todas o una señal de ausencia según contrato. Si los datos se consultan una sola vez, ordenar previamente puede costar más que recorrer. Si existen muchas consultas, un índice o estructura ordenada puede amortizar la preparación.",
+        "La búsqueda binaria mantiene un intervalo donde puede estar el objetivo. Compara con el punto medio y descarta la mitad, dando O(log n) comparaciones. Requiere datos ordenados bajo la misma clave y convención. El invariante expresa que, si el objetivo existe, permanece dentro del intervalo activo. Los errores de límites aparecen al mezclar intervalos cerrados y semiabiertos.",
+        "Las funciones bisect de Python devuelven posiciones de inserción, no necesariamente una coincidencia. bisect_left localiza el primer lugar compatible; bisect_right el posterior a iguales. Estas posiciones permiten recuperar rangos de valores repetidos. Insertar en una lista ordenada sigue costando O(n) por desplazamiento, aunque localizar la posición sea O(log n).",
+        "Un índice transforma coste de consulta a cambio de construcción, memoria y mantenimiento. Un diccionario ofrece consulta esperada O(1) exacta; una lista ordenada permite rangos; un árbol o base de datos mantiene actualizaciones. El índice debe invalidarse o actualizarse cuando cambian datos. Un resultado rápido sobre un índice obsoleto es incorrecto, por lo que la consistencia forma parte del contrato."
+      ],
+      "key_points": [
+        "Lineal no requiere preparación.",
+        "Binaria exige orden compatible y un invariante de intervalo.",
+        "bisect devuelve posiciones de inserción.",
+        "Todo índice añade construcción, memoria y mantenimiento."
+      ],
+      "equations": [
+        "T_{binaria}(n)=T(n/2)+O(1)=O(\\log n)."
+      ]
+    },
+    {
+      "heading": "Selección, top-k y cuantiles",
+      "paragraphs": [
+        "Seleccionar el k-ésimo elemento no siempre requiere ordenar todo. Quickselect particiona y tiene coste esperado O(n), aunque peor O(n²). Para un flujo, un heap de tamaño k mantiene extremos en O(n log k). Si k es cercano a n, ordenar puede ser competitivo y más simple. La elección depende de si se necesita orden completo, una sola posición o resultados incrementales.",
+        "Los cuantiles requieren una definición, especialmente en muestras finitas. Distintas bibliotecas interpolan de forma diferente. La mediana puede obtenerse por ordenamiento o selección, pero los valores ausentes deben tratarse explícitamente. Una estimación aproximada en streaming usa estructuras especializadas y sacrifica exactitud por memoria; ese compromiso debe cuantificarse.",
+        "El top-k necesita un orden total y desempate. Si las puntuaciones son flotantes, NaN no se comporta como un número ordenado ordinario. Si dos registros comparten puntuación, un identificador estable evita variaciones. El algoritmo debe especificar si incluye empates que exceden k o corta exactamente en k. Esta decisión cambia cohortes y no puede ocultarse.",
+        "En aplicaciones biomédicas, seleccionar variantes o genes por puntuación es una operación técnica, no una validación de relevancia. El ranking depende de la métrica y de datos previos. Debe conservarse la puntuación, versión del método y criterios de filtrado. Un top-k sin calibración, control de falsos descubrimientos o validación externa no se convierte en biomarcador."
+      ],
+      "key_points": [
+        "Selección puede evitar ordenamiento completo.",
+        "Heap de tamaño k es útil en flujos.",
+        "Cuantiles dependen de definición e interpolación.",
+        "Top-k técnico no demuestra relevancia biomédica."
+      ],
+      "equations": [
+        "O(n\\log k)$ es el coste de mantener top-k con heap durante $n$ observaciones."
+      ]
+    },
+    {
+      "heading": "Verificación y rendimiento de consultas",
+      "paragraphs": [
+        "Los algoritmos de ordenamiento se prueban con dos propiedades: monotonía y conservación del multiconjunto. También se verifican estabilidad, no modificación de entrada cuando corresponde y comportamiento con claves repetidas. Comparar contra sorted sirve como oráculo, pero las pruebas deben incluir objetos con identidad para detectar pérdida de estabilidad.",
+        "La búsqueda binaria se prueba contra búsqueda lineal sobre datos ordenados. Deben incluirse ausencia, extremos, una colección vacía, un elemento y bloques repetidos. Una propiedad útil afirma que bisect_left(x) separa elementos estrictamente menores de los mayores o iguales. Estas relaciones detectan errores off-by-one mejor que ejemplos aislados.",
+        "El rendimiento se mide separando construcción de claves, ordenamiento y consulta. Si una clave transforma fechas o cadenas en cada comparación, precomputarla puede reducir trabajo. Sin embargo, almacenar claves añade memoria y riesgo de desincronización. La función sort de Python usa Timsort, adaptativa a runs ordenados, por lo que la forma de entrada afecta tiempos.",
+        "En un pipeline reproducible, los resultados ordenados facilitan comparación de archivos y diffs. Pero ordenar por conveniencia puede ocultar el orden original, que quizá representa tiempo o prioridad. Conviene conservar un identificador de posición o metadato de adquisición. El informe debe declarar si el orden es original, calculado o arbitrario."
+      ],
+      "key_points": [
+        "Ordenamiento se verifica por monotonía y conservación.",
+        "Búsqueda binaria se contrasta con referencia lineal.",
+        "Construcción de claves puede dominar comparaciones.",
+        "Ordenar mejora reproducibilidad solo si no destruye semántica."
+      ],
+      "equations": [
+        "\\forall i<j:\\; key(y_i)\\le key(y_j)$ verifica monotonía de la salida $y$."
+      ]
+    },
+    {
+      "heading": "Ordenamiento externo, consultas repetidas y datos mayores que memoria",
+      "paragraphs": [
+        "Cuando los datos no caben en memoria, el ordenamiento externo crea fragmentos ordenados que luego se fusionan. La complejidad computacional sigue relacionada con n log n, pero el coste dominante puede ser la entrada/salida. El tamaño de bloque se elige según memoria, almacenamiento y patrón de acceso. Un algoritmo correcto en memoria puede volverse inviable si realiza accesos aleatorios constantes sobre disco.",
+        "La fusión de k archivos ordenados usa una cola de prioridad con el siguiente elemento de cada archivo. Mantiene O(k) elementos y produce la salida secuencialmente. Cada extracción e inserción cuesta O(log k). Deben conservarse codificación, encabezados, tipos y criterio de orden. Una interrupción requiere archivos temporales identificables y una estrategia para reiniciar o limpiar.",
+        "Para consultas repetidas, mantener un índice puede ser más eficiente que ordenar en cada ejecución. Sin embargo, el índice debe versionarse junto con los datos. Si se actualiza el archivo sin reconstruir el índice, las respuestas quedan obsoletas. Un hash del conjunto fuente, fecha de construcción y parámetros permiten verificar correspondencia. Esta práctica conecta algoritmos con principios que después se desarrollan en Bases de Datos.",
+        "Los resultados de búsqueda deben incluir contexto suficiente para ser auditables: clave usada, límites inclusivos o exclusivos, cantidad de coincidencias y versión del conjunto. En coordenadas genómicas, las convenciones 0-based y 1-based pueden generar errores sistemáticos. El algoritmo no puede corregir una convención no declarada; la representación debe formar parte del contrato y de las pruebas."
+      ],
+      "key_points": [
+        "El ordenamiento externo minimiza accesos de almacenamiento.",
+        "La fusión k-way usa heap y memoria acotada.",
+        "Índices deben corresponder a la versión de datos.",
+        "Las convenciones de coordenadas forman parte del contrato."
+      ],
+      "equations": [
+        "T_{merge}=O(n\\log k)$ al fusionar $k$ secuencias con heap."
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Orden total",
+      "definition": "Relación que permite comparar coherentemente cualquier par."
+    },
+    {
+      "term": "Estabilidad",
+      "definition": "Conservación del orden relativo entre claves iguales."
+    },
+    {
+      "term": "Permutación",
+      "definition": "Reordenamiento que conserva el multiconjunto."
+    },
+    {
+      "term": "Insertion sort",
+      "definition": "Ordenamiento incremental por inserción."
+    },
+    {
+      "term": "Merge sort",
+      "definition": "Ordenamiento por división y fusión estable."
+    },
+    {
+      "term": "Quicksort",
+      "definition": "Ordenamiento por partición alrededor de pivotes."
+    },
+    {
+      "term": "Búsqueda lineal",
+      "definition": "Examen secuencial de elementos."
+    },
+    {
+      "term": "Búsqueda binaria",
+      "definition": "Descarte repetido de la mitad de un intervalo ordenado."
+    },
+    {
+      "term": "Bisect",
+      "definition": "Cálculo de posición de inserción en una secuencia ordenada."
+    },
+    {
+      "term": "Índice",
+      "definition": "Estructura auxiliar que acelera consultas."
+    },
+    {
+      "term": "Selección",
+      "definition": "Obtención de una posición de orden sin ordenar necesariamente todo."
+    },
+    {
+      "term": "Top-k",
+      "definition": "Conjunto de k elementos extremos bajo una clave."
+    },
+    {
+      "term": "Cuantil",
+      "definition": "Valor que divide una distribución ordenada según una proporción."
+    },
+    {
+      "term": "Desempate",
+      "definition": "Criterio secundario que completa un orden."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Orden estable de resultados de laboratorio sintéticos",
+      "scenario": "Ordenar por identificador de muestra, fecha y número de repetición, preservando el orden original cuando todas las claves coinciden.",
+      "reasoning_steps": [
+        "Normalizar fechas con zona horaria.",
+        "Definir ausencias al final.",
+        "Usar clave compuesta (muestra, fecha, repetición).",
+        "Conservar posición original para auditoría.",
+        "Aplicar sorted estable.",
+        "Comprobar monotonía y conservación.",
+        "Verificar manualmente empates."
+      ],
+      "interpretation": "El orden resultante es reproducible y conserva identidad; no corrige fechas erróneas.",
+      "limitations": [
+        "Depende de normalización temporal.",
+        "No valida calidad de resultados.",
+        "El orden original debe conservarse aparte."
+      ]
+    },
+    {
+      "title": "Rango de variantes por posición",
+      "scenario": "Una lista de posiciones genómicas sintéticas está ordenada. Se requieren todas las observaciones entre a y b inclusive.",
+      "reasoning_steps": [
+        "Validar a<=b.",
+        "Usar bisect_left para a.",
+        "Usar bisect_right para b.",
+        "Tomar el segmento [i:j].",
+        "Comparar con filtro lineal.",
+        "Probar límites, ausencia y repetidos.",
+        "Mantener cromosoma como parte de la clave en datos reales."
+      ],
+      "interpretation": "Dos búsquedas O(log n) localizan el rango; copiar el segmento cuesta proporcional al resultado.",
+      "limitations": [
+        "Solo funciona con orden compatible.",
+        "Insertar sigue siendo lineal.",
+        "Las coordenadas requieren convención explícita."
+      ]
+    },
+    {
+      "title": "Ordenamiento externo de un archivo de observaciones",
+      "scenario": "Un archivo sintético de 40 GB no cabe en memoria y debe ordenarse por identificador y tiempo de adquisición.",
+      "reasoning_steps": [
+        "Definir una clave total que incluya identificador, tiempo normalizado y posición original como desempate.",
+        "Leer bloques que sí caben en memoria y ordenar cada bloque de forma estable.",
+        "Escribir cada bloque en un archivo temporal con metadatos y suma de verificación.",
+        "Abrir los bloques ordenados y mantener en un heap el siguiente registro de cada uno.",
+        "Extraer el menor, escribirlo y reemplazarlo por el siguiente del mismo bloque.",
+        "Verificar conservación mediante conteos, hashes por partición y casos manuales.",
+        "Publicar el archivo final mediante renombrado atómico y limpiar temporales solo tras la validación."
+      ],
+      "interpretation": "La estrategia transforma un problema limitado por memoria en una secuencia de accesos mayormente secuenciales. La fusión conserva estabilidad si el heap incluye el orden del bloque y la posición original.",
+      "limitations": [
+        "El rendimiento depende fuertemente del almacenamiento.",
+        "Los formatos comprimidos pueden cambiar el coste de lectura y escritura.",
+        "La suma de verificación detecta corrupción, no errores semánticos."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Motor de consultas ordenadas",
+      "instructions": [
+        "Genera registros sintéticos con claves repetidas y ausentes.",
+        "Implementa insertion y merge sort con clave.",
+        "Usa sorted como oráculo.",
+        "Implementa búsqueda binaria y rangos con bisect.",
+        "Añade top-k con heap.",
+        "Mide preparación, consulta y memoria por separado."
+      ],
+      "problems": [
+        "Probar estabilidad con objetos etiquetados.",
+        "Comparar búsqueda lineal y binaria para varias q.",
+        "Recuperar todos los duplicados.",
+        "Definir política para NaN.",
+        "Mantener top-k con desempate.",
+        "Conservar posición original."
+      ],
+      "checking_criteria": [
+        "Conservación del multiconjunto.",
+        "Orden y estabilidad verificados.",
+        "Búsqueda coincide con referencia.",
+        "Benchmarks separan fases.",
+        "Políticas de ausencia y empate explícitas."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Ordenamiento",
+      "problems": [
+        {
+          "question": "¿Qué significa estabilidad?",
+          "solution": "Claves iguales conservan su orden relativo de entrada."
+        },
+        {
+          "question": "¿Cuándo insertion sort es razonable?",
+          "solution": "Tamaños pequeños o datos casi ordenados."
+        },
+        {
+          "question": "Compara merge y quicksort.",
+          "solution": "Merge es estable y O(n log n) peor caso con memoria; quicksort promedio O(n log n) y peor O(n²)."
+        },
+        {
+          "question": "¿Qué limita a ordenamientos por comparaciones?",
+          "solution": "Requieren Ω(n log n) comparaciones en peor caso general."
+        }
+      ]
+    },
+    {
+      "title": "Búsqueda",
+      "problems": [
+        {
+          "question": "Escribe invariante de búsqueda binaria.",
+          "solution": "Si el objetivo existe, permanece dentro del intervalo activo."
+        },
+        {
+          "question": "Distingue bisect_left y right.",
+          "solution": "left va antes de iguales; right después."
+        },
+        {
+          "question": "¿Cuál es el coste de insertar tras bisect?",
+          "solution": "O(n) por desplazamiento."
+        },
+        {
+          "question": "¿Cuándo conviene índice hash?",
+          "solution": "Muchas consultas exactas y memoria disponible."
+        }
+      ]
+    },
+    {
+      "title": "Selección y verificación",
+      "problems": [
+        {
+          "question": "Compara ordenar todo y heap top-k.",
+          "solution": "Ordenar O(n log n); heap O(n log k) y memoria O(k)."
+        },
+        {
+          "question": "Define política de empates en top-k.",
+          "solution": "Clave secundaria estable y decisión sobre incluir todos o exactamente k."
+        },
+        {
+          "question": "Prueba conservación de sort.",
+          "solution": "Comparar Counter de entrada y salida."
+        },
+        {
+          "question": "Explica riesgo de ordenar por conveniencia.",
+          "solution": "Puede destruir orden temporal o procedencia original."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Ordenar sin definir ausencias.",
+      "correction": "Establecer posición y transformación de valores ausentes."
+    },
+    {
+      "error": "Suponer que estabilidad resuelve todo desempate.",
+      "correction": "Usar clave secundaria cuando la entrada no es determinista."
+    },
+    {
+      "error": "Aplicar búsqueda binaria a datos no ordenados.",
+      "correction": "Verificar precondición o usar otra estructura."
+    },
+    {
+      "error": "Confundir localizar con insertar.",
+      "correction": "Separar O(log n) de búsqueda y O(n) de desplazamiento."
+    },
+    {
+      "error": "Usar top-k como evidencia clínica.",
+      "correction": "Presentarlo como ranking técnico sujeto a validación."
+    },
+    {
+      "error": "Verificar solo que la salida está ordenada.",
+      "correction": "Comprobar también conservación y estabilidad."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué debe definir un contrato de orden?",
+      "answer": "Clave, dirección, ausencias y desempate."
+    },
+    {
+      "question": "¿Qué conserva un algoritmo estable?",
+      "answer": "Orden relativo de claves iguales."
+    },
+    {
+      "question": "¿Cuál es el peor caso de insertion sort?",
+      "answer": "Θ(n²)."
+    },
+    {
+      "question": "¿Qué complejidad tiene merge sort?",
+      "answer": "Θ(n log n) con memoria auxiliar típica Θ(n)."
+    },
+    {
+      "question": "¿Qué precondición tiene búsqueda binaria?",
+      "answer": "Datos ordenados con la misma relación."
+    },
+    {
+      "question": "¿Qué devuelve bisect?",
+      "answer": "Una posición de inserción."
+    },
+    {
+      "question": "¿Qué coste tiene top-k con heap?",
+      "answer": "O(n log k)."
+    },
+    {
+      "question": "¿Por qué definir cuantiles?",
+      "answer": "Existen convenciones de interpolación distintas."
+    },
+    {
+      "question": "¿Cómo probar sort?",
+      "answer": "Monotonía, conservación, estabilidad y límites."
+    },
+    {
+      "question": "¿Por qué conservar posición original?",
+      "answer": "Para mantener procedencia y reconstruir el orden de adquisición."
+    }
+  ],
+  "biomedical_connections": [
+    "Ordenación reproducible de resultados y eventos.",
+    "Consultas por rangos genómicos sintéticos.",
+    "Top-k de puntuaciones experimentales.",
+    "Índices para identificadores y posiciones."
+  ],
+  "sources": [
+    {
+      "title": "Python Sorting HOW TO",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/howto/sorting.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "bisect — Array bisection",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/bisect.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "OpenDSA — Sorting",
+      "organization": "Virginia Tech",
+      "url": "https://opendsa-server.cs.vt.edu/ODSA/Books/Everything/html/Sorting.html",
+      "type": "libro interactivo"
+    },
+    {
+      "title": "MIT 6.006 — Sorting",
+      "organization": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/",
+      "type": "curso abierto"
+    },
+    {
+      "title": "Rosalind — Sorting by Reversals",
+      "organization": "Rosalind",
+      "url": "https://rosalind.info/problems/sort/",
+      "type": "problema"
+    },
+    {
+      "title": "NCBI Bookshelf — Algorithms in Bioinformatics",
+      "organization": "National Center for Biotechnology Information",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK21154/",
+      "type": "libro abierto"
+    }
+  ],
+  "editorial_notice": "Material educativo para aprendizaje autónomo; requiere revisión docente experta. Los datos y casos son sintéticos o abiertos y no constituyen software clínico validado, ni una recomendación diagnóstica, terapéutica o asistencial."
+}

@@ -1,0 +1,422 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "algoritmos-estructuras-datos",
+  "area_id": "ciencias-basicas",
+  "unit": 4,
+  "slug": "arboles-grafos",
+  "title": "Árboles y grafos",
+  "status": "review",
+  "weeks": [
+    9,
+    10,
+    11
+  ],
+  "estimated_hours": 24,
+  "purpose": "Representar y recorrer árboles, montículos y grafos; analizar altura, prioridad, conectividad y caminos sin confundir estructura computacional con mecanismo biomédico.",
+  "learning_objectives": [
+    "Distinguir árbol, DAG y grafo general.",
+    "Implementar recorridos de árboles iterativos y recursivos.",
+    "Relacionar altura con coste de búsqueda.",
+    "Usar heap para prioridad y top-k.",
+    "Elegir matriz o lista de adyacencia.",
+    "Implementar BFS y DFS con visitados.",
+    "Aplicar relajación y Dijkstra bajo supuestos.",
+    "Interpretar redes con límites y sesgos."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Árboles, jerarquías y recorridos",
+      "paragraphs": [
+        "Un árbol es un grafo conectado sin ciclos. Al designar una raíz aparecen relaciones padre-hijo, profundidad y subárbol. Los árboles representan jerarquías, expresiones y decisiones, pero no toda taxonomía es estrictamente arbórea: un término biomédico puede tener varios padres y requerir un grafo acíclico dirigido. Antes de elegir la estructura se debe comprobar si la semántica admite un único camino.",
+        "Un árbol binario limita cada nodo a dos hijos. Los recorridos preorden, inorden y postorden visitan nodos en secuencias distintas; el recorrido por niveles usa una cola. En un árbol de búsqueda binaria, las claves menores quedan a un lado y mayores al otro según una política de duplicados. El invariante permite búsqueda proporcional a la altura h, no necesariamente a log n.",
+        "Un árbol de búsqueda puede degenerar en cadena cuando se insertan claves ordenadas, produciendo altura n. Los árboles balanceados mantienen altura O(log n) mediante restricciones y rotaciones, aunque implementar AVL o rojo-negro queda fuera del núcleo práctico. En Python, estructuras ordenadas especializadas no forman parte de la biblioteca estándar, por lo que a menudo se usa ordenamiento, bisect o bibliotecas externas.",
+        "Los recorridos deben manejar profundidad y ciclos según la estructura real. Una función recursiva sobre un árbol profundo puede exceder la pila; una versión iterativa usa una pila explícita. Si la entrada puede contener ciclos, ya no basta asumir árbol: se necesita conjunto de visitados. Validar estructura y no solo ejecutar el recorrido evita bucles y conteos duplicados."
+      ],
+      "key_points": [
+        "Un árbol es conectado y acíclico.",
+        "La búsqueda en BST depende de altura.",
+        "Balance evita degeneración, pero tiene coste de mantenimiento.",
+        "Un recorrido robusto valida supuestos y controla visitados."
+      ],
+      "equations": [
+        "$T_{\\text{búsqueda}}\\in\\Theta(h)$, donde $h$ es la altura del árbol."
+      ]
+    },
+    {
+      "heading": "Montículos y colas de prioridad",
+      "paragraphs": [
+        "Un montículo binario es un árbol completo representado habitualmente en un arreglo. En un min-heap, cada padre tiene prioridad menor o igual que sus hijos; la raíz contiene el mínimo. No está totalmente ordenado: los hermanos y subárboles pueden aparecer en cualquier relación. Esta distinción impide usar un heap como sustituto de una lista ordenada para recorridos arbitrarios.",
+        "La representación en arreglo calcula hijos e índices sin punteros. Para índice i con base cero, los hijos son 2i+1 y 2i+2, y el padre floor((i−1)/2). Insertar añade al final y asciende; extraer el mínimo intercambia con el último, elimina y desciende. Ambas operaciones cuestan O(log n); consultar la raíz cuesta O(1). Construir un heap completo puede hacerse en O(n).",
+        "Una cola de prioridad combina elementos y prioridades. Los empates deben resolverse si los objetos no son comparables, por ejemplo usando un contador de inserción estable. Cambiar la prioridad de un elemento existente no es una operación directa en heapq; una técnica inserta una nueva entrada y marca la anterior como inválida. La estructura necesita un diccionario auxiliar para localizar estados.",
+        "En aplicaciones biomédicas educativas, un heap puede mantener los k valores más extremos o programar eventos sintéticos. La prioridad no equivale a gravedad clínica y no debe interpretarse como triaje. También debe definirse si se buscan máximos o mínimos, cómo se manejan ausencias y qué criterio desempata. El algoritmo conserva el contrato técnico, no una decisión asistencial."
+      ],
+      "key_points": [
+        "Heap mantiene orden parcial, no total.",
+        "La representación en arreglo deriva relaciones por índices.",
+        "Insertar y extraer cuestan O(log n).",
+        "Prioridades y desempates deben definirse explícitamente."
+      ],
+      "equations": [
+        "\\operatorname{left}(i)=2i+1,\\quad \\operatorname{right}(i)=2i+2."
+      ]
+    },
+    {
+      "heading": "Grafos y representaciones",
+      "paragraphs": [
+        "Un grafo G=(V,E) modela entidades y relaciones. Puede ser dirigido o no dirigido, ponderado o no, simple o con múltiples aristas. Una red de interacción proteína-proteína puede modelarse no dirigida; una ruta regulatoria puede ser dirigida; una red metabólica puede necesitar representación bipartita para no confundir metabolitos con reacciones. La elección del tipo de grafo es parte del modelo científico.",
+        "Una matriz de adyacencia usa O(|V|²) memoria y permite consultar una arista en O(1). Una lista de adyacencia usa O(|V|+|E|) y recorre vecinos en tiempo proporcional al grado. Para redes dispersas, la lista suele ser más eficiente. La matriz es útil en grafos densos o álgebra lineal. Los identificadores de nodos deben ser estables y separarse de sus atributos.",
+        "BFS explora por distancia no ponderada desde una fuente y usa cola. Produce distancias mínimas en número de aristas y un árbol de predecesores. DFS usa pila o recursión y profundiza antes de retroceder; permite detectar componentes, ciclos y ordenar topológicamente grafos acíclicos dirigidos. Ambos cuestan O(|V|+|E|) con listas de adyacencia si cada vértice y arista se procesan un número constante de veces.",
+        "Los recorridos requieren un conjunto de visitados. Marcar al insertar en la frontera evita duplicar múltiples veces un nodo; marcar al extraer puede aumentar memoria. El orden de vecinos afecta el árbol resultante aunque no la alcanzabilidad. Para reproducibilidad, se ordenan vecinos o se documenta el orden de inserción. En grafos grandes, ordenar cada vecindad añade coste y quizá no sea necesario si el resultado no exige un camino único."
+      ],
+      "key_points": [
+        "El tipo de grafo debe corresponder al dominio.",
+        "Matriz y lista de adyacencia intercambian memoria y acceso.",
+        "BFS obtiene distancias no ponderadas; DFS explora profundidad.",
+        "Visitados y orden de vecinos afectan implementación y reproducibilidad."
+      ],
+      "equations": [
+        "T_{BFS}=T_{DFS}=\\Theta(|V|+|E|) en listas de adyacencia."
+      ]
+    },
+    {
+      "heading": "Caminos, componentes y límites de interpretación",
+      "paragraphs": [
+        "En grafos ponderados con pesos no negativos, Dijkstra calcula caminos mínimos desde una fuente mediante una cola de prioridad. La relajación compara la mejor distancia conocida con una ruta alternativa. Si existen pesos negativos, Dijkstra puede fallar y se requieren otros algoritmos. El significado del peso debe ser aditivo: similitud, probabilidad o correlación no se convierten automáticamente en distancia.",
+        "Las componentes conexas agrupan nodos alcanzables en grafos no dirigidos. En dirigidos se distinguen componentes débil y fuertemente conexas. Una componente no demuestra mecanismo biológico; refleja relaciones presentes en el conjunto y sus sesgos. Redes incompletas, umbrales y errores de medición alteran topología. Por ello se separa el cálculo estructural de la interpretación científica.",
+        "Un DAG permite orden topológico, útil para dependencias de tareas o transformaciones. Si aparece un ciclo, no existe un orden lineal que respete todas las aristas. Detectar ciclos antes de ejecutar un pipeline evita dependencias imposibles. Sin embargo, los ciclos son naturales en redes de señalización; eliminarlos para obtener un DAG puede perder significado.",
+        "Las métricas de centralidad o caminos dependen de representación y pesos. Un nodo de alto grado no es automáticamente un blanco terapéutico; puede reflejar sesgo de estudio. El curso limita el uso de grafos a formular y comprobar preguntas algorítmicas. Cualquier utilidad biomédica exige validación externa, análisis de robustez y conocimiento del proceso de generación de la red."
+      ],
+      "key_points": [
+        "Dijkstra requiere pesos no negativos y aditivos.",
+        "Componentes expresan alcanzabilidad, no mecanismo.",
+        "Un orden topológico existe solo en DAG.",
+        "Las métricas de red dependen del modelo y sesgos."
+      ],
+      "equations": [
+        "d(v)\\leftarrow\\min\\{d(v),d(u)+w(u,v)\\}$ es la relajación de una arista."
+      ]
+    },
+    {
+      "heading": "Algoritmos de red, calidad del grafo y reproducibilidad",
+      "paragraphs": [
+        "Antes de analizar una red debe validarse su construcción. Se comprueban nodos huérfanos, bucles propios, aristas duplicadas, dirección, pesos y atributos ausentes. Una lista de interacciones puede contener la misma pareja en ambos sentidos o múltiples evidencias para una arista. Decidir si se agregan, conservan o ponderan es parte del modelo y cambia grados, componentes y caminos.",
+        "Los grafos derivados de umbrales son sensibles a la elección del corte. Una pequeña modificación puede añadir o eliminar muchas aristas y alterar componentes. Un análisis responsable repite métricas bajo varios umbrales o justifica uno con evidencia independiente. La estabilidad de una conclusión frente a perturbaciones es más informativa que una única visualización atractiva.",
+        "Para grafos grandes, copiar la estructura en cada función puede dominar memoria. Los algoritmos deben declarar si modifican el grafo, si trabajan sobre vistas y cómo manejan atributos. NetworkX favorece claridad y docencia, pero no es la única opción para escalas grandes. Migrar de biblioteca requiere pruebas de equivalencia porque nombres y convenciones pueden diferir.",
+        "La reproducibilidad también depende del orden. Muchos algoritmos admiten múltiples árboles BFS, órdenes topológicos o caminos con igual coste. Si el resultado se guarda y compara, se define un desempate estable. Si cualquier solución es válida, la prueba debe verificar propiedades y coste, no exigir una secuencia específica. Esta distinción evita pruebas frágiles."
+      ],
+      "key_points": [
+        "Validar la construcción precede al análisis de red.",
+        "Los umbrales pueden cambiar topología y conclusiones.",
+        "Escala y biblioteca deben declararse.",
+        "Las pruebas distinguen solución única de conjunto de soluciones válidas."
+      ],
+      "equations": [
+        "\\rho=\\frac{2|E|}{|V|(|V|-1)}$ es la densidad de un grafo simple no dirigido."
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Árbol",
+      "definition": "Grafo conectado sin ciclos."
+    },
+    {
+      "term": "Raíz",
+      "definition": "Nodo distinguido desde el que se orienta una jerarquía."
+    },
+    {
+      "term": "Altura",
+      "definition": "Longitud máxima de un camino descendente desde un nodo."
+    },
+    {
+      "term": "BST",
+      "definition": "Árbol binario que mantiene un invariante de orden."
+    },
+    {
+      "term": "Montículo",
+      "definition": "Árbol completo con propiedad de prioridad."
+    },
+    {
+      "term": "Cola de prioridad",
+      "definition": "Estructura que extrae el elemento de prioridad extrema."
+    },
+    {
+      "term": "Grafo",
+      "definition": "Conjunto de vértices y aristas."
+    },
+    {
+      "term": "Lista de adyacencia",
+      "definition": "Representación que almacena vecinos por vértice."
+    },
+    {
+      "term": "Matriz de adyacencia",
+      "definition": "Matriz que indica presencia o peso de aristas."
+    },
+    {
+      "term": "BFS",
+      "definition": "Recorrido en anchura mediante cola."
+    },
+    {
+      "term": "DFS",
+      "definition": "Recorrido en profundidad mediante pila o recursión."
+    },
+    {
+      "term": "Componente conexa",
+      "definition": "Conjunto máximo de vértices mutuamente alcanzables en un grafo no dirigido."
+    },
+    {
+      "term": "DAG",
+      "definition": "Grafo dirigido acíclico."
+    },
+    {
+      "term": "Relajación",
+      "definition": "Actualización de una cota de distancia mediante una arista."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "BFS en red de interacción sintética",
+      "scenario": "Encontrar proteínas sintéticas alcanzables desde una proteína origen y su distancia mínima en número de interacciones.",
+      "reasoning_steps": [
+        "Representar vecinos con diccionario de conjuntos.",
+        "Inicializar cola con origen y marcarlo visitado.",
+        "Extraer FIFO y explorar vecinos.",
+        "Asignar distancia del vecino como distancia actual+1 al descubrirlo.",
+        "Guardar predecesor para reconstruir camino.",
+        "Verificar que cada arista del camino existe.",
+        "Ordenar vecinos si se requiere camino reproducible."
+      ],
+      "interpretation": "BFS calcula separación topológica no ponderada, no proximidad funcional ni causalidad.",
+      "limitations": [
+        "La red puede estar incompleta.",
+        "Todas las aristas reciben el mismo coste.",
+        "Un camino no demuestra interacción directa en un paciente."
+      ]
+    },
+    {
+      "title": "Mantener top-k con heap",
+      "scenario": "Conservar las diez puntuaciones más altas de un flujo grande sin almacenar todas.",
+      "reasoning_steps": [
+        "Usar min-heap de tamaño máximo k.",
+        "Insertar hasta llenarlo.",
+        "Para cada nueva puntuación, compararla con la raíz.",
+        "Reemplazar la raíz solo si la nueva es mayor bajo criterio total.",
+        "Definir desempate estable con identificador.",
+        "Al final, ordenar el heap para presentar resultados.",
+        "Comparar con ordenar todo en una muestra pequeña."
+      ],
+      "interpretation": "El coste es O(n log k) y memoria O(k), útil cuando k es pequeño.",
+      "limitations": [
+        "La puntuación no está clínicamente validada.",
+        "Los empates requieren política.",
+        "Valores ausentes deben tratarse antes."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Explorador reproducible de una red biomédica sintética",
+      "instructions": [
+        "Define tipo de grafo y significado de arista.",
+        "Implementa lista de adyacencia.",
+        "Añade BFS, DFS, componentes y caminos.",
+        "Usa NetworkX como oráculo parcial.",
+        "Crea pruebas con grafos vacíos, desconectados y cíclicos.",
+        "Documenta orden de vecinos y límites."
+      ],
+      "problems": [
+        "Reconstruir un camino BFS.",
+        "Detectar ciclo en un grafo dirigido.",
+        "Obtener componentes no dirigidas.",
+        "Mantener top-k de grados con heap.",
+        "Comparar memoria conceptual de matriz y lista.",
+        "Explicar por qué centralidad no implica importancia clínica."
+      ],
+      "checking_criteria": [
+        "Tipo y pesos están definidos.",
+        "Cada recorrido usa visitados.",
+        "Pruebas cubren desconexión y ciclos.",
+        "Resultados coinciden con oráculo.",
+        "Interpretación distingue estructura y evidencia."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Árboles y heaps",
+      "problems": [
+        {
+          "question": "¿Cuál es el coste de búsqueda en BST de altura h?",
+          "solution": "Θ(h)."
+        },
+        {
+          "question": "Construye recorridos preorden e inorden.",
+          "solution": "Preorden visita raíz-izquierda-derecha; inorden izquierda-raíz-derecha."
+        },
+        {
+          "question": "¿Por qué heap no está ordenado completamente?",
+          "solution": "Solo garantiza relación padre-hijos."
+        },
+        {
+          "question": "Implementa top-k con min-heap.",
+          "solution": "Mantener tamaño k y reemplazar raíz cuando llega un valor mayor."
+        }
+      ]
+    },
+    {
+      "title": "Representación y recorridos",
+      "problems": [
+        {
+          "question": "Compara matriz y lista en grafo disperso.",
+          "solution": "Lista usa O(V+E); matriz O(V²)."
+        },
+        {
+          "question": "¿Qué estructura usa BFS?",
+          "solution": "Cola FIFO."
+        },
+        {
+          "question": "¿Qué estructura usa DFS iterativo?",
+          "solution": "Pila LIFO."
+        },
+        {
+          "question": "¿Cuándo marcar visitado?",
+          "solution": "Al insertar en frontera para evitar duplicados."
+        }
+      ]
+    },
+    {
+      "title": "Caminos e interpretación",
+      "problems": [
+        {
+          "question": "¿Cuándo es válido Dijkstra?",
+          "solution": "Con pesos no negativos que representen coste aditivo."
+        },
+        {
+          "question": "Detecta si existe orden topológico.",
+          "solution": "Solo si el grafo dirigido es acíclico."
+        },
+        {
+          "question": "Distingue componente y comunidad.",
+          "solution": "Componente es alcanzabilidad exacta; comunidad es agrupamiento dependiente de método."
+        },
+        {
+          "question": "Critica “nodo central = diana terapéutica”.",
+          "solution": "La centralidad depende de red, sesgos y métrica; no demuestra utilidad clínica."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Suponer que BST siempre mide log n.",
+      "correction": "Analizar altura y degeneración."
+    },
+    {
+      "error": "Usar heap como lista ordenada.",
+      "correction": "Recordar que solo la raíz es extrema garantizada."
+    },
+    {
+      "error": "Omitir visitados en grafos.",
+      "correction": "Marcar descubrimiento y evitar ciclos."
+    },
+    {
+      "error": "Aplicar Dijkstra con pesos negativos.",
+      "correction": "Verificar supuestos o elegir otro algoritmo."
+    },
+    {
+      "error": "Confundir similitud con distancia aditiva.",
+      "correction": "Definir transformación y validar propiedades."
+    },
+    {
+      "error": "Interpretar centralidad como causalidad.",
+      "correction": "Separar métrica computacional de evidencia biológica."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué propiedad define un árbol?",
+      "answer": "Conectividad y ausencia de ciclos."
+    },
+    {
+      "question": "¿De qué depende búsqueda en BST?",
+      "answer": "De la altura."
+    },
+    {
+      "question": "¿Qué garantiza un min-heap?",
+      "answer": "Que cada padre no supera a sus hijos y la raíz es mínima."
+    },
+    {
+      "question": "¿Qué memoria usa lista de adyacencia?",
+      "answer": "O(V+E)."
+    },
+    {
+      "question": "¿Qué obtiene BFS?",
+      "answer": "Distancias mínimas no ponderadas desde una fuente."
+    },
+    {
+      "question": "¿Para qué sirve DFS?",
+      "answer": "Exploración, componentes, ciclos y orden topológico en DAG."
+    },
+    {
+      "question": "¿Por qué se usa visitados?",
+      "answer": "Para no reprocesar nodos y evitar ciclos."
+    },
+    {
+      "question": "¿Qué supuesto exige Dijkstra?",
+      "answer": "Pesos no negativos."
+    },
+    {
+      "question": "¿Qué indica una componente?",
+      "answer": "Alcanzabilidad, no mecanismo."
+    },
+    {
+      "question": "¿Por qué ordenar vecinos?",
+      "answer": "Para hacer reproducible un recorrido cuando el orden importa."
+    }
+  ],
+  "biomedical_connections": [
+    "Jerarquías de ontologías y muestras.",
+    "Redes de interacción sintéticas.",
+    "Priorización top-k de puntuaciones.",
+    "Pipelines como DAG y detección de dependencias."
+  ],
+  "sources": [
+    {
+      "title": "OpenDSA — Binary Trees",
+      "organization": "Virginia Tech",
+      "url": "https://opendsa-server.cs.vt.edu/ODSA/Books/Everything/html/BinaryTree.html",
+      "type": "libro interactivo"
+    },
+    {
+      "title": "OpenDSA — Graphs",
+      "organization": "Virginia Tech",
+      "url": "https://opendsa-server.cs.vt.edu/ODSA/Books/Everything/html/GraphIntro.html",
+      "type": "libro interactivo"
+    },
+    {
+      "title": "heapq — Heap queue algorithm",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/heapq.html",
+      "type": "documentación oficial"
+    },
+    {
+      "title": "NetworkX Tutorial",
+      "organization": "NetworkX Developers",
+      "url": "https://networkx.org/documentation/stable/tutorial.html",
+      "type": "documentación"
+    },
+    {
+      "title": "MIT 6.006 — Graph Algorithms",
+      "organization": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/",
+      "type": "curso abierto"
+    },
+    {
+      "title": "Introduction to Mathematics for Computational Biology",
+      "organization": "Springer Nature",
+      "url": "https://link.springer.com/book/10.1007/978-3-031-36566-9",
+      "type": "libro"
+    }
+  ],
+  "editorial_notice": "Material educativo para aprendizaje autónomo; requiere revisión docente experta. Los datos y casos son sintéticos o abiertos y no constituyen software clínico validado, ni una recomendación diagnóstica, terapéutica o asistencial."
+}
