@@ -15,8 +15,6 @@ WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 
 MIN_UNITS = 6
-MIN_WORDS_PER_UNIT = 2_000
-MIN_TOTAL_WORDS = 15_000
 MIN_THEORY_SECTIONS = 4
 MIN_OBJECTIVES = 5
 MIN_GLOSSARY = 12
@@ -26,7 +24,6 @@ MIN_WORKED_EXAMPLES = 2
 MIN_GUIDED_ACTIVITIES = 1
 MIN_PRACTICE_ITEMS = 8
 MIN_COMMON_ERRORS = 5
-
 MIN_DURATION_WEEKS = 12
 MAX_DURATION_WEEKS = 16
 MIN_TOTAL_HOURS = 90
@@ -82,6 +79,8 @@ def as_list(data: dict[str, Any], singular: str, plural: str) -> list[Any]:
 def practice_item_count(data: dict[str, Any]) -> int:
     total = 0
     for activity in as_list(data, "guided_activity", "guided_activities"):
+        if not isinstance(activity, dict):
+            continue
         for key in ("problems", "tasks", "exercises"):
             value = activity.get(key)
             if isinstance(value, list):
@@ -92,11 +91,9 @@ def practice_item_count(data: dict[str, Any]) -> int:
     return total
 
 
-def audit_unit(path: Path, data: dict[str, Any]) -> tuple[int, list[str]]:
+def audit_unit(data: dict[str, Any]) -> tuple[int, list[str]]:
     words = count_words(data)
     issues: list[str] = []
-    if words < MIN_WORDS_PER_UNIT:
-        issues.append(f"{words} palabras; mínimo {MIN_WORDS_PER_UNIT}")
     if len(data.get("learning_objectives", [])) < MIN_OBJECTIVES:
         issues.append(f"menos de {MIN_OBJECTIVES} objetivos")
     if len(data.get("theory_sections", [])) < MIN_THEORY_SECTIONS:
@@ -122,7 +119,6 @@ def audit_course_architecture(subject_id: str) -> list[str]:
     path = COURSE_ROOT / f"{subject_id}.json"
     if not path.exists():
         return [f"falta {path.relative_to(ROOT)}"]
-
     try:
         data = load_json(path)
     except (ValueError, TypeError, json.JSONDecodeError) as error:
@@ -178,22 +174,18 @@ def audit_course_architecture(subject_id: str) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audita si las asignaturas equivalen a un curso semestral.")
-    parser.add_argument("--subject", help="Limita la auditoría a un subject_id.")
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Devuelve código distinto de cero cuando la asignatura seleccionada no cumple el estándar.",
+    parser = argparse.ArgumentParser(
+        description="Audita la integridad de la arquitectura semestral sin usar extensión textual como criterio de completitud."
     )
+    parser.add_argument("--subject", help="Limita la auditoría a un subject_id.")
+    parser.add_argument("--strict", action="store_true", help="Devuelve error cuando la estructura seleccionada no cumple.")
     args = parser.parse_args()
 
     grouped: dict[str, list[Path]] = defaultdict(list)
     for path in sorted(UNIT_ROOT.glob("*/unit-*.json")):
         grouped[path.parent.name].append(path)
-
     if args.subject:
         grouped = {args.subject: grouped.get(args.subject, [])}
-
     if not grouped:
         print("No hay unidades para auditar.")
         return 1 if args.strict else 0
@@ -207,7 +199,7 @@ def main() -> int:
             try:
                 data = load_json(path)
                 schema_versions.add(str(data.get("schema_version", "")))
-                words, issues = audit_unit(path, data)
+                words, issues = audit_unit(data)
                 total_words += words
                 if issues:
                     unit_issues.append(f"{path.name}: " + "; ".join(issues))
@@ -216,16 +208,14 @@ def main() -> int:
 
         course_issues = audit_course_architecture(subject_id)
         if len(paths) < MIN_UNITS:
-            course_issues.append(f"{len(paths)} unidades; mínimo {MIN_UNITS}")
-        if total_words < MIN_TOTAL_WORDS:
-            course_issues.append(f"{total_words} palabras totales; mínimo {MIN_TOTAL_WORDS}")
+            course_issues.append(f"{len(paths)} unidades; mínimo estructural {MIN_UNITS}")
         if schema_versions != {"2.0"}:
             course_issues.append("todas las unidades deben usar schema_version 2.0")
 
         ready = not course_issues and not unit_issues
-        state = "SEMESTRALMENTE LISTA" if ready else "PENDIENTE DE AMPLIACIÓN"
+        state = "ARQUITECTURA SEMESTRAL VÁLIDA" if ready else "ESTRUCTURA PENDIENTE"
         print(f"\n{subject_id}: {state}")
-        print(f"  unidades={len(paths)} · palabras={total_words} · esquemas={','.join(sorted(schema_versions)) or 'ninguno'}")
+        print(f"  unidades={len(paths)} · extensión descriptiva={total_words} palabras · esquemas={','.join(sorted(schema_versions)) or 'ninguno'}")
         for issue in course_issues:
             print(f"  CURSO: {issue}")
         for issue in unit_issues:
@@ -233,7 +223,8 @@ def main() -> int:
         if not ready:
             failed_subjects += 1
 
-    print(f"\nAsignaturas auditadas: {len(grouped)} · pendientes: {failed_subjects}")
+    print("\nNota: esta auditoría valida estructura, no exhaustividad disciplinar ni revisión humana.")
+    print(f"Asignaturas auditadas: {len(grouped)} · estructuras pendientes: {failed_subjects}")
     return 1 if args.strict and failed_subjects else 0
 
 
