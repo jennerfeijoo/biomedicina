@@ -1,0 +1,80 @@
+name: Assemble Biología Molecular y Celular Aplicada
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: assemble-biologia-molecular-celular-aplicada-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    if: github.head_ref == 'agent/biologia-molecular-celular-aplicada-semester-course'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Reconstruct and verify academic package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          import hashlib
+          import tarfile
+
+          root = Path('.citonauta/biologia-molecular-celular-aplicada')
+          parts = [root / f'part-{index:02d}' for index in range(6)]
+          assert all(path.is_file() for path in parts), [str(path) for path in parts if not path.is_file()]
+
+          payload = b''.join(path.read_bytes() for path in parts)
+          assert len(payload) == 35564, len(payload)
+          assert hashlib.sha256(payload).hexdigest() == '90832b1d045812202d1b5c341075b3657a37207ae070dccff7f8eab5ad9da534'
+
+          archive = base64.b64decode(payload, validate=True)
+          assert hashlib.sha256(archive).hexdigest() == '18cb62ee9cd95570fa4040df3aa80ed05cdef194d5d7fc62432547aec2a19154'
+          archive_path = Path('/tmp/biologia-molecular-celular-aplicada.tar.gz')
+          archive_path.write_bytes(archive)
+
+          expected = {
+              'data/generated_courses/biologia-molecular-celular-aplicada.json',
+              *{f'data/generated_units/biologia-molecular-celular-aplicada/unit-{index:02d}.json' for index in range(1, 7)},
+          }
+          with tarfile.open(archive_path, 'r:gz') as package:
+              members = package.getmembers()
+              file_members = [member for member in members if member.isfile()]
+              names = {member.name for member in file_members}
+              assert names == expected, {'missing': sorted(expected - names), 'extra': sorted(names - expected)}
+              assert all(member.isfile() or member.isdir() for member in members)
+              package.extractall('.', filter='data')
+          PY
+
+      - name: Validate applied molecular-cellular biology
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_generated_units.py
+          python scripts/audit_semester_readiness.py --subject biologia-molecular-celular-aplicada --strict
+          python scripts/audit_semester_portfolio.py --strict
+
+      - name: Commit clean academic package
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -r .citonauta/biologia-molecular-celular-aplicada
+          git rm .github/workflows/assemble-biologia-molecular-celular-aplicada.yml
+          git add data/generated_courses/biologia-molecular-celular-aplicada.json data/generated_units/biologia-molecular-celular-aplicada
+          git commit -m "Assemble and validate applied molecular-cellular biology course"
+          git push origin HEAD:agent/biologia-molecular-celular-aplicada-semester-course
