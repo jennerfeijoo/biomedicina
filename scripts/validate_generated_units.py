@@ -63,21 +63,9 @@ def practice_count(data: dict[str, Any]) -> int:
 
 def validate_common(path: Path, data: dict[str, Any]) -> None:
     required = {
-        "schema_version",
-        "subject_id",
-        "area_id",
-        "unit",
-        "slug",
-        "title",
-        "status",
-        "purpose",
-        "learning_objectives",
-        "theory_sections",
-        "glossary",
-        "common_errors",
-        "self_assessment",
-        "biomedical_connections",
-        "sources",
+        "schema_version", "subject_id", "area_id", "unit", "slug", "title",
+        "status", "purpose", "learning_objectives", "theory_sections", "glossary",
+        "common_errors", "self_assessment", "biomedical_connections", "sources",
         "editorial_notice",
     }
     missing = sorted(required - data.keys())
@@ -99,14 +87,13 @@ def validate_common(path: Path, data: dict[str, Any]) -> None:
         if not URL_RE.match(str(source.get("url") or "")):
             raise ValueError("todas las fuentes deben tener URL HTTP válida")
 
-    text = " ".join(collect_text(data))
-    lowered = text.casefold()
+    text = " ".join(collect_text(data)).casefold()
     for marker in ("lorem ipsum", "contenido pendiente", "por completar", "placeholder"):
-        if marker in lowered:
+        if marker in text:
             raise ValueError(f"marcador incompleto detectado: {marker}")
 
 
-def validate_transitional(data: dict[str, Any], words: int) -> None:
+def validate_transitional(data: dict[str, Any]) -> None:
     if data["status"] != "complete":
         raise ValueError("en schema 1.0, status debe ser complete")
     if len(data["learning_objectives"]) < 4:
@@ -124,13 +111,9 @@ def validate_transitional(data: dict[str, Any], words: int) -> None:
         raise ValueError("se requieren al menos cinco preguntas de autoevaluación")
     if len(data["sources"]) < 3:
         raise ValueError("se requieren al menos tres fuentes")
-    if words < 900:
-        raise ValueError(f"contenido insuficiente: {words} palabras")
-    if words > 2300:
-        raise ValueError(f"contenido excesivo para una unidad transicional: {words} palabras")
 
 
-def validate_semester(data: dict[str, Any], words: int) -> None:
+def validate_semester(data: dict[str, Any]) -> None:
     if data["status"] not in {"review", "complete"}:
         raise ValueError("en schema 2.0, status debe ser review o complete")
     if int(data.get("estimated_hours", 0) or 0) < 12:
@@ -158,22 +141,17 @@ def validate_semester(data: dict[str, Any], words: int) -> None:
         raise ValueError("schema 2.0 requiere al menos cinco fuentes")
     if practice_count(data) < 8:
         raise ValueError("schema 2.0 requiere al menos ocho problemas o tareas")
-    if words < 2000:
-        raise ValueError(f"contenido semestral insuficiente: {words} palabras")
-    if words > 5000:
-        raise ValueError(f"contenido excesivo para una sola unidad: {words} palabras")
 
 
 def validate_unit(path: Path) -> int:
     data = load_json(path)
     validate_common(path, data)
-    text = " ".join(collect_text(data))
-    words = len(WORD_RE.findall(text))
+    words = len(WORD_RE.findall(" ".join(collect_text(data))))
     schema = str(data.get("schema_version"))
     if schema == "1.0":
-        validate_transitional(data, words)
+        validate_transitional(data)
     elif schema == "2.0":
-        validate_semester(data, words)
+        validate_semester(data)
     else:
         raise ValueError(f"schema_version no soportado: {schema}")
     return words
@@ -200,7 +178,8 @@ def main() -> int:
         print(f"Validación fallida: {len(errors)} archivo(s) con errores · {valid_count} válidos")
         return 1
 
-    print(f"Unidades válidas: {valid_count} · {total_words} palabras")
+    print(f"Unidades válidas: {valid_count} · extensión descriptiva={total_words} palabras")
+    print("La extensión no determina completitud ni impone límites máximos.")
     return 0
 
 

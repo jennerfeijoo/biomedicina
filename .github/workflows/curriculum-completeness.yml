@@ -1,0 +1,62 @@
+name: CitoNauta Curriculum Completeness
+
+on:
+  pull_request:
+    paths:
+      - 'data/generated_courses/**'
+      - 'data/generated_units/**'
+      - 'data/curriculum_coverage/**'
+      - 'docs/ACADEMIC_COMPLETENESS_STANDARD.md'
+      - 'scripts/audit_curriculum_completeness.py'
+      - 'scripts/audit_semester_readiness.py'
+      - 'scripts/validate_generated_units.py'
+      - '.github/workflows/curriculum-completeness.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/generated_courses/**'
+      - 'data/generated_units/**'
+      - 'data/curriculum_coverage/**'
+      - 'docs/ACADEMIC_COMPLETENESS_STANDARD.md'
+      - 'scripts/audit_curriculum_completeness.py'
+      - 'scripts/audit_semester_readiness.py'
+      - 'scripts/validate_generated_units.py'
+      - '.github/workflows/curriculum-completeness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  curriculum-completeness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate generated units without word limits
+        run: python scripts/validate_generated_units.py
+
+      - name: Validate semester architecture without word thresholds
+        run: python scripts/audit_semester_readiness.py --strict
+
+      - name: Audit coverage matrices
+        run: |
+          mkdir -p reports
+          python scripts/audit_curriculum_completeness.py \
+            --strict \
+            --json-output reports/curriculum-completeness.json
+
+      - name: Upload curriculum report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: curriculum-completeness-report
+          path: reports/curriculum-completeness.json
+          if-no-files-found: warn
