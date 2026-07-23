@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -181,17 +180,16 @@ def main() -> int:
     parser.add_argument("--strict", action="store_true", help="Devuelve error cuando la estructura seleccionada no cumple.")
     args = parser.parse_args()
 
-    grouped: dict[str, list[Path]] = defaultdict(list)
-    for path in sorted(UNIT_ROOT.glob("*/unit-*.json")):
-        grouped[path.parent.name].append(path)
+    generated_subjects = sorted(path.stem for path in COURSE_ROOT.glob("*.json"))
     if args.subject:
-        grouped = {args.subject: grouped.get(args.subject, [])}
-    if not grouped:
-        print("No hay unidades para auditar.")
+        generated_subjects = [args.subject]
+    if not generated_subjects:
+        print("No hay arquitecturas semestrales generadas para auditar.")
         return 1 if args.strict else 0
 
     failed_subjects = 0
-    for subject_id, paths in sorted(grouped.items()):
+    for subject_id in generated_subjects:
+        paths = sorted((UNIT_ROOT / subject_id).glob("unit-*.json"))
         total_words = 0
         unit_issues: list[str] = []
         schema_versions: set[str] = set()
@@ -224,7 +222,7 @@ def main() -> int:
             failed_subjects += 1
 
     print("\nNota: esta auditoría valida estructura, no exhaustividad disciplinar ni revisión humana.")
-    print(f"Asignaturas auditadas: {len(grouped)} · estructuras pendientes: {failed_subjects}")
+    print(f"Asignaturas auditadas: {len(generated_subjects)} · estructuras pendientes: {failed_subjects}")
     return 1 if args.strict and failed_subjects else 0
 
 
