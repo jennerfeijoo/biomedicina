@@ -1,0 +1,690 @@
+{
+  "schema_version": "1.0",
+  "subject_id": "bioestadistica",
+  "title": "Núcleo avanzado de Bioestadística",
+  "status": "review",
+  "purpose": "Completar la formación bioestadística más allá de comparaciones y regresiones introductorias. El suplemento desarrolla datos longitudinales y jerárquicos, análisis de supervivencia, datos faltantes, inferencia causal, predicción clínica y validación externa, y fundamentos bayesianos. Cada módulo conecta estimando, diseño, dependencia, modelo, diagnóstico, incertidumbre, reproducibilidad y límites de utilidad clínica.",
+  "modules": [
+    {
+      "module_id": "BE-S01",
+      "title": "Datos longitudinales, medidas repetidas y modelos jerárquicos",
+      "learning_outcomes": [
+        "Representar explícitamente la jerarquía entre personas, centros, visitas, muestras y mediciones.",
+        "Distinguir variación entre unidades y dentro de una misma unidad.",
+        "Calcular e interpretar correlación intraclase y componentes de varianza.",
+        "Comparar modelos mixtos y ecuaciones de estimación generalizadas según el estimando.",
+        "Especificar interceptos y pendientes aleatorias sin automatismo.",
+        "Modelar tiempo, interacciones y trayectorias no lineales.",
+        "Diagnosticar supuestos, influencia y estructura de covarianza.",
+        "Interpretar efectos poblacionales e individuales sin confundirlos."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Dependencia, jerarquía y unidad de análisis",
+          "paragraphs": [
+            "Los datos biomédicos suelen contener múltiples niveles: células dentro de muestras, muestras dentro de personas, personas dentro de centros y visitas repetidas en el tiempo. Las observaciones del mismo nivel superior comparten características y no son independientes. Ignorar esta dependencia subestima incertidumbre y puede convertir pseudorreplicación en evidencia aparente.",
+            "La unidad de análisis debe corresponder al estimando. Si la exposición se asigna a personas, miles de células no crean miles de participantes independientes. Las células aportan información sobre distribución intraindividual, pero la generalización entre personas depende del número y representatividad de personas. Agregar demasiado pronto también pierde heterogeneidad; el modelo debe conservar la estructura relevante.",
+            "La variación total puede descomponerse en componentes entre unidades y dentro de unidades. La correlación intraclase resume qué fracción de variabilidad se asocia a agrupación bajo un modelo concreto. Un ICC alto no significa que todos los perfiles sean idénticos; indica mayor semejanza relativa dentro de grupos. Depende de población, escala y modelo.",
+            "El tiempo introduce orden y dependencia adicional. Dos visitas cercanas pueden ser más similares que dos visitas distantes. La ausencia de una estructura temporal explícita no vuelve independientes las mediciones. Diseños con intervalos irregulares, eventos intercurrentes o cambios de tratamiento requieren una definición precisa del tiempo y del estado de exposición."
+          ],
+          "key_points": [
+            "La jerarquía define dependencia y denominadores.",
+            "Muchas mediciones por persona no sustituyen muchas personas.",
+            "El ICC depende del modelo y la población.",
+            "El tiempo debe definirse como variable y como estructura de dependencia."
+          ],
+          "quantitative_models": [
+            {"expression":"ICC = σ²_between / (σ²_between + σ²_within)","interpretation":"Fracción de variación atribuible a diferencias entre grupos en un modelo de intercepto aleatorio."},
+            {"expression":"DE = 1 + (m - 1)ICC","interpretation":"Efecto de diseño aproximado para tamaños de clúster similares."}
+          ]
+        },
+        {
+          "heading": "Modelos mixtos y efectos aleatorios",
+          "paragraphs": [
+            "Un modelo mixto combina efectos fijos, que describen asociaciones sistemáticas, y efectos aleatorios, que modelan desviaciones de unidades o grupos. Un intercepto aleatorio permite niveles basales distintos. Una pendiente aleatoria permite respuestas temporales diferentes. Estos términos representan una distribución, no parámetros independientes sin relación.",
+            "La elección de estructura aleatoria debe seguir el diseño y la pregunta. Incluir un intercepto por participante es habitual en medidas repetidas, pero puede ser insuficiente si las trayectorias difieren. Añadir términos sin datos suficientes produce estimaciones inestables o ajustes singulares. Simplificar debe basarse en identificabilidad y no únicamente en convergencia del software.",
+            "Los coeficientes fijos de un modelo lineal mixto se interpretan condicionalmente a los efectos aleatorios y covariables. En modelos no lineales o logísticos, la distinción entre efecto condicional y marginal es importante. Promediar predicciones individuales no siempre reproduce un modelo poblacional por la no linealidad de la función de enlace.",
+            "La estimación mediante máxima verosimilitud o máxima verosimilitud restringida tiene propiedades distintas para comparar efectos fijos y componentes de varianza. Los intervalos para varianzas cercanas a cero pueden ser asimétricos. La incertidumbre de predicciones individuales debe incluir más que el valor puntual del efecto aleatorio."
+          ],
+          "key_points": [
+            "Efectos aleatorios modelan distribuciones de desviaciones.",
+            "La estructura aleatoria debe reflejar diseño e identificabilidad.",
+            "Efectos condicionales y marginales pueden diferir.",
+            "Los componentes de varianza requieren inferencia cuidadosa cerca de límites."
+          ],
+          "quantitative_models": [
+            {"expression":"y_ij = β0 + β1 t_ij + b0i + b1i t_ij + ε_ij","interpretation":"Modelo de trayectoria con intercepto y pendiente aleatorios por individuo."},
+            {"expression":"b_i ~ Normal(0, D)","interpretation":"Distribución de efectos aleatorios con matriz de covarianza D."}
+          ]
+        },
+        {
+          "heading": "GEE, estimandos marginales y estructuras de correlación",
+          "paragraphs": [
+            "Las ecuaciones de estimación generalizadas estiman asociaciones marginales especificando media, varianza y una correlación de trabajo. Son útiles cuando interesa un efecto promedio poblacional y existen muchos clústeres. La correlación de trabajo puede ser independiente, intercambiable, autorregresiva o no estructurada, entre otras.",
+            "La consistencia robusta de errores estándar depende de condiciones y número suficiente de clústeres. Con pocos centros o participantes, la corrección sandwich puede ser sesgada y requiere ajustes. Elegir una estructura incorrecta puede reducir eficiencia, aunque la inferencia robusta puede conservar validez asintótica.",
+            "GEE y modelos mixtos responden preguntas relacionadas pero no idénticas. En desenlaces binarios, un odds ratio condicional de un modelo mixto no coincide con el marginal de GEE. La elección debe declararse antes del software: ¿interesa la comparación promedio de población o la asociación dentro de perfiles condicionados?",
+            "Los datos faltantes afectan ambos enfoques. GEE estándar depende de supuestos sobre el mecanismo de ausencia; ponderaciones o modelos conjuntos pueden ser necesarios. Llamar robusto al estimador no significa robustez frente a cualquier pérdida de seguimiento, confusión o especificación de media."
+          ],
+          "key_points": [
+            "GEE estima efectos marginales bajo una correlación de trabajo.",
+            "Errores robustos necesitan suficientes clústeres.",
+            "Modelos mixtos y GEE pueden producir estimandos diferentes.",
+            "Robustez sandwich no corrige sesgo por datos faltantes o confusión."
+          ]
+        },
+        {
+          "heading": "Tiempo, no linealidad, diagnóstico y comunicación",
+          "paragraphs": [
+            "El tiempo puede representarse como continuo, categórico, por tramos o mediante splines. Una única pendiente lineal supone cambio constante, lo que rara vez es neutral. Las interacciones tratamiento-tiempo permiten comparar trayectorias, pero su interpretación depende de la codificación del origen temporal y del contraste elegido.",
+            "El diagnóstico incluye residuos por nivel, distribución de efectos aleatorios, influencia de unidades, heterocedasticidad y adecuación temporal. La normalidad exacta de efectos aleatorios no siempre domina la inferencia de efectos fijos, pero desviaciones graves o pocos grupos pueden importar. Visualizar trayectorias individuales evita que una media suavizada oculte subgrupos.",
+            "Las comparaciones deben presentarse como diferencias de cambio o predicciones marginales con intervalos, no como una lista de valores p por visita. Probar cada tiempo por separado aumenta multiplicidad y fragmenta la pregunta. Un contraste global y contrastes planificados suelen ser más coherentes.",
+            "En estudios multicéntricos, centro puede ser efecto fijo o aleatorio según objetivo y muestreo. Tratar tres centros convenientes como muestra aleatoria de todos los hospitales puede ser difícil de justificar. La generalización requiere información de selección y heterogeneidad, no solo un término matemático."
+          ],
+          "key_points": [
+            "La forma temporal es una hipótesis del modelo.",
+            "Trayectorias individuales revelan heterogeneidad oculta.",
+            "Contrastes de trayectoria son preferibles a pruebas aisladas por visita.",
+            "Un efecto aleatorio de centro no garantiza generalización entre centros."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Mil células por participante",
+          "problem": "Un estudio compara 8 pacientes y 8 controles, con 1.000 células por persona. Un análisis celular simple reporta p < 10^-20.",
+          "solution": "El análisis trata células dependientes como si fueran personas independientes. Debe modelarse persona como nivel o resumirse de forma coherente. La inferencia entre personas sigue limitada por 16 participantes. El efecto celular puede describirse, pero la incertidumbre poblacional debe reflejar participantes y variación entre ellos."
+        },
+        {
+          "title": "Interacción tratamiento-tiempo",
+          "problem": "Un modelo obtiene interacción negativa entre tratamiento y tiempo, pero el grupo tratado parte con peor nivel basal.",
+          "solution": "La interacción describe diferencia de pendientes bajo el modelo y codificación; no demuestra recuperación causal sin asignación y supuestos. Deben inspeccionarse trayectorias, ajuste basal, no linealidad, pérdidas y regresión a la media. Predicciones por grupo con intervalos facilitan interpretación."
+        }
+      ],
+      "practical_workshops": [
+        {"title":"Modelo de trayectorias clínicas","tasks":["Dibujar jerarquía y unidad experimental.","Comparar intercepto aleatorio y pendiente aleatoria.","Visualizar trayectorias y residuales.","Reportar diferencias marginales y condicionales."]},
+        {"title":"Datos multicéntricos","tasks":["Evaluar número y selección de centros.","Calcular ICC y efecto de diseño.","Comparar centro fijo y aleatorio.","Identificar límites de transportabilidad."]}
+      ],
+      "mastery_questions": [
+        "¿Qué hace dependientes a las medidas repetidas?",
+        "¿Por qué células no sustituyen participantes?",
+        "¿Qué interpreta el ICC?",
+        "¿Qué diferencia intercepto y pendiente aleatorios?",
+        "¿Qué diferencia efecto marginal y condicional?",
+        "¿Cuándo puede fallar el error sandwich?",
+        "¿Cómo se modela tiempo no lineal?",
+        "¿Por qué un término aleatorio de centro no demuestra transportabilidad?"
+      ]
+    },
+    {
+      "module_id": "BE-S02",
+      "title": "Análisis de supervivencia y eventos en el tiempo",
+      "learning_outcomes": [
+        "Definir origen temporal, evento, censura, truncamiento y escala de tiempo.",
+        "Distinguir función de supervivencia, riesgo instantáneo y riesgo acumulado.",
+        "Construir e interpretar curvas de Kaplan-Meier y estimaciones de riesgo.",
+        "Explicar supuestos y límites de log-rank y modelo de Cox.",
+        "Evaluar riesgos proporcionales y covariables dependientes del tiempo.",
+        "Distinguir riesgos competitivos, eventos recurrentes y estados múltiples.",
+        "Interpretar predicción temporal mediante calibración y discriminación dependiente del tiempo.",
+        "Evitar sesgo de tiempo inmortal y otros errores de definición temporal."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Tiempo a evento, censura y estimandos",
+          "paragraphs": [
+            "El análisis de supervivencia estudia tiempo desde un origen definido hasta un evento. El origen puede ser diagnóstico, aleatorización, cirugía o entrada en cohorte. Cambiarlo modifica población en riesgo y estimando. El evento debe definirse con criterios y adjudicación; combinar eventos diferentes en un compuesto cambia interpretación.",
+            "La censura derecha indica que el evento no se observó antes del último seguimiento. La inferencia estándar supone que, condicionada en covariables relevantes, la censura no informa sobre el tiempo de evento. Pérdidas por deterioro pueden violar este supuesto. La censura no equivale a ausencia del evento para siempre.",
+            "El truncamiento ocurre cuando la inclusión depende de haber sobrevivido hasta entrar. En truncamiento izquierdo, personas con eventos tempranos no son observables. Ignorarlo puede generar sesgo de supervivencia. Debe distinguirse de censura porque modifica quién entra al conjunto de riesgo.",
+            "La función de supervivencia es la probabilidad de permanecer libre del evento más allá de un tiempo. El hazard es una tasa instantánea condicionada a seguir en riesgo. Un hazard ratio no es una razón de probabilidades acumuladas ni una diferencia de supervivencia."
+          ],
+          "key_points": [
+            "Origen temporal y definición de evento determinan el estimando.",
+            "Censura no significa que el evento no ocurra.",
+            "Truncamiento modifica la población observable.",
+            "Hazard y riesgo acumulado no son intercambiables."
+          ],
+          "quantitative_models": [
+            {"expression":"S(t) = P(T > t)","interpretation":"Probabilidad de permanecer sin evento después de t."},
+            {"expression":"H(t) = ∫0^t h(u) du; S(t) = exp(-H(t))","interpretation":"Relación entre hazard acumulado y supervivencia."}
+          ]
+        },
+        {
+          "heading": "Kaplan-Meier, log-rank y comunicación absoluta",
+          "paragraphs": [
+            "Kaplan-Meier actualiza la supervivencia en cada tiempo de evento mediante el producto de probabilidades condicionales. Las censuras reducen el conjunto en riesgo después de su tiempo, pero no causan descensos. La curva depende de seguimiento y se vuelve inestable cuando quedan pocas personas en riesgo.",
+            "Las tablas de número en riesgo son esenciales. Una separación tardía con pocos individuos puede parecer grande y ser muy incierta. La mediana no es estimable si la supervivencia no cruza 0,5. Reportar 'no alcanzada' es más correcto que extrapolar.",
+            "La prueba log-rank compara patrones de eventos ponderando tiempos y es especialmente sensible bajo riesgos proporcionales. Un valor p no expresa magnitud ni momento. Curvas que se cruzan pueden requerir otras descripciones o pruebas, pero elegirlas después de ver datos aumenta flexibilidad analítica.",
+            "Las diferencias absolutas de supervivencia a tiempos clínicamente relevantes y el tiempo medio de supervivencia restringido pueden ser más interpretables que un hazard ratio. Deben preespecificarse horizontes y asegurar seguimiento suficiente."
+          ],
+          "key_points": [
+            "Las censuras no producen escalones de evento.",
+            "Las colas con pocos sujetos son inestables.",
+            "Log-rank no cuantifica magnitud.",
+            "Medidas absolutas y RMST complementan razones de hazard."
+          ],
+          "quantitative_models": [
+            {"expression":"Ŝ(t) = ∏(1 - d_i/n_i)","interpretation":"Estimador Kaplan-Meier con d eventos entre n personas en riesgo."},
+            {"expression":"RMST(τ) = ∫0^τ S(t) dt","interpretation":"Tiempo medio libre de evento restringido al horizonte τ."}
+          ]
+        },
+        {
+          "heading": "Modelo de Cox, proporcionalidad y covariables temporales",
+          "paragraphs": [
+            "El modelo de Cox expresa el hazard como producto de un hazard basal no especificado y un factor exponencial de covariables. El coeficiente genera un hazard ratio condicional. La estimación por verosimilitud parcial utiliza el orden de eventos y conjuntos de riesgo. Empates y pequeñas muestras requieren métodos adecuados.",
+            "El supuesto de riesgos proporcionales implica una razón de hazards constante en el tiempo para una covariable fija. Puede evaluarse con residuos, interacciones con tiempo y gráficos. Una prueba no significativa no demuestra proporcionalidad, especialmente con poca potencia. Si el efecto cambia, pueden usarse coeficientes temporales, estratificación o medidas alternativas.",
+            "Covariables dependientes del tiempo deben actualizarse sin usar información futura. Clasificar personas según una exposición que ocurre después del origen crea tiempo inmortal: para pertenecer al grupo expuesto debieron sobrevivir hasta recibirla. Modelar la exposición temporalmente o usar diseños de landmark puede reducir este sesgo bajo supuestos.",
+            "Ajustar por variables medidas después de la exposición puede bloquear mediación o inducir sesgo. El modelo de Cox no resuelve causalidad por sí solo. La selección de covariables debe depender del estimando y estructura causal."
+          ],
+          "key_points": [
+            "El hazard ratio de Cox es condicional y depende de proporcionalidad.",
+            "No rechazar una prueba no prueba el supuesto.",
+            "Covariables temporales deben evitar información futura.",
+            "El modelo de Cox no transforma asociaciones en efectos causales."
+          ]
+        },
+        {
+          "heading": "Competencia, recurrencia, estados múltiples y predicción",
+          "paragraphs": [
+            "Un riesgo competitivo impide o modifica la posibilidad del evento de interés. Tratar una muerte competitiva como censura puede estimar una cantidad hipotética distinta de la incidencia observada. La función de incidencia acumulada describe probabilidad de cada causa en presencia de competencia.",
+            "Modelos de hazard causa-específico y subdistribución responden preguntas diferentes. El primero modela tasa entre quienes siguen libres de cualquier evento; el segundo se relaciona con incidencia acumulada. La elección debe seguir el estimando, no una preferencia de software.",
+            "Eventos recurrentes requieren distinguir número de episodios, tiempo entre episodios y evento terminal. Métodos que usan solo el primer evento desperdician información, pero modelos de recurrencia tienen supuestos sobre dependencia y riesgo. Los modelos multiestado representan transiciones entre estados clínicos.",
+            "La predicción temporal necesita calibración a horizontes, discriminación dependiente del tiempo y validación externa. Un C-index alto puede coexistir con probabilidades mal calibradas. La censura debe manejarse en la evaluación. La utilidad depende de decisiones y umbrales."
+          ],
+          "key_points": [
+            "Competencia cambia la probabilidad observable del evento.",
+            "Hazard causa-específico y subdistribución tienen estimandos distintos.",
+            "Recurrencia y estados múltiples requieren modelos más allá del primer evento.",
+            "Discriminación temporal no sustituye calibración ni utilidad."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Sesgo de tiempo inmortal",
+          "problem": "Se compara supervivencia entre pacientes que alguna vez recibieron un fármaco y quienes nunca lo recibieron, desde el diagnóstico.",
+          "solution": "El grupo tratado debe sobrevivir hasta tratamiento, creando tiempo inmortal clasificado como expuesto. Debe modelarse tratamiento como variable temporal, definir landmark o emular una estrategia con elegibilidad y asignación explícitas."
+        },
+        {
+          "title": "Curvas que se cruzan",
+          "problem": "Las curvas KM se cruzan y el hazard ratio promedio es 0,95.",
+          "solution": "Un único HR oculta efectos temporales. Deben examinarse proporcionalidad, diferencias a tiempos, RMST y una especificación temporal predefinida. No debe elegirse una métrica únicamente porque resulte significativa."
+        }
+      ],
+      "practical_workshops": [
+        {"title":"Análisis de supervivencia reproducible","tasks":["Definir origen, evento y censura.","Construir KM y tabla de riesgo.","Evaluar proporcionalidad.","Reportar HR, diferencias absolutas y RMST."]},
+        {"title":"Riesgos competitivos","tasks":["Definir eventos mutuamente excluyentes.","Comparar KM ingenua e incidencia acumulada.","Aclarar estimandos de causa específica y subdistribución.","Evaluar consecuencias clínicas de cada pregunta."]}
+      ],
+      "mastery_questions": [
+        "¿Qué diferencia censura y truncamiento?",
+        "¿Qué diferencia hazard y riesgo acumulado?",
+        "¿Por qué la cola de Kaplan-Meier puede ser inestable?",
+        "¿Qué interpreta RMST?",
+        "¿Qué supone proporcionalidad de hazards?",
+        "¿Cómo surge tiempo inmortal?",
+        "¿Qué diferencia hazard causa-específico y subdistribución?",
+        "¿Qué requiere validar una predicción temporal?"
+      ]
+    },
+    {
+      "module_id": "BE-S03",
+      "title": "Datos faltantes, imputación y análisis de sensibilidad",
+      "learning_outcomes": [
+        "Distinguir dato no medido, no aplicable, censurado y estructuralmente ausente.",
+        "Explicar MCAR, MAR y MNAR como supuestos sobre mecanismos, no etiquetas observables.",
+        "Evaluar sesgo de análisis de casos completos.",
+        "Diseñar imputación múltiple compatible con diseño y análisis.",
+        "Incluir variables auxiliares, jerarquía y transformaciones de forma coherente.",
+        "Combinar estimaciones imputadas e interpretar variabilidad entre imputaciones.",
+        "Construir análisis de sensibilidad para desviaciones de MAR.",
+        "Comunicar extensión, patrones y consecuencias de ausencia."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Tipos de ausencia y mecanismos",
+          "paragraphs": [
+            "Un valor ausente puede representar que no se midió, falló el ensayo, no aplicaba, quedó fuera del límite o se perdió seguimiento. Codificar todo como NA sin razón pierde información. La causa de ausencia debe conservarse cuando sea posible y distinguirse de cero o resultado negativo.",
+            "MCAR supone que la probabilidad de ausencia no depende de datos observados ni no observados. MAR permite dependencia de variables observadas. MNAR implica dependencia residual de valores no observados incluso tras condicionar. Estos mecanismos no se prueban completamente con datos observados; son supuestos que deben justificarse y someterse a sensibilidad.",
+            "Los patrones importan: ausencia monotónica por abandono difiere de huecos intermitentes. Visualizar proporciones por variable, tiempo, grupo y centro puede revelar procesos. Las pruebas automáticas de MCAR no sustituyen conocimiento del proceso y pueden tener poca potencia o detectar desviaciones irrelevantes.",
+            "El estimando determina el impacto. La ausencia de una covariable, exposición o desenlace afecta de forma distinta. En datos ómicos, valores bajo detección pueden ser censura técnica y no datos faltantes genéricos. Imputar sin modelo de medición puede distorsionar distribución."
+          ],
+          "key_points": [
+            "La razón de ausencia debe conservarse cuando exista.",
+            "MCAR, MAR y MNAR son supuestos sobre el mecanismo.",
+            "Patrones y tiempos de ausencia aportan información.",
+            "El tratamiento depende de qué variable falta y por qué."
+          ]
+        },
+        {
+          "heading": "Casos completos, ponderación e imputación múltiple",
+          "paragraphs": [
+            "El análisis de casos completos elimina unidades con cualquier dato requerido ausente. Puede ser válido bajo condiciones más amplias que MCAR para ciertos modelos, pero suele perder precisión y cambiar población. Comparar características de incluidos y excluidos ayuda, aunque no detecta sesgo por variables no observadas.",
+            "La ponderación por probabilidad de observación intenta reconstruir la población mediante pesos. Requiere modelar la probabilidad de permanecer observado y positividad. Pesos extremos aumentan varianza y señalan poca superposición. Estabilización o truncamiento cambia el estimando y debe documentarse.",
+            "La imputación múltiple genera varios conjuntos plausibles, analiza cada uno y combina estimaciones. No busca adivinar el valor verdadero individual, sino reflejar incertidumbre. El modelo de imputación debe incluir variables del análisis, predictores de ausencia y variables auxiliares informativas.",
+            "Imputar una vez y tratar valores como conocidos subestima incertidumbre. Imputar antes de dividir entrenamiento y prueba puede filtrar información en predicción. En datos jerárquicos, ignorar clústeres reduce relaciones. Las transformaciones y términos derivados deben manejarse de forma compatible."
+          ],
+          "key_points": [
+            "Casos completos cambian precisión y posiblemente población objetivo.",
+            "Ponderación requiere positividad y control de pesos extremos.",
+            "Imputación múltiple representa incertidumbre, no recuperación exacta.",
+            "El modelo de imputación debe respetar jerarquía y separación de datos."
+          ],
+          "quantitative_models": [
+            {"expression":"Q̄ = media(Q_m)","interpretation":"Promedio de la estimación sobre m conjuntos imputados."},
+            {"expression":"T = W + (1 + 1/m)B","interpretation":"Varianza total combinando variación dentro y entre imputaciones."}
+          ]
+        },
+        {
+          "heading": "Compatibilidad, diagnóstico y número de imputaciones",
+          "paragraphs": [
+            "El modelo de imputación debe ser al menos tan rico como el análisis. Si el análisis incluye interacción o no linealidad, una imputación lineal simple puede atenuarlas. La compatibilidad perfecta no siempre es posible, pero las decisiones deben explicarse. La imputación por ecuaciones encadenadas permite modelos por variable, aunque su convergencia y coherencia requieren revisión.",
+            "Los diagnósticos comparan distribuciones observadas e imputadas condicionadas en variables relevantes, trazas de cadenas y estabilidad de estimaciones. Una coincidencia marginal perfecta no garantiza relaciones correctas. Imputaciones imposibles indican restricciones o modelos inadecuados.",
+            "El número de imputaciones debe relacionarse con fracción de información faltante y precisión de Monte Carlo. Usar cinco por tradición puede ser insuficiente con ausencia extensa. Aumentar m reduce error Monte Carlo, pero no corrige un modelo mal especificado.",
+            "La imputación no crea información sobre regiones sin soporte. Si un subgrupo completo carece de una medición, la inferencia depende fuertemente de extrapolación. Esto debe presentarse como limitación, no ocultarse detrás de un algoritmo."
+          ],
+          "key_points": [
+            "La imputación debe preservar interacciones y no linealidad relevantes.",
+            "Los diagnósticos deben revisar relaciones, no solo distribuciones marginales.",
+            "Más imputaciones reducen error Monte Carlo, no sesgo del modelo.",
+            "Ausencia estructural de un subgrupo implica extrapolación no verificable."
+          ]
+        },
+        {
+          "heading": "MNAR y análisis de sensibilidad",
+          "paragraphs": [
+            "Como MNAR depende de información no observada, la identificación requiere supuestos adicionales o datos externos. Modelos de selección, pattern-mixture y modelos compartidos expresan supuestos de formas diferentes. Ninguno convierte automáticamente MNAR en verificable.",
+            "Una sensibilidad delta modifica sistemáticamente imputaciones de quienes faltan respecto a MAR. Explorar valores plausibles muestra cuánto debe desviarse la ausencia para cambiar la conclusión. El rango debe basarse en conocimiento, datos externos o escenarios, no solo en valores convenientes.",
+            "En ensayos, eventos intercurrentes como discontinuación, rescate o muerte plantean estimandos diferentes. La estrategia de datos faltantes debe alinearse con el tratamiento del evento intercurrente. Imputar como si la persona continuara igual puede no corresponder a la pregunta.",
+            "El informe debe mostrar cantidad y razones de ausencia, método, variables, número de imputaciones, diagnósticos y sensibilidad. Presentar solo resultados finales impide evaluar dependencia de supuestos."
+          ],
+          "key_points": [
+            "MNAR necesita supuestos no identificables desde datos observados.",
+            "El análisis delta cuantifica sensibilidad a desviaciones de MAR.",
+            "Datos faltantes y eventos intercurrentes deben alinearse con el estimando.",
+            "La transparencia del proceso es parte de la validez."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Abandono por empeoramiento",
+          "problem": "Participantes con peor respuesta abandonan más. Un análisis de casos completos favorece el tratamiento.",
+          "solution": "La pérdida depende probablemente de resultados observados y no observados. Casos completos pueden sesgar hacia quienes toleran o responden. Se requiere imputación o ponderación bajo MAR con predictores de abandono y sensibilidad MNAR que empeore resultados faltantes."
+        },
+        {
+          "title": "Imputación antes de validación",
+          "problem": "Un equipo imputa toda la base y después separa entrenamiento y prueba.",
+          "solution": "El modelo de imputación utiliza información del conjunto de prueba y produce fuga. La imputación debe ajustarse dentro de cada partición o resampling, y el pipeline completo evaluarse externamente."
+        }
+      ],
+      "practical_workshops": [
+        {"title":"Auditoría de ausencia longitudinal","tasks":["Visualizar patrones por tiempo y grupo.","Modelar probabilidad de observación.","Comparar casos completos, ponderación e imputación.","Ejecutar sensibilidad delta."]},
+        {"title":"Imputación múltiple reproducible","tasks":["Definir variables y modelos.","Incluir interacción y jerarquía.","Revisar diagnósticos.","Combinar estimaciones y error Monte Carlo."]}
+      ],
+      "mastery_questions": [
+        "¿Qué diferencia ausencia, censura y no aplicabilidad?",
+        "¿Por qué MAR no puede probarse completamente?",
+        "¿Cuándo casos completos pueden sesgar?",
+        "¿Qué requiere la ponderación por observación?",
+        "¿Qué representa imputación múltiple?",
+        "¿Por qué debe respetarse la separación entrenamiento-prueba?",
+        "¿Qué aporta un análisis delta?",
+        "¿Qué debe reportarse sobre datos faltantes?"
+      ]
+    },
+    {
+      "module_id": "BE-S04",
+      "title": "Inferencia causal, DAG y emulación de ensayos",
+      "learning_outcomes": [
+        "Definir efectos causales mediante resultados potenciales y contrastes.",
+        "Distinguir efecto total, directo, per-protocol y de intención de tratar.",
+        "Construir DAG para identificar confusores, mediadores y colisionadores.",
+        "Explicar intercambio, consistencia, positividad y ausencia de interferencia.",
+        "Aplicar estandarización, propensity scores y ponderación con diagnóstico.",
+        "Reconocer confusión dependiente del tiempo y sesgo de selección.",
+        "Emular componentes de un ensayo objetivo con datos observacionales.",
+        "Comunicar supuestos causales y sensibilidades sin presentarlos como hechos."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Resultados potenciales, estimandos y supuestos",
+          "paragraphs": [
+            "Un efecto causal compara resultados potenciales bajo intervenciones alternativas para la misma unidad o población. Como solo se observa una trayectoria, la inferencia necesita diseño y supuestos. Definir tratamiento, tiempo cero, población, desenlace y contraste es anterior al modelo.",
+            "El efecto promedio de tratamiento, el efecto en tratados y otros estimandos usan poblaciones diferentes. En ensayos, intención de tratar compara estrategias asignadas; per-protocol compara adherencia bajo supuestos adicionales. Un odds ratio ajustado no define por sí solo el efecto de interés.",
+            "Intercambiabilidad significa que, condicionada en variables adecuadas, la asignación es comparable respecto a resultados potenciales. Positividad requiere probabilidad distinta de cero para cada estrategia en los estratos usados. Consistencia conecta intervención definida y resultado observado. Si 'tratamiento' agrupa versiones diferentes, este supuesto se vuelve ambiguo.",
+            "La interferencia ocurre cuando tratamiento de una unidad afecta otra, como en infecciones o redes. El supuesto de no interferencia puede ser inadecuado. La unidad causal y el diseño deben adaptarse; ignorarlo cambia el estimando."
+          ],
+          "key_points": [
+            "El efecto causal requiere una intervención y contraste definidos.",
+            "Estimandos distintos usan poblaciones y estrategias distintas.",
+            "Intercambio, positividad y consistencia son supuestos centrales.",
+            "Interferencia puede invalidar efectos definidos por individuo aislado."
+          ]
+        },
+        {
+          "heading": "DAG, ajuste y sesgos",
+          "paragraphs": [
+            "Un grafo causal dirigido representa supuestos sobre relaciones causales. Ayuda a identificar caminos de confusión y conjuntos de ajuste. No se aprende automáticamente de correlaciones; incorpora conocimiento y debe permitir versiones alternativas.",
+            "Un confusor es causa común de exposición y desenlace o parte de una estructura que abre un camino no causal. Un mediador está en la vía del efecto y ajustarlo cambia del efecto total a otro estimando. Un colisionador es efecto común; condicionarlo puede crear asociación espuria. Clasificar variables solo por asociación estadística produce errores.",
+            "La selección puede actuar como condicionamiento en colisionadores. Incluir únicamente personas hospitalizadas, muestras disponibles o supervivientes puede inducir asociaciones. Dibujar el proceso de inclusión es tan importante como el mecanismo biológico.",
+            "Los instrumentos, controles negativos y diseños cuasiexperimentales ofrecen estrategias bajo supuestos específicos. Una variable asociada fuertemente a tratamiento no es automáticamente instrumento; debe afectar desenlace solo mediante exposición y no compartir causas no medidas."
+          ],
+          "key_points": [
+            "DAG expresa supuestos, no resultados automáticos de datos.",
+            "Ajustar mediadores y colisionadores cambia o sesga el estimando.",
+            "El proceso de selección debe representarse causalmente.",
+            "Los instrumentos necesitan supuestos fuertes más allá de asociación."
+          ]
+        },
+        {
+          "heading": "Estandarización, propensity score y ponderación",
+          "paragraphs": [
+            "La estandarización modela el desenlace bajo cada estrategia y promedia predicciones sobre una población objetivo. La g-formula paramétrica generaliza esta idea. El resultado depende de especificación del modelo y soporte de covariables.",
+            "El propensity score es la probabilidad de tratamiento condicionada en covariables. Puede usarse para emparejar, estratificar, ajustar o ponderar. Su objetivo es balance, no predecir perfectamente tratamiento. Un AUC alto puede indicar poca superposición y pesos extremos.",
+            "La ponderación por probabilidad inversa crea una pseudopoblación. Deben revisarse distribuciones de scores, balance estandarizado, pesos y positividad. Recortar pesos reduce varianza pero cambia población efectiva. La decisión debe documentarse y acompañarse de sensibilidad.",
+            "Los estimadores doblemente robustos combinan modelos de tratamiento y desenlace; bajo condiciones pueden ser consistentes si uno está correctamente especificado. No son robustos frente a confusión no medida, mala positividad o definiciones temporales incorrectas."
+          ],
+          "key_points": [
+            "La estandarización promedia resultados modelados sobre una población.",
+            "Propensity score se evalúa por balance y superposición.",
+            "Pesos extremos señalan problemas de positividad.",
+            "Doble robustez no corrige confusión no medida."
+          ],
+          "quantitative_models": [
+            {"expression":"ATE = E[Y(1) - Y(0)]","interpretation":"Efecto promedio bajo dos intervenciones definidas."},
+            {"expression":"w_i = A_i/e(X_i) + (1-A_i)/(1-e(X_i))","interpretation":"Peso IPW básico para un efecto promedio, sujeto a positividad."}
+          ]
+        },
+        {
+          "heading": "Tiempo, ensayo objetivo y sensibilidad",
+          "paragraphs": [
+            "En exposiciones variables, confusores pueden ser afectados por tratamiento previo y predecir tratamiento futuro. Ajuste convencional puede bloquear parte del efecto y dejar confusión. Métodos g, como ponderación marginal estructural, requieren historia temporal y modelos secuenciales.",
+            "La emulación de un ensayo objetivo obliga a especificar elegibilidad, estrategias, asignación, tiempo cero, seguimiento, desenlace, contraste causal y análisis. Alinear elegibilidad, asignación y tiempo cero evita tiempo inmortal y selección. Clonar, censurar y ponderar puede representar estrategias dinámicas bajo supuestos.",
+            "La confusión no medida no desaparece por ajuste extenso. Análisis cuantitativos, E-values, controles negativos o datos externos pueden evaluar magnitud necesaria para explicar un efecto. Ninguna sensibilidad demuestra ausencia de confusión; muestra robustez bajo escenarios.",
+            "La comunicación causal debe separar estimación, supuestos y evidencia. Expresiones como 'efecto estimado bajo ausencia de confusión no medida' son más precisas que afirmar causalidad absoluta. La triangulación entre diseños fortalece conclusiones cuando sesgos difieren."
+          ],
+          "key_points": [
+            "Confusión dependiente del tiempo requiere métodos longitudinales causales.",
+            "Emular un ensayo alinea tiempo cero y estrategias.",
+            "Sensibilidad cuantifica escenarios, no prueba ausencia de sesgo.",
+            "La conclusión causal siempre depende de diseño y supuestos."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Ajuste por mediador",
+          "problem": "Se estima el efecto total de obesidad sobre diabetes y se ajusta por resistencia a insulina medida después.",
+          "solution": "La resistencia puede mediar parte del efecto; ajustarla cambia el estimando y puede inducir sesgo si comparte causas con el desenlace. Debe definirse si interesa efecto total o directo y representar el DAG."
+        },
+        {
+          "title": "Propensity score con AUC 0,95",
+          "problem": "El equipo celebra una excelente predicción del tratamiento.",
+          "solution": "Puede indicar grupos casi separables y mala positividad. Deben evaluarse solapamiento, balance y pesos. La meta no es maximizar AUC, sino construir comparabilidad en una población definida."
+        }
+      ],
+      "practical_workshops": [
+        {"title":"DAG y conjunto de ajuste","tasks":["Definir intervención y estimando.","Dibujar causas, mediadores, selección y medición.","Identificar conjuntos de ajuste.","Comparar DAG alternativos y sensibilidades."]},
+        {"title":"Emulación de ensayo objetivo","tasks":["Especificar elegibilidad y estrategias.","Alinear tiempo cero.","Definir censura y eventos intercurrentes.","Proponer análisis y supuestos."]}
+      ],
+      "mastery_questions": [
+        "¿Qué es un resultado potencial?",
+        "¿Qué diferencia ATE y efecto en tratados?",
+        "¿Qué supone positividad?",
+        "¿Qué diferencia confusor, mediador y colisionador?",
+        "¿Por qué propensity score se evalúa por balance?",
+        "¿Qué no resuelve la doble robustez?",
+        "¿Cómo surge confusión dependiente del tiempo?",
+        "¿Qué componentes define un ensayo objetivo?"
+      ]
+    },
+    {
+      "module_id": "BE-S05",
+      "title": "Predicción clínica, validación externa y utilidad",
+      "learning_outcomes": [
+        "Distinguir modelos explicativos, pronósticos y de clasificación.",
+        "Diseñar pipelines sin fuga entre desarrollo y evaluación.",
+        "Evaluar discriminación, calibración, precisión y desempeño por umbral.",
+        "Interpretar validación interna, temporal, geográfica y externa.",
+        "Evaluar subgrupos, heterogeneidad y transportabilidad.",
+        "Aplicar curvas de decisión y beneficio neto a contextos definidos.",
+        "Reconocer sobreajuste, drift y degradación de calibración.",
+        "Separar desempeño estadístico de impacto y utilidad clínica."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Pregunta predictiva, datos y separación de pipelines",
+          "paragraphs": [
+            "Un modelo predictivo estima un desenlace futuro o no observado para una población y momento de uso. Debe definirse quién, cuándo, qué variables estarán disponibles, horizonte y acción. Usar variables registradas después del momento de predicción produce fuga temporal aunque mejoren métricas.",
+            "El pipeline incluye selección de variables, imputación, normalización, transformación, modelado y calibración. Todas las etapas aprendidas deben ajustarse solo en entrenamiento dentro de cada resampling. Evaluar únicamente el algoritmo y preparar datos con toda la muestra genera optimismo.",
+            "El tamaño efectivo depende de eventos, complejidad y heterogeneidad, no solo del número total. Muchos predictores con pocos eventos favorecen sobreajuste. Penalización y reducción pueden ayudar, pero no sustituyen diseño ni validación.",
+            "El estándar de referencia puede ser imperfecto o diferencial. Etiquetas derivadas de decisiones clínicas pueden incorporar sesgos. El modelo aprende la etiqueta disponible, no una verdad abstracta. La validación debe describir cómo se determinó el desenlace."
+          ],
+          "key_points": [
+            "El momento de uso define qué variables son legítimas.",
+            "El pipeline completo debe permanecer dentro de entrenamiento.",
+            "Complejidad se limita por información efectiva, especialmente eventos.",
+            "El modelo predice la etiqueta y sus sesgos."
+          ]
+        },
+        {
+          "heading": "Discriminación, calibración y umbrales",
+          "paragraphs": [
+            "La discriminación mide capacidad de ordenar casos y no casos. AUROC puede ser útil, pero no informa probabilidades correctas ni desempeño en un umbral. En eventos raros, precisión-recall puede mostrar mejor el compromiso entre sensibilidad y valor predictivo.",
+            "La calibración compara probabilidades predichas y observadas. Intercepto y pendiente resumen sesgo global y extremidad; curvas muestran desviaciones locales. Una calibración aparente buena por agrupación gruesa puede ocultar problemas. Se requieren intervalos y suavizado apropiado.",
+            "Sensibilidad, especificidad, PPV y NPV dependen del umbral; los valores predictivos también dependen de prevalencia. Elegir umbral después de ver evaluación produce optimismo. Debe vincularse a consecuencias de falsos positivos y negativos.",
+            "Accuracy puede ser engañosa en clases desbalanceadas. Un modelo que predice siempre la clase mayoritaria puede tener alta accuracy y cero utilidad. Métricas deben responder a la decisión."
+          ],
+          "key_points": [
+            "Discriminación no garantiza probabilidades correctas.",
+            "Calibración debe evaluarse gráficamente y con parámetros.",
+            "Los valores predictivos dependen de prevalencia.",
+            "El umbral debe relacionarse con consecuencias."
+          ],
+          "quantitative_models": [
+            {"expression":"Brier = media((p_i - y_i)²)","interpretation":"Error cuadrático de probabilidades, mezcla calibración y refinamiento."},
+            {"expression":"Net benefit = TP/N - FP/N × pt/(1-pt)","interpretation":"Beneficio neto a umbral pt bajo una valoración explícita de errores."}
+          ]
+        },
+        {
+          "heading": "Validación interna y externa",
+          "paragraphs": [
+            "La validación aparente reutiliza desarrollo y sobreestima desempeño. Bootstrap y validación cruzada estiman optimismo si incluyen todas las etapas. Una única división desperdicia datos y produce alta variabilidad, aunque puede ser necesaria cuando existe conjunto verdaderamente independiente.",
+            "La validación externa evalúa el modelo bloqueado en datos diferentes. Puede ser temporal, geográfica, institucional o de población. Debe aplicar exactamente el pipeline y no reentrenar antes de medir desempeño original. Recalibrar es una etapa posterior que debe reportarse por separado.",
+            "La diferencia de desempeño puede surgir por case-mix, prevalencia, medición, práctica clínica o relación predictor-desenlace. Comparar solo AUROC no identifica causa. Calibración y distribución de predictores ayudan a diagnosticar transportabilidad.",
+            "Subgrupos requieren suficiente tamaño e intervalos. Comparar significación dentro de cada grupo no prueba interacción. La equidad no se resume en una métrica universal; depende del uso, base rates, daños y acceso."
+          ],
+          "key_points": [
+            "Validación interna debe incluir el pipeline completo.",
+            "Validación externa evalúa un modelo bloqueado.",
+            "Recalibración se reporta después del desempeño original.",
+            "Diferencias de subgrupo necesitan interacción e incertidumbre."
+          ]
+        },
+        {
+          "heading": "Utilidad, impacto, drift y vigilancia",
+          "paragraphs": [
+            "La curva de decisión compara beneficio neto del modelo con estrategias como tratar a todos o a nadie. Requiere que el umbral represente una relación de daños y beneficios. No demuestra que profesionales usarán el modelo ni que la intervención mejora resultados.",
+            "Un estudio de impacto evalúa integración en flujo, conducta, resultados, seguridad y costes. Un modelo con buen desempeño puede fracasar por alert fatigue, retrasos, inequidad o ausencia de una acción eficaz. Utilidad clínica es propiedad del sistema sociotécnico.",
+            "El drift incluye cambios en población, medición, prevalencia o relación entre variables. Puede degradar calibración antes que discriminación. La vigilancia necesita métricas, ventanas, umbrales de acción, revisión humana y gobernanza de actualizaciones.",
+            "Actualizar un modelo crea una nueva versión que debe validarse. Aprendizaje continuo sin control puede introducir inestabilidad y sesgo. Documentar versiones, datos, cambios y rollback forma parte de seguridad."
+          ],
+          "key_points": [
+            "Beneficio neto depende de umbral y valoración de daños.",
+            "Impacto clínico requiere evaluar uso y resultados reales.",
+            "Drift puede afectar primero la calibración.",
+            "Toda actualización produce un modelo nuevo que requiere control."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "AUROC estable y calibración degradada",
+          "problem": "Un modelo mantiene AUROC 0,82 en otro hospital, pero sobreestima riesgo dos veces.",
+          "solution": "La ordenación se conserva, pero las probabilidades no. Debe reportarse calibración original, investigar prevalencia y case-mix y considerar recalibración. No se debe afirmar validación exitosa basándose solo en AUROC."
+        },
+        {
+          "title": "Fuga por selección de genes",
+          "problem": "Se seleccionan genes diferenciales con toda la cohorte y después se hace cross-validation.",
+          "solution": "La selección vio las etiquetas de validación y filtra información. Debe repetirse dentro de cada fold junto con normalización e imputación. El desempeño previo está sesgado."
+        }
+      ],
+      "practical_workshops": [
+        {"title":"Validación externa completa","tasks":["Bloquear pipeline.","Comparar distribuciones y case-mix.","Evaluar discriminación, calibración y umbrales.","Reportar recalibración separada."]},
+        {"title":"Utilidad y vigilancia","tasks":["Definir acción y umbral.","Construir curva de decisión.","Identificar daños y workflow.","Diseñar monitorización de drift y versiones."]}
+      ],
+      "mastery_questions": [
+        "¿Qué es fuga temporal?",
+        "¿Por qué el pipeline completo debe estar dentro del resampling?",
+        "¿Qué diferencia discriminación y calibración?",
+        "¿Por qué PPV cambia con prevalencia?",
+        "¿Qué significa validar un modelo bloqueado?",
+        "¿Cómo se evalúan diferencias de subgrupo?",
+        "¿Qué demuestra y qué no una curva de decisión?",
+        "¿Por qué actualizar exige nueva validación?"
+      ]
+    },
+    {
+      "module_id": "BE-S06",
+      "title": "Fundamentos bayesianos y modelos jerárquicos",
+      "learning_outcomes": [
+        "Explicar prior, likelihood, posterior y distribución predictiva.",
+        "Distinguir probabilidad bayesiana y cobertura frecuentista.",
+        "Construir priors débiles, informativos y de regularización con justificación.",
+        "Interpretar intervalos creíbles y probabilidades posteriores.",
+        "Aplicar chequeos predictivos posteriores y diagnóstico computacional.",
+        "Explicar pooling parcial en modelos jerárquicos.",
+        "Evaluar sensibilidad a priors y especificación.",
+        "Comunicar evidencia bayesiana sin convertir probabilidades en certeza causal."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Actualización bayesiana y significado probabilístico",
+          "paragraphs": [
+            "La inferencia bayesiana combina una distribución previa con la verosimilitud para obtener una posterior. La prior representa información o regularización antes de los datos actuales bajo el modelo. La likelihood expresa compatibilidad de datos con parámetros. La posterior es condicional a ambos y al modelo.",
+            "Un intervalo creíble del 95 % puede interpretarse como probabilidad posterior del parámetro dentro del intervalo, dado modelo y datos. Esto difiere de la cobertura de un intervalo frecuentista. Ninguna interpretación elimina dependencia de supuestos o sesgo del diseño.",
+            "La distribución predictiva posterior integra incertidumbre paramétrica para generar datos futuros o replicados. Es central para predicción y chequeo. Una estimación puntual posterior sin dispersión pierde información.",
+            "La evidencia de datos puede dominar una prior con mucha información, pero en muestras pequeñas o parámetros débiles la prior importa. Esto no es un defecto ocultable: debe evaluarse y comunicarse."
+          ],
+          "key_points": [
+            "Posterior combina prior y likelihood bajo un modelo.",
+            "Intervalos creíbles y de confianza tienen interpretaciones distintas.",
+            "La predictiva posterior integra incertidumbre.",
+            "La influencia de la prior depende de información de datos."
+          ],
+          "quantitative_models": [
+            {"expression":"p(θ|y) ∝ p(y|θ)p(θ)","interpretation":"Regla de actualización posterior."},
+            {"expression":"p(y_new|y) = ∫ p(y_new|θ)p(θ|y)dθ","interpretation":"Distribución predictiva posterior."}
+          ]
+        },
+        {
+          "heading": "Priors, regularización y sensibilidad",
+          "paragraphs": [
+            "Una prior informativa puede sintetizar evidencia previa relevante; una prior débilmente informativa limita valores implausibles sin dominar. Una prior llamada no informativa puede no ser neutral bajo reparametrización. Toda prior debe evaluarse en la escala del resultado y mediante predicciones previas.",
+            "Priors de regularización reducen estimaciones extremas y pueden estabilizar modelos con muchos parámetros. Su efecto se parece a penalización, pero mantiene interpretación probabilística. Una prior demasiado estrecha puede ocultar señales; una demasiado amplia puede permitir regiones computacionalmente problemáticas.",
+            "La prior predictiva genera datos antes de observar la muestra y permite detectar escalas absurdas. Si un modelo de presión arterial asigna alta probabilidad a millones de unidades, la especificación necesita corrección aunque la posterior luego se concentre.",
+            "El análisis de sensibilidad compara priors plausibles y, cuando corresponde, modelos de likelihood. Si la conclusión cambia, debe presentarse como dependencia de supuestos. Elegir la prior que produce el resultado deseado es una forma de flexibilidad analítica."
+          ],
+          "key_points": [
+            "No existe prior universalmente neutral.",
+            "Regularización controla valores extremos y sobreajuste.",
+            "Chequeos predictivos previos verifican escala y plausibilidad.",
+            "Sensibilidad debe abarcar priors plausibles prejustificadas."
+          ]
+        },
+        {
+          "heading": "Computación, convergencia y chequeos predictivos",
+          "paragraphs": [
+            "Muchos modelos requieren métodos Monte Carlo como MCMC. Las cadenas producen muestras correlacionadas de la posterior. El número bruto de iteraciones no equivale al tamaño efectivo. Diagnósticos como R-hat, tamaño efectivo, divergencias y energía ayudan a evaluar exploración.",
+            "La convergencia aparente de trazas no garantiza modelo correcto. Divergencias pueden señalar geometría problemática y sesgar regiones. Reparametrizar, escalar variables o revisar priors puede ser necesario. Aumentar iteraciones no resuelve una parametrización patológica.",
+            "Los chequeos predictivos posteriores comparan estadísticas y patrones de datos observados con replicados. Pueden revelar dispersión, ceros, colas o dependencia no capturada. Un p-valor predictivo no se interpreta como una prueba frecuentista convencional.",
+            "La validación predictiva fuera de muestra sigue siendo necesaria. Un modelo puede reproducir datos de entrenamiento y predecir mal. LOO o cross-validation bayesiana comparan capacidad predictiva, pero deben incluir el pipeline y revisar observaciones influyentes."
+          ],
+          "key_points": [
+            "Tamaño efectivo importa más que iteraciones brutas.",
+            "Divergencias no se corrigen solo con más muestras.",
+            "Chequeos predictivos evalúan patrones generados por el modelo.",
+            "Ajuste interno no sustituye validación predictiva."
+          ]
+        },
+        {
+          "heading": "Modelos jerárquicos, pooling y decisiones",
+          "paragraphs": [
+            "Los modelos jerárquicos conectan parámetros de grupos mediante una distribución común. El pooling parcial contrae estimaciones ruidosas hacia un promedio en proporción a su información. No impone que todos los grupos sean iguales ni los estima completamente separados.",
+            "En multicéntricos, el modelo puede estimar heterogeneidad y predicciones para nuevos centros. Con pocos centros, la varianza entre centros es incierta y depende de la prior. Una posterior estrecha no debe forzarse mediante prior injustificada.",
+            "Las probabilidades posteriores permiten expresar eventos como P(efecto > δ | datos), donde δ es una diferencia relevante. El umbral δ debe definirse científicamente. Una probabilidad alta de efecto positivo no implica utilidad si el efecto es trivial o el diseño sesgado.",
+            "Las decisiones bayesianas combinan probabilidades y utilidades o pérdidas. Esto hace explícitos costes, pero no elimina valores ni incertidumbre. En clínica, la función de utilidad debe reflejar contexto, pacientes y consecuencias, y requiere validación del sistema."
+          ],
+          "key_points": [
+            "Pooling parcial equilibra información de grupo y población.",
+            "Pocos grupos implican gran incertidumbre de heterogeneidad.",
+            "Probabilidad de efecto debe acompañarse de magnitud relevante.",
+            "Decisiones requieren probabilidades y consecuencias explícitas."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Prior demasiado amplia",
+          "problem": "Una regresión logística usa Normal(0,1000) para todos los coeficientes y presenta divergencias.",
+          "solution": "La prior permite odds ratios extremos y geometría difícil. Deben escalarse predictores y usar priors débilmente informativas plausibles, revisar prior predictiva y reparametrizar. Más iteraciones no corrigen el problema conceptual."
+        },
+        {
+          "title": "Centro pequeño con efecto extremo",
+          "problem": "Un hospital con 8 pacientes muestra un efecto muy grande; otros centros son moderados.",
+          "solution": "Un modelo jerárquico aplicará pooling parcial y reflejará alta incertidumbre. El resultado no se elimina, pero se evita tratar la estimación ruidosa como precisa. Deben evaluarse datos, case-mix y sensibilidad de la prior de heterogeneidad."
+        }
+      ],
+      "practical_workshops": [
+        {"title":"Prior y posterior predictiva","tasks":["Definir escala plausible.","Simular datos desde priors.","Ajustar modelo y revisar posterior.","Comparar sensibilidad y predicción fuera de muestra."]},
+        {"title":"Modelo jerárquico multicéntrico","tasks":["Ajustar modelos separados, pooled y parciales.","Comparar incertidumbre.","Revisar R-hat, ESS y divergencias.","Predecir para un centro nuevo con cautela."]}
+      ],
+      "mastery_questions": [
+        "¿Qué representa una prior?",
+        "¿Cómo se interpreta un intervalo creíble?",
+        "¿Por qué no existe prior completamente neutral?",
+        "¿Qué evalúa una prior predictiva?",
+        "¿Qué diferencia iteraciones y tamaño efectivo?",
+        "¿Qué indica una divergencia?",
+        "¿Qué es pooling parcial?",
+        "¿Por qué probabilidad posterior alta no demuestra utilidad clínica?"
+      ]
+    }
+  ],
+  "integrative_assessment": {
+    "title": "Análisis bioestadístico avanzado reproducible",
+    "scenario": "El estudiante recibe una cohorte multicéntrica longitudinal con pérdidas, un desenlace de tiempo a evento y un modelo predictivo candidato. Debe definir estimandos descriptivos, predictivos y causales por separado; modelar dependencia; tratar ausencia; analizar supervivencia; validar el modelo y realizar sensibilidades bayesianas o causales.",
+    "deliverables": [
+      "Protocolo con población, tiempo cero, variables, estimandos y DAG.",
+      "Diccionario y auditoría de jerarquía, calidad y ausencia.",
+      "Análisis longitudinal y de supervivencia reproducible.",
+      "Pipeline predictivo bloqueado con validación externa.",
+      "Análisis causal o sensibilidad explícita.",
+      "Informe con magnitud, incertidumbre, supuestos y límites.",
+      "Defensa y revisión por pares."
+    ],
+    "mastery_criteria": [
+      "Respeta unidades, jerarquía y dependencia.",
+      "Alinea modelo con estimando.",
+      "Distingue censura, ausencia y eventos intercurrentes.",
+      "Evita fuga, tiempo inmortal y ajuste de colisionadores.",
+      "Evalúa discriminación, calibración y utilidad por separado.",
+      "Documenta sensibilidad a supuestos y decisiones.",
+      "No convierte asociación o predicción en causalidad."
+    ]
+  },
+  "sources": [
+    {"title":"Cochrane Handbook for Systematic Reviews of Interventions","organization":"Cochrane","url":"https://training.cochrane.org/handbook/current"},
+    {"title":"CONSORT Statement","organization":"CONSORT","url":"https://www.consort-statement.org/"},
+    {"title":"STROBE Statement","organization":"STROBE","url":"https://www.strobe-statement.org/"},
+    {"title":"TRIPOD Statement","organization":"TRIPOD","url":"https://www.tripod-statement.org/"},
+    {"title":"PROBAST","organization":"PROBAST","url":"https://www.probast.org/"},
+    {"title":"DAGitty","organization":"DAGitty","url":"https://www.dagitty.net/"},
+    {"title":"Target Trial Emulation","organization":"Harvard Program on Causal Inference","url":"https://www.hsph.harvard.edu/causal/"},
+    {"title":"R survival package","organization":"R Project","url":"https://cran.r-project.org/package=survival"},
+    {"title":"mice: Multivariate Imputation by Chained Equations","organization":"CRAN","url":"https://cran.r-project.org/package=mice"},
+    {"title":"Stan User's Guide","organization":"Stan Development Team","url":"https://mc-stan.org/docs/stan-users-guide/"},
+    {"title":"Bayesian Data Analysis resources","organization":"Aalto University","url":"https://avehtari.github.io/BDA_course_Aalto/"},
+    {"title":"Decision Curve Analysis","organization":"Memorial Sloan Kettering Cancer Center","url":"https://www.mskcc.org/departments/epidemiology-biostatistics/biostatistics/decision-curve-analysis"}
+  ],
+  "editorial_notice": "Suplemento educativo sujeto a revisión bioestadística experta. No sustituye un protocolo, un plan estadístico aprobado, revisión ética, asesoría metodológica ni validación clínica."
+}
