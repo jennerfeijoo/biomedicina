@@ -1,0 +1,59 @@
+name: Assemble Molecular Biology disciplinary expansion
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.citonauta/biologia-molecular-expansion/**'
+      - '.github/workflows/assemble-biologia-molecular-expansion.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct and verify expansion
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, gzip, hashlib, json
+          from pathlib import Path
+          source = Path('.citonauta/biologia-molecular-expansion/payload.b64')
+          compressed = base64.b64decode(source.read_text().strip(), validate=True)
+          assert hashlib.sha256(compressed).hexdigest() == 'e1a648445faa135f4bdcef34d2b91849358b437a4ae8b34f3c8067149babfef1'
+          raw = gzip.decompress(compressed)
+          assert hashlib.sha256(raw).hexdigest() == 'c6ad6807508bf46ed5dc39ac89d3b39c17e05be4dceb69eec088fa9917578f07'
+          data = json.loads(raw)
+          assert data['subject_id'] == 'biologia-molecular'
+          target = Path('data/curriculum_expansions/biologia-molecular.json')
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(raw)
+          PY
+      - name: Validate repository and expansion
+        run: |
+          python scripts/validate_generated_units.py
+          python scripts/validate_course_supplements.py
+          python scripts/audit_semester_readiness.py --strict
+          python scripts/audit_curriculum_completeness.py --strict
+          python scripts/audit_curriculum_expansions.py --subject biologia-molecular --strict
+      - name: Commit clean final expansion
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .citonauta/biologia-molecular-expansion
+          rm -f .github/workflows/assemble-biologia-molecular-expansion.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Implement auditable Molecular Biology disciplinary expansion'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
