@@ -1,0 +1,85 @@
+name: Repair Numerical Methods JSON
+
+on:
+  push:
+    branches:
+      - content/metodos-numericos-complete-course
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/metodos-numericos-complete-course
+
+      - name: Repair LaTeX escaping and validate JSON
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          unit_dir = Path('data/generated_units/metodos-numericos')
+          paths = sorted(unit_dir.glob('unit-*.json'))
+          if len(paths) != 6:
+              raise SystemExit(f'Expected 6 unit files, found {len(paths)}')
+
+          latex_field = re.compile(r'("latex"\s*:\s*")((?:[^"\\]|\\.)*)(")')
+
+          def make_runs_even(value: str) -> str:
+              out = []
+              i = 0
+              while i < len(value):
+                  if value[i] != '\\':
+                      out.append(value[i])
+                      i += 1
+                      continue
+                  j = i
+                  while j < len(value) and value[j] == '\\':
+                      j += 1
+                  run = j - i
+                  if run % 2:
+                      run += 1
+                  out.append('\\' * run)
+                  i = j
+              return ''.join(out)
+
+          for path in paths:
+              text = path.read_text(encoding='utf-8')
+
+              def replace(match: re.Match[str]) -> str:
+                  return match.group(1) + make_runs_even(match.group(2)) + match.group(3)
+
+              fixed, count = latex_field.subn(replace, text)
+              if count == 0:
+                  raise SystemExit(f'No latex fields found in {path}')
+              data = json.loads(fixed)
+              if data.get('subject_id') != 'metodos-numericos':
+                  raise SystemExit(f'Unexpected subject in {path}')
+              path.write_text(
+                  json.dumps(data, ensure_ascii=False, separators=(',', ':')) + '\n',
+                  encoding='utf-8',
+              )
+              json.loads(path.read_text(encoding='utf-8'))
+              print(f'Validated {path} ({count} latex fields)')
+          PY
+
+      - name: Commit repaired units
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated_units/metodos-numericos/unit-*.json
+          if git diff --cached --quiet; then
+            echo "No unit changes required"
+            exit 0
+          fi
+          git commit -m "Repair Numerical Methods JSON escaping"
+          git push origin HEAD:content/metodos-numericos-complete-course
