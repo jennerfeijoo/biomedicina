@@ -1,0 +1,41 @@
+name: Fix Numerical Methods JSON escaping
+
+on:
+  push:
+    branches:
+      - 'content/metodos-numericos-complete-course'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-json:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: content/metodos-numericos-complete-course
+          fetch-depth: 0
+
+      - name: Escape LaTeX backslashes and remove temporary workflow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('data/generated_units/metodos-numericos')
+          for path in sorted(root.glob('unit-*.json')):
+              text = path.read_text(encoding='utf-8')
+              path.write_text(text.replace('\\', '\\\\'), encoding='utf-8')
+
+          Path('.github/workflows/fix-numerical-methods-json.yml').unlink()
+          PY
+
+      - name: Commit corrected units
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/generated_units/metodos-numericos .github/workflows/fix-numerical-methods-json.yml
+          git commit -m 'Fix LaTeX escaping in Numerical Methods units'
+          git push origin HEAD:content/metodos-numericos-complete-course
