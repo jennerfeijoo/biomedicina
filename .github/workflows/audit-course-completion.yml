@@ -1,0 +1,127 @@
+name: Audit course completion
+
+on:
+  push:
+    branches:
+      - agent/complete-remaining-courses
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build course completion inventory
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          root = Path.cwd()
+          sys.path.insert(0, str(root / 'scripts'))
+          import generate_site
+
+          curriculum = generate_site.load_json(generate_site.DATA_PATH)
+          override_path = root / 'data' / 'authored_unit_overrides.json'
+          override_data = json.loads(override_path.read_text(encoding='utf-8')) if override_path.exists() else {}
+          override_items = override_data.get('overrides', override_data if isinstance(override_data, list) else [])
+          override_keys = {
+              (str(item.get('subject_id')), int(item.get('unit', 0)))
+              for item in override_items
+              if isinstance(item, dict) and item.get('subject_id') and item.get('unit')
+          }
+
+          rows = []
+          for area in curriculum.get('areas', []):
+              for subject in area.get('subjects', []):
+                  course = generate_site.merge_subject_overlay(area, subject)
+                  units = course.get('detailed_units', [])
+                  advanced = 0
+                  authored = 0
+                  fallback = 0
+                  missing_pages = 0
+                  for unit in units:
+                      number = int(unit['unit'])
+                      advanced_path = root / 'data' / 'generated_units' / course['id'] / f'unit-{number:02d}.json'
+                      page_path = root / area['id'] / course['id'] / 'unidades' / f'unidad-{number:02d}.html'
+                      page = page_path.read_text(encoding='utf-8', errors='ignore') if page_path.exists() else ''
+                      is_authored = 'data-authored-unit="true"' in page or (course['id'], number) in override_keys
+                      if not page_path.exists():
+                          missing_pages += 1
+                      elif advanced_path.exists():
+                          advanced += 1
+                      elif is_authored or 'data-generated="citonauta-unit"' not in page:
+                          authored += 1
+                      else:
+                          fallback += 1
+
+                  expected = len(units)
+                  developed = advanced + authored
+                  rows.append({
+                      'area_id': area['id'],
+                      'area_title': area.get('title', area['id']),
+                      'subject_id': course['id'],
+                      'title': course.get('title', course['id']),
+                      'status': course.get('status', 'unknown'),
+                      'expected_units': expected,
+                      'advanced_units': advanced,
+                      'authored_units': authored,
+                      'fallback_units': fallback,
+                      'missing_pages': missing_pages,
+                      'developed_units': developed,
+                      'completion_ratio': round(developed / expected, 4) if expected else 0.0,
+                      'has_generated_course': (root / 'data' / 'generated_courses' / f"{course['id']}.json").exists(),
+                      'has_subject_overlay': (root / 'data' / 'subjects' / area['id'] / f"{course['id']}.json").exists(),
+                      'fully_developed': expected > 0 and fallback == 0 and missing_pages == 0 and developed == expected,
+                  })
+
+          rows.sort(key=lambda row: (row['fully_developed'], row['completion_ratio'], -row['fallback_units'], row['area_id'], row['subject_id']))
+          summary = {
+              'course_count': len(rows),
+              'fully_developed_courses': sum(row['fully_developed'] for row in rows),
+              'incomplete_courses': sum(not row['fully_developed'] for row in rows),
+              'expected_units': sum(row['expected_units'] for row in rows),
+              'advanced_units': sum(row['advanced_units'] for row in rows),
+              'authored_units': sum(row['authored_units'] for row in rows),
+              'fallback_units': sum(row['fallback_units'] for row in rows),
+              'missing_pages': sum(row['missing_pages'] for row in rows),
+          }
+          report = {'summary': summary, 'courses': rows}
+          Path('course-completion-inventory.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          lines = [
+              '# Inventario real de desarrollo de asignaturas',
+              '',
+              f"- Asignaturas inventariadas: {summary['course_count']}",
+              f"- Asignaturas completamente desarrolladas: {summary['fully_developed_courses']}",
+              f"- Asignaturas incompletas: {summary['incomplete_courses']}",
+              f"- Unidades esperadas: {summary['expected_units']}",
+              f"- Unidades avanzadas: {summary['advanced_units']}",
+              f"- Unidades autorales: {summary['authored_units']}",
+              f"- Unidades con renderer de respaldo: {summary['fallback_units']}",
+              f"- Páginas ausentes: {summary['missing_pages']}",
+              '',
+              '| Área | Asignatura | Avanzadas | Autorales | Respaldo | Total | Desarrollo |',
+              '|---|---|---:|---:|---:|---:|---:|',
+          ]
+          for row in rows:
+              lines.append(
+                  f"| {row['area_id']} | {row['title']} (`{row['subject_id']}`) | "
+                  f"{row['advanced_units']} | {row['authored_units']} | {row['fallback_units']} | "
+                  f"{row['expected_units']} | {row['completion_ratio']:.0%} |"
+              )
+          Path('course-completion-inventory.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          print(json.dumps(summary, ensure_ascii=False, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: course-completion-inventory
+          path: |
+            course-completion-inventory.json
+            course-completion-inventory.md
