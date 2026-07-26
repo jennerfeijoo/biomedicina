@@ -10,6 +10,105 @@
 
   const tokens = (value) => String(value || "").split(/\s+/).filter(Boolean);
 
+  const scriptUrl = document.currentScript?.src || new URL("assets/js/catalog.js", window.location.href).href;
+  const siteRoot = new URL("../../", scriptUrl);
+  const provisionalDataUrl = new URL("data/provisional_subjects.json", siteRoot);
+  const areaIds = [
+    "ciencias-basicas",
+    "biologicas-medicas",
+    "ingenieria-biomedica",
+    "gestion-etica-comunicacion",
+  ];
+
+  function currentArea() {
+    const segments = window.location.pathname.split("/").filter(Boolean);
+    return areaIds.find((areaId) => segments.includes(areaId)) || "";
+  }
+
+  function buildCourseCard(subject) {
+    const card = document.createElement("a");
+    card.className = "link-card course-card";
+    card.href = new URL(subject.path, siteRoot).href;
+    card.dataset.courseCard = "";
+    card.dataset.subject = subject.id;
+    card.dataset.area = subject.area_id;
+    card.dataset.tracks = "";
+    card.dataset.search = [
+      subject.title,
+      subject.description,
+      subject.biomedical_connection,
+      subject.area_title,
+      "Contenido pendiente",
+    ].join(" ");
+
+    const title = document.createElement("strong");
+    title.textContent = subject.title;
+
+    const description = document.createElement("p");
+    description.textContent = subject.description;
+
+    const meta = document.createElement("span");
+    meta.className = "course-card-meta";
+
+    const areaChip = document.createElement("span");
+    areaChip.className = "catalog-chip";
+    areaChip.textContent = subject.area_title;
+
+    const statusChip = document.createElement("span");
+    statusChip.className = "catalog-chip";
+    statusChip.textContent = "Contenido pendiente";
+
+    meta.append(areaChip, statusChip);
+    card.append(title, description, meta);
+    return card;
+  }
+
+  function updateAreaCount(grid) {
+    const area = currentArea();
+    if (!area) return;
+
+    const count = grid.querySelectorAll("[data-course-card]").length;
+    const metaRows = Array.from(document.querySelectorAll(".course-meta > div"));
+    const subjectRow = metaRows.find((row) => normalize(row.querySelector("dt")?.textContent) === "asignaturas");
+    const value = subjectRow?.querySelector("dd");
+    if (value) value.textContent = String(count);
+  }
+
+  async function injectProvisionalSubjects() {
+    const grid = document.querySelector("[data-course-grid]");
+    if (!grid) return;
+
+    try {
+      const response = await fetch(provisionalDataUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      const area = currentArea();
+      const existing = new Set(
+        Array.from(grid.querySelectorAll("[data-course-card]"), (card) => card.dataset.subject)
+      );
+
+      payload.subjects
+        .filter((subject) => !area || subject.area_id === area)
+        .filter((subject) => !existing.has(subject.id))
+        .sort((left, right) => left.title.localeCompare(right.title, "es"))
+        .forEach((subject) => grid.append(buildCourseCard(subject)));
+
+      const cards = Array.from(grid.querySelectorAll("[data-course-card]"));
+      cards
+        .sort((left, right) =>
+          left.querySelector("strong").textContent.localeCompare(
+            right.querySelector("strong").textContent,
+            "es"
+          )
+        )
+        .forEach((card) => grid.append(card));
+
+      updateAreaCount(grid);
+    } catch (error) {
+      console.error("No se pudieron cargar las asignaturas provisionales.", error);
+    }
+  }
+
   function initCatalog(root) {
     const cards = Array.from(document.querySelectorAll("[data-course-card]"));
     const search = root.querySelector("[data-course-search]");
@@ -67,5 +166,10 @@
     apply();
   }
 
-  document.querySelectorAll("[data-catalog]").forEach(initCatalog);
+  async function boot() {
+    await injectProvisionalSubjects();
+    document.querySelectorAll("[data-catalog]").forEach(initCatalog);
+  }
+
+  boot();
 })();
