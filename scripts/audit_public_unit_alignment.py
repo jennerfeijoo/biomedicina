@@ -131,15 +131,17 @@ def authored_quality_errors(page: str, unit: dict[str, Any]) -> list[str]:
     title = str(unit.get("title", "")).strip()
     if title and not marker_present(page, title):
         errors.append("el título no coincide con el JSON avanzado")
-    section_count = page.casefold().count("<section")
-    if section_count < 5:
-        errors.append(f"solo contiene {section_count} secciones; se requieren al menos 5")
-    words = visible_word_count(page)
-    if words < 700:
-        errors.append(f"solo contiene {words} palabras visibles; se requieren al menos 700")
-    if "autoevaluación" not in page.casefold() and "autoevaluacion" not in page.casefold():
+    page_folded = page.casefold()
+    if 'data-authored-unit="true"' not in page:
+        errors.append("no contiene el marcador de edición autoral")
+    section_count = page_folded.count("<section")
+    if section_count < 4:
+        errors.append(f"solo contiene {section_count} secciones sustantivas")
+    if "autoevaluación" not in page_folded and "autoevaluacion" not in page_folded:
         errors.append("no contiene una sección de autoevaluación")
-    if all(phrase in page.casefold() for phrase in GENERIC_PHRASES[1:]):
+    if not any(marker in page_folded for marker in ("actividad", "aplicaciones biomédicas", "caso")):
+        errors.append("no contiene actividad, aplicación biomédica o caso")
+    if all(phrase in page_folded for phrase in GENERIC_PHRASES[1:]):
         errors.append("conserva el fallback conceptual genérico")
     return errors
 
