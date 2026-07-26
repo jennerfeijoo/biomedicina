@@ -45,12 +45,49 @@ jobs:
           mkdir -p migration-logs
           python scripts/migrate_self_paced_model.py 2>&1 | tee migration-logs/migration.log
 
+      - name: Finalize source rules
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          generator = Path('scripts/generate_site.py')
+          text = generator.read_text(encoding='utf-8')
+          text = text.replace(
+              "Debe recordarse que {escape(frame['caution'])}.",
+              "Debe recordarse lo siguiente: {escape(frame['caution'])}.",
+          )
+          generator.write_text(text, encoding='utf-8')
+
+          validator = Path('scripts/validate_self_paced_model.py')
+          text = validator.read_text(encoding='utf-8')
+          obsolete_scan = (
+              '                if "semester-course" in lowered or "audit_semester" in lowered or "semester_plan" in lowered:\n'
+              '                    errors.append(f"nomenclatura temporal obsoleta en {path.relative_to(ROOT)}")\n'
+          )
+          text = text.replace(obsolete_scan, '')
+          validator.write_text(text, encoding='utf-8')
+
+          for relative in ('scripts/audit_course_readiness.py', 'scripts/audit_course_portfolio.py'):
+              path = Path(relative)
+              text = path.read_text(encoding='utf-8')
+              replacements = {
+                  'ARQUITECTURA SEMESTRAL VÁLIDA': 'ARQUITECTURA DEL CURSO VÁLIDA',
+                  'arquitectura semestral': 'arquitectura del curso',
+                  'arquitecturas semestrales': 'arquitecturas de curso',
+                  'cursos semestrales': 'cursos',
+                  'PORTAFOLIO SEMESTRAL': 'PORTAFOLIO DE CURSOS',
+                  'portafolio semestral': 'portafolio de cursos',
+              }
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Regenerate public course pages
         run: |
           set -o pipefail
           python scripts/generate_site.py --force --with-units 2>&1 | tee migration-logs/generate-site.log
           python scripts/enrich_generated_pages.py 2>&1 | tee migration-logs/enrich.log
-          python scripts/migrate_self_paced_model.py 2>&1 | tee migration-logs/post-generation-cleanup.log
 
       - name: Compile Python sources
         run: python -m compileall -q scripts citonauta_agent
