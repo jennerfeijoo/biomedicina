@@ -9,45 +9,12 @@
       .trim();
 
   const state = { courses: [], tracks: [], research: [] };
-  const featuredIds = [
-    "biologia-celular-tisular",
-    "bioinformatica",
-    "fisiologia-sistemas",
-    "machine-learning-biomedico-validacion-clinica",
-    "biomarcadores-diagnostico-molecular",
-    "imagenes-biomedicas",
-    "biomecanica",
-    "ciencia-regulatoria-calidad-seguridad-tecnologias-medicas",
-  ];
   const areaTitles = {
     "ciencias-basicas": "Ciencias Básicas",
     "biologicas-medicas": "Biológicas y Médicas",
     "ingenieria-biomedica": "Ingeniería Biomédica Aplicada",
     "gestion-etica-comunicacion": "Gestión, Ética y Comunicación",
   };
-
-  function initLayout() {
-    const navInner = document.querySelector(".home-premium .nav-inner");
-    if (navInner) {
-      Object.assign(navInner.style, {
-        flexDirection: "row",
-        alignItems: "center",
-        position: "relative",
-      });
-    }
-
-    const positions = [
-      { top: "4%", left: "40%" },
-      { top: "20%", right: "0" },
-      { bottom: "21%", right: "2%" },
-      { bottom: "3%", left: "38%" },
-      { bottom: "22%", left: "0" },
-      { top: "20%", left: "1%" },
-    ];
-    document.querySelectorAll(".map-node").forEach((node, index) => {
-      if (positions[index]) Object.assign(node.style, positions[index]);
-    });
-  }
 
   function flattenCurriculum(payload) {
     return payload.areas.flatMap((area) =>
@@ -76,6 +43,7 @@
         membership.set(subjectId, list);
       });
     });
+
     return courses.map((course) => {
       const related = membership.get(course.id) || [];
       return {
@@ -104,6 +72,7 @@
 
     const meta = document.createElement("div");
     meta.className = "result-meta";
+
     const area = document.createElement("span");
     area.className = "result-chip";
     area.textContent = course.area_title;
@@ -123,11 +92,14 @@
 
     const title = document.createElement("h3");
     title.textContent = course.title;
+
     const description = document.createElement("p");
     description.textContent = course.description;
+
     const action = document.createElement("span");
     action.className = "result-action";
     action.textContent = "Abrir asignatura →";
+
     card.append(meta, title, description, action);
     return card;
   }
@@ -143,6 +115,7 @@
   function initExplorer() {
     const root = document.querySelector("[data-home-explorer]");
     if (!root) return;
+
     const search = root.querySelector("[data-home-search]");
     const area = root.querySelector("[data-home-area]");
     const track = root.querySelector("[data-home-track]");
@@ -150,7 +123,6 @@
     const results = root.querySelector("[data-home-results]");
     const status = root.querySelector("[data-home-status]");
     const fullCatalog = root.querySelector("[data-home-catalog-link]");
-    const quickTopics = root.querySelectorAll("[data-topic]");
 
     state.tracks.forEach((item) => {
       const option = document.createElement("option");
@@ -166,34 +138,34 @@
       const selectedTrack = track.value;
       const hasFilters = Boolean(queryTokens.length || selectedArea || selectedTrack);
 
-      let matches = state.courses.filter((course) => {
-        const text = courseSearchText(course);
-        return (
-          (!queryTokens.length || queryTokens.every((token) => text.includes(token))) &&
-          (!selectedArea || course.area_id === selectedArea) &&
-          (!selectedTrack || course.track_ids.includes(selectedTrack))
-        );
-      });
+      updateCatalogLink(fullCatalog, rawQuery, selectedArea, selectedTrack);
 
       if (!hasFilters) {
-        const featuredOrder = new Map(featuredIds.map((id, index) => [id, index]));
-        matches = matches
-          .filter((course) => featuredOrder.has(course.id))
-          .sort((left, right) => featuredOrder.get(left.id) - featuredOrder.get(right.id));
-        status.textContent = "Puertas de entrada recomendadas para explorar el catálogo.";
-      } else {
-        matches.sort((left, right) => left.title.localeCompare(right.title, "es"));
-        status.textContent = `${matches.length} asignaturas coinciden con los filtros. Se muestran hasta 8 resultados.`;
+        results.replaceChildren();
+        status.textContent = "Introduce un término o selecciona un filtro.";
+        return;
       }
 
-      results.replaceChildren(...matches.slice(0, 8).map(createResultCard));
+      const matches = state.courses
+        .filter((course) => {
+          const text = courseSearchText(course);
+          return (
+            (!queryTokens.length || queryTokens.every((token) => text.includes(token))) &&
+            (!selectedArea || course.area_id === selectedArea) &&
+            (!selectedTrack || course.track_ids.includes(selectedTrack))
+          );
+        })
+        .sort((left, right) => left.title.localeCompare(right.title, "es"));
+
+      status.textContent = `${matches.length} asignaturas coinciden. Se muestran hasta 6 resultados.`;
+      results.replaceChildren(...matches.slice(0, 6).map(createResultCard));
+
       if (!matches.length) {
         const empty = document.createElement("div");
         empty.className = "research-empty";
-        empty.innerHTML = "<div><strong>No encontramos una coincidencia directa.</strong><p>Prueba con un término más general o abre el catálogo completo para explorar por área y ruta.</p></div>";
+        empty.innerHTML = "<p>No hay una coincidencia directa. Prueba con un término más general o continúa en el catálogo completo.</p>";
         results.append(empty);
       }
-      updateCatalogLink(fullCatalog, rawQuery, selectedArea, selectedTrack);
     };
 
     search.addEventListener("input", apply);
@@ -206,13 +178,7 @@
       apply();
       search.focus();
     });
-    quickTopics.forEach((button) => {
-      button.addEventListener("click", () => {
-        search.value = button.dataset.topic || "";
-        apply();
-        search.focus();
-      });
-    });
+
     apply();
   }
 
@@ -227,6 +193,7 @@
   function createResearchItem(item) {
     const article = document.createElement("article");
     article.className = "research-item";
+
     const meta = document.createElement("div");
     meta.className = "result-meta";
     (item.subject_ids || []).slice(0, 2).forEach((subjectId) => {
@@ -237,14 +204,18 @@
       chip.textContent = course.title;
       meta.append(chip);
     });
+
     const title = document.createElement("h4");
     title.textContent = item.title;
+
     const summary = document.createElement("p");
     summary.textContent = item.summary;
+
     const details = document.createElement("p");
     details.textContent = [item.publication_date, item.study_design, item.evidence_type]
       .filter(Boolean)
       .join(" · ");
+
     article.append(meta, title, summary, details);
     return article;
   }
@@ -254,26 +225,31 @@
     const empty = document.querySelector("[data-research-empty]");
     const count = document.querySelector("[data-research-count]");
     if (!container || !empty || !count) return;
+
     const items = [...state.research].sort((left, right) =>
       String(right.publication_date || "").localeCompare(String(left.publication_date || ""))
     );
-    count.textContent = items.length ? `${items.length} artículos catalogados` : "Catálogo preparado";
+
+    count.textContent = items.length ? `${items.length} artículos` : "Catálogo preparado";
     if (!items.length) {
       empty.hidden = false;
       return;
     }
+
     empty.hidden = true;
-    container.replaceChildren(...items.slice(0, 4).map(createResearchItem));
+    container.replaceChildren(...items.slice(0, 3).map(createResearchItem));
   }
 
   function initNavigation() {
     const toggle = document.querySelector("[data-nav-toggle]");
     const menu = document.querySelector("[data-nav-menu]");
     if (!toggle || !menu) return;
+
     toggle.addEventListener("click", () => {
       const open = menu.classList.toggle("is-open");
       toggle.setAttribute("aria-expanded", String(open));
     });
+
     menu.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", () => {
         menu.classList.remove("is-open");
@@ -288,13 +264,15 @@
       items.forEach((item) => item.classList.add("is-visible"));
       return;
     }
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
         entry.target.classList.add("is-visible");
         observer.unobserve(entry.target);
       });
-    }, { threshold: 0.12 });
+    }, { threshold: 0.1 });
+
     items.forEach((item) => observer.observe(item));
   }
 
@@ -305,26 +283,30 @@
       fetch("data/tracks.json", { cache: "no-store" }),
       fetch("data/research_catalog.json", { cache: "no-store" }),
     ]);
+
     for (const response of responses) {
       if (!response.ok) throw new Error(`No se pudo cargar ${response.url}: HTTP ${response.status}`);
     }
+
     const [curriculum, provisional, tracksPayload, researchPayload] = await Promise.all(
       responses.map((response) => response.json())
     );
+
     const coreCourses = flattenCurriculum(curriculum);
     const provisionalCourses = provisional.subjects.map((subject) => ({
       ...subject,
       area_title: subject.area_title || areaTitles[subject.area_id],
     }));
+
     state.tracks = tracksPayload.tracks;
     state.courses = annotateTracks([...coreCourses, ...provisionalCourses], state.tracks);
     state.research = researchPayload.items || [];
   }
 
   async function boot() {
-    initLayout();
     initNavigation();
     initReveals();
+
     try {
       await loadData();
       initExplorer();
@@ -333,7 +315,7 @@
     } catch (error) {
       console.error("No se pudo iniciar la portada interactiva.", error);
       const status = document.querySelector("[data-home-status]");
-      if (status) status.textContent = "La búsqueda interactiva no está disponible en este momento. El catálogo completo sigue accesible.";
+      if (status) status.textContent = "La búsqueda interactiva no está disponible. El catálogo completo sigue accesible.";
     }
   }
 
