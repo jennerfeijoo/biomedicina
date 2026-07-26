@@ -23,6 +23,31 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Inspect staged archive fragments
+        run: |
+          python - <<'PY' | tee genetica-archive-diagnostic.txt
+          import hashlib
+          from pathlib import Path
+
+          parts = sorted(Path('.tmp/genetica').glob('part-*.b64'))
+          combined = []
+          print(f'fragmentos={len(parts)}')
+          for path in parts:
+              raw = path.read_text(encoding='utf-8')
+              compact = ''.join(raw.split())
+              combined.append(compact)
+              print(path.name, f'raw={len(raw)}', f'compact={len(compact)}', hashlib.sha256(compact.encode()).hexdigest())
+          payload = ''.join(combined)
+          print('combined_length=', len(payload))
+          print('combined_sha256=', hashlib.sha256(payload.encode()).hexdigest())
+          PY
+
+      - name: Upload archive diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: genetica-archive-diagnostic
+          path: genetica-archive-diagnostic.txt
+
       - name: Restore Genetica source package
         run: |
           cat .tmp/genetica/part-*.b64 | tr -d '\r\n\t ' > /tmp/genetica-course.b64
