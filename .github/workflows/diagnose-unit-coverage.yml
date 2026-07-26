@@ -1,0 +1,31 @@
+name: Diagnose unit coverage
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.event.pull_request.head.ref == 'agent/advanced-unit-renderer'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run coverage validator
+        id: coverage
+        continue-on-error: true
+        run: python scripts/validate_units.py > validate-units.txt 2>&1
+      - name: Upload coverage output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validate-units-diagnostic
+          path: validate-units.txt
+      - name: Preserve failure status
+        if: steps.coverage.outcome != 'success'
+        run: exit 1
