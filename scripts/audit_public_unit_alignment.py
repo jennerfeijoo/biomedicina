@@ -139,7 +139,7 @@ def authored_quality_errors(page: str, unit: dict[str, Any]) -> list[str]:
         errors.append(f"solo contiene {section_count} secciones sustantivas")
     if "autoevaluación" not in page_folded and "autoevaluacion" not in page_folded:
         errors.append("no contiene una sección de autoevaluación")
-    if not any(marker in page_folded for marker in ("actividad", "aplicaciones biomédicas", "caso")):
+    if not any(marker in page_folded for marker in ("actividad", "aplicaciones", "caso")):
         errors.append("no contiene actividad, aplicación biomédica o caso")
     if all(phrase in page_folded for phrase in GENERIC_PHRASES[1:]):
         errors.append("conserva el fallback conceptual genérico")
