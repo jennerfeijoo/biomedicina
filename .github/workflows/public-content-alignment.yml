@@ -21,18 +21,27 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Generate site and capture publication drift
+      - name: Validate advanced unit sources
+        run: python scripts/validate_generated_units.py
+
+      - name: Audit committed advanced unit pages
         run: |
           mkdir -p audit-artifacts
-          python scripts/generate_site.py --force --with-units
-          git diff --name-only > audit-artifacts/generated-site-files.txt
-          git diff --no-ext-diff --binary > audit-artifacts/generated-site.patch
-
-      - name: Audit advanced JSON against public unit pages
-        run: |
           python scripts/audit_public_unit_alignment.py \
+            --strict \
             --json-output audit-artifacts/public-unit-alignment.json \
             | tee audit-artifacts/public-unit-alignment.txt
+
+      - name: Regenerate public site deterministically
+        run: |
+          python scripts/generate_site.py --force --with-units
+          python scripts/enrich_generated_pages.py
+
+      - name: Enforce generated-site synchronization
+        run: |
+          git diff --name-only | tee audit-artifacts/generated-site-files.txt
+          git diff --no-ext-diff --binary > audit-artifacts/generated-site.patch
+          git diff --exit-code
 
       - name: Upload alignment report
         if: always()
