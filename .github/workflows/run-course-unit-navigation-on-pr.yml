@@ -40,8 +40,22 @@ jobs:
 
       - name: Regenerate all pages
         run: |
-          python scripts/generate_site.py --force --with-units
-          python scripts/enrich_generated_pages.py
+          set -o pipefail
+          mkdir -p migration-logs
+          python scripts/generate_site.py --force --with-units 2>&1 | tee migration-logs/generate-site.log
+
+      - name: Enrich generated pages
+        run: |
+          set -o pipefail
+          mkdir -p migration-logs
+          python scripts/enrich_generated_pages.py 2>&1 | tee migration-logs/enrich-generated-pages.log
+
+      - name: Upload migration logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: course-unit-navigation-logs
+          path: migration-logs/
 
       - name: Validate migrated architecture
         run: |
