@@ -23,34 +23,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Inspect staged archive fragments
+      - name: Restore verified Genetica source package
         run: |
-          python - <<'PY' | tee genetica-archive-diagnostic.txt
-          import hashlib
-          from pathlib import Path
-
-          parts = sorted(Path('.tmp/genetica').glob('part-*.b64'))
-          combined = []
-          print(f'fragmentos={len(parts)}')
-          for path in parts:
-              raw = path.read_text(encoding='utf-8')
-              compact = ''.join(raw.split())
-              combined.append(compact)
-              print(path.name, f'raw={len(raw)}', f'compact={len(compact)}', hashlib.sha256(compact.encode()).hexdigest())
-          payload = ''.join(combined)
-          print('combined_length=', len(payload))
-          print('combined_sha256=', hashlib.sha256(payload.encode()).hexdigest())
-          PY
-
-      - name: Upload archive diagnostics
-        uses: actions/upload-artifact@v4
-        with:
-          name: genetica-archive-diagnostic
-          path: genetica-archive-diagnostic.txt
-
-      - name: Restore Genetica source package
-        run: |
-          cat .tmp/genetica/part-*.b64 | tr -d '\r\n\t ' > /tmp/genetica-course.b64
+          cat \
+            .tmp/genetica/part-00.b64 \
+            .tmp/genetica/part-01.b64 \
+            .tmp/genetica/part-02.b64 \
+            .tmp/genetica/part-03.b64 \
+            .tmp/genetica/part-04a.b64 \
+            .tmp/genetica/part-04b.b64 \
+            .tmp/genetica/part-05.b64 \
+            .tmp/genetica/part-06.b64 \
+            .tmp/genetica/part-07.b64 \
+            .tmp/genetica/part-08.b64 \
+            | tr -d '\r\n\t ' > /tmp/genetica-course.b64
           echo "5c8bad6408d37b3b109c06ce1b6c934735ac4500346fb471e1b3b5f70b43a753  /tmp/genetica-course.b64" | sha256sum --check
           base64 --decode /tmp/genetica-course.b64 > /tmp/genetica-course.zip
           echo "3ddf59423de703e9b24a76f156ec216eb2675acd6a1150772a0404af11473f0c  /tmp/genetica-course.zip" | sha256sum --check
