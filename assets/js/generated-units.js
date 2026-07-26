@@ -379,9 +379,97 @@
   }
 
   function currentSubjectId() {
+    const explicit = document.querySelector("[data-subject-id]")?.dataset.subjectId;
+    if (explicit) return explicit;
     const parts = window.location.pathname.split("/").filter(Boolean);
     if (parts.at(-1)?.endsWith(".html")) parts.pop();
+    if (parts.at(-1) === "unidades") return parts.at(-2) || "";
     return parts.at(-1) || "";
+  }
+
+  function siteRootUrl() {
+    const brandHref = document.querySelector(".brand")?.getAttribute("href");
+    if (brandHref) return new URL("./", new URL(brandHref, window.location.href));
+    return new URL("/", window.location.href);
+  }
+
+  function ensureGeneratedUnitStyles(rootUrl) {
+    if (document.querySelector('link[data-generated-units="true"]')) return;
+    const css = element("link");
+    css.rel = "stylesheet";
+    css.href = new URL("assets/css/generated-units.css", rootUrl).href;
+    css.dataset.generatedUnits = "true";
+    document.head.appendChild(css);
+  }
+
+  function createUnitPageSection(id, title, description = "") {
+    const section = element("section", "section");
+    section.id = id;
+    const header = element("div", "section-header");
+    header.appendChild(element("h2", "", title));
+    if (description) header.appendChild(element("p", "", description));
+    section.appendChild(header);
+    return section;
+  }
+
+  function renderUnitPage(container, unit) {
+    container.classList.add("course-unit-developed");
+    container.replaceChildren();
+
+    const results = createUnitPageSection("resultados", "Resultados y alcance");
+    renderUnitMetadata(results, unit);
+    if (unit.learning_objectives?.length) {
+      appendHeading(results, 3, "Objetivos de aprendizaje");
+      appendList(results, unit.learning_objectives);
+    }
+    if (unit.biomedical_connections?.length) {
+      appendHeading(results, 3, "Conexiones biomédicas");
+      appendList(results, unit.biomedical_connections);
+    }
+    container.appendChild(results);
+
+    const theory = createUnitPageSection(
+      "teoria",
+      "Desarrollo teórico",
+      "La teoría, las ecuaciones y el glosario se presentan dentro de la lección correspondiente."
+    );
+    renderTheory(theory, unit.theory_sections);
+    renderEquations(theory, unit.equations);
+    renderGlossary(theory, unit.glossary);
+    container.appendChild(theory);
+
+    const caseSection = createUnitPageSection("caso", "Casos y ejemplos resueltos");
+    const examples = asArray(unit, "worked_example", "worked_examples");
+    if (examples.length) {
+      examples.forEach((example, index) => renderWorkedExample(caseSection, example, index, examples.length));
+    } else {
+      caseSection.appendChild(element("p", "muted", "Esta edición no incluye todavía un ejemplo resuelto específico."));
+    }
+    container.appendChild(caseSection);
+
+    const practice = createUnitPageSection("practica", "Práctica guiada y problemas");
+    const activities = asArray(unit, "guided_activity", "guided_activities");
+    activities.forEach((activity, index) => renderActivity(practice, activity, index, activities.length));
+    renderPracticeSets(practice, unit.practice_sets);
+    renderCommonErrors(practice, unit.common_errors);
+    if (!activities.length && !unit.practice_sets?.length) {
+      practice.appendChild(element("p", "muted", "La práctica específica de esta edición permanece pendiente."));
+    }
+    container.appendChild(practice);
+
+    const assessment = createUnitPageSection("autoevaluacion", "Autoevaluación");
+    renderAssessment(assessment, unit.self_assessment);
+    if (!unit.self_assessment?.length) {
+      assessment.appendChild(element("p", "muted", "La autoevaluación específica de esta edición permanece pendiente."));
+    }
+    container.appendChild(assessment);
+
+    const sources = createUnitPageSection("fuentes", "Fuentes de la unidad");
+    renderSources(sources, unit.sources);
+    if (!unit.sources?.length) {
+      sources.appendChild(element("p", "muted", "Consulta los recursos generales de la asignatura."));
+    }
+    container.appendChild(sources);
   }
 
   function loadSemesterCourseEnhancer(rootUrl) {
@@ -394,21 +482,31 @@
   }
 
   async function init() {
+    const rootUrl = siteRootUrl();
+    const unitPage = document.querySelector(".unit-lesson[data-unit-number]");
+    if (unitPage) {
+      const subjectId = currentSubjectId();
+      const unitNumber = Number(unitPage.dataset.unitNumber);
+      if (!subjectId || !Number.isInteger(unitNumber) || unitNumber < 1) return;
+      const unit = await fetchUnit(rootUrl, subjectId, unitNumber).catch((error) => {
+        console.error(error);
+        return null;
+      });
+      if (!unit) return;
+      ensureGeneratedUnitStyles(rootUrl);
+      renderUnitPage(unitPage, unit);
+      await typesetMath(unitPage);
+      return;
+    }
+
     const unitsSection = document.querySelector("#unidades .course-units");
     if (!unitsSection) return;
-
     const articles = [...unitsSection.querySelectorAll(".course-unit")];
     if (articles.length === 0) return;
-
     const subjectId = currentSubjectId();
     if (!subjectId) return;
 
-    const rootUrl = new URL("../../", window.location.href);
-    const css = element("link");
-    css.rel = "stylesheet";
-    css.href = new URL("assets/css/generated-units.css", rootUrl).href;
-    document.head.appendChild(css);
-
+    ensureGeneratedUnitStyles(rootUrl);
     createUnitSelector(articles);
 
     const total = Math.min(Math.max(articles.length, 1), UNIT_FILE_LIMIT);
