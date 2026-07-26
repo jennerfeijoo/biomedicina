@@ -1,0 +1,32 @@
+name: Audit course completion
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build course completion inventory
+        run: |
+          python scripts/audit_course_completion.py \
+            --require-course-count 84 \
+            --fail-on-missing-pages \
+            --json-output course-completion-inventory.json \
+            --markdown-output course-completion-inventory.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: course-completion-inventory
+          path: |
+            course-completion-inventory.json
+            course-completion-inventory.md
