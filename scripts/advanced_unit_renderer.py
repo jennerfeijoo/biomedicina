@@ -71,8 +71,21 @@ def normalize_latex(value: Any) -> str:
 
 def render_equation(equation: Any) -> str:
     if isinstance(equation, str):
-        latex = normalize_latex(equation)
+        raw = equation.strip()
         description = ""
+        if raw.startswith("$"):
+            closing = raw.find("$", 1)
+            if closing > 1:
+                latex = normalize_latex(raw[: closing + 1])
+                description = raw[closing + 1 :].strip(" .")
+            else:
+                latex = normalize_latex(raw)
+        elif "$" in raw:
+            latex_text, description_text = raw.split("$", 1)
+            latex = normalize_latex(latex_text)
+            description = description_text.strip(" .")
+        else:
+            latex = normalize_latex(raw)
         variables: dict[str, Any] = {}
     elif isinstance(equation, dict):
         latex = normalize_latex(equation.get("latex"))

@@ -20,6 +20,8 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+from advanced_unit_renderer import advanced_replacements, load_advanced_unit
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "citonauta_curriculum.json"
 OUTLINES_PATH = ROOT / "data" / "course_outlines.json"
@@ -1142,14 +1144,15 @@ def render_unit_nav_link(unit_number: int, unit_title: str, direction: str) -> s
 
 def render_unit_page(template: str, area: dict[str, Any], course: dict[str, Any], unit: dict[str, Any], index: int) -> str:
     units = course.get("detailed_units", [])
-    output_path = ROOT / area["id"] / course["id"] / "unidades" / f"unidad-{int(unit['unit']):02d}.html"
+    unit_number = int(unit["unit"])
+    output_path = ROOT / area["id"] / course["id"] / "unidades" / f"unidad-{unit_number:02d}.html"
     previous_unit = units[index - 1] if index > 0 else None
     next_unit = units[index + 1] if index < len(units) - 1 else None
     previous_link = render_unit_nav_link(int(previous_unit["unit"]), previous_unit["title"], "previous") if previous_unit else ""
     next_link = render_unit_nav_link(int(next_unit["unit"]), next_unit["title"], "next") if next_unit else ""
     frame = pedagogical_frame_for(area["id"], course["id"])
     replacements = {
-        "unit_number": str(unit["unit"]),
+        "unit_number": str(unit_number),
         "unit_count": str(len(units)),
         "unit_title": escape(unit["title"]),
         "unit_description": escape(unit["description"]),
@@ -1178,6 +1181,9 @@ def render_unit_page(template: str, area: dict[str, Any], course: dict[str, Any]
             f"{clean_topic((unit.get('biomedical_applications') or [course['biomedical_connection']])[0]).lower()}."
         ),
     }
+    advanced_unit = load_advanced_unit(ROOT, course["id"], unit_number)
+    if advanced_unit is not None:
+        replacements.update(advanced_replacements(advanced_unit))
     output = template
     for key, value in replacements.items():
         output = output.replace("{{ " + key + " }}", value)
@@ -1188,10 +1194,14 @@ def render_units_index(template: str, area: dict[str, Any], course: dict[str, An
     output_path = ROOT / area["id"] / course["id"] / "unidades" / "index.html"
     cards = []
     for unit in course.get("detailed_units", []):
+        unit_number = int(unit["unit"])
+        advanced_unit = load_advanced_unit(ROOT, course["id"], unit_number)
+        display_title = advanced_unit.get("title", unit["title"]) if advanced_unit else unit["title"]
+        display_description = advanced_unit.get("purpose", unit["description"]) if advanced_unit else unit["description"]
         cards.append(
-            f'        <a class="link-card unit-index-card" href="unidad-{int(unit["unit"]):02d}.html">'
-            f'<span class="course-tag">Unidad {int(unit["unit"])}</span>'
-            f'<strong>{escape(unit["title"])}</strong><p>{escape(unit["description"])}</p>'
+            f'        <a class="link-card unit-index-card" href="unidad-{unit_number:02d}.html">'
+            f'<span class="course-tag">Unidad {unit_number}</span>'
+            f'<strong>{escape(display_title)}</strong><p>{escape(display_description)}</p>'
             '<span class="unit-index-action">Abrir lección →</span></a>'
         )
     replacements = {
