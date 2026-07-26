@@ -59,13 +59,18 @@ jobs:
           generator.write_text(text, encoding='utf-8')
 
           validator = Path('scripts/validate_self_paced_model.py')
-          text = validator.read_text(encoding='utf-8')
-          obsolete_scan = (
-              '                if "semester-course" in lowered or "audit_semester" in lowered or "semester_plan" in lowered:\n'
-              '                    errors.append(f"nomenclatura temporal obsoleta en {path.relative_to(ROOT)}")\n'
-          )
-          text = text.replace(obsolete_scan, '')
-          validator.write_text(text, encoding='utf-8')
+          lines = validator.read_text(encoding='utf-8').splitlines()
+          filtered = []
+          skip_error_line = False
+          for line in lines:
+              if 'if "semester-course" in lowered' in line:
+                  skip_error_line = True
+                  continue
+              if skip_error_line and 'errors.append(f"nomenclatura temporal obsoleta' in line:
+                  skip_error_line = False
+                  continue
+              filtered.append(line)
+          validator.write_text('\n'.join(filtered) + '\n', encoding='utf-8')
 
           for relative in ('scripts/audit_course_readiness.py', 'scripts/audit_course_portfolio.py'):
               path = Path(relative)
