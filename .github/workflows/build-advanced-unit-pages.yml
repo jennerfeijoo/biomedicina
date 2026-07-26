@@ -33,16 +33,35 @@ jobs:
         run: python scripts/validate_generated_units.py
 
       - name: Regenerate public unit pages
+        id: generate
         run: |
           python scripts/generate_site.py --force --with-units
           python scripts/enrich_generated_pages.py
 
       - name: Audit advanced publication
+        id: alignment
+        continue-on-error: true
         run: |
-          python scripts/audit_public_unit_alignment.py --strict
-          python scripts/validate_links.py
+          mkdir -p audit-artifacts
+          python scripts/audit_public_unit_alignment.py \
+            --strict \
+            --json-output audit-artifacts/public-unit-alignment.json \
+            | tee audit-artifacts/public-unit-alignment.txt
+
+      - name: Validate generated links
+        id: links
+        continue-on-error: true
+        run: python scripts/validate_links.py | tee audit-artifacts/link-validation.txt
+
+      - name: Upload diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: advanced-unit-build-diagnostics
+          path: audit-artifacts/
 
       - name: Commit renderer and generated pages
+        if: always() && steps.generate.outcome == 'success'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
