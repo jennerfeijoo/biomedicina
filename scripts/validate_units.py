@@ -4,7 +4,7 @@
 La validación distingue tres arquitecturas:
 - páginas generadas desde JSON avanzado;
 - páginas generadas mediante el renderer de respaldo;
-- páginas autorales registradas.
+- páginas autorales, con o sin una fuente JSON avanzada equivalente.
 
 La profundidad científica del JSON avanzado se comprueba en
 validate_generated_units.py y su correspondencia pública en
@@ -82,6 +82,7 @@ def validate_units() -> tuple[list[str], dict[str, int]]:
                     continue
                 unit_html = unit_path.read_text(encoding="utf-8", errors="ignore")
                 relative = unit_path.relative_to(ROOT)
+                advanced_source = generate_site.load_advanced_unit(ROOT, course["id"], number)
 
                 if any(marker in unit_html for marker in FORBIDDEN_MARKERS):
                     errors.append(f"Unidad con marcador pendiente: {relative}")
@@ -93,7 +94,6 @@ def validate_units() -> tuple[list[str], dict[str, int]]:
                         if section not in unit_html:
                             errors.append(f"{relative} no contiene la sección pública: {section}")
 
-                    advanced_source = generate_site.load_advanced_unit(ROOT, course["id"], number)
                     if advanced_source is not None:
                         counts["advanced_generated_units"] += 1
                         if ADVANCED_MARKER not in unit_html:
@@ -106,8 +106,8 @@ def validate_units() -> tuple[list[str], dict[str, int]]:
                             errors.append(f"{relative} no contiene desarrollo conceptual de respaldo")
                 else:
                     counts["authored_units"] += 1
-                    if AUTHORED_MARKER not in unit_html:
-                        errors.append(f"Unidad autoral no registrada o sin sincronizar: {relative}")
+                    if advanced_source is not None and AUTHORED_MARKER not in unit_html:
+                        errors.append(f"Unidad autoral avanzada no registrada o sin sincronizar: {relative}")
 
     if counts["subjects"] != 84:
         errors.append(f"Se esperaban 84 asignaturas y se encontraron {counts['subjects']}")
