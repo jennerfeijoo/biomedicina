@@ -15,7 +15,13 @@ UNIT_ROOT = ROOT / "data" / "generated_units"
 ASSET_ROOT = ROOT / "assets" / "js"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 SPACE_RE = re.compile(r"\s+")
-COURSE_TIME_KEYS = {"estimated_workload", "duration_weeks", "weekly_hours", "total_workload_hours", "course_plan"}
+COURSE_TIME_KEYS = {
+    "estimated_workload",
+    "duration_weeks",
+    "weekly_hours",
+    "total_workload_hours",
+    "semester_plan",
+}
 UNIT_TIME_KEYS = {"estimated_hours", "weeks"}
 
 FORBIDDEN_PUBLIC_PHRASES = (
@@ -70,7 +76,10 @@ def paragraph_records(subject_id: str, units: list[dict[str, Any]]) -> list[tupl
         label = f"{subject_id}/unit-{int(unit.get('unit', 0)):02d}"
         for section in unit.get("theory_sections", []):
             for paragraph in section.get("paragraphs", []):
-                if isinstance(paragraph, str) and len(normalized(paragraph)) >= MIN_DUPLICATE_PARAGRAPH_CHARS:
+                if (
+                    isinstance(paragraph, str)
+                    and len(normalized(paragraph)) >= MIN_DUPLICATE_PARAGRAPH_CHARS
+                ):
                     records.append((label, paragraph))
     return records
 
@@ -128,11 +137,19 @@ def audit_course(
         errors.append(f"{prefix}: conserva metadatos temporales: {', '.join(forbidden)}")
 
     assessment = course.get("assessment_plan", [])
-    assessment_total = sum(float(item.get("weight_percent", 0) or 0) for item in assessment if isinstance(item, dict))
+    assessment_total = sum(
+        float(item.get("weight_percent", 0) or 0)
+        for item in assessment
+        if isinstance(item, dict)
+    )
     if abs(assessment_total - 100.0) > 1e-9:
         errors.append(f"{prefix}: evaluación suma {assessment_total:g} %, no 100 %")
     rubric = course.get("final_project", {}).get("rubric", [])
-    rubric_total = sum(float(item.get("weight_percent", 0) or 0) for item in rubric if isinstance(item, dict))
+    rubric_total = sum(
+        float(item.get("weight_percent", 0) or 0)
+        for item in rubric
+        if isinstance(item, dict)
+    )
     if abs(rubric_total - 100.0) > 1e-9:
         errors.append(f"{prefix}: rúbrica suma {rubric_total:g} %, no 100 %")
 
@@ -167,32 +184,50 @@ def audit_course(
         all_source_urls.extend(urls)
 
         theory = unit.get("theory_sections", [])
-        equation_count += sum(len(section.get("equations", [])) for section in theory if isinstance(section, dict))
+        equation_count += sum(
+            len(section.get("equations", []))
+            for section in theory
+            if isinstance(section, dict)
+        )
         total_words += len(WORD_RE.findall(json.dumps(unit, ensure_ascii=False)))
 
-        glossary_terms = [normalized(str(item.get("term", ""))) for item in unit.get("glossary", [])]
+        glossary_terms = [
+            normalized(str(item.get("term", ""))) for item in unit.get("glossary", [])
+        ]
         if len(glossary_terms) != len(set(glossary_terms)):
             errors.append(f"{unit_prefix}: glosario con términos duplicados")
-        questions = [normalized(str(item.get("question", ""))) for item in unit.get("self_assessment", [])]
+        questions = [
+            normalized(str(item.get("question", "")))
+            for item in unit.get("self_assessment", [])
+        ]
         if len(questions) != len(set(questions)):
             errors.append(f"{unit_prefix}: autoevaluación con preguntas duplicadas")
 
     if equation_count == 0:
         errors.append(f"{prefix}: curso cuantitativo sin ecuaciones estructuradas para MathJax")
-    repeated_source_count = sum(count - 1 for count in Counter(all_source_urls).values() if count > 1)
+    repeated_source_count = sum(
+        count - 1 for count in Counter(all_source_urls).values() if count > 1
+    )
     if repeated_source_count > len(units) * 3:
-        warnings.append(f"{prefix}: bibliografía muy repetitiva entre unidades ({repeated_source_count} repeticiones)")
+        warnings.append(
+            f"{prefix}: bibliografía muy repetitiva entre unidades "
+            f"({repeated_source_count} repeticiones)"
+        )
 
     all_paragraphs.extend(paragraph_records(subject_id, units))
     metrics[subject_id] = {
         "units": len(units),
         "words": total_words,
         "equations": equation_count,
-        "source_domains": len({source_domain(url) for url in all_source_urls if source_domain(url)}),
+        "source_domains": len(
+            {source_domain(url) for url in all_source_urls if source_domain(url)}
+        ),
     }
 
 
-def audit_duplicate_paragraphs(records: list[tuple[str, str]], errors: list[str]) -> None:
+def audit_duplicate_paragraphs(
+    records: list[tuple[str, str]], errors: list[str]
+) -> None:
     by_text: dict[str, list[str]] = defaultdict(list)
     for label, paragraph in records:
         by_text[normalized(paragraph)].append(label)
@@ -203,9 +238,18 @@ def audit_duplicate_paragraphs(records: list[tuple[str, str]], errors: list[str]
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audita coherencia y calidad transversal de cursos del curso.")
-    parser.add_argument("--strict", action="store_true", help="Devuelve error si existen hallazgos críticos.")
-    parser.add_argument("--json-output", help="Ruta opcional para guardar el informe JSON.")
+    parser = argparse.ArgumentParser(
+        description="Audita coherencia y calidad transversal del portafolio de cursos."
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Devuelve error si existen hallazgos críticos.",
+    )
+    parser.add_argument(
+        "--json-output",
+        help="Ruta opcional para guardar el informe JSON.",
+    )
     args = parser.parse_args()
 
     errors: list[str] = []
@@ -215,7 +259,7 @@ def main() -> int:
 
     course_paths = sorted(COURSE_ROOT.glob("*.json"))
     if not course_paths:
-        print("No hay cursos del curso para auditar.")
+        print("No hay cursos generados para auditar.")
         return 1 if args.strict else 0
 
     for course_path in course_paths:
@@ -246,14 +290,16 @@ def main() -> int:
     for subject_id, data in sorted(metrics.items()):
         print(
             f"- {subject_id}: unidades={data['units']} · palabras={data['words']} · "
-            f"ecuaciones={data['equations']} · "
-            f"dominios={data['source_domains']}"
+            f"ecuaciones={data['equations']} · dominios={data['source_domains']}"
         )
     for warning in warnings:
         print(f"ADVERTENCIA: {warning}")
     for error in errors:
         print(f"ERROR: {error}")
-    print(f"Resumen: {len(course_paths)} cursos · {len(errors)} errores · {len(warnings)} advertencias")
+    print(
+        f"Resumen: {len(course_paths)} cursos · {len(errors)} errores · "
+        f"{len(warnings)} advertencias"
+    )
     return 1 if args.strict and errors else 0
 
 
