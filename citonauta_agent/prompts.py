@@ -43,7 +43,6 @@ def _compact_baseline(baseline: dict[str, Any]) -> dict[str, Any]:
         "status": baseline.get("status"),
         "description": _text(baseline.get("description"), 700),
         "level": _text(baseline.get("level"), 160),
-        "estimated_workload": _text(baseline.get("estimated_workload"), 160),
         "biomedical_connection": _text(baseline.get("biomedical_connection"), 900),
         "prerequisites": _list(baseline.get("prerequisites"), 8),
         "course_competencies": _list(baseline.get("course_competencies"), 10),

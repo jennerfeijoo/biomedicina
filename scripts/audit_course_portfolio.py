@@ -15,6 +15,8 @@ UNIT_ROOT = ROOT / "data" / "generated_units"
 ASSET_ROOT = ROOT / "assets" / "js"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 SPACE_RE = re.compile(r"\s+")
+COURSE_TIME_KEYS = {"estimated_workload", "duration_weeks", "weekly_hours", "total_workload_hours", "course_plan"}
+UNIT_TIME_KEYS = {"estimated_hours", "weeks"}
 
 FORBIDDEN_PUBLIC_PHRASES = (
     "contenido desarrollado",
@@ -34,7 +36,6 @@ GENERIC_SOURCE_PATHS = {
 }
 MIN_SOURCE_DOMAINS_PER_UNIT = 3
 MIN_COURSE_RESOURCE_DOMAINS = 4
-MAX_HOUR_MISMATCH = 8
 MIN_DUPLICATE_PARAGRAPH_CHARS = 180
 
 
@@ -122,56 +123,9 @@ def audit_course(
     if any(unit.get("status") != "review" for unit in units):
         errors.append(f"{prefix}: todas las unidades deben conservar status review")
 
-    duration = int(course.get("duration_weeks", 0) or 0)
-    expected_weeks = set(range(1, duration + 1))
-    semester_plan = course.get("semester_plan", [])
-    plan_weeks = [int(row.get("week", 0) or 0) for row in semester_plan if isinstance(row, dict)]
-    if len(plan_weeks) != len(set(plan_weeks)):
-        errors.append(f"{prefix}: el cronograma contiene semanas duplicadas")
-    if set(plan_weeks) != expected_weeks:
-        missing = sorted(expected_weeks - set(plan_weeks))
-        extra = sorted(set(plan_weeks) - expected_weeks)
-        errors.append(f"{prefix}: cobertura semanal incorrecta; faltan={missing}, sobran={extra}")
-
-    unit_week_owner: dict[int, int] = {}
-    for unit in units:
-        number = int(unit["unit"])
-        weeks = unit.get("weeks", [])
-        if not isinstance(weeks, list) or not weeks:
-            errors.append(f"{prefix}/unit-{number:02d}: no tiene semanas asignadas")
-            continue
-        for week in weeks:
-            week = int(week)
-            if week not in expected_weeks:
-                errors.append(f"{prefix}/unit-{number:02d}: semana {week} fuera del semestre")
-            if week in unit_week_owner:
-                errors.append(
-                    f"{prefix}: semana {week} asignada a unidades {unit_week_owner[week]} y {number}"
-                )
-            unit_week_owner[week] = number
-    if set(unit_week_owner) != expected_weeks:
-        missing = sorted(expected_weeks - set(unit_week_owner))
-        errors.append(f"{prefix}: semanas no cubiertas por unidades: {missing}")
-
-    for row in semester_plan:
-        if not isinstance(row, dict):
-            continue
-        week = int(row.get("week", 0) or 0)
-        planned_unit = int(row.get("unit", 0) or 0)
-        owned_unit = unit_week_owner.get(week)
-        if owned_unit is not None and planned_unit != owned_unit:
-            errors.append(
-                f"{prefix}: semana {week} apunta a unidad {planned_unit} en el cronograma y a {owned_unit} en la unidad"
-            )
-
-    course_hours = int(course.get("total_workload_hours", 0) or 0)
-    unit_hours = sum(int(unit.get("estimated_hours", 0) or 0) for unit in units)
-    if abs(course_hours - unit_hours) > MAX_HOUR_MISMATCH:
-        errors.append(
-            f"{prefix}: horas del curso ({course_hours}) y de las unidades ({unit_hours}) difieren en más de {MAX_HOUR_MISMATCH}"
-        )
-    elif course_hours != unit_hours:
-        warnings.append(f"{prefix}: horas declaradas curso={course_hours}, unidades={unit_hours}")
+    forbidden = sorted(COURSE_TIME_KEYS & course.keys())
+    if forbidden:
+        errors.append(f"{prefix}: conserva metadatos temporales: {', '.join(forbidden)}")
 
     assessment = course.get("assessment_plan", [])
     assessment_total = sum(float(item.get("weight_percent", 0) or 0) for item in assessment if isinstance(item, dict))
@@ -197,6 +151,9 @@ def audit_course(
     for unit in units:
         number = int(unit["unit"])
         unit_prefix = f"{prefix}/unit-{number:02d}"
+        forbidden = sorted(UNIT_TIME_KEYS & unit.keys())
+        if forbidden:
+            errors.append(f"{unit_prefix}: conserva metadatos temporales: {', '.join(forbidden)}")
         sources = unit.get("sources", [])
         urls = [str(item.get("url", "")) for item in sources if isinstance(item, dict)]
         domains = {source_domain(url) for url in urls if source_domain(url)}
@@ -230,8 +187,6 @@ def audit_course(
     metrics[subject_id] = {
         "units": len(units),
         "words": total_words,
-        "course_hours": course_hours,
-        "unit_hours": unit_hours,
         "equations": equation_count,
         "source_domains": len({source_domain(url) for url in all_source_urls if source_domain(url)}),
     }
@@ -248,7 +203,7 @@ def audit_duplicate_paragraphs(records: list[tuple[str, str]], errors: list[str]
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audita coherencia y calidad transversal de cursos semestrales.")
+    parser = argparse.ArgumentParser(description="Audita coherencia y calidad transversal de cursos del curso.")
     parser.add_argument("--strict", action="store_true", help="Devuelve error si existen hallazgos críticos.")
     parser.add_argument("--json-output", help="Ruta opcional para guardar el informe JSON.")
     args = parser.parse_args()
@@ -260,7 +215,7 @@ def main() -> int:
 
     course_paths = sorted(COURSE_ROOT.glob("*.json"))
     if not course_paths:
-        print("No hay cursos semestrales para auditar.")
+        print("No hay cursos del curso para auditar.")
         return 1 if args.strict else 0
 
     for course_path in course_paths:
@@ -287,11 +242,11 @@ def main() -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    print("AUDITORÍA DEL PORTAFOLIO SEMESTRAL")
+    print("AUDITORÍA DEL PORTAFOLIO DE CURSOS")
     for subject_id, data in sorted(metrics.items()):
         print(
             f"- {subject_id}: unidades={data['units']} · palabras={data['words']} · "
-            f"horas={data['unit_hours']}/{data['course_hours']} · ecuaciones={data['equations']} · "
+            f"ecuaciones={data['equations']} · "
             f"dominios={data['source_domains']}"
         )
     for warning in warnings:

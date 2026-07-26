@@ -126,7 +126,6 @@ Estos controles son necesarios para integridad editorial y técnica, pero no sus
 - No existe máximo de palabras por unidad o curso.
 - No se expandirá contenido con repetición, paráfrasis redundante o relleno.
 - Un tema complejo puede dividirse en capítulos, anexos o módulos suplementarios.
-- La ruta de 16 semanas representa una secuencia docente, no un límite para el corpus.
 - La claridad tiene prioridad sobre la brevedad y la exhaustividad tiene prioridad sobre una estructura uniforme.
 
 ## Revisión externa

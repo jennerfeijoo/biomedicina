@@ -12,6 +12,8 @@ UNIT_ROOT = ROOT / "data" / "generated_units"
 COURSE_ROOT = ROOT / "data" / "generated_courses"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 URL_RE = re.compile(r"^https?://", re.IGNORECASE)
+COURSE_TIME_KEYS = {"estimated_workload", "duration_weeks", "weekly_hours", "total_workload_hours", "course_plan"}
+UNIT_TIME_KEYS = {"estimated_hours", "weeks"}
 
 MIN_UNITS = 6
 MIN_THEORY_SECTIONS = 4
@@ -23,10 +25,6 @@ MIN_WORKED_EXAMPLES = 2
 MIN_GUIDED_ACTIVITIES = 1
 MIN_PRACTICE_ITEMS = 8
 MIN_COMMON_ERRORS = 5
-MIN_DURATION_WEEKS = 12
-MAX_DURATION_WEEKS = 16
-MIN_TOTAL_HOURS = 90
-MIN_SEMESTER_PLAN_ROWS = 12
 MIN_DIAGNOSTIC_QUESTIONS = 10
 MIN_COURSE_OUTCOMES = 6
 MIN_COURSE_COMPETENCIES = 5
@@ -93,6 +91,9 @@ def practice_item_count(data: dict[str, Any]) -> int:
 def audit_unit(data: dict[str, Any]) -> tuple[int, list[str]]:
     words = count_words(data)
     issues: list[str] = []
+    forbidden = sorted(UNIT_TIME_KEYS & data.keys())
+    if forbidden:
+        issues.append("conserva metadatos temporales: " + ", ".join(forbidden))
     if len(data.get("learning_objectives", [])) < MIN_OBJECTIVES:
         issues.append(f"menos de {MIN_OBJECTIVES} objetivos")
     if len(data.get("theory_sections", [])) < MIN_THEORY_SECTIONS:
@@ -131,14 +132,9 @@ def audit_course_architecture(subject_id: str) -> list[str]:
     if data.get("status") not in {"review", "complete"}:
         issues.append("status del curso debe ser review o complete")
 
-    duration = int(data.get("duration_weeks", 0) or 0)
-    if not MIN_DURATION_WEEKS <= duration <= MAX_DURATION_WEEKS:
-        issues.append(f"duración={duration}; debe estar entre {MIN_DURATION_WEEKS} y {MAX_DURATION_WEEKS} semanas")
-    total_hours = int(data.get("total_workload_hours", 0) or 0)
-    if total_hours < MIN_TOTAL_HOURS:
-        issues.append(f"carga total={total_hours}; mínimo {MIN_TOTAL_HOURS} horas")
-    if len(data.get("semester_plan", [])) < MIN_SEMESTER_PLAN_ROWS:
-        issues.append(f"cronograma con menos de {MIN_SEMESTER_PLAN_ROWS} semanas")
+    forbidden = sorted(COURSE_TIME_KEYS & data.keys())
+    if forbidden:
+        issues.append("conserva metadatos temporales: " + ", ".join(forbidden))
     if len(data.get("course_competencies", [])) < MIN_COURSE_COMPETENCIES:
         issues.append(f"menos de {MIN_COURSE_COMPETENCIES} competencias")
     if len(data.get("learning_outcomes", [])) < MIN_COURSE_OUTCOMES:
@@ -174,7 +170,7 @@ def audit_course_architecture(subject_id: str) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Audita la integridad de la arquitectura semestral sin usar extensión textual como criterio de completitud."
+        description="Audita la integridad de la arquitectura del curso sin usar extensión textual como criterio de completitud."
     )
     parser.add_argument("--subject", help="Limita la auditoría a un subject_id.")
     parser.add_argument("--strict", action="store_true", help="Devuelve error cuando la estructura seleccionada no cumple.")
@@ -184,7 +180,7 @@ def main() -> int:
     if args.subject:
         generated_subjects = [args.subject]
     if not generated_subjects:
-        print("No hay arquitecturas semestrales generadas para auditar.")
+        print("No hay arquitecturas del curso generadas para auditar.")
         return 1 if args.strict else 0
 
     failed_subjects = 0
@@ -211,7 +207,7 @@ def main() -> int:
             course_issues.append("todas las unidades deben usar schema_version 2.0")
 
         ready = not course_issues and not unit_issues
-        state = "ARQUITECTURA SEMESTRAL VÁLIDA" if ready else "ESTRUCTURA PENDIENTE"
+        state = "ARQUITECTURA DEL CURSO VÁLIDA" if ready else "ESTRUCTURA PENDIENTE"
         print(f"\n{subject_id}: {state}")
         print(f"  unidades={len(paths)} · extensión descriptiva={total_words} palabras · esquemas={','.join(sorted(schema_versions)) or 'ninguno'}")
         for issue in course_issues:

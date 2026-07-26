@@ -16,7 +16,7 @@ COURSE_TIME_KEYS = {
     "duration_weeks",
     "weekly_hours",
     "total_workload_hours",
-    "semester_plan",
+    "course_plan",
 }
 UNIT_TIME_KEYS = {"estimated_hours", "weeks"}
 
@@ -31,6 +31,8 @@ def write(path: Path, text: str) -> None:
 
 
 def rename(old_rel: str, new_rel: str) -> None:
+    if old_rel == new_rel:
+        return
     old = ROOT / old_rel
     new = ROOT / new_rel
     if old.exists():
@@ -51,30 +53,30 @@ def replace_file(path: Path, replacements: list[tuple[str, str]]) -> None:
 
 def normalize_pacing_text(value: str) -> str:
     replacements = {
-        "Antes de cada semana:": "Antes de iniciar una unidad:",
-        "antes de cada semana:": "antes de iniciar una unidad:",
-        "Cada dos semanas:": "De forma periódica:",
-        "cada dos semanas:": "de forma periódica:",
-        "nivelación de dos a tres semanas": "nivelación previa",
-        "nivelación de 2 a 3 semanas": "nivelación previa",
-        "al final del semestre": "al completar el recorrido",
-        "durante el semestre": "a lo largo del recorrido",
-        "Plan de evaluación semestral": "Plan de evaluación",
-        "plan de evaluación semestral": "plan de evaluación",
-        "cronograma semestral": "ruta del curso",
-        "Cronograma semestral": "Ruta del curso",
-        "semestrales": "del curso",
-        "semestral": "del curso",
-        "semestres": "recorridos",
-        "semestre": "recorrido",
-        "Semester": "Course",
-        "semester": "course",
+        "Antes de iniciar una unidad:": "Antes de iniciar una unidad:",
+        "antes de iniciar una unidad:": "antes de iniciar una unidad:",
+        "De forma periódica:": "De forma periódica:",
+        "de forma periódica:": "de forma periódica:",
+        "nivelación previa": "nivelación previa",
+        "nivelación previa": "nivelación previa",
+        "al completar el recorrido": "al completar el recorrido",
+        "a lo largo del recorrido": "a lo largo del recorrido",
+        "Plan de evaluación": "Plan de evaluación",
+        "plan de evaluación": "plan de evaluación",
+        "ruta del curso": "ruta del curso",
+        "Ruta del curso": "Ruta del curso",
+        "del curso": "del curso",
+        "del curso": "del curso",
+        "recorridos": "recorridos",
+        "recorrido": "recorrido",
+        "Course": "Course",
+        "course": "course",
     }
     text = value
     for old, new in replacements.items():
         text = text.replace(old, new)
     text = re.sub(r"\bpor semana\b", "según la necesidad", text, flags=re.IGNORECASE)
-    return re.sub(r" {2,}", " ", text)
+    return text
 
 
 def clean_json_value(value: Any, *, course_file: bool, unit_file: bool) -> Any:
@@ -92,7 +94,7 @@ def clean_json_value(value: Any, *, course_file: bool, unit_file: bool) -> Any:
     if isinstance(value, list):
         return [clean_json_value(item, course_file=course_file, unit_file=unit_file) for item in value]
     if isinstance(value, str):
-        return normalize_pacing_text(value).replace("que que", "que")
+        return normalize_pacing_text(value).replace("que", "que")
     return value
 
 
@@ -113,7 +115,7 @@ def migrate_templates_and_generators() -> None:
         ROOT / "templates" / "asignatura.html",
         [
             ('        <div><dt>Carga estimada</dt><dd>{{ estimated_workload }}</dd></div>\n', ''),
-            ('../../assets/js/semester-course.js', '../../assets/js/course.js'),
+            ('../../assets/js/course.js', '../../assets/js/course.js'),
         ],
     )
     replace_file(
@@ -154,8 +156,8 @@ def migrate_templates_and_generators() -> None:
 
 
 def migrate_course_assets() -> None:
-    rename("assets/js/semester-course.js", "assets/js/course.js")
-    rename("assets/css/semester-course.css", "assets/css/course.css")
+    rename("assets/js/course.js", "assets/js/course.js")
+    rename("assets/css/course.css", "assets/css/course.css")
 
     js_path = ROOT / "assets" / "js" / "course.js"
     if js_path.exists():
@@ -177,30 +179,30 @@ def migrate_course_assets() -> None:
             flags=re.DOTALL,
         )
         text = re.sub(
-            r"\n  function renderSemesterPlan\(course\) \{.*?\n  \}\n\n  function renderAssessment",
+            r"\n  function renderCoursePlan\(course\) \{.*?\n  \}\n\n  function renderAssessment",
             "\n\n  function renderAssessment",
             text,
             flags=re.DOTALL,
         )
-        text = text.replace("    renderSemesterPlan(course);\n", "")
-        text = text.replace("Plan de evaluación semestral", "Plan de evaluación")
-        text = text.replace("semester-course", "course")
-        text = text.replace("assets/css/semester-course.css", "assets/css/course.css")
+        text = text.replace("    renderCoursePlan(course);\n", "")
+        text = text.replace("Plan de evaluación", "Plan de evaluación")
+        text = text.replace("course-course", "course")
+        text = text.replace("assets/css/course.css", "assets/css/course.css")
         write(js_path, text)
 
     css_path = ROOT / "assets" / "css" / "course.css"
     if css_path.exists():
-        write(css_path, read(css_path).replace("semester-course", "course"))
+        write(css_path, read(css_path).replace("course-course", "course"))
 
     units_js = ROOT / "assets" / "js" / "generated-units.js"
     if units_js.exists():
         text = read(units_js)
         text = text.replace('    if (unit.estimated_hours) values.push(`${unit.estimated_hours} horas estimadas`);\n', '')
         text = text.replace('    if (unit.weeks?.length) values.push(`Semanas ${unit.weeks.join("–")}`);\n', '')
-        text = text.replace("loadSemesterCourseEnhancer", "loadCourseEnhancer")
-        text = text.replace('script[data-semester-course="true"]', 'script[data-course="true"]')
-        text = text.replace("assets/js/semester-course.js", "assets/js/course.js")
-        text = text.replace('script.dataset.semesterCourse = "true";', 'script.dataset.course = "true";')
+        text = text.replace("loadCourseCourseEnhancer", "loadCourseEnhancer")
+        text = text.replace('script[data-course-course="true"]', 'script[data-course="true"]')
+        text = text.replace("assets/js/course.js", "assets/js/course.js")
+        text = text.replace('script.dataset.courseCourse = "true";', 'script.dataset.course = "true";')
         write(units_js, text)
 
 
@@ -208,8 +210,8 @@ def migrate_validators_and_audits() -> None:
     unit_validator = ROOT / "scripts" / "validate_generated_units.py"
     if unit_validator.exists():
         text = read(unit_validator)
-        text = text.replace("def validate_semester(data: dict[str, Any]) -> None:", "def validate_course(data: dict[str, Any]) -> None:")
-        text = text.replace("        validate_semester(data)\n", "        validate_course(data)\n")
+        text = text.replace("def validate_course(data: dict[str, Any]) -> None:", "def validate_course(data: dict[str, Any]) -> None:")
+        text = text.replace("        validate_course(data)\n", "        validate_course(data)\n")
         text = re.sub(
             r"    if int\(data\.get\(\"estimated_hours\", 0\) or 0\) < 12:\n"
             r"        raise ValueError\(\"schema 2\.0 requiere al menos 12 horas estimadas\"\)\n"
@@ -223,7 +225,7 @@ def migrate_validators_and_audits() -> None:
         text = text.replace(marker, insertion)
         write(unit_validator, text)
 
-    rename("scripts/audit_semester_readiness.py", "scripts/audit_course_readiness.py")
+    rename("scripts/audit_course_readiness.py", "scripts/audit_course_readiness.py")
     readiness = ROOT / "scripts" / "audit_course_readiness.py"
     if readiness.exists():
         text = read(readiness)
@@ -243,7 +245,7 @@ def migrate_validators_and_audits() -> None:
         )
         text = text.replace(
             "URL_RE = re.compile(r\"^https?://\", re.IGNORECASE)\n",
-            "URL_RE = re.compile(r\"^https?://\", re.IGNORECASE)\nCOURSE_TIME_KEYS = {\"estimated_workload\", \"duration_weeks\", \"weekly_hours\", \"total_workload_hours\", \"semester_plan\"}\nUNIT_TIME_KEYS = {\"estimated_hours\", \"weeks\"}\n",
+            "URL_RE = re.compile(r\"^https?://\", re.IGNORECASE)\nCOURSE_TIME_KEYS = {\"estimated_workload\", \"duration_weeks\", \"weekly_hours\", \"total_workload_hours\", \"course_plan\"}\nUNIT_TIME_KEYS = {\"estimated_hours\", \"weeks\"}\n",
         )
         text = text.replace(
             "    issues: list[str] = []\n    if len(data.get(\"learning_objectives\", [])) < MIN_OBJECTIVES:\n",
@@ -255,14 +257,14 @@ def migrate_validators_and_audits() -> None:
         text = text.replace("arquitecturas course", "arquitecturas de curso")
         write(readiness, text)
 
-    rename("scripts/audit_semester_portfolio.py", "scripts/audit_course_portfolio.py")
+    rename("scripts/audit_course_portfolio.py", "scripts/audit_course_portfolio.py")
     portfolio = ROOT / "scripts" / "audit_course_portfolio.py"
     if portfolio.exists():
         text = read(portfolio)
         text = text.replace("MAX_HOUR_MISMATCH = 8\n", "")
         text = text.replace(
             "SPACE_RE = re.compile(r\"\\s+\")\n",
-            "SPACE_RE = re.compile(r\"\\s+\")\nCOURSE_TIME_KEYS = {\"estimated_workload\", \"duration_weeks\", \"weekly_hours\", \"total_workload_hours\", \"semester_plan\"}\nUNIT_TIME_KEYS = {\"estimated_hours\", \"weeks\"}\n",
+            "SPACE_RE = re.compile(r\"\\s+\")\nCOURSE_TIME_KEYS = {\"estimated_workload\", \"duration_weeks\", \"weekly_hours\", \"total_workload_hours\", \"course_plan\"}\nUNIT_TIME_KEYS = {\"estimated_hours\", \"weeks\"}\n",
         )
         text = re.sub(
             r"\n    duration = int\(course\.get\(\"duration_weeks\", 0\) or 0\).*?"
@@ -289,10 +291,10 @@ def migrate_validators_and_audits() -> None:
 
 def update_references_and_docs() -> None:
     replacements = {
-        "audit_semester_readiness.py": "audit_course_readiness.py",
-        "audit_semester_portfolio.py": "audit_course_portfolio.py",
-        "semester-course.js": "course.js",
-        "semester-course.css": "course.css",
+        "audit_course_readiness.py": "audit_course_readiness.py",
+        "audit_course_portfolio.py": "audit_course_portfolio.py",
+        "course.js": "course.js",
+        "course.css": "course.css",
     }
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
@@ -302,7 +304,7 @@ def update_references_and_docs() -> None:
         text = read(path)
         for old, new in replacements.items():
             text = text.replace(old, new)
-        text = text.replace("que que", "que")
+        text = text.replace("que", "que")
         if path.suffix.lower() != ".json":
             text = normalize_pacing_text(text)
         write(path, text)
@@ -356,9 +358,9 @@ def clean_public_html() -> None:
         if ".git" in path.parts:
             continue
         text = block_re.sub("", read(path))
-        text = text.replace("que que", "que")
-        text = text.replace("semester-course.js", "course.js")
-        text = text.replace("semester-course.css", "course.css")
+        text = text.replace("que", "que")
+        text = text.replace("course.js", "course.js")
+        text = text.replace("course.css", "course.css")
         text = normalize_pacing_text(text)
         write(path, text)
 
@@ -437,7 +439,7 @@ def write_validator() -> None:
         from typing import Any
 
         ROOT = Path(__file__).resolve().parents[1]
-        COURSE_KEYS = {"estimated_workload", "duration_weeks", "weekly_hours", "total_workload_hours", "semester_plan"}
+        COURSE_KEYS = {"estimated_workload", "duration_weeks", "weekly_hours", "total_workload_hours", "course_plan"}
         UNIT_KEYS = {"estimated_hours", "weeks"}
         TEXT_SUFFIXES = {".py", ".js", ".css", ".html", ".md", ".yml", ".yaml", ".json"}
         FORBIDDEN_UI = ("Carga estimada", "Tiempo sugerido", "horas estimadas", "horas semanales", "horas totales de estudio")
@@ -459,10 +461,10 @@ def write_validator() -> None:
         def main() -> int:
             errors: list[str] = []
             old_paths = (
-                "assets/js/semester-course.js",
-                "assets/css/semester-course.css",
-                "scripts/audit_semester_readiness.py",
-                "scripts/audit_semester_portfolio.py",
+                "assets/js/course.js",
+                "assets/css/course.css",
+                "scripts/audit_course_readiness.py",
+                "scripts/audit_course_portfolio.py",
             )
             for relative in old_paths:
                 if (ROOT / relative).exists():
@@ -488,7 +490,7 @@ def write_validator() -> None:
                 if DUPLICATE_QUE.search(text):
                     errors.append(f"duplicación tipográfica en {path.relative_to(ROOT)}")
                 lowered = text.casefold()
-                if "semester-course" in lowered or "audit_semester" in lowered or "semester_plan" in lowered:
+                if "course-course" in lowered or "audit_course" in lowered or "course_plan" in lowered:
                     errors.append(f"nomenclatura temporal obsoleta en {path.relative_to(ROOT)}")
                 if path.suffix.lower() in {".html", ".js"} or path.name in {"asignatura.html", "unidad.html"}:
                     for phrase in FORBIDDEN_UI:

@@ -16,7 +16,7 @@
   }
 
   function appendHeading(parent, level, text, id = "") {
-    const heading = element(`h${level}`, "semester-course-heading", text);
+    const heading = element(`h${level}`, "course-heading", text);
     if (id) heading.id = id;
     parent.appendChild(heading);
     return heading;
@@ -38,31 +38,25 @@
     else toc.appendChild(link);
   }
 
-  function renderCourseHeader(course) {
-    const meta = document.querySelector(".course-meta");
-    if (!meta) return;
 
-    const values = meta.querySelectorAll("dd");
-    if (values[0] && course.academic_level) values[0].textContent = course.academic_level;
-    if (values[1] && course.duration_weeks && course.total_workload_hours) {
-      values[1].textContent = `${course.duration_weeks} semanas · ${course.weekly_hours} horas semanales · ${course.total_workload_hours} horas totales`;
-    }
+function renderCourseHeader(course) {
+  const meta = document.querySelector(".course-meta");
+  if (!meta) return;
+  const values = meta.querySelectorAll("dd");
+  if (values[0] && course.academic_level) values[0].textContent = course.academic_level;
+}
 
-    const editorialStatus = values[2]?.closest("div");
-    if (editorialStatus) editorialStatus.remove();
-  }
-
-  function renderPurpose(course) {
+function renderPurpose(course) {
     const section = document.querySelector("#proposito");
     if (!section) return;
 
-    const overview = element("div", "semester-course-overview");
+    const overview = element("div", "course-overview");
     appendHeading(overview, 3, "Alcance del curso");
     overview.appendChild(element("p", "", course.course_purpose));
 
     if (course.study_method?.length) {
       appendHeading(overview, 3, "Cómo estudiar esta asignatura");
-      appendList(overview, course.study_method, "semester-course-checklist");
+      appendList(overview, course.study_method, "course-checklist");
     }
     section.appendChild(overview);
   }
@@ -72,7 +66,7 @@
     if (!section) return;
 
     if (course.prerequisites?.length) {
-      const wrapper = element("div", "semester-course-panel");
+      const wrapper = element("div", "course-panel");
       appendHeading(wrapper, 3, "Conocimientos necesarios");
       appendList(wrapper, course.prerequisites);
       section.appendChild(wrapper);
@@ -81,14 +75,14 @@
     const diagnostic = course.diagnostic_assessment;
     if (!diagnostic) return;
 
-    const details = element("details", "semester-course-details");
+    const details = element("details", "course-details");
     const summary = element("summary", "", diagnostic.title || "Diagnóstico de prerrequisitos");
     details.appendChild(summary);
     if (diagnostic.purpose) details.appendChild(element("p", "", diagnostic.purpose));
 
-    const questions = element("div", "semester-course-diagnostic");
+    const questions = element("div", "course-diagnostic");
     (diagnostic.questions || []).forEach((item, index) => {
-      const question = element("details", "semester-course-question");
+      const question = element("details", "course-question");
       question.appendChild(element("summary", "", `${index + 1}. ${item.question}`));
       question.appendChild(element("p", "", item.answer));
       questions.appendChild(question);
@@ -107,7 +101,7 @@
     if (!section || !course.course_competencies?.length) return;
     const existing = section.querySelector("ul");
     if (existing) existing.remove();
-    appendList(section, course.course_competencies, "semester-course-outcomes");
+    appendList(section, course.course_competencies, "course-outcomes");
   }
 
   function renderLearningOutcomes(course) {
@@ -115,48 +109,17 @@
     if (!section || !course.learning_outcomes?.length) return;
     const existing = section.querySelector("ul");
     if (existing) existing.remove();
-    appendList(section, course.learning_outcomes, "semester-course-outcomes");
+    appendList(section, course.learning_outcomes, "course-outcomes");
   }
 
-  function renderSemesterPlan(course) {
-    const section = document.querySelector("#modulos");
-    if (!section || !course.semester_plan?.length) return;
-
-    const existing = section.querySelector(":scope > ul, :scope > ol");
-    if (existing) existing.remove();
-
-    const wrapper = element("div", "semester-course-table-wrap");
-    appendHeading(wrapper, 3, `Cronograma de ${course.duration_weeks} semanas`, "cronograma-semestral");
-    const table = element("table", "semester-course-table");
-    const thead = element("thead");
-    const headRow = element("tr");
-    ["Semana", "Unidad", "Foco", "Trabajo guiado", "Trabajo autónomo", "Evidencia"].forEach((label) => {
-      headRow.appendChild(element("th", "", label));
-    });
-    thead.appendChild(headRow);
-    table.appendChild(thead);
-
-    const tbody = element("tbody");
-    for (const row of course.semester_plan) {
-      const tr = element("tr");
-      [row.week, row.unit, row.focus, row.guided_work, row.independent_work, row.evidence].forEach((value) => {
-        tr.appendChild(element("td", "", value));
-      });
-      tbody.appendChild(tr);
-    }
-    table.appendChild(tbody);
-    wrapper.appendChild(table);
-    section.appendChild(wrapper);
-    addTocLink("cronograma-semestral", "Cronograma", 'a[href="#unidades"]');
-  }
 
   function renderAssessment(course) {
     const section = document.querySelector("#evaluacion");
     if (!section || !course.assessment_plan?.length) return;
 
-    const wrapper = element("div", "semester-course-assessment");
-    appendHeading(wrapper, 3, "Plan de evaluación semestral");
-    const table = element("table", "semester-course-table semester-course-grading");
+    const wrapper = element("div", "course-assessment");
+    appendHeading(wrapper, 3, "Plan de evaluación");
+    const table = element("table", "course-table course-grading");
     const thead = element("thead");
     const headRow = element("tr");
     ["Componente", "Ponderación", "Evidencia evaluada"].forEach((label) => headRow.appendChild(element("th", "", label)));
@@ -173,7 +136,7 @@
       tbody.appendChild(tr);
       total += Number(item.weight_percent || 0);
     }
-    const totalRow = element("tr", "semester-course-total");
+    const totalRow = element("tr", "course-total");
     totalRow.appendChild(element("th", "", "Total"));
     totalRow.appendChild(element("th", "", `${total} %`));
     totalRow.appendChild(element("td", "", ""));
@@ -202,9 +165,9 @@
     const project = course.final_project;
     if (!section || !project) return;
 
-    const wrapper = element("article", "semester-course-project");
+    const wrapper = element("article", "course-project");
     appendHeading(wrapper, 3, `Proyecto integrador: ${project.title}`, "proyecto-integrador");
-    wrapper.appendChild(element("p", "semester-course-project-scenario", project.scenario));
+    wrapper.appendChild(element("p", "course-project-scenario", project.scenario));
 
     appendHeading(wrapper, 4, "Fases");
     const phases = element("ol");
@@ -216,7 +179,7 @@
 
     if (project.rubric?.length) {
       appendHeading(wrapper, 4, "Rúbrica");
-      const table = element("table", "semester-course-table");
+      const table = element("table", "course-table");
       const thead = element("thead");
       const headRow = element("tr");
       ["Criterio", "Peso", "Desempeño excelente"].forEach((label) => headRow.appendChild(element("th", "", label)));
@@ -241,7 +204,7 @@
     const section = document.querySelector("#recursos");
     if (!section || !course.core_resources?.length) return;
 
-    const wrapper = element("div", "semester-course-resources");
+    const wrapper = element("div", "course-resources");
     appendHeading(wrapper, 3, "Bibliografía central del curso");
     const list = element("ol");
     for (const resource of course.core_resources) {
@@ -258,7 +221,7 @@
 
     if (course.completion_criteria?.length) {
       appendHeading(wrapper, 3, "Criterios para completar la asignatura", "criterios-finalizacion");
-      appendList(wrapper, course.completion_criteria, "semester-course-checklist");
+      appendList(wrapper, course.completion_criteria, "course-checklist");
     }
     section.appendChild(wrapper);
   }
@@ -283,7 +246,7 @@
 
     const css = element("link");
     css.rel = "stylesheet";
-    css.href = new URL("assets/css/semester-course.css", rootUrl).href;
+    css.href = new URL("assets/css/course.css", rootUrl).href;
     document.head.appendChild(css);
 
     renderCourseHeader(course);
@@ -291,7 +254,6 @@
     renderPrerequisites(course);
     renderCompetencies(course);
     renderLearningOutcomes(course);
-    renderSemesterPlan(course);
     renderFinalProject(course);
     renderAssessment(course);
     renderResources(course);

@@ -1,1 +1,414 @@
-{"schema_version":"2.0","subject_id":"metodos-numericos","area_id":"ciencias-basicas","unit":5,"slug":"cuadratura-integracion-temporal","title":"Cuadratura e integración numérica de ecuaciones diferenciales","status":"review","estimated_hours":16,"weeks":[13,14],"difficulty":"Intermedio–avanzado","prerequisite_knowledge":["Integrales definidas.","Series de Taylor.","EDO y problemas iniciales.","Error y estabilidad numérica."],"progression":{"previous":"Interpolación y ajuste","next":"Verificación y reproducibilidad"},"purpose":"Implementar y verificar métodos de integración espacial y temporal, controlando orden, estabilidad, adaptación, eventos y rigidez sin duplicar el análisis matemático completo de Ecuaciones Diferenciales.","learning_objectives":["Aplicar reglas de Newton–Cotes compuestas.","Construir cuadratura gaussiana y adaptativa.","Analizar singularidades y transformaciones.","Implementar Euler y Runge–Kutta explícitos.","Estimar error local y global.","Analizar estabilidad absoluta y rigidez introductoria.","Comparar solucionadores mediante referencias, eventos y coste."],"theory_sections":[{"heading":"Cuadratura compuesta y orden","paragraphs":["La cuadratura aproxima una integral mediante una suma ponderada de evaluaciones. Trapecio y Simpson se derivan de interpolación local y tienen errores que dependen de derivadas y tamaño de subintervalo.","En reglas compuestas, refinar reduce truncamiento hasta que redondeo, ruido de la función o coste dominan. El orden observado debe estimarse en una región asintótica, no a partir de dos puntos arbitrarios.","Integrandos con oscilaciones, discontinuidades o picos estrechos pueden eludir una malla uniforme. Visualizar y analizar la estructura precede a elegir el método.","En curvas concentración-tiempo educativas, el área numérica depende de muestreo y extrapolación terminal. No equivale automáticamente a una estimación farmacocinética clínicamente válida."],"equations":[{"label":"Simpson compuesto","latex":"I_h=\\frac{h}{3}\\left[f(x_0)+4\\sum f(x_{2j-1})+2\\sum f(x_{2j})+f(x_n)\\right]"}],"key_points":["Cuadratura deriva de aproximación local","El refinamiento tiene un régimen útil","La estructura del integrando importa","Área numérica no implica validez clínica"]},{"heading":"Cuadratura adaptativa, gaussiana y transformaciones","paragraphs":["La cuadratura adaptativa compara estimaciones de distinto orden o escala para distribuir evaluaciones donde el error parece mayor. Su estimador puede fallar si ambas aproximaciones comparten un sesgo.","Las reglas gaussianas eligen nodos y pesos para integrar exactamente polinomios de grado alto respecto de un peso. Su eficacia depende de regularidad y transformación del dominio.","Singularidades integrables y dominios infinitos pueden tratarse mediante cambios de variable, separación del intervalo o reglas especializadas. Ocultar una singularidad bajo tolerancias laxas produce convergencia aparente.","Monte Carlo escala favorablemente con dimensión, pero converge lentamente como N^{-1/2}. Semillas, estimadores de varianza y repeticiones independientes forman parte del resultado."],"equations":[{"label":"Error estándar Monte Carlo","latex":"SE(\\hat I)=\\frac{s_g}{\\sqrt{N}}"}],"key_points":["Adaptación usa estimadores, no oráculos","Gauss explota exactitud polinómica","Las singularidades requieren tratamiento explícito","Monte Carlo necesita incertidumbre y semillas"]},{"heading":"Euler, Runge–Kutta y error temporal","paragraphs":["Euler explícito avanza usando la pendiente inicial y tiene error global de primer orden. Es pedagógico y útil como referencia, pero requiere pasos pequeños para precisión y estabilidad.","Runge–Kutta combina varias pendientes para alcanzar mayor orden sin derivadas superiores explícitas. Los pares embebidos estiman error local y ajustan el paso.","El error local se acumula y propaga a través de la dinámica. Una tolerancia interna no es una cota directa del error global ni de un observable derivado.","Eventos como cruces de umbral exigen localizar raíces dentro de un paso mediante interpolación densa o refinamiento. Detectar solo en nodos puede sesgar tiempos y máximos."],"equations":[{"label":"Euler explícito","latex":"y_{n+1}=y_n+h f(t_n,y_n)"}],"key_points":["Euler es primer orden","RK combina pendientes","Tolerancia local no es error global","Eventos requieren localización"]},{"heading":"Estabilidad, rigidez y selección de solucionador","paragraphs":["La estabilidad absoluta estudia la respuesta numérica a y'=λy. Un método puede ser consistente y convergente cuando h tiende a cero, pero inestable con un paso demasiado grande.","La rigidez aparece cuando escalas rápidas restringen el paso explícito aunque el comportamiento de interés sea lento. Métodos implícitos amplían estabilidad a costa de resolver ecuaciones internas.","Comparar solucionadores exige igualar tolerancias, observables y manejo de eventos. Tiempo aislado sin error no informa eficiencia.","Verificar una simulación usa solución analítica, solución manufacturada, refinamiento, invariantes y comparación cruzada. La concordancia entre dos bibliotecas que comparten un método no es independencia completa."],"equations":[{"label":"Función de estabilidad","latex":"y_{n+1}=R(h\\lambda)y_n,\\quad |R(h\\lambda)|\\le1"}],"key_points":["Estabilidad depende de hλ","Rigidez restringe métodos explícitos","Eficiencia combina coste y error","Verificación requiere referencias independientes"]}],"glossary":[{"term":"Cuadratura","definition":"Aproximación numérica de una integral definida."},{"term":"Newton–Cotes","definition":"Reglas basadas en interpolación en nodos prefijados."},{"term":"Trapecio","definition":"Regla lineal de cuadratura."},{"term":"Simpson","definition":"Regla basada en interpolación cuadrática."},{"term":"Cuadratura gaussiana","definition":"Regla con nodos y pesos óptimos para exactitud polinómica."},{"term":"Adaptación","definition":"Distribución dinámica de esfuerzo según error estimado."},{"term":"Monte Carlo","definition":"Integración mediante muestreo aleatorio."},{"term":"Error local","definition":"Error introducido en un paso partiendo del estado exacto."},{"term":"Error global","definition":"Error acumulado en la trayectoria numérica."},{"term":"Runge–Kutta","definition":"Familia de métodos de una etapa compuesta por varias pendientes."},{"term":"Par embebido","definition":"Dos fórmulas RK de diferente orden que comparten evaluaciones."},{"term":"Estabilidad absoluta","definition":"Control de crecimiento numérico en la ecuación de prueba."},{"term":"Rigidez","definition":"Separación de escalas que impone restricciones severas a métodos explícitos."},{"term":"Evento","definition":"Condición cuya raíz se localiza durante la integración."}],"worked_examples":[{"title":"Área bajo una curva sintética","scenario":"Integrar una curva de concentración educativa con referencia analítica.","reasoning_steps":["Definir unidades e intervalo.","Comparar trapecio, Simpson y adaptativa.","Construir curva error-evaluaciones.","Perturbar muestreo y tramo terminal."],"interpretation":"La discretización y el dominio afectan el área estimada.","limitations":["No representa dosificación real.","La referencia analítica es sintética."]},{"title":"Modelo compartimental con escalas separadas","scenario":"Comparar RK explícito e implícito en un sistema lineal rígido educativo.","reasoning_steps":["Calcular solución matricial de referencia.","Variar tolerancias y pasos.","Medir error en estados y observables.","Registrar evaluaciones, Jacobianos y tiempo."],"interpretation":"El método implícito puede ser más eficiente cuando estabilidad limita al explícito.","limitations":["Sistema pequeño e idealizado.","No valida farmacocinética clínica."]}],"guided_activities":[{"title":"Estudio de convergencia de cuadratura","instructions":["Implementar trapecio y Simpson compuestos.","Añadir una regla adaptativa.","Usar integrandos suaves, singulares y oscilatorios.","Estimar orden y coste."],"problems":["Polinomio control.","Gaussiana estrecha.","Singularidad integrable.","Integral oscilatoria."],"checking_criteria":["Referencia independiente.","Régimen asintótico identificado.","Evaluaciones contabilizadas.","Fallas del estimador discutidas."]},{"title":"Benchmark de solucionadores EDO","instructions":["Implementar Euler y RK4.","Comparar con solve_ivp o equivalente.","Evaluar problema no rígido y rígido.","Medir error, eventos y coste."],"problems":["Decaimiento exponencial.","Oscilador.","Sistema rígido lineal.","Cruce de umbral."],"checking_criteria":["Mismas tolerancias y horizonte.","Referencia analítica o refinada.","Estabilidad explicada.","Resultados reproducibles."]}],"practice_sets":[{"title":"Problemas graduados","problems":[{"level":"Fundamental","prompt":"Aplica trapecio a tres nodos.","solution":"Sumar áreas de dos trapecios conservando unidades."},{"level":"Fundamental","prompt":"¿Cuándo Simpson compuesto requiere n par?","solution":"Porque cada panel usa dos subintervalos."},{"level":"Fundamental","prompt":"Ejecuta dos pasos de Euler.","solution":"Evaluar pendiente en el inicio de cada paso."},{"level":"Intermedio","prompt":"Estima orden observado de una cuadratura.","solution":"Usar errores en refinamientos sucesivos dentro del régimen asintótico."},{"level":"Intermedio","prompt":"Transforma una integral infinita.","solution":"Elegir cambio de variable, incluir jacobiano y analizar extremos."},{"level":"Intermedio","prompt":"Deriva región de estabilidad de Euler.","solution":"R(z)=1+z y exigir |1+z|≤1."},{"level":"Intermedio","prompt":"Distingue error local y global.","solution":"El local corresponde a un paso exacto; el global acumula y propaga errores."},{"level":"Aplicado","prompt":"Compara adaptativa y malla uniforme.","solution":"Usar misma tolerancia, referencia y número de evaluaciones."},{"level":"Aplicado","prompt":"Detecta rigidez experimentalmente.","solution":"Observar restricción de paso explícito frente a método estable implícito."},{"level":"Aplicado","prompt":"Audita tiempo de evento.","solution":"Comparar localización densa con refinamiento y referencia."}]}],"common_errors":[{"error":"Inferir convergencia con dos mallas.","correction":"Usar varios refinamientos y confirmar régimen asintótico."},{"error":"Ignorar singularidades del integrando.","correction":"Analizar dominio y transformar o dividir el intervalo."},{"error":"Comparar solucionadores solo por tiempo.","correction":"Igualar error, tolerancias, eventos y observables."},{"error":"Confundir tolerancia local con error global.","correction":"Verificar contra referencia y refinamiento."},{"error":"Usar método explícito con paso inestable.","correction":"Analizar región de estabilidad y rigidez."},{"error":"Interpretar simulación correcta como modelo validado.","correction":"Separar verificación numérica de validación científica."}],"self_assessment":[{"question":"¿De qué deriva Simpson?","answer":"De interpolación cuadrática por panel."},{"question":"¿Qué hace la adaptación?","answer":"Redistribuye evaluaciones según un error estimado."},{"question":"¿Orden Monte Carlo estándar?","answer":"Error estadístico de orden N^{-1/2}."},{"question":"¿Orden global de Euler?","answer":"Uno."},{"question":"¿Qué estima un par RK embebido?","answer":"Error local para controlar paso."},{"question":"¿Consistencia garantiza estabilidad?","answer":"No."},{"question":"¿Qué indica rigidez?","answer":"Escalas rápidas que restringen métodos explícitos."},{"question":"¿Simulación verificada valida el modelo?","answer":"No."}],"biomedical_connections":["Área bajo curvas educativas.","Integración de perfiles espaciales.","Modelos compartimentales.","Dinámica de biomarcadores.","Cruces de umbral no clínicos.","Procesos con escalas temporales múltiples."],"sources":[{"title":"Solving Ordinary Differential Equations I","organization":"Hairer, Nørsett y Wanner / Springer","url":"https://doi.org/10.1007/978-3-540-78862-1","type":"libro académico"},{"title":"Solving Ordinary Differential Equations II","organization":"Hairer y Wanner / Springer","url":"https://doi.org/10.1007/978-3-642-05221-7","type":"libro académico"},{"title":"Numerical Integration","organization":"Davis y Rabinowitz / Dover","url":"https://store.doverpublications.com/products/9780486453392","type":"libro académico"},{"title":"QUADPACK","organization":"Netlib","url":"https://www.netlib.org/quadpack/","type":"software científico"},{"title":"SciPy Integration","organization":"SciPy","url":"https://docs.scipy.org/doc/scipy/reference/integrate.html","type":"documentación"},{"title":"DifferentialEquations.jl","organization":"SciML","url":"https://docs.sciml.ai/DiffEqDocs/stable/","type":"documentación"}],"editorial_notice":"Material educativo sujeto a revisión académica externa. La integración numérica y la simulación no constituyen validación farmacológica, fisiológica ni clínica."}
+{
+  "schema_version": "2.0",
+  "subject_id": "metodos-numericos",
+  "area_id": "ciencias-basicas",
+  "unit": 5,
+  "slug": "cuadratura-integracion-temporal",
+  "title": "Cuadratura e integración numérica de ecuaciones diferenciales",
+  "status": "review",
+  "difficulty": "Intermedio–avanzado",
+  "prerequisite_knowledge": [
+    "Integrales definidas.",
+    "Series de Taylor.",
+    "EDO y problemas iniciales.",
+    "Error y estabilidad numérica."
+  ],
+  "progression": {
+    "previous": "Interpolación y ajuste",
+    "next": "Verificación y reproducibilidad"
+  },
+  "purpose": "Implementar y verificar métodos de integración espacial y temporal, controlando orden, estabilidad, adaptación, eventos y rigidez sin duplicar el análisis matemático completo de Ecuaciones Diferenciales.",
+  "learning_objectives": [
+    "Aplicar reglas de Newton–Cotes compuestas.",
+    "Construir cuadratura gaussiana y adaptativa.",
+    "Analizar singularidades y transformaciones.",
+    "Implementar Euler y Runge–Kutta explícitos.",
+    "Estimar error local y global.",
+    "Analizar estabilidad absoluta y rigidez introductoria.",
+    "Comparar solucionadores mediante referencias, eventos y coste."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Cuadratura compuesta y orden",
+      "paragraphs": [
+        "La cuadratura aproxima una integral mediante una suma ponderada de evaluaciones. Trapecio y Simpson se derivan de interpolación local y tienen errores que dependen de derivadas y tamaño de subintervalo.",
+        "En reglas compuestas, refinar reduce truncamiento hasta que redondeo, ruido de la función o coste dominan. El orden observado debe estimarse en una región asintótica, no a partir de dos puntos arbitrarios.",
+        "Integrandos con oscilaciones, discontinuidades o picos estrechos pueden eludir una malla uniforme. Visualizar y analizar la estructura precede a elegir el método.",
+        "En curvas concentración-tiempo educativas, el área numérica depende de muestreo y extrapolación terminal. No equivale automáticamente a una estimación farmacocinética clínicamente válida."
+      ],
+      "equations": [
+        {
+          "label": "Simpson compuesto",
+          "latex": "I_h=\\frac{h}{3}\\left[f(x_0)+4\\sum f(x_{2j-1})+2\\sum f(x_{2j})+f(x_n)\\right]"
+        }
+      ],
+      "key_points": [
+        "Cuadratura deriva de aproximación local",
+        "El refinamiento tiene un régimen útil",
+        "La estructura del integrando importa",
+        "Área numérica no implica validez clínica"
+      ]
+    },
+    {
+      "heading": "Cuadratura adaptativa, gaussiana y transformaciones",
+      "paragraphs": [
+        "La cuadratura adaptativa compara estimaciones de distinto orden o escala para distribuir evaluaciones donde el error parece mayor. Su estimador puede fallar si ambas aproximaciones comparten un sesgo.",
+        "Las reglas gaussianas eligen nodos y pesos para integrar exactamente polinomios de grado alto respecto de un peso. Su eficacia depende de regularidad y transformación del dominio.",
+        "Singularidades integrables y dominios infinitos pueden tratarse mediante cambios de variable, separación del intervalo o reglas especializadas. Ocultar una singularidad bajo tolerancias laxas produce convergencia aparente.",
+        "Monte Carlo escala favorablemente con dimensión, pero converge lentamente como N^{-1/2}. Semillas, estimadores de varianza y repeticiones independientes forman parte del resultado."
+      ],
+      "equations": [
+        {
+          "label": "Error estándar Monte Carlo",
+          "latex": "SE(\\hat I)=\\frac{s_g}{\\sqrt{N}}"
+        }
+      ],
+      "key_points": [
+        "Adaptación usa estimadores, no oráculos",
+        "Gauss explota exactitud polinómica",
+        "Las singularidades requieren tratamiento explícito",
+        "Monte Carlo necesita incertidumbre y semillas"
+      ]
+    },
+    {
+      "heading": "Euler, Runge–Kutta y error temporal",
+      "paragraphs": [
+        "Euler explícito avanza usando la pendiente inicial y tiene error global de primer orden. Es pedagógico y útil como referencia, pero requiere pasos pequeños para precisión y estabilidad.",
+        "Runge–Kutta combina varias pendientes para alcanzar mayor orden sin derivadas superiores explícitas. Los pares embebidos estiman error local y ajustan el paso.",
+        "El error local se acumula y propaga a través de la dinámica. Una tolerancia interna no es una cota directa del error global ni de un observable derivado.",
+        "Eventos como cruces de umbral exigen localizar raíces dentro de un paso mediante interpolación densa o refinamiento. Detectar solo en nodos puede sesgar tiempos y máximos."
+      ],
+      "equations": [
+        {
+          "label": "Euler explícito",
+          "latex": "y_{n+1}=y_n+h f(t_n,y_n)"
+        }
+      ],
+      "key_points": [
+        "Euler es primer orden",
+        "RK combina pendientes",
+        "Tolerancia local no es error global",
+        "Eventos requieren localización"
+      ]
+    },
+    {
+      "heading": "Estabilidad, rigidez y selección de solucionador",
+      "paragraphs": [
+        "La estabilidad absoluta estudia la respuesta numérica a y'=λy. Un método puede ser consistente y convergente cuando h tiende a cero, pero inestable con un paso demasiado grande.",
+        "La rigidez aparece cuando escalas rápidas restringen el paso explícito aunque el comportamiento de interés sea lento. Métodos implícitos amplían estabilidad a costa de resolver ecuaciones internas.",
+        "Comparar solucionadores exige igualar tolerancias, observables y manejo de eventos. Tiempo aislado sin error no informa eficiencia.",
+        "Verificar una simulación usa solución analítica, solución manufacturada, refinamiento, invariantes y comparación cruzada. La concordancia entre dos bibliotecas que comparten un método no es independencia completa."
+      ],
+      "equations": [
+        {
+          "label": "Función de estabilidad",
+          "latex": "y_{n+1}=R(h\\lambda)y_n,\\quad |R(h\\lambda)|\\le1"
+        }
+      ],
+      "key_points": [
+        "Estabilidad depende de hλ",
+        "Rigidez restringe métodos explícitos",
+        "Eficiencia combina coste y error",
+        "Verificación requiere referencias independientes"
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Cuadratura",
+      "definition": "Aproximación numérica de una integral definida."
+    },
+    {
+      "term": "Newton–Cotes",
+      "definition": "Reglas basadas en interpolación en nodos prefijados."
+    },
+    {
+      "term": "Trapecio",
+      "definition": "Regla lineal de cuadratura."
+    },
+    {
+      "term": "Simpson",
+      "definition": "Regla basada en interpolación cuadrática."
+    },
+    {
+      "term": "Cuadratura gaussiana",
+      "definition": "Regla con nodos y pesos óptimos para exactitud polinómica."
+    },
+    {
+      "term": "Adaptación",
+      "definition": "Distribución dinámica de esfuerzo según error estimado."
+    },
+    {
+      "term": "Monte Carlo",
+      "definition": "Integración mediante muestreo aleatorio."
+    },
+    {
+      "term": "Error local",
+      "definition": "Error introducido en un paso partiendo del estado exacto."
+    },
+    {
+      "term": "Error global",
+      "definition": "Error acumulado en la trayectoria numérica."
+    },
+    {
+      "term": "Runge–Kutta",
+      "definition": "Familia de métodos de una etapa compuesta por varias pendientes."
+    },
+    {
+      "term": "Par embebido",
+      "definition": "Dos fórmulas RK de diferente orden que comparten evaluaciones."
+    },
+    {
+      "term": "Estabilidad absoluta",
+      "definition": "Control de crecimiento numérico en la ecuación de prueba."
+    },
+    {
+      "term": "Rigidez",
+      "definition": "Separación de escalas que impone restricciones severas a métodos explícitos."
+    },
+    {
+      "term": "Evento",
+      "definition": "Condición cuya raíz se localiza durante la integración."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Área bajo una curva sintética",
+      "scenario": "Integrar una curva de concentración educativa con referencia analítica.",
+      "reasoning_steps": [
+        "Definir unidades e intervalo.",
+        "Comparar trapecio, Simpson y adaptativa.",
+        "Construir curva error-evaluaciones.",
+        "Perturbar muestreo y tramo terminal."
+      ],
+      "interpretation": "La discretización y el dominio afectan el área estimada.",
+      "limitations": [
+        "No representa dosificación real.",
+        "La referencia analítica es sintética."
+      ]
+    },
+    {
+      "title": "Modelo compartimental con escalas separadas",
+      "scenario": "Comparar RK explícito e implícito en un sistema lineal rígido educativo.",
+      "reasoning_steps": [
+        "Calcular solución matricial de referencia.",
+        "Variar tolerancias y pasos.",
+        "Medir error en estados y observables.",
+        "Registrar evaluaciones, Jacobianos y tiempo."
+      ],
+      "interpretation": "El método implícito puede ser más eficiente cuando estabilidad limita al explícito.",
+      "limitations": [
+        "Sistema pequeño e idealizado.",
+        "No valida farmacocinética clínica."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Estudio de convergencia de cuadratura",
+      "instructions": [
+        "Implementar trapecio y Simpson compuestos.",
+        "Añadir una regla adaptativa.",
+        "Usar integrandos suaves, singulares y oscilatorios.",
+        "Estimar orden y coste."
+      ],
+      "problems": [
+        "Polinomio control.",
+        "Gaussiana estrecha.",
+        "Singularidad integrable.",
+        "Integral oscilatoria."
+      ],
+      "checking_criteria": [
+        "Referencia independiente.",
+        "Régimen asintótico identificado.",
+        "Evaluaciones contabilizadas.",
+        "Fallas del estimador discutidas."
+      ]
+    },
+    {
+      "title": "Benchmark de solucionadores EDO",
+      "instructions": [
+        "Implementar Euler y RK4.",
+        "Comparar con solve_ivp o equivalente.",
+        "Evaluar problema no rígido y rígido.",
+        "Medir error, eventos y coste."
+      ],
+      "problems": [
+        "Decaimiento exponencial.",
+        "Oscilador.",
+        "Sistema rígido lineal.",
+        "Cruce de umbral."
+      ],
+      "checking_criteria": [
+        "Mismas tolerancias y horizonte.",
+        "Referencia analítica o refinada.",
+        "Estabilidad explicada.",
+        "Resultados reproducibles."
+      ]
+    }
+  ],
+  "practice_sets": [
+    {
+      "title": "Problemas graduados",
+      "problems": [
+        {
+          "level": "Fundamental",
+          "prompt": "Aplica trapecio a tres nodos.",
+          "solution": "Sumar áreas de dos trapecios conservando unidades."
+        },
+        {
+          "level": "Fundamental",
+          "prompt": "¿Cuándo Simpson compuesto requiere n par?",
+          "solution": "Porque cada panel usa dos subintervalos."
+        },
+        {
+          "level": "Fundamental",
+          "prompt": "Ejecuta dos pasos de Euler.",
+          "solution": "Evaluar pendiente en el inicio de cada paso."
+        },
+        {
+          "level": "Intermedio",
+          "prompt": "Estima orden observado de una cuadratura.",
+          "solution": "Usar errores en refinamientos sucesivos dentro del régimen asintótico."
+        },
+        {
+          "level": "Intermedio",
+          "prompt": "Transforma una integral infinita.",
+          "solution": "Elegir cambio de variable, incluir jacobiano y analizar extremos."
+        },
+        {
+          "level": "Intermedio",
+          "prompt": "Deriva región de estabilidad de Euler.",
+          "solution": "R(z)=1+z y exigir |1+z|≤1."
+        },
+        {
+          "level": "Intermedio",
+          "prompt": "Distingue error local y global.",
+          "solution": "El local corresponde a un paso exacto; el global acumula y propaga errores."
+        },
+        {
+          "level": "Aplicado",
+          "prompt": "Compara adaptativa y malla uniforme.",
+          "solution": "Usar misma tolerancia, referencia y número de evaluaciones."
+        },
+        {
+          "level": "Aplicado",
+          "prompt": "Detecta rigidez experimentalmente.",
+          "solution": "Observar restricción de paso explícito frente a método estable implícito."
+        },
+        {
+          "level": "Aplicado",
+          "prompt": "Audita tiempo de evento.",
+          "solution": "Comparar localización densa con refinamiento y referencia."
+        }
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Inferir convergencia con dos mallas.",
+      "correction": "Usar varios refinamientos y confirmar régimen asintótico."
+    },
+    {
+      "error": "Ignorar singularidades del integrando.",
+      "correction": "Analizar dominio y transformar o dividir el intervalo."
+    },
+    {
+      "error": "Comparar solucionadores solo por tiempo.",
+      "correction": "Igualar error, tolerancias, eventos y observables."
+    },
+    {
+      "error": "Confundir tolerancia local con error global.",
+      "correction": "Verificar contra referencia y refinamiento."
+    },
+    {
+      "error": "Usar método explícito con paso inestable.",
+      "correction": "Analizar región de estabilidad y rigidez."
+    },
+    {
+      "error": "Interpretar simulación correcta como modelo validado.",
+      "correction": "Separar verificación numérica de validación científica."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿De qué deriva Simpson?",
+      "answer": "De interpolación cuadrática por panel."
+    },
+    {
+      "question": "¿Qué hace la adaptación?",
+      "answer": "Redistribuye evaluaciones según un error estimado."
+    },
+    {
+      "question": "¿Orden Monte Carlo estándar?",
+      "answer": "Error estadístico de orden N^{-1/2}."
+    },
+    {
+      "question": "¿Orden global de Euler?",
+      "answer": "Uno."
+    },
+    {
+      "question": "¿Qué estima un par RK embebido?",
+      "answer": "Error local para controlar paso."
+    },
+    {
+      "question": "¿Consistencia garantiza estabilidad?",
+      "answer": "No."
+    },
+    {
+      "question": "¿Qué indica rigidez?",
+      "answer": "Escalas rápidas que restringen métodos explícitos."
+    },
+    {
+      "question": "¿Simulación verificada valida el modelo?",
+      "answer": "No."
+    }
+  ],
+  "biomedical_connections": [
+    "Área bajo curvas educativas.",
+    "Integración de perfiles espaciales.",
+    "Modelos compartimentales.",
+    "Dinámica de biomarcadores.",
+    "Cruces de umbral no clínicos.",
+    "Procesos con escalas temporales múltiples."
+  ],
+  "sources": [
+    {
+      "title": "Solving Ordinary Differential Equations I",
+      "organization": "Hairer, Nørsett y Wanner / Springer",
+      "url": "https://doi.org/10.1007/978-3-540-78862-1",
+      "type": "libro académico"
+    },
+    {
+      "title": "Solving Ordinary Differential Equations II",
+      "organization": "Hairer y Wanner / Springer",
+      "url": "https://doi.org/10.1007/978-3-642-05221-7",
+      "type": "libro académico"
+    },
+    {
+      "title": "Numerical Integration",
+      "organization": "Davis y Rabinowitz / Dover",
+      "url": "https://store.doverpublications.com/products/9780486453392",
+      "type": "libro académico"
+    },
+    {
+      "title": "QUADPACK",
+      "organization": "Netlib",
+      "url": "https://www.netlib.org/quadpack/",
+      "type": "software científico"
+    },
+    {
+      "title": "SciPy Integration",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/integrate.html",
+      "type": "documentación"
+    },
+    {
+      "title": "DifferentialEquations.jl",
+      "organization": "SciML",
+      "url": "https://docs.sciml.ai/DiffEqDocs/stable/",
+      "type": "documentación"
+    }
+  ],
+  "editorial_notice": "Material educativo sujeto a revisión académica externa. La integración numérica y la simulación no constituyen validación farmacológica, fisiológica ni clínica."
+}

@@ -1,1 +1,383 @@
-{"schema_version":"1.0","subject_id":"bases-datos","title":"Núcleo avanzado de Bases de Datos para biomedicina computacional","status":"review","purpose":"Completar BD-01–BD-08 en modelado extendido, teoría relacional avanzada, SQL programable, coordinación distribuida, operación, almacenes heterogéneos e interoperabilidad federada.","modules":[{"module_id":"BD-S01","title":"Modelado extendido y teoría relacional avanzada","learning_outcomes":["Modelar especialización, generalización, herencia y agregación.","Distinguir subtipos disjuntos, solapados, totales y parciales.","Traducir jerarquías conceptuales a estrategias relacionales verificables.","Reconocer dependencias multivaluadas y anomalías posteriores a BCNF.","Aplicar cuarta forma normal de manera introductoria.","Comparar esquemas temporales, bitemporales y de eventos.","Validar descomposición, preservación semántica y reconstrucción.","Documentar decisiones mediante ejemplos y contraejemplos biomédicos."],"theory_sections":[{"heading":"Especialización, herencia y agregación","paragraphs":["La especialización representa subtipos que comparten identidad y atributos del supertipo. Deben declararse criterios de pertenencia, exclusividad y cobertura.","Los subtipos pueden ser disjuntos o solapados, y totales o parciales. Estas restricciones cambian qué estados son válidos.","La implementación puede usar una tabla por jerarquía, por tipo concreto o tablas de supertipo y subtipo. Cada estrategia intercambia nulos, joins, duplicación e integridad.","La agregación trata una relación o evento compuesto como una unidad participante en otra relación, sin ocultar granularidad ni procedencia."],"key_points":["La herencia necesita reglas de pertenencia.","Disjunción y cobertura son independientes.","Cada estrategia relacional tiene costes.","La agregación conserva granularidad interna."]},{"heading":"Dependencias multivaluadas y cuarta forma normal","paragraphs":["Una dependencia multivaluada X ↠ Y aparece cuando, dado X, los valores de Y varían independientemente de otro conjunto Z.","La cuarta forma normal exige que toda dependencia multivaluada no trivial tenga como determinante una superclave.","La descomposición debe conservar información y evitar tuplas espurias; la independencia asumida debe proceder del dominio.","Las dependencias de join quedan como extensión; se prioriza reconocer el patrón y verificar reconstrucción con datos mínimos."],"key_points":["BCNF no elimina toda redundancia multivaluada.","4NF separa hechos independientes.","La independencia es una afirmación del dominio.","La reconstrucción debe probarse."]},{"heading":"Temporalidad, eventos y validación","paragraphs":["Los modelos temporales distinguen tiempo válido y tiempo de sistema. La bitemporalidad permite reconstruir verdad histórica y conocimiento almacenado.","Event sourcing conserva cambios como eventos y deriva estados, pero exige evolución de esquemas y reconstrucción determinista.","Una tabla de historial puede ser suficiente; la complejidad temporal debe responder a requisitos reales de auditoría.","La validación combina restricciones, escenarios, consultas y reconciliación; DDL válido no garantiza semántica correcta."],"key_points":["Tiempo válido y de sistema son distintos.","Los eventos requieren evolución.","La complejidad temporal debe justificarse.","Las pruebas deben cubrir semántica."]}],"worked_cases":[{"title":"Jerarquía de muestras","problem":"Representar sangre, tejido e imagen con atributos comunes y específicos.","solution":"Definir supertipo, restricciones y comparar tabla única con supertipo-subtipo."},{"title":"Dependencia multivaluada","problem":"Una persona tiene contactos y consentimientos independientes.","solution":"Mostrar el producto cartesiano y descomponer en relaciones 4NF con reunión sin pérdida."}],"practical_workshops":[{"title":"Herencia y temporalidad","tasks":["Modelar una jerarquía.","Implementar dos estrategias.","Probar disjunción y cobertura.","Comparar consultas y migraciones."]},{"title":"4NF y contraejemplos","tasks":["Construir dos hechos multivaluados.","Derivar dependencias.","Descomponer y reconstruir.","Probar un caso no independiente."]}],"mastery_questions":["¿Qué diferencia especialización total y parcial?","¿Qué implica que subtipos sean solapados?","¿Qué intercambia una tabla por jerarquía?","¿Cuándo es útil la agregación?","¿Qué expresa una dependencia multivaluada?","¿Qué exige 4NF?","¿Qué diferencia tiempo válido y de sistema?","¿Qué riesgo introduce event sourcing?"]},{"module_id":"BD-S02","title":"SQL programable, sagas y operación distribuida","learning_outcomes":["Diseñar procedimientos, funciones y triggers con contratos explícitos.","Distinguir lógica declarativa, procedural y de aplicación.","Implementar vistas materializadas con políticas de refresco.","Modelar sagas mediante acciones, compensaciones y estados durables.","Comparar outbox, reintentos e idempotencia.","Diseñar particionamiento, replicación y recuperación por RPO/RTO.","Evaluar lag, failover y split brain.","Construir observabilidad y pruebas de restauración reproducibles."],"theory_sections":[{"heading":"Procedimientos, triggers y materialización","paragraphs":["Funciones y procedimientos encapsulan lógica cerca de los datos; deben declarar entradas, salidas, efectos, permisos y transacción.","Los triggers pueden proteger invariantes o auditar, pero introducen efectos implícitos, orden de ejecución y riesgo de recursión.","Las vistas materializadas almacenan derivados y necesitan contrato de frescura, refresco, bloqueo, procedencia y reconciliación.","Toda lógica programable debe versionarse mediante migraciones y ejecutarse con mínimo privilegio."],"key_points":["La lógica necesita contratos.","Los triggers crean efectos implícitos.","Materializar intercambia frescura por coste.","Los privilegios son parte del diseño."]},{"heading":"Sagas, outbox e idempotencia","paragraphs":["Una saga coordina operaciones largas mediante transacciones locales y compensaciones; no ofrece aislamiento global automático.","Las compensaciones restauran una condición aceptable, pero no siempre deshacen acciones físicas o decisiones humanas.","Outbox registra cambio y evento en una misma transacción; el publicador reintenta y los consumidores deben ser idempotentes.","El diseño necesita máquina de estados durable, correlación, timeouts y manejo de mensajes fuera de orden."],"key_points":["Saga no equivale a ACID global.","Compensar no siempre deshace.","Outbox reduce la ventana commit-publicación.","La idempotencia sigue siendo necesaria."]},{"heading":"Particionamiento, replicación y recuperación","paragraphs":["El particionamiento por rango, lista o hash puede facilitar poda y mantenimiento, pero depende de consultas y distribución.","La replicación física o lógica mantiene copias con objetivos distintos; una réplica de lectura puede presentar lag.","El failover necesita promoción, fencing y retorno; sin exclusión de primarios puede aparecer split brain.","Backups, logs y runbooks deben validarse mediante restauraciones que midan RPO y RTO observados."],"key_points":["Particionar cambia distribución.","Replicar no garantiza frescura.","Failover necesita fencing.","RPO y RTO deben probarse."]}],"worked_cases":[{"title":"Saga de registro de muestra","problem":"Coordinar registro, almacenamiento y evento.","solution":"Definir estados, outbox, claves idempotentes y compensación."},{"title":"Failover con réplica retrasada","problem":"Falla el primario con lag de réplica.","solution":"Medir pérdida, aplicar fencing, promover y reconciliar operaciones inciertas."}],"practical_workshops":[{"title":"SQL programable","tasks":["Crear una función.","Implementar trigger de auditoría.","Construir vista materializada.","Probar permisos y refresco."]},{"title":"Operación distribuida","tasks":["Modelar una saga.","Implementar outbox.","Simular lag y failover.","Restaurar a un punto."]}],"mastery_questions":["¿Cuándo conviene una función de base?","¿Qué riesgo añade un trigger?","¿Qué debe declarar una vista materializada?","¿Qué garantiza una saga?","¿Por qué compensar no es rollback?","¿Qué resuelve outbox?","¿Qué significa lag?","¿Por qué failover requiere fencing?"]},{"module_id":"BD-S03","title":"Almacenes heterogéneos e interoperabilidad federada","learning_outcomes":["Comparar JSON, formatos columnares, series temporales y grafos.","Diseñar esquemas JSON con validación, índices y evolución.","Usar Parquet o Arrow preservando tipos y metadatos.","Modelar series temporales con retención y downsampling.","Construir grafos biomédicos introductorios con procedencia.","Distinguir warehouse, lake y lakehouse.","Diseñar consultas federadas con pushdown e identidad explícita.","Validar perfiles FHIR, mapeos OMOP y objetos DICOM."],"theory_sections":[{"heading":"Documentos, columnas, series y grafos","paragraphs":["JSON conserva estructuras variables, pero necesita esquema, versionado e índices; sin contrato, los errores aparecen al consultar.","Los formatos columnares favorecen compresión, escaneos analíticos y predicate pushdown; demasiadas particiones crean archivos pequeños.","Las series temporales necesitan timestamp, identidad, calidad, frecuencia y política de datos tardíos; downsampling destruye detalle.","Los grafos modelan relaciones; dirección, tipo, peso y procedencia deben definirse, y centralidad no demuestra mecanismo."],"key_points":["JSON necesita contratos.","Columnar favorece análisis.","Las series requieren políticas temporales.","Un grafo no demuestra causalidad."]},{"heading":"Warehouses, lakes y lakehouse","paragraphs":["Un warehouse integra datos curados bajo esquemas y cargas gobernadas; un lake conserva archivos diversos y necesita catálogo y calidad.","Lakehouse intenta combinar formatos abiertos, transacciones y metadatos; el nombre no garantiza capacidades.","Las capas raw, validated, standardized y curated conservan fuente y derivados mediante contratos y reconciliación.","La selección depende de volumen, consultas, latencia, coste, competencias y portabilidad, no de tendencias."],"key_points":["Warehouse y lake optimizan objetivos distintos.","Lakehouse exige capacidades verificables.","Las capas necesitan lineage.","La tecnología no resuelve semántica."]},{"heading":"Federación e interoperabilidad biomédica","paragraphs":["La federación consulta fuentes autónomas sin copiar todo; pushdown, latencia y límites de API afectan ejecución.","La identidad federada requiere ámbitos, resolución y políticas; coincidir cadenas no demuestra identidad.","FHIR necesita perfiles, OMOP mapeos versionados y DICOM jerarquía y desidentificación comprobada.","La equivalencia semántica se prueba con casos positivos, negativos y pérdidas conocidas; federar no crea una verdad clínica única."],"key_points":["Federar no elimina autonomía.","La identidad necesita gobernanza.","Cada estándar requiere validación.","Interoperabilidad técnica no es equivalencia clínica."]}],"worked_cases":[{"title":"Parquet para señales","problem":"Almacenar millones de mediciones por persona y período.","solution":"Definir tipos, particiones, metadatos y reconciliación con fuente."},{"title":"Cohorte federada FHIR–OMOP","problem":"Combinar criterios en dos fuentes.","solution":"Definir identidad, tiempos, códigos, pushdown y pérdidas de mapeo."}],"practical_workshops":[{"title":"Almacenes heterogéneos","tasks":["Indexar JSON validado.","Escribir Parquet.","Modelar serie temporal.","Construir grafo con procedencia."]},{"title":"Federación biomédica","tasks":["Validar perfil FHIR.","Mapear a OMOP.","Inspeccionar DICOM.","Federar con reconciliación."]}],"mastery_questions":["¿Qué riesgo tiene JSON sin esquema?","¿Qué favorece un formato columnar?","¿Qué pierde el downsampling?","¿Qué debe contener una arista?","¿Qué diferencia warehouse y lake?","¿Qué se verifica en lakehouse?","¿Qué limita federación?","¿Qué prueba equivalencia semántica?"]}],"integrative_assessment":{"title":"Plataforma federada y recuperable de datos biomédicos educativos","scenario":"Diseñar una plataforma con datos relacionales, documentos, series, archivos columnares y estándares biomédicos.","deliverables":["Modelo conceptual extendido.","Esquema relacional y migraciones.","SQL avanzado y pruebas.","Saga, partición y réplica.","Pipeline con lineage.","Validación FHIR/OMOP/DICOM.","Plan de backup y límites."],"mastery_criteria":["Preserva identidad y temporalidad.","Justifica normalización.","Prueba consultas y concurrencia.","Valida recuperación.","Conserva procedencia.","Demuestra mapeos.","Limita conclusiones clínicas."]},"sources":[{"title":"PostgreSQL Documentation","organization":"PostgreSQL Global Development Group","url":"https://www.postgresql.org/docs/"},{"title":"Database System Concepts","organization":"McGraw Hill / authors","url":"https://www.db-book.com/"},{"title":"Designing Data-Intensive Applications","organization":"O'Reilly","url":"https://dataintensive.net/"},{"title":"HL7 FHIR Specification","organization":"HL7 International","url":"https://hl7.org/fhir/"},{"title":"OMOP Common Data Model","organization":"OHDSI","url":"https://ohdsi.github.io/CommonDataModel/"},{"title":"DICOM Standard","organization":"NEMA","url":"https://www.dicomstandard.org/current"},{"title":"Apache Parquet Documentation","organization":"Apache Software Foundation","url":"https://parquet.apache.org/docs/"},{"title":"W3C PROV Overview","organization":"W3C","url":"https://www.w3.org/TR/prov-overview/"}],"editorial_notice":"Material educativo sujeto a revisión experta externa. No equivale a acreditación, autorización para datos clínicos, certificación de seguridad, validación regulatoria ni utilidad clínica."}
+{
+  "schema_version": "1.0",
+  "subject_id": "bases-datos",
+  "title": "Núcleo avanzado de Bases de Datos para biomedicina computacional",
+  "status": "review",
+  "purpose": "Completar BD-01–BD-08 en modelado extendido, teoría relacional avanzada, SQL programable, coordinación distribuida, operación, almacenes heterogéneos e interoperabilidad federada.",
+  "modules": [
+    {
+      "module_id": "BD-S01",
+      "title": "Modelado extendido y teoría relacional avanzada",
+      "learning_outcomes": [
+        "Modelar especialización, generalización, herencia y agregación.",
+        "Distinguir subtipos disjuntos, solapados, totales y parciales.",
+        "Traducir jerarquías conceptuales a estrategias relacionales verificables.",
+        "Reconocer dependencias multivaluadas y anomalías posteriores a BCNF.",
+        "Aplicar cuarta forma normal de manera introductoria.",
+        "Comparar esquemas temporales, bitemporales y de eventos.",
+        "Validar descomposición, preservación semántica y reconstrucción.",
+        "Documentar decisiones mediante ejemplos y contraejemplos biomédicos."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Especialización, herencia y agregación",
+          "paragraphs": [
+            "La especialización representa subtipos que comparten identidad y atributos del supertipo. Deben declararse criterios de pertenencia, exclusividad y cobertura.",
+            "Los subtipos pueden ser disjuntos o solapados, y totales o parciales. Estas restricciones cambian qué estados son válidos.",
+            "La implementación puede usar una tabla por jerarquía, por tipo concreto o tablas de supertipo y subtipo. Cada estrategia intercambia nulos, joins, duplicación e integridad.",
+            "La agregación trata una relación o evento compuesto como una unidad participante en otra relación, sin ocultar granularidad ni procedencia."
+          ],
+          "key_points": [
+            "La herencia necesita reglas de pertenencia.",
+            "Disjunción y cobertura son independientes.",
+            "Cada estrategia relacional tiene costes.",
+            "La agregación conserva granularidad interna."
+          ]
+        },
+        {
+          "heading": "Dependencias multivaluadas y cuarta forma normal",
+          "paragraphs": [
+            "Una dependencia multivaluada X ↠ Y aparece cuando, dado X, los valores de Y varían independientemente de otro conjunto Z.",
+            "La cuarta forma normal exige que toda dependencia multivaluada no trivial tenga como determinante una superclave.",
+            "La descomposición debe conservar información y evitar tuplas espurias; la independencia asumida debe proceder del dominio.",
+            "Las dependencias de join quedan como extensión; se prioriza reconocer el patrón y verificar reconstrucción con datos mínimos."
+          ],
+          "key_points": [
+            "BCNF no elimina toda redundancia multivaluada.",
+            "4NF separa hechos independientes.",
+            "La independencia es una afirmación del dominio.",
+            "La reconstrucción debe probarse."
+          ]
+        },
+        {
+          "heading": "Temporalidad, eventos y validación",
+          "paragraphs": [
+            "Los modelos temporales distinguen tiempo válido y tiempo de sistema. La bitemporalidad permite reconstruir verdad histórica y conocimiento almacenado.",
+            "Event sourcing conserva cambios como eventos y deriva estados, pero exige evolución de esquemas y reconstrucción determinista.",
+            "Una tabla de historial puede ser suficiente; la complejidad temporal debe responder a requisitos reales de auditoría.",
+            "La validación combina restricciones, escenarios, consultas y reconciliación; DDL válido no garantiza semántica correcta."
+          ],
+          "key_points": [
+            "Tiempo válido y de sistema son distintos.",
+            "Los eventos requieren evolución.",
+            "La complejidad temporal debe justificarse.",
+            "Las pruebas deben cubrir semántica."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Jerarquía de muestras",
+          "problem": "Representar sangre, tejido e imagen con atributos comunes y específicos.",
+          "solution": "Definir supertipo, restricciones y comparar tabla única con supertipo-subtipo."
+        },
+        {
+          "title": "Dependencia multivaluada",
+          "problem": "Una persona tiene contactos y consentimientos independientes.",
+          "solution": "Mostrar el producto cartesiano y descomponer en relaciones 4NF con reunión sin pérdida."
+        }
+      ],
+      "practical_workshops": [
+        {
+          "title": "Herencia y temporalidad",
+          "tasks": [
+            "Modelar una jerarquía.",
+            "Implementar dos estrategias.",
+            "Probar disjunción y cobertura.",
+            "Comparar consultas y migraciones."
+          ]
+        },
+        {
+          "title": "4NF y contraejemplos",
+          "tasks": [
+            "Construir dos hechos multivaluados.",
+            "Derivar dependencias.",
+            "Descomponer y reconstruir.",
+            "Probar un caso no independiente."
+          ]
+        }
+      ],
+      "mastery_questions": [
+        "¿Qué diferencia especialización total y parcial?",
+        "¿Qué implica que subtipos sean solapados?",
+        "¿Qué intercambia una tabla por jerarquía?",
+        "¿Cuándo es útil la agregación?",
+        "¿Qué expresa una dependencia multivaluada?",
+        "¿Qué exige 4NF?",
+        "¿Qué diferencia tiempo válido y de sistema?",
+        "¿Qué riesgo introduce event sourcing?"
+      ]
+    },
+    {
+      "module_id": "BD-S02",
+      "title": "SQL programable, sagas y operación distribuida",
+      "learning_outcomes": [
+        "Diseñar procedimientos, funciones y triggers con contratos explícitos.",
+        "Distinguir lógica declarativa, procedural y de aplicación.",
+        "Implementar vistas materializadas con políticas de refresco.",
+        "Modelar sagas mediante acciones, compensaciones y estados durables.",
+        "Comparar outbox, reintentos e idempotencia.",
+        "Diseñar particionamiento, replicación y recuperación por RPO/RTO.",
+        "Evaluar lag, failover y split brain.",
+        "Construir observabilidad y pruebas de restauración reproducibles."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Procedimientos, triggers y materialización",
+          "paragraphs": [
+            "Funciones y procedimientos encapsulan lógica cerca de los datos; deben declarar entradas, salidas, efectos, permisos y transacción.",
+            "Los triggers pueden proteger invariantes o auditar, pero introducen efectos implícitos, orden de ejecución y riesgo de recursión.",
+            "Las vistas materializadas almacenan derivados y necesitan contrato de frescura, refresco, bloqueo, procedencia y reconciliación.",
+            "Toda lógica programable debe versionarse mediante migraciones y ejecutarse con mínimo privilegio."
+          ],
+          "key_points": [
+            "La lógica necesita contratos.",
+            "Los triggers crean efectos implícitos.",
+            "Materializar intercambia frescura por coste.",
+            "Los privilegios son parte del diseño."
+          ]
+        },
+        {
+          "heading": "Sagas, outbox e idempotencia",
+          "paragraphs": [
+            "Una saga coordina operaciones largas mediante transacciones locales y compensaciones; no ofrece aislamiento global automático.",
+            "Las compensaciones restauran una condición aceptable, pero no siempre deshacen acciones físicas o decisiones humanas.",
+            "Outbox registra cambio y evento en una misma transacción; el publicador reintenta y los consumidores deben ser idempotentes.",
+            "El diseño necesita máquina de estados durable, correlación, timeouts y manejo de mensajes fuera de orden."
+          ],
+          "key_points": [
+            "Saga no equivale a ACID global.",
+            "Compensar no siempre deshace.",
+            "Outbox reduce la ventana commit-publicación.",
+            "La idempotencia sigue siendo necesaria."
+          ]
+        },
+        {
+          "heading": "Particionamiento, replicación y recuperación",
+          "paragraphs": [
+            "El particionamiento por rango, lista o hash puede facilitar poda y mantenimiento, pero depende de consultas y distribución.",
+            "La replicación física o lógica mantiene copias con objetivos distintos; una réplica de lectura puede presentar lag.",
+            "El failover necesita promoción, fencing y retorno; sin exclusión de primarios puede aparecer split brain.",
+            "Backups, logs y runbooks deben validarse mediante restauraciones que midan RPO y RTO observados."
+          ],
+          "key_points": [
+            "Particionar cambia distribución.",
+            "Replicar no garantiza frescura.",
+            "Failover necesita fencing.",
+            "RPO y RTO deben probarse."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Saga de registro de muestra",
+          "problem": "Coordinar registro, almacenamiento y evento.",
+          "solution": "Definir estados, outbox, claves idempotentes y compensación."
+        },
+        {
+          "title": "Failover con réplica retrasada",
+          "problem": "Falla el primario con lag de réplica.",
+          "solution": "Medir pérdida, aplicar fencing, promover y reconciliar operaciones inciertas."
+        }
+      ],
+      "practical_workshops": [
+        {
+          "title": "SQL programable",
+          "tasks": [
+            "Crear una función.",
+            "Implementar trigger de auditoría.",
+            "Construir vista materializada.",
+            "Probar permisos y refresco."
+          ]
+        },
+        {
+          "title": "Operación distribuida",
+          "tasks": [
+            "Modelar una saga.",
+            "Implementar outbox.",
+            "Simular lag y failover.",
+            "Restaurar a un punto."
+          ]
+        }
+      ],
+      "mastery_questions": [
+        "¿Cuándo conviene una función de base?",
+        "¿Qué riesgo añade un trigger?",
+        "¿Qué debe declarar una vista materializada?",
+        "¿Qué garantiza una saga?",
+        "¿Por qué compensar no es rollback?",
+        "¿Qué resuelve outbox?",
+        "¿Qué significa lag?",
+        "¿Por qué failover requiere fencing?"
+      ]
+    },
+    {
+      "module_id": "BD-S03",
+      "title": "Almacenes heterogéneos e interoperabilidad federada",
+      "learning_outcomes": [
+        "Comparar JSON, formatos columnares, series temporales y grafos.",
+        "Diseñar esquemas JSON con validación, índices y evolución.",
+        "Usar Parquet o Arrow preservando tipos y metadatos.",
+        "Modelar series temporales con retención y downsampling.",
+        "Construir grafos biomédicos introductorios con procedencia.",
+        "Distinguir warehouse, lake y lakehouse.",
+        "Diseñar consultas federadas con pushdown e identidad explícita.",
+        "Validar perfiles FHIR, mapeos OMOP y objetos DICOM."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Documentos, columnas, series y grafos",
+          "paragraphs": [
+            "JSON conserva estructuras variables, pero necesita esquema, versionado e índices; sin contrato, los errores aparecen al consultar.",
+            "Los formatos columnares favorecen compresión, escaneos analíticos y predicate pushdown; demasiadas particiones crean archivos pequeños.",
+            "Las series temporales necesitan timestamp, identidad, calidad, frecuencia y política de datos tardíos; downsampling destruye detalle.",
+            "Los grafos modelan relaciones; dirección, tipo, peso y procedencia deben definirse, y centralidad no demuestra mecanismo."
+          ],
+          "key_points": [
+            "JSON necesita contratos.",
+            "Columnar favorece análisis.",
+            "Las series requieren políticas temporales.",
+            "Un grafo no demuestra causalidad."
+          ]
+        },
+        {
+          "heading": "Warehouses, lakes y lakehouse",
+          "paragraphs": [
+            "Un warehouse integra datos curados bajo esquemas y cargas gobernadas; un lake conserva archivos diversos y necesita catálogo y calidad.",
+            "Lakehouse intenta combinar formatos abiertos, transacciones y metadatos; el nombre no garantiza capacidades.",
+            "Las capas raw, validated, standardized y curated conservan fuente y derivados mediante contratos y reconciliación.",
+            "La selección depende de volumen, consultas, latencia, coste, competencias y portabilidad, no de tendencias."
+          ],
+          "key_points": [
+            "Warehouse y lake optimizan objetivos distintos.",
+            "Lakehouse exige capacidades verificables.",
+            "Las capas necesitan lineage.",
+            "La tecnología no resuelve semántica."
+          ]
+        },
+        {
+          "heading": "Federación e interoperabilidad biomédica",
+          "paragraphs": [
+            "La federación consulta fuentes autónomas sin copiar todo; pushdown, latencia y límites de API afectan ejecución.",
+            "La identidad federada requiere ámbitos, resolución y políticas; coincidir cadenas no demuestra identidad.",
+            "FHIR necesita perfiles, OMOP mapeos versionados y DICOM jerarquía y desidentificación comprobada.",
+            "La equivalencia semántica se prueba con casos positivos, negativos y pérdidas conocidas; federar no crea una verdad clínica única."
+          ],
+          "key_points": [
+            "Federar no elimina autonomía.",
+            "La identidad necesita gobernanza.",
+            "Cada estándar requiere validación.",
+            "Interoperabilidad técnica no es equivalencia clínica."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Parquet para señales",
+          "problem": "Almacenar millones de mediciones por persona y período.",
+          "solution": "Definir tipos, particiones, metadatos y reconciliación con fuente."
+        },
+        {
+          "title": "Cohorte federada FHIR–OMOP",
+          "problem": "Combinar criterios en dos fuentes.",
+          "solution": "Definir identidad, tiempos, códigos, pushdown y pérdidas de mapeo."
+        }
+      ],
+      "practical_workshops": [
+        {
+          "title": "Almacenes heterogéneos",
+          "tasks": [
+            "Indexar JSON validado.",
+            "Escribir Parquet.",
+            "Modelar serie temporal.",
+            "Construir grafo con procedencia."
+          ]
+        },
+        {
+          "title": "Federación biomédica",
+          "tasks": [
+            "Validar perfil FHIR.",
+            "Mapear a OMOP.",
+            "Inspeccionar DICOM.",
+            "Federar con reconciliación."
+          ]
+        }
+      ],
+      "mastery_questions": [
+        "¿Qué riesgo tiene JSON sin esquema?",
+        "¿Qué favorece un formato columnar?",
+        "¿Qué pierde el downsampling?",
+        "¿Qué debe contener una arista?",
+        "¿Qué diferencia warehouse y lake?",
+        "¿Qué se verifica en lakehouse?",
+        "¿Qué limita federación?",
+        "¿Qué prueba equivalencia semántica?"
+      ]
+    }
+  ],
+  "integrative_assessment": {
+    "title": "Plataforma federada y recuperable de datos biomédicos educativos",
+    "scenario": "Diseñar una plataforma con datos relacionales, documentos, series, archivos columnares y estándares biomédicos.",
+    "deliverables": [
+      "Modelo conceptual extendido.",
+      "Esquema relacional y migraciones.",
+      "SQL avanzado y pruebas.",
+      "Saga, partición y réplica.",
+      "Pipeline con lineage.",
+      "Validación FHIR/OMOP/DICOM.",
+      "Plan de backup y límites."
+    ],
+    "mastery_criteria": [
+      "Preserva identidad y temporalidad.",
+      "Justifica normalización.",
+      "Prueba consultas y concurrencia.",
+      "Valida recuperación.",
+      "Conserva procedencia.",
+      "Demuestra mapeos.",
+      "Limita conclusiones clínicas."
+    ]
+  },
+  "sources": [
+    {
+      "title": "PostgreSQL Documentation",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/"
+    },
+    {
+      "title": "Database System Concepts",
+      "organization": "McGraw Hill / authors",
+      "url": "https://www.db-book.com/"
+    },
+    {
+      "title": "Designing Data-Intensive Applications",
+      "organization": "O'Reilly",
+      "url": "https://dataintensive.net/"
+    },
+    {
+      "title": "HL7 FHIR Specification",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/"
+    },
+    {
+      "title": "OMOP Common Data Model",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/"
+    },
+    {
+      "title": "DICOM Standard",
+      "organization": "NEMA",
+      "url": "https://www.dicomstandard.org/current"
+    },
+    {
+      "title": "Apache Parquet Documentation",
+      "organization": "Apache Software Foundation",
+      "url": "https://parquet.apache.org/docs/"
+    },
+    {
+      "title": "W3C PROV Overview",
+      "organization": "W3C",
+      "url": "https://www.w3.org/TR/prov-overview/"
+    }
+  ],
+  "editorial_notice": "Material educativo sujeto a revisión experta externa. No equivale a acreditación, autorización para datos clínicos, certificación de seguridad, validación regulatoria ni utilidad clínica."
+}

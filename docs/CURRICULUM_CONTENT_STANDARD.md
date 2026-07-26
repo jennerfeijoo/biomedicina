@@ -20,7 +20,6 @@ Una página mínima contiene:
 Un programa curricular estructurado debe contener además:
 
 - nivel académico;
-- carga estimada;
 - prerrequisitos;
 - competencias;
 - resultados de aprendizaje evaluables;
@@ -44,7 +43,6 @@ Cada archivo en `data/subjects/<area_id>/<subject_id>.json` puede evolucionar ha
   "title": "...",
   "description": "...",
   "level": "pregrado universitario",
-  "estimated_workload": "12-16 semanas; 90-150 horas de trabajo total",
   "prerequisites": [],
   "course_competencies": [],
   "learning_objectives": [],

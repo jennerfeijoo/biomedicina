@@ -71,6 +71,9 @@ def validate_common(path: Path, data: dict[str, Any]) -> None:
     missing = sorted(required - data.keys())
     if missing:
         raise ValueError("faltan campos: " + ", ".join(missing))
+    forbidden_time_fields = sorted({"estimated_hours", "weeks"} & data.keys())
+    if forbidden_time_fields:
+        raise ValueError("metadatos temporales no permitidos: " + ", ".join(forbidden_time_fields))
     if not as_list(data, "worked_example", "worked_examples"):
         raise ValueError("falta worked_example o worked_examples")
     if not as_list(data, "guided_activity", "guided_activities"):
@@ -113,13 +116,9 @@ def validate_transitional(data: dict[str, Any]) -> None:
         raise ValueError("se requieren al menos tres fuentes")
 
 
-def validate_semester(data: dict[str, Any]) -> None:
+def validate_course(data: dict[str, Any]) -> None:
     if data["status"] not in {"review", "complete"}:
         raise ValueError("en schema 2.0, status debe ser review o complete")
-    if int(data.get("estimated_hours", 0) or 0) < 12:
-        raise ValueError("schema 2.0 requiere al menos 12 horas estimadas")
-    if not isinstance(data.get("weeks"), list) or not data["weeks"]:
-        raise ValueError("schema 2.0 requiere semanas asignadas")
     if len(data["learning_objectives"]) < 5:
         raise ValueError("schema 2.0 requiere al menos cinco objetivos")
     if len(data["theory_sections"]) < 4:
@@ -151,7 +150,7 @@ def validate_unit(path: Path) -> int:
     if schema == "1.0":
         validate_transitional(data)
     elif schema == "2.0":
-        validate_semester(data)
+        validate_course(data)
     else:
         raise ValueError(f"schema_version no soportado: {schema}")
     return words

@@ -44,7 +44,6 @@ REQUIRED_TEMPLATE_KEYS = {
     "next_link",
     "biomedical_connection",
     "level",
-    "estimated_workload",
     "status",
     "status_label",
     "prerequisites",
