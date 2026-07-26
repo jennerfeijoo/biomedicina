@@ -63,15 +63,36 @@
     return card;
   }
 
-  function updateAreaCount(grid) {
-    const area = currentArea();
-    if (!area) return;
-
-    const count = grid.querySelectorAll("[data-course-card]").length;
+  function findSubjectCountField() {
     const metaRows = Array.from(document.querySelectorAll(".course-meta > div"));
-    const subjectRow = metaRows.find((row) => normalize(row.querySelector("dt")?.textContent) === "asignaturas");
-    const value = subjectRow?.querySelector("dd");
-    if (value) value.textContent = String(count);
+    const subjectRow = metaRows.find(
+      (row) => normalize(row.querySelector("dt")?.textContent) === "asignaturas"
+    );
+    return subjectRow?.querySelector("dd") || null;
+  }
+
+  function updatePublicCounts(grid) {
+    const count = grid.querySelectorAll("[data-course-card]").length;
+    const countField = findSubjectCountField();
+    if (countField) countField.textContent = String(count);
+
+    const isCatalog = window.location.pathname.split("/").includes("catalogo");
+    if (!isCatalog) return;
+
+    const intro = document.querySelector(".page-intro");
+    const introDescription = intro
+      ? Array.from(intro.children).find(
+          (element) => element.tagName === "P" && !element.classList.contains("eyebrow")
+        )
+      : null;
+    if (introDescription) {
+      introDescription.textContent = `Explora las ${count} asignaturas mediante búsqueda, áreas y rutas interdisciplinarias. Ninguna ruta fija plazos ni obliga a completar las asignaturas en un orden único.`;
+    }
+
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.content = `Busca y explora las ${count} asignaturas abiertas de CitoNauta por área y ruta interdisciplinaria.`;
+    }
   }
 
   async function injectProvisionalSubjects() {
@@ -103,7 +124,7 @@
         )
         .forEach((card) => grid.append(card));
 
-      updateAreaCount(grid);
+      updatePublicCounts(grid);
     } catch (error) {
       console.error("No se pudieron cargar las asignaturas provisionales.", error);
     }
