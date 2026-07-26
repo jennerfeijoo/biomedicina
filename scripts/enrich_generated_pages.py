@@ -30,6 +30,10 @@ RESOURCE_SECTION_RE = re.compile(
     r"(<section id=\"recursos\" class=\"section\">.*?)(\n\s*</section>)",
     re.DOTALL,
 )
+THEORY_SECTION_RE = re.compile(
+    r"(<section id=\"teoria\" class=\"section\">.*?)(\n\s*</section>)",
+    re.DOTALL,
+)
 
 
 def esc(value: Any) -> str:
@@ -138,29 +142,44 @@ def render_sources(sources: list[dict[str, Any]]) -> str:
     )
 
 
-def enrich_html(original: str, overlay: dict[str, Any]) -> str:
-    cleaned = UNIT_MARKER_RE.sub("\n", original)
-    cleaned = SOURCE_MARKER_RE.sub("\n", cleaned)
-    units = overlay.get("detailed_units", [])
-    article_matches = list(ARTICLE_RE.finditer(cleaned))
-    if len(article_matches) != len(units):
-        raise ValueError(
-            f"El HTML contiene {len(article_matches)} unidades y el overlay {len(units)}"
-        )
+def enrich_unit_page(original: str, unit: dict[str, Any]) -> str:
+    cleaned = UNIT_MARKER_RE.sub('\n', original)
+    enrichment = render_unit_enrichment(unit)
+    enriched, count = THEORY_SECTION_RE.subn(
+        lambda match: match.group(1) + enrichment + match.group(2),
+        cleaned,
+        count=1,
+    )
+    if count != 1:
+        raise ValueError("No se encontró la sección de teoría en la página de unidad")
+    return '\n'.join(line.rstrip() for line in enriched.splitlines()).rstrip() + '\n'
 
-    pieces: list[str] = []
-    cursor = 0
-    for match, unit in zip(article_matches, units, strict=True):
-        article = match.group(0)
-        anchor = "        <h4>Temas</h4>"
-        if anchor not in article:
-            raise ValueError("No se encontró el ancla <h4>Temas</h4> en una unidad")
-        article = article.replace(anchor, render_unit_enrichment(unit) + anchor, 1)
-        pieces.append(cleaned[cursor : match.start()])
-        pieces.append(article)
-        cursor = match.end()
-    pieces.append(cleaned[cursor:])
-    enriched = "".join(pieces)
+
+def enrich_html(original: str, overlay: dict[str, Any]) -> str:
+    cleaned = UNIT_MARKER_RE.sub('\n', original)
+    cleaned = SOURCE_MARKER_RE.sub('\n', cleaned)
+    if 'data-unit-overview="compact"' in cleaned:
+        enriched = cleaned
+    else:
+        units = overlay.get("detailed_units", [])
+        article_matches = list(ARTICLE_RE.finditer(cleaned))
+        if len(article_matches) != len(units):
+            raise ValueError(
+                f"El HTML contiene {len(article_matches)} unidades y el overlay {len(units)}"
+            )
+        pieces: list[str] = []
+        cursor = 0
+        for match, unit in zip(article_matches, units, strict=True):
+            article = match.group(0)
+            anchor = "        <h4>Temas</h4>"
+            if anchor not in article:
+                raise ValueError("No se encontró el ancla <h4>Temas</h4> en una unidad")
+            article = article.replace(anchor, render_unit_enrichment(unit) + anchor, 1)
+            pieces.append(cleaned[cursor : match.start()])
+            pieces.append(article)
+            cursor = match.end()
+        pieces.append(cleaned[cursor:])
+        enriched = "".join(pieces)
 
     sources_html = render_sources(overlay.get("sources_used", []))
     if sources_html:
@@ -171,9 +190,7 @@ def enrich_html(original: str, overlay: dict[str, Any]) -> str:
         )
         if count != 1:
             raise ValueError("No se encontró la sección de recursos en el HTML")
-    return "\n".join(line.rstrip() for line in enriched.splitlines()).rstrip() + "\n"
-
-
+    return '\n'.join(line.rstrip() for line in enriched.splitlines()).rstrip() + '\n'
 def catalog_paths() -> dict[str, tuple[str, str]]:
     curriculum = json.loads(CURRICULUM_PATH.read_text(encoding="utf-8"))
     result: dict[str, tuple[str, str]] = {}
@@ -207,10 +224,27 @@ def process(subject_ids: set[str], check: bool) -> tuple[int, list[str]]:
                     print(f"[ok] enriquecido: {html_relative}")
                 else:
                     errors.append(f"HTML enriquecido desactualizado: {html_relative}")
+
+            for unit in overlay.get("detailed_units", []):
+                unit_number = int(unit.get("unit", 0))
+                unit_path = html_path.parent / "unidades" / f"unidad-{unit_number:02d}.html"
+                if not unit_path.exists():
+                    errors.append(f"{subject_id}: falta {unit_path.relative_to(ROOT)}")
+                    continue
+                unit_original = unit_path.read_text(encoding="utf-8")
+                if 'data-generated="citonauta-unit"' not in unit_original:
+                    continue
+                unit_enriched = enrich_unit_page(unit_original, unit)
+                if unit_enriched != unit_original:
+                    changed += 1
+                    if not check:
+                        unit_path.write_text(unit_enriched, encoding="utf-8")
+                        print(f"[ok] enriquecida: {unit_path.relative_to(ROOT)}")
+                    else:
+                        errors.append(f"HTML enriquecido desactualizado: {unit_path.relative_to(ROOT)}")
         except (OSError, ValueError, TypeError) as exc:
             errors.append(f"{subject_id}: {exc}")
     return changed, errors
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Enriquece HTML generado con contenido del agente.")

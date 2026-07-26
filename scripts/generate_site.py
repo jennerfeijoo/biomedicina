@@ -66,7 +66,7 @@ STATUS_LABELS = {
 
 REQUIRED_UNIT_TEMPLATE_KEYS = {
     "unit_number", "unit_count", "unit_title", "unit_description",
-    "subject_title", "area_title", "css_path", "editorial_css_path",
+    "subject_title", "subject_id", "area_title", "css_path", "editorial_css_path",
     "home_path", "area_path", "subject_path", "units_index_path",
     "previous_unit_link", "next_unit_link", "learning_outcomes", "topics",
     "theory_sections", "worked_case", "guided_activity", "self_assessment",
@@ -931,37 +931,23 @@ def render_key_value_list(items: list[dict[str, Any]], empty_message: str) -> st
     return '<ul class="rich-list">\n' + "\n".join(rendered_items) + "\n      </ul>"
 
 
-def render_units(units: list[dict[str, Any]], empty_message: str) -> str:
+def render_units(units: list[dict[str, object]], empty_message: str) -> str:
+    """Renderiza una vista compacta; el desarrollo completo vive en cada página de unidad."""
     if not units:
         return f'<p class="muted">{escape(empty_message)}</p>'
-    rendered_units = []
+    cards: list[str] = []
     for unit in units:
-        number = escape(unit.get("unit", ""))
+        number = int(unit.get("unit", 0))
         title = escape(unit.get("title", "Unidad"))
         description = escape(unit.get("description", ""))
-        topics = render_list(unit.get("topics", []), "Temas pendientes.")
-        outcomes = render_list(unit.get("learning_outcomes", []), "Resultados pendientes.")
-        activities = render_list(unit.get("activities", []), "Actividades pendientes.")
-        applications = render_list(unit.get("biomedical_applications", []), "Aplicaciones pendientes.")
-        unit_href = f"unidades/unidad-{int(unit.get('unit', 0)):02d}.html"
-        rendered_units.append(
-            "      <article class=\"course-unit\">\n"
-            f"        <h3>Unidad {number}. {title}</h3>\n"
-            f"        <p>{description}</p>\n"
-            "        <h4>Temas</h4>\n"
-            f"        {topics}\n"
-            "        <h4>Resultados esperados</h4>\n"
-            f"        {outcomes}\n"
-            "        <h4>Actividades</h4>\n"
-            f"        {activities}\n"
-            "        <h4>Aplicaciones biomédicas</h4>\n"
-            f"        {applications}\n"
-            f'        <a class="btn-link unit-link" href="{unit_href}">Abrir unidad completa →</a>\n'
-            "      </article>"
+        href = f"unidades/unidad-{number:02d}.html"
+        cards.append(
+            f'        <a class="link-card unit-index-card course-unit-summary" href="{href}">'
+            f'<span class="course-tag">Unidad {number}</span>'
+            f'<strong>{title}</strong><p>{description}</p>'
+            '<span class="unit-index-action">Abrir lección →</span></a>'
         )
-    return '<div class="course-units">\n' + "\n".join(rendered_units) + "\n      </div>"
-
-
+    return '<div class="unit-index-grid course-unit-overview">\n' + '\n'.join(cards) + '\n      </div>'
 def pedagogical_frame_for(area_id: str, subject_id: str) -> dict[str, Any]:
     """Selecciona una estructura de razonamiento coherente con la disciplina."""
     if subject_id in STATISTICS_SUBJECTS:
@@ -1168,6 +1154,7 @@ def render_unit_page(template: str, area: dict[str, Any], course: dict[str, Any]
         "unit_title": escape(unit["title"]),
         "unit_description": escape(unit["description"]),
         "subject_title": escape(course["title"]),
+        "subject_id": escape(course["id"]),
         "area_title": escape(area["title"]),
         "css_path": rel_path(output_path, ROOT / "assets" / "css" / "style.css"),
         "editorial_css_path": rel_path(output_path, ROOT / "assets" / "css" / "editorial.css"),
