@@ -1,0 +1,491 @@
+name: Apply Course Unit Navigation
+
+on:
+  push:
+    branches:
+      - agent/standardize-course-unit-navigation
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/standardize-course-unit-navigation
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Standardize course and unit navigation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          ROOT = Path.cwd()
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              text = path.read_text(encoding="utf-8")
+              if old not in text:
+                  raise RuntimeError(f"Pattern not found in {path}: {old[:80]!r}")
+              path.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          def replace_between(path: Path, start_marker: str, end_marker: str, replacement: str) -> None:
+              text = path.read_text(encoding="utf-8")
+              start = text.index(start_marker)
+              end = text.index(end_marker, start)
+              path.write_text(text[:start] + replacement + text[end:], encoding="utf-8")
+
+          generator = ROOT / "scripts/generate_site.py"
+          generator_text = generator.read_text(encoding="utf-8")
+          start = generator_text.index("def render_units(")
+          end = generator_text.index("\ndef pedagogical_frame_for", start)
+          compact_renderer = '''def render_units(units: list[dict[str, object]], empty_message: str) -> str:
+              """Renderiza una vista compacta; el desarrollo completo vive en cada página de unidad."""
+              if not units:
+                  return f'<p class="muted">{escape(empty_message)}</p>'
+              cards: list[str] = []
+              for unit in units:
+                  number = int(unit.get("unit", 0))
+                  title = escape(unit.get("title", "Unidad"))
+                  description = escape(unit.get("description", ""))
+                  href = f"unidades/unidad-{number:02d}.html"
+                  cards.append(
+                      f'        <a class="link-card unit-index-card course-unit-summary" href="{href}">'
+                      f'<span class="course-tag">Unidad {number}</span>'
+                      f'<strong>{title}</strong><p>{description}</p>'
+                      '<span class="unit-index-action">Abrir lección →</span></a>'
+                  )
+              return '<div class="unit-index-grid course-unit-overview">\n' + "\n".join(cards) + "\n      </div>"
+
+'''
+          generator_text = generator_text[:start] + compact_renderer + generator_text[end + 1:]
+          generator_text = generator_text.replace(
+              '"subject_title", "area_title", "css_path", "editorial_css_path",',
+              '"subject_title", "subject_id", "area_title", "css_path", "editorial_css_path",',
+              1,
+          )
+          generator_text = generator_text.replace(
+              '"subject_title": escape(course["title"]),\n        "area_title":',
+              '"subject_title": escape(course["title"]),\n        "subject_id": escape(course["id"]),\n        "area_title":',
+              1,
+          )
+          generator.write_text(generator_text, encoding="utf-8")
+
+          course_template = ROOT / "templates/asignatura.html"
+          text = course_template.read_text(encoding="utf-8")
+          text = text.replace(
+              '<main id="contenido" class="page-shell">',
+              '<main id="contenido" class="page-shell" data-unit-overview="compact">',
+              1,
+          )
+          text = text.replace(
+              '''      <div class="page-actions">
+                <a class="btn-link" href="{{ area_path }}">Ver todas las asignaturas</a>
+                <a class="btn-link secondary" href="{{ home_path }}">Inicio</a>''',
+              '''      <div class="page-actions">
+                <a class="btn-link" href="unidades/index.html">Ver unidades</a>
+                <a class="btn-link secondary" href="{{ area_path }}">Ver todas las asignaturas</a>
+                <a class="btn-link secondary" href="{{ home_path }}">Inicio</a>''',
+              1,
+          )
+          text = text.replace(
+              '''    <section id="unidades" class="section">
+                <div class="section-header">
+                  <h2>Unidades temáticas detalladas</h2>
+                </div>
+                {{ detailed_units }}
+              </section>''',
+              '''    <section id="unidades" class="section">
+                <div class="section-header">
+                  <h2>Ruta de unidades</h2>
+                  <p>Revisa la secuencia del curso y abre cada lección en su propia página.</p>
+                </div>
+                <div class="page-actions course-units-action">
+                  <a class="btn-link" href="unidades/index.html">Abrir índice de unidades →</a>
+                </div>
+                {{ detailed_units }}
+              </section>''',
+              1,
+          )
+          text = text.replace(
+              '<script src="../../assets/js/generated-units.js" defer></script>',
+              '<script src="../../assets/js/semester-course.js" defer></script>',
+              1,
+          )
+          course_template.write_text(text, encoding="utf-8")
+
+          unit_template = ROOT / "templates/unidad.html"
+          text = unit_template.read_text(encoding="utf-8")
+          text = text.replace(
+              '''  <link rel="stylesheet" href="{{ editorial_css_path }}" />
+              </head>''',
+              '''  <link rel="stylesheet" href="{{ editorial_css_path }}" />
+                <script>
+                  window.MathJax = {
+                    tex: {
+                      inlineMath: [["\\\\(", "\\\\)"]],
+                      displayMath: [["\\\\[", "\\\\]"]],
+                      processEscapes: true
+                    },
+                    svg: { fontCache: "global" },
+                    options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"] }
+                  };
+                </script>
+                <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+              </head>''',
+              1,
+          )
+          text = text.replace(
+              '<main id="contenido" class="page-shell" data-generated="citonauta-unit">',
+              '<main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="{{ subject_id }}">',
+              1,
+          )
+          text = text.replace(
+              '    <section id="resultados" class="section">',
+              '    <article class="unit-lesson" data-unit-number="{{ unit_number }}">\n    <section id="resultados" class="section">',
+              1,
+          )
+          text = text.replace(
+              '''    <section class="section unit-close">
+                <div class="section-header"><h2>Cierre de la unidad</h2></div>
+                <p>{{ synthesis }}</p>
+                <div class="page-actions">{{ previous_unit_link }}{{ next_unit_link }}</div>
+              </section>
+            </main>''',
+              '''    <section class="section unit-close">
+                <div class="section-header"><h2>Cierre de la unidad</h2></div>
+                <p>{{ synthesis }}</p>
+                <div class="page-actions">{{ previous_unit_link }}{{ next_unit_link }}</div>
+              </section>
+              </article>
+            </main>''',
+              1,
+          )
+          text = text.replace(
+              '</footer>\n</body>',
+              '</footer>\n  <script src="../../../assets/js/generated-units.js" defer></script>\n</body>',
+              1,
+          )
+          unit_template.write_text(text, encoding="utf-8")
+
+          js_path = ROOT / "assets/js/generated-units.js"
+          js = js_path.read_text(encoding="utf-8")
+          old_current = '''  function currentSubjectId() {
+              const parts = window.location.pathname.split("/").filter(Boolean);
+              if (parts.at(-1)?.endsWith(".html")) parts.pop();
+              return parts.at(-1) || "";
+            }
+
+'''
+          new_current = '''  function currentSubjectId() {
+              const explicit = document.querySelector("[data-subject-id]")?.dataset.subjectId;
+              if (explicit) return explicit;
+              const parts = window.location.pathname.split("/").filter(Boolean);
+              if (parts.at(-1)?.endsWith(".html")) parts.pop();
+              if (parts.at(-1) === "unidades") return parts.at(-2) || "";
+              return parts.at(-1) || "";
+            }
+
+            function siteRootUrl() {
+              const brandHref = document.querySelector(".brand")?.getAttribute("href");
+              if (brandHref) return new URL("./", new URL(brandHref, window.location.href));
+              return new URL("/", window.location.href);
+            }
+
+            function ensureGeneratedUnitStyles(rootUrl) {
+              if (document.querySelector('link[data-generated-units="true"]')) return;
+              const css = element("link");
+              css.rel = "stylesheet";
+              css.href = new URL("assets/css/generated-units.css", rootUrl).href;
+              css.dataset.generatedUnits = "true";
+              document.head.appendChild(css);
+            }
+
+            function createUnitPageSection(id, title, description = "") {
+              const section = element("section", "section");
+              section.id = id;
+              const header = element("div", "section-header");
+              header.appendChild(element("h2", "", title));
+              if (description) header.appendChild(element("p", "", description));
+              section.appendChild(header);
+              return section;
+            }
+
+            function renderUnitPage(container, unit) {
+              container.classList.add("course-unit-developed");
+              container.replaceChildren();
+
+              const results = createUnitPageSection("resultados", "Resultados y alcance");
+              renderUnitMetadata(results, unit);
+              if (unit.learning_objectives?.length) {
+                appendHeading(results, 3, "Objetivos de aprendizaje");
+                appendList(results, unit.learning_objectives);
+              }
+              if (unit.biomedical_connections?.length) {
+                appendHeading(results, 3, "Conexiones biomédicas");
+                appendList(results, unit.biomedical_connections);
+              }
+              container.appendChild(results);
+
+              const theory = createUnitPageSection(
+                "teoria",
+                "Desarrollo teórico",
+                "La teoría, las ecuaciones y el glosario se presentan dentro de la lección correspondiente."
+              );
+              renderTheory(theory, unit.theory_sections);
+              renderEquations(theory, unit.equations);
+              renderGlossary(theory, unit.glossary);
+              container.appendChild(theory);
+
+              const caseSection = createUnitPageSection("caso", "Casos y ejemplos resueltos");
+              const examples = asArray(unit, "worked_example", "worked_examples");
+              if (examples.length) {
+                examples.forEach((example, index) => renderWorkedExample(caseSection, example, index, examples.length));
+              } else {
+                caseSection.appendChild(element("p", "muted", "Esta edición no incluye todavía un ejemplo resuelto específico."));
+              }
+              container.appendChild(caseSection);
+
+              const practice = createUnitPageSection("practica", "Práctica guiada y problemas");
+              const activities = asArray(unit, "guided_activity", "guided_activities");
+              activities.forEach((activity, index) => renderActivity(practice, activity, index, activities.length));
+              renderPracticeSets(practice, unit.practice_sets);
+              renderCommonErrors(practice, unit.common_errors);
+              if (!activities.length && !unit.practice_sets?.length) {
+                practice.appendChild(element("p", "muted", "La práctica específica de esta edición permanece pendiente."));
+              }
+              container.appendChild(practice);
+
+              const assessment = createUnitPageSection("autoevaluacion", "Autoevaluación");
+              renderAssessment(assessment, unit.self_assessment);
+              if (!unit.self_assessment?.length) {
+                assessment.appendChild(element("p", "muted", "La autoevaluación específica de esta edición permanece pendiente."));
+              }
+              container.appendChild(assessment);
+
+              const sources = createUnitPageSection("fuentes", "Fuentes de la unidad");
+              renderSources(sources, unit.sources);
+              if (!unit.sources?.length) {
+                sources.appendChild(element("p", "muted", "Consulta los recursos generales de la asignatura."));
+              }
+              container.appendChild(sources);
+            }
+
+'''
+          if old_current not in js:
+              raise RuntimeError("currentSubjectId block not found")
+          js = js.replace(old_current, new_current, 1)
+          init_start = js.index("  async function init() {")
+          init_end = js.index('  if (document.readyState === "loading") {', init_start)
+          new_init = '''  async function init() {
+              const rootUrl = siteRootUrl();
+              const unitPage = document.querySelector(".unit-lesson[data-unit-number]");
+              if (unitPage) {
+                const subjectId = currentSubjectId();
+                const unitNumber = Number(unitPage.dataset.unitNumber);
+                if (!subjectId || !Number.isInteger(unitNumber) || unitNumber < 1) return;
+                const unit = await fetchUnit(rootUrl, subjectId, unitNumber).catch((error) => {
+                  console.error(error);
+                  return null;
+                });
+                if (!unit) return;
+                ensureGeneratedUnitStyles(rootUrl);
+                renderUnitPage(unitPage, unit);
+                await typesetMath(unitPage);
+                return;
+              }
+
+              const unitsSection = document.querySelector("#unidades .course-units");
+              if (!unitsSection) return;
+              const articles = [...unitsSection.querySelectorAll(".course-unit")];
+              if (articles.length === 0) return;
+              const subjectId = currentSubjectId();
+              if (!subjectId) return;
+
+              ensureGeneratedUnitStyles(rootUrl);
+              createUnitSelector(articles);
+
+              const total = Math.min(Math.max(articles.length, 1), UNIT_FILE_LIMIT);
+              const results = await Promise.all(
+                Array.from({ length: total }, (_, index) => fetchUnit(rootUrl, subjectId, index + 1).catch((error) => {
+                  console.error(error);
+                  return null;
+                }))
+              );
+
+              const articleByUnit = new Map();
+              for (const article of articles) {
+                const number = unitNumberFromArticle(article);
+                if (number !== null) articleByUnit.set(number, article);
+              }
+              for (const unit of results.filter(Boolean)) {
+                const article = articleByUnit.get(Number(unit.unit));
+                if (article) renderUnit(article, unit);
+              }
+
+              await typesetMath(unitsSection);
+              loadSemesterCourseEnhancer(rootUrl);
+            }
+
+'''
+          js = js[:init_start] + new_init + js[init_end:]
+          js_path.write_text(js, encoding="utf-8")
+
+          enrich_path = ROOT / "scripts/enrich_generated_pages.py"
+          enrich = enrich_path.read_text(encoding="utf-8")
+          enrich = enrich.replace(
+              '''RESOURCE_SECTION_RE = re.compile(
+              r"(<section id=\\"recursos\\" class=\\"section\\">.*?)(\\n\\s*</section>)",
+              re.DOTALL,
+          )
+          ''',
+              '''RESOURCE_SECTION_RE = re.compile(
+              r"(<section id=\\"recursos\\" class=\\"section\\">.*?)(\\n\\s*</section>)",
+              re.DOTALL,
+          )
+          THEORY_SECTION_RE = re.compile(
+              r"(<section id=\\"teoria\\" class=\\"section\\">.*?)(\\n\\s*</section>)",
+              re.DOTALL,
+          )
+          ''',
+              1,
+          )
+          enrich_start = enrich.index("def enrich_html(")
+          enrich_end = enrich.index("\ndef catalog_paths", enrich_start)
+          new_enrich = '''def enrich_unit_page(original: str, unit: dict[str, Any]) -> str:
+              cleaned = UNIT_MARKER_RE.sub("\n", original)
+              enrichment = render_unit_enrichment(unit)
+              enriched, count = THEORY_SECTION_RE.subn(
+                  lambda match: match.group(1) + enrichment + match.group(2),
+                  cleaned,
+                  count=1,
+              )
+              if count != 1:
+                  raise ValueError("No se encontró la sección de teoría en la página de unidad")
+              return "\n".join(line.rstrip() for line in enriched.splitlines()).rstrip() + "\n"
+
+
+          def enrich_html(original: str, overlay: dict[str, Any]) -> str:
+              cleaned = UNIT_MARKER_RE.sub("\n", original)
+              cleaned = SOURCE_MARKER_RE.sub("\n", cleaned)
+              if 'data-unit-overview="compact"' in cleaned:
+                  enriched = cleaned
+              else:
+                  units = overlay.get("detailed_units", [])
+                  article_matches = list(ARTICLE_RE.finditer(cleaned))
+                  if len(article_matches) != len(units):
+                      raise ValueError(
+                          f"El HTML contiene {len(article_matches)} unidades y el overlay {len(units)}"
+                      )
+                  pieces: list[str] = []
+                  cursor = 0
+                  for match, unit in zip(article_matches, units, strict=True):
+                      article = match.group(0)
+                      anchor = "        <h4>Temas</h4>"
+                      if anchor not in article:
+                          raise ValueError("No se encontró el ancla <h4>Temas</h4> en una unidad")
+                      article = article.replace(anchor, render_unit_enrichment(unit) + anchor, 1)
+                      pieces.append(cleaned[cursor : match.start()])
+                      pieces.append(article)
+                      cursor = match.end()
+                  pieces.append(cleaned[cursor:])
+                  enriched = "".join(pieces)
+
+              sources_html = render_sources(overlay.get("sources_used", []))
+              if sources_html:
+                  enriched, count = RESOURCE_SECTION_RE.subn(
+                      lambda match: match.group(1) + sources_html + match.group(2),
+                      enriched,
+                      count=1,
+                  )
+                  if count != 1:
+                      raise ValueError("No se encontró la sección de recursos en el HTML")
+              return "\n".join(line.rstrip() for line in enriched.splitlines()).rstrip() + "\n"
+
+'''
+          enrich = enrich[:enrich_start] + new_enrich + enrich[enrich_end + 1:]
+          process_start = enrich.index("def process(")
+          process_end = enrich.index("\ndef main()", process_start)
+          new_process = '''def process(subject_ids: set[str], check: bool) -> tuple[int, list[str]]:
+              paths = catalog_paths()
+              changed = 0
+              errors: list[str] = []
+              for subject_id, (area_id, html_relative) in paths.items():
+                  if subject_ids and subject_id not in subject_ids:
+                      continue
+                  overlay_path = OVERLAYS_DIR / area_id / f"{subject_id}.json"
+                  if not overlay_path.exists():
+                      continue
+                  overlay = json.loads(overlay_path.read_text(encoding="utf-8"))
+                  if not (overlay.get("generation_metadata") or {}).get("autonomous_agent"):
+                      continue
+                  html_path = ROOT / html_relative
+                  try:
+                      original = html_path.read_text(encoding="utf-8")
+                      enriched = enrich_html(original, overlay)
+                      if enriched != original:
+                          changed += 1
+                          if not check:
+                              html_path.write_text(enriched, encoding="utf-8")
+                              print(f"[ok] enriquecido: {html_relative}")
+                          else:
+                              errors.append(f"HTML enriquecido desactualizado: {html_relative}")
+
+                      for unit in overlay.get("detailed_units", []):
+                          unit_number = int(unit.get("unit", 0))
+                          unit_path = html_path.parent / "unidades" / f"unidad-{unit_number:02d}.html"
+                          if not unit_path.exists():
+                              errors.append(f"{subject_id}: falta {unit_path.relative_to(ROOT)}")
+                              continue
+                          unit_original = unit_path.read_text(encoding="utf-8")
+                          if 'data-generated="citonauta-unit"' not in unit_original:
+                              continue
+                          unit_enriched = enrich_unit_page(unit_original, unit)
+                          if unit_enriched != unit_original:
+                              changed += 1
+                              if not check:
+                                  unit_path.write_text(unit_enriched, encoding="utf-8")
+                                  print(f"[ok] enriquecida: {unit_path.relative_to(ROOT)}")
+                              else:
+                                  errors.append(f"HTML enriquecido desactualizado: {unit_path.relative_to(ROOT)}")
+                  except (OSError, ValueError, TypeError) as exc:
+                      errors.append(f"{subject_id}: {exc}")
+              return changed, errors
+
+'''
+          enrich = enrich[:process_start] + new_process + enrich[process_end + 1:]
+          enrich_path.write_text(enrich, encoding="utf-8")
+          PY
+
+      - name: Regenerate all course and unit pages
+        run: |
+          python scripts/generate_site.py --force --with-units
+          python scripts/enrich_generated_pages.py
+
+      - name: Validate migrated architecture
+        run: |
+          python scripts/validate_curriculum.py
+          python scripts/check_generated_preview.py --limit 84
+          python scripts/validate_units.py
+          python scripts/validate_links.py --quiet
+          python scripts/enrich_generated_pages.py --check
+
+      - name: Commit standardized navigation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/generated-units.js scripts/generate_site.py scripts/enrich_generated_pages.py templates/asignatura.html templates/unidad.html
+          git add ciencias-basicas biologicas-medicas ingenieria-biomedica gestion-etica-comunicacion
+          if git diff --cached --quiet; then
+            echo "No migration changes to commit."
+            exit 0
+          fi
+          git commit -m "Standardize course unit navigation"
+          git push origin HEAD:agent/standardize-course-unit-navigation
