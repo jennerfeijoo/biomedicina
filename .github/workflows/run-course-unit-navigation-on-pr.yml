@@ -38,6 +38,46 @@ jobs:
       - name: Apply migration
         run: python /tmp/migrate_course_navigation.py
 
+      - name: Repair compact renderer source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/generate_site.py')
+          text = path.read_text(encoding='utf-8')
+          start = text.index('def render_units(')
+          end = text.index('\ndef pedagogical_frame_for', start)
+          return_line = (
+              '    return '
+              + repr('<div class="unit-index-grid course-unit-overview">\n')
+              + ' + '
+              + repr('\n')
+              + '.join(cards) + '
+              + repr('\n      </div>')
+          )
+          replacement = '\n'.join([
+              'def render_units(units: list[dict[str, object]], empty_message: str) -> str:',
+              '    """Renderiza una vista compacta; el desarrollo completo vive en cada página de unidad."""',
+              '    if not units:',
+              '        return f\'<p class="muted">{escape(empty_message)}</p>\'',
+              '    cards: list[str] = []',
+              '    for unit in units:',
+              '        number = int(unit.get("unit", 0))',
+              '        title = escape(unit.get("title", "Unidad"))',
+              '        description = escape(unit.get("description", ""))',
+              '        href = f"unidades/unidad-{number:02d}.html"',
+              '        cards.append(',
+              '            f\'        <a class="link-card unit-index-card course-unit-summary" href="{href}">\'',
+              '            f\'<span class="course-tag">Unidad {number}</span>\'',
+              '            f\'<strong>{title}</strong><p>{description}</p>\'',
+              '            \'<span class="unit-index-action">Abrir lección →</span></a>\'',
+              '        )',
+              return_line,
+              '',
+          ])
+          path.write_text(text[:start] + replacement + text[end + 1:], encoding='utf-8')
+          PY
+
       - name: Regenerate all pages
         run: |
           set -o pipefail
