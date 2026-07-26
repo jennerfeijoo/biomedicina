@@ -1,0 +1,57 @@
+name: Build advanced unit pages
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.pull_request.head.ref == 'agent/advanced-unit-renderer' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Integrate advanced renderer
+        run: |
+          python scripts/patch_advanced_equation_strings.py
+          python scripts/patch_advanced_unit_integration.py
+          python -m py_compile scripts/advanced_unit_renderer.py scripts/generate_site.py
+
+      - name: Validate advanced unit sources
+        run: python scripts/validate_generated_units.py
+
+      - name: Regenerate public unit pages
+        run: |
+          python scripts/generate_site.py --force --with-units
+          python scripts/enrich_generated_pages.py
+
+      - name: Audit advanced publication
+        run: |
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Commit renderer and generated pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/advanced_unit_renderer.py scripts/generate_site.py \
+            ciencias-basicas biologicas-medicas ingenieria-biomedica gestion-etica-comunicacion \
+            catalogo
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git commit -m "Render advanced unit content in public pages"
+          git push origin HEAD:${{ github.head_ref }}
