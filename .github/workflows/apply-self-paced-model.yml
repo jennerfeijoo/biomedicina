@@ -24,16 +24,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Preserve source indentation
+      - name: Harden migration helper
         run: |
           python - <<'PY'
           from pathlib import Path
           path = Path('scripts/migrate_self_paced_model.py')
           text = path.read_text(encoding='utf-8')
-          old = '    return re.sub(r" {2,}", " ", text)'
-          if old not in text:
-              raise SystemExit('No se encontró la normalización insegura esperada.')
-          path.write_text(text.replace(old, '    return text', 1), encoding='utf-8')
+          unsafe = '    return re.sub(r" {2,}", " ", text)'
+          if unsafe in text:
+              text = text.replace(unsafe, '    return text', 1)
+          rename_head = 'def rename(old_rel: str, new_rel: str) -> None:\n    old = ROOT / old_rel'
+          safe_head = 'def rename(old_rel: str, new_rel: str) -> None:\n    if old_rel == new_rel:\n        return\n    old = ROOT / old_rel'
+          if rename_head in text:
+              text = text.replace(rename_head, safe_head, 1)
+          path.write_text(text, encoding='utf-8')
           PY
 
       - name: Apply self-paced migration
