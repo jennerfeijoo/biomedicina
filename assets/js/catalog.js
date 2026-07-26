@@ -13,6 +13,7 @@
   const scriptUrl = document.currentScript?.src || new URL("assets/js/catalog.js", window.location.href).href;
   const siteRoot = new URL("../../", scriptUrl);
   const provisionalDataUrl = new URL("data/provisional_subjects.json", siteRoot);
+  const tracksDataUrl = new URL("data/tracks.json", siteRoot);
   const areaIds = [
     "ciencias-basicas",
     "biologicas-medicas",
@@ -25,14 +26,26 @@
     return areaIds.find((areaId) => segments.includes(areaId)) || "";
   }
 
-  function buildCourseCard(subject) {
+  function trackMembership(tracks) {
+    const membership = new Map();
+    tracks.forEach((track) => {
+      track.subjects.forEach((subjectId) => {
+        const list = membership.get(subjectId) || [];
+        list.push(track.id);
+        membership.set(subjectId, list);
+      });
+    });
+    return membership;
+  }
+
+  function buildCourseCard(subject, membership) {
     const card = document.createElement("a");
     card.className = "link-card course-card";
     card.href = new URL(subject.path, siteRoot).href;
     card.dataset.courseCard = "";
     card.dataset.subject = subject.id;
     card.dataset.area = subject.area_id;
-    card.dataset.tracks = "";
+    card.dataset.tracks = (membership.get(subject.id) || []).join(" ");
     card.dataset.search = [
       subject.title,
       subject.description,
@@ -63,21 +76,67 @@
     return card;
   }
 
-  function findSubjectCountField() {
-    const metaRows = Array.from(document.querySelectorAll(".course-meta > div"));
-    const subjectRow = metaRows.find(
-      (row) => normalize(row.querySelector("dt")?.textContent) === "asignaturas"
-    );
-    return subjectRow?.querySelector("dd") || null;
+  function assignTrackMembership(grid, membership) {
+    grid.querySelectorAll("[data-course-card]").forEach((card) => {
+      card.dataset.tracks = (membership.get(card.dataset.subject) || []).join(" ");
+    });
   }
 
-  function updatePublicCounts(grid) {
-    const count = grid.querySelectorAll("[data-course-card]").length;
-    const countField = findSubjectCountField();
-    if (countField) countField.textContent = String(count);
+  function populateTrackSelect(root, tracks) {
+    const select = root.querySelector("[data-track-filter]");
+    if (!select) return;
 
-    const isCatalog = window.location.pathname.split("/").includes("catalogo");
-    if (!isCatalog) return;
+    const selected = new URLSearchParams(window.location.search).get("track") || "";
+    select.replaceChildren(new Option("Todas las rutas", ""));
+
+    tracks.forEach((track) => {
+      select.append(new Option(track.title, track.id));
+    });
+
+    if (selected && tracks.some((track) => track.id === selected)) {
+      select.value = selected;
+    }
+  }
+
+  function renderTrackGrid(tracks) {
+    const grid = document.querySelector(".track-grid");
+    if (!grid || !window.location.pathname.split("/").includes("catalogo")) return;
+
+    const cards = tracks.map((track) => {
+      const card = document.createElement("a");
+      card.className = "track-card";
+      card.href = `?track=${encodeURIComponent(track.id)}#asignaturas`;
+
+      const title = document.createElement("strong");
+      title.textContent = track.title;
+
+      const description = document.createElement("p");
+      description.textContent = track.description;
+
+      const count = document.createElement("span");
+      count.textContent = `${track.subjects.length} asignaturas relacionadas →`;
+
+      card.append(title, description, count);
+      return card;
+    });
+
+    grid.replaceChildren(...cards);
+  }
+
+  function findMetaField(label) {
+    const rows = Array.from(document.querySelectorAll(".course-meta > div"));
+    const row = rows.find((item) => normalize(item.querySelector("dt")?.textContent) === label);
+    return row?.querySelector("dd") || null;
+  }
+
+  function updatePublicCounts(grid, tracks) {
+    const count = grid.querySelectorAll("[data-course-card]").length;
+    const countField = findMetaField("asignaturas");
+    const routeCountField = findMetaField("rutas");
+    if (countField) countField.textContent = String(count);
+    if (routeCountField) routeCountField.textContent = String(tracks.length);
+
+    if (!window.location.pathname.split("/").includes("catalogo")) return;
 
     const intro = document.querySelector(".page-intro");
     const introDescription = intro
@@ -85,8 +144,9 @@
           (element) => element.tagName === "P" && !element.classList.contains("eyebrow")
         )
       : null;
+
     if (introDescription) {
-      introDescription.textContent = `Explora las ${count} asignaturas mediante búsqueda, áreas y rutas interdisciplinarias. Ninguna ruta fija plazos ni obliga a completar las asignaturas en un orden único.`;
+      introDescription.textContent = `Explora las ${count} asignaturas mediante búsqueda, áreas y rutas interdisciplinarias. Las rutas conectan problemas y métodos; no prescriben una duración ni un orden único.`;
     }
 
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -95,39 +155,37 @@
     }
   }
 
-  async function injectProvisionalSubjects() {
+  async function prepareCatalog(tracks, provisionalSubjects) {
     const grid = document.querySelector("[data-course-grid]");
     if (!grid) return;
 
-    try {
-      const response = await fetch(provisionalDataUrl, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload = await response.json();
-      const area = currentArea();
-      const existing = new Set(
-        Array.from(grid.querySelectorAll("[data-course-card]"), (card) => card.dataset.subject)
-      );
+    const membership = trackMembership(tracks);
+    const area = currentArea();
+    const existing = new Set(
+      Array.from(grid.querySelectorAll("[data-course-card]"), (card) => card.dataset.subject)
+    );
 
-      payload.subjects
-        .filter((subject) => !area || subject.area_id === area)
-        .filter((subject) => !existing.has(subject.id))
-        .sort((left, right) => left.title.localeCompare(right.title, "es"))
-        .forEach((subject) => grid.append(buildCourseCard(subject)));
+    provisionalSubjects
+      .filter((subject) => !area || subject.area_id === area)
+      .filter((subject) => !existing.has(subject.id))
+      .sort((left, right) => left.title.localeCompare(right.title, "es"))
+      .forEach((subject) => grid.append(buildCourseCard(subject, membership)));
 
-      const cards = Array.from(grid.querySelectorAll("[data-course-card]"));
-      cards
-        .sort((left, right) =>
-          left.querySelector("strong").textContent.localeCompare(
-            right.querySelector("strong").textContent,
-            "es"
-          )
+    assignTrackMembership(grid, membership);
+
+    const cards = Array.from(grid.querySelectorAll("[data-course-card]"));
+    cards
+      .sort((left, right) =>
+        left.querySelector("strong").textContent.localeCompare(
+          right.querySelector("strong").textContent,
+          "es"
         )
-        .forEach((card) => grid.append(card));
+      )
+      .forEach((card) => grid.append(card));
 
-      updatePublicCounts(grid);
-    } catch (error) {
-      console.error("No se pudieron cargar las asignaturas provisionales.", error);
-    }
+    document.querySelectorAll("[data-catalog]").forEach((root) => populateTrackSelect(root, tracks));
+    renderTrackGrid(tracks);
+    updatePublicCounts(grid, tracks);
   }
 
   function initCatalog(root) {
@@ -147,13 +205,15 @@
     if (params.has("track")) track.value = params.get("track") || "";
 
     const apply = () => {
-      const query = normalize(search.value);
+      const queryTokens = normalize(search.value).split(/\s+/).filter(Boolean);
       const selectedArea = area ? area.value : "";
       const selectedTrack = track.value;
       let visible = 0;
 
       cards.forEach((card) => {
-        const matchesSearch = !query || normalize(card.dataset.search).includes(query);
+        const searchable = normalize(card.dataset.search);
+        const matchesSearch =
+          !queryTokens.length || queryTokens.every((token) => searchable.includes(token));
         const matchesArea = !selectedArea || card.dataset.area === selectedArea;
         const matchesTrack = !selectedTrack || tokens(card.dataset.tracks).includes(selectedTrack);
         const show = matchesSearch && matchesArea && matchesTrack;
@@ -188,8 +248,27 @@
   }
 
   async function boot() {
-    await injectProvisionalSubjects();
-    document.querySelectorAll("[data-catalog]").forEach(initCatalog);
+    try {
+      const [provisionalResponse, tracksResponse] = await Promise.all([
+        fetch(provisionalDataUrl, { cache: "no-store" }),
+        fetch(tracksDataUrl, { cache: "no-store" }),
+      ]);
+
+      if (!provisionalResponse.ok || !tracksResponse.ok) {
+        throw new Error("No se pudieron cargar los datos del catálogo.");
+      }
+
+      const [provisionalPayload, tracksPayload] = await Promise.all([
+        provisionalResponse.json(),
+        tracksResponse.json(),
+      ]);
+
+      await prepareCatalog(tracksPayload.tracks, provisionalPayload.subjects);
+      document.querySelectorAll("[data-catalog]").forEach(initCatalog);
+    } catch (error) {
+      console.error("No se pudo iniciar el catálogo.", error);
+      document.querySelectorAll("[data-catalog]").forEach(initCatalog);
+    }
   }
 
   boot();
