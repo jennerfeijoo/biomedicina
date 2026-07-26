@@ -24,6 +24,18 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Preserve source indentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/migrate_self_paced_model.py')
+          text = path.read_text(encoding='utf-8')
+          old = '    return re.sub(r" {2,}", " ", text)'
+          if old not in text:
+              raise SystemExit('No se encontró la normalización insegura esperada.')
+          path.write_text(text.replace(old, '    return text', 1), encoding='utf-8')
+          PY
+
       - name: Apply self-paced migration
         run: |
           mkdir -p migration-logs
