@@ -78,6 +78,72 @@ jobs:
           path.write_text(text[:start] + replacement + text[end + 1:], encoding='utf-8')
           PY
 
+      - name: Repair enrichment source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/enrich_generated_pages.py')
+          text = path.read_text(encoding='utf-8')
+          start = text.index('def enrich_unit_page(')
+          end = text.index('\ndef catalog_paths', start)
+          nl = repr('\n')
+          lines = [
+              'def enrich_unit_page(original: str, unit: dict[str, Any]) -> str:',
+              f'    cleaned = UNIT_MARKER_RE.sub({nl}, original)',
+              '    enrichment = render_unit_enrichment(unit)',
+              '    enriched, count = THEORY_SECTION_RE.subn(',
+              '        lambda match: match.group(1) + enrichment + match.group(2),',
+              '        cleaned,',
+              '        count=1,',
+              '    )',
+              '    if count != 1:',
+              '        raise ValueError("No se encontró la sección de teoría en la página de unidad")',
+              f'    return {nl}.join(line.rstrip() for line in enriched.splitlines()).rstrip() + {nl}',
+              '',
+              '',
+              'def enrich_html(original: str, overlay: dict[str, Any]) -> str:',
+              f'    cleaned = UNIT_MARKER_RE.sub({nl}, original)',
+              f'    cleaned = SOURCE_MARKER_RE.sub({nl}, cleaned)',
+              '    if \'data-unit-overview="compact"\' in cleaned:',
+              '        enriched = cleaned',
+              '    else:',
+              '        units = overlay.get("detailed_units", [])',
+              '        article_matches = list(ARTICLE_RE.finditer(cleaned))',
+              '        if len(article_matches) != len(units):',
+              '            raise ValueError(',
+              '                f"El HTML contiene {len(article_matches)} unidades y el overlay {len(units)}"',
+              '            )',
+              '        pieces: list[str] = []',
+              '        cursor = 0',
+              '        for match, unit in zip(article_matches, units, strict=True):',
+              '            article = match.group(0)',
+              '            anchor = "        <h4>Temas</h4>"',
+              '            if anchor not in article:',
+              '                raise ValueError("No se encontró el ancla <h4>Temas</h4> en una unidad")',
+              '            article = article.replace(anchor, render_unit_enrichment(unit) + anchor, 1)',
+              '            pieces.append(cleaned[cursor : match.start()])',
+              '            pieces.append(article)',
+              '            cursor = match.end()',
+              '        pieces.append(cleaned[cursor:])',
+              '        enriched = "".join(pieces)',
+              '',
+              '    sources_html = render_sources(overlay.get("sources_used", []))',
+              '    if sources_html:',
+              '        enriched, count = RESOURCE_SECTION_RE.subn(',
+              '            lambda match: match.group(1) + sources_html + match.group(2),',
+              '            enriched,',
+              '            count=1,',
+              '        )',
+              '        if count != 1:',
+              '            raise ValueError("No se encontró la sección de recursos en el HTML")',
+              f'    return {nl}.join(line.rstrip() for line in enriched.splitlines()).rstrip() + {nl}',
+              '',
+          ]
+          replacement = '\n'.join(lines)
+          path.write_text(text[:start] + replacement + text[end + 1:], encoding='utf-8')
+          PY
+
       - name: Regenerate all pages
         run: |
           set -o pipefail
