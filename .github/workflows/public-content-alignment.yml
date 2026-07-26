@@ -21,9 +21,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Audit advanced JSON against public unit pages
+      - name: Generate site and capture publication drift
         run: |
           mkdir -p audit-artifacts
+          python scripts/generate_site.py --force --with-units
+          git diff --name-only > audit-artifacts/generated-site-files.txt
+          git diff --no-ext-diff --binary > audit-artifacts/generated-site.patch
+
+      - name: Audit advanced JSON against public unit pages
+        run: |
           python scripts/audit_public_unit_alignment.py \
             --json-output audit-artifacts/public-unit-alignment.json \
             | tee audit-artifacts/public-unit-alignment.txt
