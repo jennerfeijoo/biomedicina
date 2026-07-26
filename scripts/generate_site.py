@@ -20,7 +20,11 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from advanced_unit_renderer import advanced_replacements, load_advanced_unit
+from advanced_unit_renderer import (
+    advanced_replacements,
+    load_advanced_unit,
+    merge_advanced_unit_summaries,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "citonauta_curriculum.json"
@@ -1287,6 +1291,7 @@ def merge_subject_overlay(area: dict[str, Any], subject: dict[str, Any]) -> dict
     merged = synthesize_course(area, subject)
     overlay_path = subject_overlay_path(area["id"], subject["id"])
     if not overlay_path.exists():
+        merged = merge_advanced_unit_summaries(ROOT, merged)
         merged["status_label"] = STATUS_LABELS.get(merged["status"], merged["status"])
         return merged
 
@@ -1326,6 +1331,7 @@ def merge_subject_overlay(area: dict[str, Any], subject: dict[str, Any]) -> dict
             merged[key] = combined
         else:
             merged[key] = value
+    merged = merge_advanced_unit_summaries(ROOT, merged)
     if merged.get("status") != "complete":
         merged["status"] = "generated"
     merged["status_label"] = STATUS_LABELS.get(merged["status"], merged["status"])
