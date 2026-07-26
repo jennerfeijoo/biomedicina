@@ -1,0 +1,75 @@
+name: Apply Self-Paced Learning Model
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.head_ref == 'agent/self-paced-learning-model' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/self-paced-learning-model
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply self-paced migration
+        run: |
+          mkdir -p migration-logs
+          python scripts/migrate_self_paced_model.py 2>&1 | tee migration-logs/migration.log
+
+      - name: Regenerate public course pages
+        run: |
+          set -o pipefail
+          python scripts/generate_site.py --force --with-units 2>&1 | tee migration-logs/generate-site.log
+          python scripts/enrich_generated_pages.py 2>&1 | tee migration-logs/enrich.log
+          python scripts/migrate_self_paced_model.py 2>&1 | tee migration-logs/post-generation-cleanup.log
+
+      - name: Compile Python sources
+        run: python -m compileall -q scripts citonauta_agent
+
+      - name: Validate self-paced architecture
+        run: |
+          set -o pipefail
+          {
+            python scripts/validate_curriculum.py
+            python scripts/check_generated_preview.py --limit 84
+            python scripts/validate_units.py
+            python scripts/validate_generated_units.py
+            python scripts/audit_course_readiness.py --strict
+            python scripts/audit_course_portfolio.py --strict
+            python scripts/enrich_generated_pages.py --check
+            python scripts/audit_public_unit_alignment.py
+            python scripts/validate_links.py --quiet
+            python scripts/validate_self_paced_model.py
+          } 2>&1 | tee migration-logs/validation.log
+
+      - name: Upload migration logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-paced-migration-logs
+          path: migration-logs/
+
+      - name: Commit migrated repository
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No migration changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Adopt self-paced learning model'
+          git push origin HEAD:agent/self-paced-learning-model
