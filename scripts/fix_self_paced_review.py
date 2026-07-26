@@ -20,13 +20,13 @@ DURATION_META = re.compile(
 )
 
 KNOWN_REPAIRS = {
-    "Las precondiciones describen propiedades que deben cumplirse antes de ejecutar el algoritmo; las postcondiciones describen lo queda garantizado":
+    "Las precondiciones describen propiedades que deben cumplirse antes de ejecutar el algoritmo; las postcondiciones describen lo que queda garantizado":
         "Las precondiciones describen propiedades que deben cumplirse antes de ejecutar el algoritmo; las postcondiciones describen lo que queda garantizado",
-    "dos operadores verifican queda al menos una alícuota disponible":
+    "dos operadores verifican que queda al menos una alícuota disponible":
         "dos operadores verifican que queda al menos una alícuota disponible",
-    "menos torque una fuerza": "menos torque que una fuerza",
-    "por lo quedan 18": "por lo que quedan 18",
-    '"aprendizaje supervisado": "Enfoque ajusta un modelo':
+    "menos torque que una fuerza": "menos torque que una fuerza",
+    "por lo que quedan 18": "por lo que quedan 18",
+    '"aprendizaje supervisado": "Enfoque que ajusta un modelo':
         '"aprendizaje supervisado": "Enfoque que ajusta un modelo',
 }
 

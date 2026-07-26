@@ -262,7 +262,7 @@ CONCEPT_DEFINITIONS = {
     "fhir": "Estándar de HL7 que representa e intercambia información de salud mediante recursos modulares y interfaces web.",
     "snomed": "Terminología clínica composicional que asigna identificadores a conceptos y relaciones para registrar significado de forma consistente.",
     "loinc": "Sistema de identificadores para observaciones, mediciones, documentos y preguntas clínicas o de laboratorio.",
-    "aprendizaje supervisado": "Enfoque ajusta un modelo a ejemplos con entradas y resultados conocidos para predecir nuevas observaciones.",
+    "aprendizaje supervisado": "Enfoque que ajusta un modelo a ejemplos con entradas y resultados conocidos para predecir nuevas observaciones.",
     "sobreajuste": "Situación en la que un modelo aprende peculiaridades del conjunto de entrenamiento y pierde desempeño en datos nuevos.",
     "señalización celular": "Procesos mediante los que una célula detecta señales, las transmite por redes moleculares y modifica su comportamiento.",
     "expresión génica": "Uso regulado de la información de un gen para producir ARN funcional y, cuando corresponde, proteína.",

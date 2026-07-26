@@ -13,6 +13,9 @@ UNIT_KEYS = {"estimated_hours", "weeks"}
 TEXT_SUFFIXES = {".py", ".js", ".css", ".html", ".md", ".yml", ".yaml", ".json"}
 FORBIDDEN_UI = ("Carga estimada", "Tiempo sugerido", "horas estimadas", "horas semanales", "horas totales de estudio")
 DUPLICATE_QUE = re.compile(r"\bque\s+que\b", re.IGNORECASE)
+COURSE_META = re.compile(r'<dl[^>]*class="[^"]*course-meta[^"]*"[^>]*>(.*?)</dl>', re.IGNORECASE | re.DOTALL)
+DURATION_LABEL = re.compile(r"<dt>\s*Duraci[oó]n\s*</dt>", re.IGNORECASE)
+STUDY_RANGE = re.compile(r"\b\d+(?:\s*[–-]\s*\d+)?\s*(?:horas?|semanas?)\b", re.IGNORECASE)
 
 def find_keys(value: Any, forbidden: set[str], prefix: str = "") -> list[str]:
     errors: list[str] = []
@@ -59,6 +62,10 @@ def main() -> int:
         if DUPLICATE_QUE.search(text):
             errors.append(f"duplicación tipográfica en {path.relative_to(ROOT)}")
         lowered = text.casefold()
+        if path.suffix.lower() == ".html":
+            for meta_block in COURSE_META.findall(text):
+                if DURATION_LABEL.search(meta_block) or STUDY_RANGE.search(meta_block):
+                    errors.append(f"metadato temporal público en {path.relative_to(ROOT)}")
         if path.suffix.lower() in {".html", ".js"} or path.name in {"asignatura.html", "unidad.html"}:
             for phrase in FORBIDDEN_UI:
                 if phrase.casefold() in lowered:
