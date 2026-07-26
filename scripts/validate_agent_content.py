@@ -72,7 +72,6 @@ def validate_overlay(path: Path) -> list[str]:
         "description",
         "biomedical_connection",
         "level",
-        "estimated_workload",
     ):
         text_fragments.append(str(data.get(field, "")))
 

@@ -52,7 +52,7 @@ class OllamaGateway:
             return """
 CourseContent = {
   id:string, area_id:string, status:"complete", description:string, level:string,
-  estimated_workload:string, biomedical_connection:string,
+  biomedical_connection:string,
   prerequisites:[string], course_competencies:[string], learning_objectives:[string],
   learning_outcomes:[string], modules:[string],
   detailed_units:[{

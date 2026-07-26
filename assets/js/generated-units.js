@@ -46,8 +46,6 @@
 
   function renderUnitMetadata(parent, unit) {
     const values = [];
-    if (unit.estimated_hours) values.push(`${unit.estimated_hours} horas estimadas`);
-    if (unit.weeks?.length) values.push(`Semanas ${unit.weeks.join("–")}`);
     if (unit.difficulty) values.push(unit.difficulty);
     if (values.length) parent.appendChild(element("p", "generated-unit-meta", values.join(" · ")));
 
@@ -472,12 +470,12 @@
     container.appendChild(sources);
   }
 
-  function loadSemesterCourseEnhancer(rootUrl) {
-    if (document.querySelector('script[data-semester-course="true"]')) return;
+  function loadCourseEnhancer(rootUrl) {
+    if (document.querySelector('script[data-course="true"]')) return;
     const script = element("script");
-    script.src = new URL("assets/js/semester-course.js", rootUrl).href;
+    script.src = new URL("assets/js/course.js", rootUrl).href;
     script.defer = true;
-    script.dataset.semesterCourse = "true";
+    script.dataset.course = "true";
     document.body.appendChild(script);
   }
 
@@ -528,7 +526,7 @@
     }
 
     await typesetMath(unitsSection);
-    loadSemesterCourseEnhancer(rootUrl);
+    loadCourseEnhancer(rootUrl);
   }
 
   if (document.readyState === "loading") {

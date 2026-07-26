@@ -1,1 +1,391 @@
-{"schema_version":"1.0","subject_id":"arquitectura-computadores","title":"Núcleo avanzado de Arquitectura de Computadores","status":"review","purpose":"Completar AC-01–AC-08 en sistemas operativos y compilación, coherencia y paralelismo multinivel, y seguridad y confiabilidad arquitectónica, conectando rendimiento, energía, fallos, privacidad y reproducibilidad sin presentar prototipos educativos como sistemas médicos validados.","modules":[{"module_id":"AC-S01","title":"Sistemas operativos, compilación y contenedores","learning_outcomes":["Distinguir proceso, hilo, espacio de direcciones y recurso del sistema.","Explicar planificación, cambios de contexto, afinidad y estados de proceso.","Relacionar memoria virtual, page faults y copy-on-write con rendimiento.","Trazar llamadas al sistema entre aplicación, kernel y dispositivo.","Comparar page cache, sistema de archivos, bloques y durabilidad.","Auditar compilación, enlace, carga y opciones de optimización.","Distinguir procesos, máquinas virtuales y contenedores.","Diseñar experimentos que separen CPU, kernel, almacenamiento y compilación."],"theory_sections":[{"heading":"Procesos, hilos y planificación","paragraphs":["Un proceso combina espacio de direcciones, recursos y contexto. Los hilos comparten memoria y descriptores, pero mantienen registros y pila propios.","El planificador mueve tareas entre estados listo, ejecutando y bloqueado. Prioridad, quantum y afinidad modifican latencia y throughput.","Un cambio de contexto conserva estado y perturba caché, TLB y predictores. Un benchmark con tareas pequeñas puede medir planificación en lugar del algoritmo.","La afinidad puede mejorar localidad y reproducibilidad o crear desbalance. En NUMA debe analizarse junto con la ubicación de páginas."],"key_points":["Proceso e hilo comparten recursos distintos.","Planificación modifica latencia y throughput.","El cambio de contexto tiene costes microarquitectónicos.","Afinidad y memoria deben evaluarse juntas."]},{"heading":"Memoria virtual, syscalls y archivos","paragraphs":["Las llamadas al sistema cruzan la frontera aplicación-kernel para solicitar memoria, archivos, red o procesos. El buffering de bibliotecas puede ocultar la frecuencia real de llamadas.","La memoria virtual permite aislamiento, memory mapping y copy-on-write. Los page faults menores y mayores tienen causas y costes diferentes.","El sistema de archivos organiza nombres y metadatos; el almacenamiento opera con bloques y colas. La page cache puede convertir lecturas posteriores en accesos a RAM.","mmap, flush, fsync y renombrado atómico ofrecen propiedades diferentes. Un pipeline debe declarar cuándo considera durable una salida."],"key_points":["Las bibliotecas pueden ocultar syscalls.","Los page faults no forman una categoría homogénea.","Page cache y almacenamiento son niveles distintos.","Visibilidad y durabilidad no son equivalentes."]},{"heading":"Compilación, carga y contenedores","paragraphs":["Compilación, enlace y carga transforman fuente, objetos y bibliotecas en un proceso ejecutable. Vectorización y optimización interprocedural pueden cambiar el trabajo real.","Las opciones rápidas pueden reordenar flotantes o asumir ausencia de desbordamiento. Toda mejora debe contrastar código generado, exactitud y compatibilidad.","Una máquina virtual virtualiza hardware; un contenedor comparte el kernel y aísla mediante namespaces, cgroups y sistemas de archivos.","Una imagen fija dependencias, pero no microarquitectura, kernel, drivers ni aceleradores. La reproducción requiere registrar también el host y los límites de recursos."],"key_points":["Compilador, enlazador y loader son etapas distintas.","Optimización puede cambiar semántica numérica.","Los contenedores comparten el kernel.","La imagen no fija hardware ni drivers."]}],"worked_cases":[{"title":"Page cache en un benchmark","problem":"La segunda lectura de un archivo es diez veces más rápida.","solution":"Separar caché caliente y fría, medir faults, syscalls y bytes, y declarar si se estudia almacenamiento o reutilización en RAM."},{"title":"Contenedor con rendimiento variable","problem":"La misma imagen produce tiempos incompatibles en dos hosts.","solution":"Comparar CPU, kernel, cgroups, almacenamiento, afinidad, drivers y aceleradores; la imagen no controla esos factores."}],"practical_workshops":[{"title":"Procesos y planificación","tasks":["Comparar proceso, hilo y pool.","Registrar cambios de contexto.","Aplicar afinidad.","Comparar latencia y throughput."]},{"title":"Kernel, compilación y contenedor","tasks":["Trazar syscalls.","Comparar page cache caliente y fría.","Compilar con varias opciones.","Ejecutar en host y contenedor."]}],"mastery_questions":["¿Qué comparten los hilos?","¿Qué mide un cambio de contexto?","¿Por qué la afinidad puede perjudicar?","¿Qué diferencia fault menor y mayor?","¿Qué función cumple page cache?","¿Qué garantiza fsync?","¿Qué etapas separan compilador y loader?","¿Qué no controla un contenedor?"]},{"module_id":"AC-S02","title":"Coherencia, NUMA y paralelismo distribuido","learning_outcomes":["Distinguir coherencia y consistencia de memoria.","Explicar invalidación y propiedad de líneas de caché.","Detectar false sharing y tráfico de coherencia.","Relacionar atomics, locks, fences y happens-before.","Analizar first-touch, afinidad y acceso remoto NUMA.","Comparar memoria compartida y distribuida.","Modelar comunicación, sincronización y desbalance.","Validar escalabilidad y reproducibilidad numérica."],"theory_sections":[{"heading":"Coherencia, consistencia y sincronización","paragraphs":["La coherencia mantiene un orden compatible de escrituras sobre una ubicación entre cachés. Los protocolos transfieren propiedad o invalidan copias.","La consistencia especifica qué órdenes pueden observarse entre ubicaciones. Compilador y procesador pueden reordenar dentro de sus reglas.","Happens-before conecta eventos cuya visibilidad debe estar ordenada. Una carrera aparece cuando accesos conflictivos carecen de sincronización.","False sharing surge cuando variables independientes comparten línea. Padding puede reducir invalidaciones, pero no corrige carreras de datos."],"key_points":["Coherencia trata ubicaciones individuales.","Consistencia define órdenes observables.","Happens-before exige primitivas adecuadas.","False sharing y carrera son problemas distintos."]},{"heading":"NUMA, afinidad y localidad","paragraphs":["En NUMA cada procesador accede más rápido a cierta memoria. First-touch suele colocar páginas cerca del hilo que las inicializa.","Afinidad fija hilos; políticas bind, interleave o migración controlan páginas. Ninguna estrategia es universal.","Accesos locales y remotos, ancho de banda y latencia permiten probar cuellos. El interconector puede saturarse antes que los núcleos.","Replicar lectura reduce accesos remotos y aumenta memoria. Particionar ayuda cuando las fronteras requieren poca comunicación."],"key_points":["NUMA hace relevante la ubicación física.","First-touch conecta inicialización y colocación.","Afinidad no fija por sí sola la memoria.","Replicación intercambia memoria por localidad."]},{"heading":"Memoria distribuida y escalabilidad","paragraphs":["En memoria distribuida cada proceso posee memoria local y comunica mensajes. Latencia, volumen y número de mensajes determinan coste.","Broadcast, reduce y all-to-all presentan patrones diferentes. La partición debe minimizar comunicación y sincronización.","El modelo alfa-beta aproxima tiempo como latencia por mensaje más bytes sobre ancho de banda. Amdahl omite desbalance y contención.","Las reducciones cambian el orden flotante. El contrato debe definir tolerancia, invariantes y necesidad de reproducibilidad bit a bit."],"key_points":["Comunicar tiene coste de latencia y volumen.","Las colectivas no escalan igual.","Amdahl no modela todos los costes.","La reproducibilidad numérica debe especificarse."]}],"worked_cases":[{"title":"False sharing en contadores","problem":"Cada hilo usa un contador privado y el rendimiento cae al añadir núcleos.","solution":"Inspeccionar líneas, separar contadores, medir tráfico y verificar ausencia de carrera."},{"title":"Escalado NUMA de una matriz","problem":"El tiempo mejora hasta un socket y empeora después.","solution":"Controlar first-touch, afinidad, acceso remoto y partición; comparar bind, interleave y dominios locales."}],"practical_workshops":[{"title":"Coherencia compartida","tasks":["Construir false sharing.","Aplicar padding.","Comparar locks y atomics.","Validar resultados y tráfico."]},{"title":"NUMA y mensajes","tasks":["Aplicar first-touch.","Fijar afinidad.","Modelar alfa-beta.","Medir escalado fuerte y débil."]}],"mastery_questions":["¿Qué diferencia coherencia y consistencia?","¿Qué establece happens-before?","¿Qué distingue false sharing de carrera?","¿Cómo actúa first-touch?","¿Qué es acceso NUMA remoto?","¿Cuándo conviene replicar?","¿Qué representa alfa-beta?","¿Por qué cambia una reducción paralela?"]},{"module_id":"AC-S03","title":"Seguridad arquitectónica y fault injection","learning_outcomes":["Construir un modelo de amenazas.","Distinguir confidencialidad, integridad, autenticidad, disponibilidad y privacidad.","Explicar cadena de confianza y secure boot.","Analizar mínimo privilegio y superficie de ataque.","Relacionar ECC y redundancia con modos de fallo.","Diseñar campañas de fault injection con oráculos.","Cuantificar cobertura, recuperación y corrupción silenciosa.","Separar controles técnicos de validación clínica y regulatoria."],"theory_sections":[{"heading":"Amenazas, privilegios y privacidad","paragraphs":["Un modelo de amenazas identifica activos, actores, fronteras, capacidades y consecuencias. Los controles deben vincularse con amenazas concretas.","La superficie incluye radio, puertos, parsers, actualizaciones, drivers y depuración. Deshabilitar interfaces reduce exposición y puede afectar mantenimiento.","Mínimo privilegio limita permisos y contiene fallos. Compartimentar adquisición, almacenamiento y red añade interfaces que deben autenticarse.","Privacidad depende de propósito, retención y acceso. Hashing sin secreto no anonimiza identificadores predecibles y los logs también pueden exponer datos."],"key_points":["El modelo de amenazas precede a controles.","Toda interfaz amplía superficie.","Mínimo privilegio reduce impacto.","Privacidad exige analizar el flujo completo."]},{"heading":"Arranque seguro y actualización","paragraphs":["Secure boot verifica cada etapa antes de transferir control y construye confianza desde una raíz protegida. No demuestra ausencia de vulnerabilidades.","Una actualización segura necesita firma, integridad, anti-rollback y recuperación ante corte. Esquemas A/B conservan una versión anterior.","El cifrado protege confidencialidad; MAC o firma aporta autenticidad. CRC detecta errores accidentales, pero un atacante puede recomputarlo.","La procedencia incluye fuente, toolchain, dependencias y artefacto firmado. Un SBOM mejora trazabilidad, no garantiza seguridad."],"key_points":["Secure boot verifica origen e integridad.","Anti-rollback evita versiones vulnerables.","CRC y firma responden a amenazas distintas.","SBOM no equivale a seguridad demostrada."]},{"heading":"ECC, confiabilidad e inyección de fallos","paragraphs":["Confiabilidad trata fallos accidentales; seguridad incluye acciones adversarias. Comparten mecanismos, pero no modelos idénticos.","Paridad detecta ciertos errores y ECC corrige patrones limitados. Scrubbing revisa memoria; la cobertura depende del código y de errores correlacionados.","Fault injection introduce fallos controlados en bits, mensajes, tiempo o alimentación simulada. Debe definir sitio, momento, modelo y oráculo.","Las métricas incluyen detección, recuperación, corrupción silenciosa y disponibilidad. Una campaña educativa no sustituye certificación ni validación clínica."],"key_points":["Seguridad y confiabilidad tienen modelos distintos.","ECC tiene cobertura limitada.","La inyección necesita un espacio definido.","La corrupción silenciosa se mide aparte."]}],"worked_cases":[{"title":"Actualización interrumpida","problem":"Se pierde energía durante la actualización.","solution":"Usar A/B, manifiesto firmado, anti-rollback, escritura verificada y conmutación atómica; probar cortes en varias fases."},{"title":"Corrupción silenciosa","problem":"Un bit alterado cambia la salida sin alarma.","solution":"Definir oráculo, inyectar en datos y metadatos, comparar paridad, ECC y checksum y cuantificar SDC."}],"practical_workshops":[{"title":"Amenazas y arranque","tasks":["Construir diagrama de flujo.","Enumerar amenazas.","Diseñar cadena de confianza.","Probar rollback y corte."]},{"title":"Campaña de fallos","tasks":["Definir espacio de fallos.","Automatizar inyección.","Medir detección y recuperación.","Documentar riesgo residual."]}],"mastery_questions":["¿Qué contiene un modelo de amenazas?","¿Qué significa mínimo privilegio?","¿Qué garantiza secure boot?","¿Por qué se requiere anti-rollback?","¿Qué diferencia CRC y firma?","¿Qué cobertura ofrece ECC?","¿Qué requiere fault injection?","¿Qué es corrupción silenciosa?"]}],"integrative_assessment":{"title":"Auditoría arquitectónica de una plataforma biomédica educativa","scenario":"Construir la cadena desde representación y ejecución hasta sistema operativo, paralelismo, seguridad y recuperación.","deliverables":["Matriz de requisitos, amenazas y fallos.","Modelo cuantitativo de CPU, memoria, E/S y energía.","Benchmark reproducible y versionado.","Experimento de localidad o escalabilidad.","Campaña de fallos y recuperación.","Informe con límites técnicos y clínicos."],"mastery_criteria":["Relaciona decisiones con requisitos medibles.","Distingue hardware, SO, compilador y aplicación.","Incluye comunicación y sincronización.","Verifica equivalencia numérica.","Conecta controles con amenazas y fallos.","Mantiene límites académicos y clínicos."]},"sources":[{"title":"Computer Systems: A Programmer's Perspective","organization":"Carnegie Mellon University","url":"https://csapp.cs.cmu.edu/"},{"title":"Operating Systems: Three Easy Pieces","organization":"University of Wisconsin–Madison","url":"https://pages.cs.wisc.edu/~remzi/OSTEP/"},{"title":"RISC-V Specifications","organization":"RISC-V International","url":"https://riscv.org/technical/specifications/"},{"title":"Linux kernel documentation","organization":"Linux Kernel Organization","url":"https://docs.kernel.org/"},{"title":"OpenMP Specifications","organization":"OpenMP ARB","url":"https://www.openmp.org/specifications/"},{"title":"MPI Standard","organization":"MPI Forum","url":"https://www.mpi-forum.org/docs/"},{"title":"CUDA C++ Programming Guide","organization":"NVIDIA","url":"https://docs.nvidia.com/cuda/cuda-c-programming-guide/"},{"title":"NIST Secure Software Development Framework","organization":"NIST","url":"https://csrc.nist.gov/Projects/ssdf"},{"title":"Platform Firmware Resiliency Guidelines","organization":"NIST","url":"https://csrc.nist.gov/publications/detail/sp/800-193/final"},{"title":"OWASP IoT Security Guidance","organization":"OWASP Foundation","url":"https://owasp.org/www-project-internet-of-things/"}],"editorial_notice":"Material educativo sujeto a revisión experta externa. La implementación auditable no equivale a acreditación, certificación de seguridad, validación de dispositivo médico ni utilidad clínica."}
+{
+  "schema_version": "1.0",
+  "subject_id": "arquitectura-computadores",
+  "title": "Núcleo avanzado de Arquitectura de Computadores",
+  "status": "review",
+  "purpose": "Completar AC-01–AC-08 en sistemas operativos y compilación, coherencia y paralelismo multinivel, y seguridad y confiabilidad arquitectónica, conectando rendimiento, energía, fallos, privacidad y reproducibilidad sin presentar prototipos educativos como sistemas médicos validados.",
+  "modules": [
+    {
+      "module_id": "AC-S01",
+      "title": "Sistemas operativos, compilación y contenedores",
+      "learning_outcomes": [
+        "Distinguir proceso, hilo, espacio de direcciones y recurso del sistema.",
+        "Explicar planificación, cambios de contexto, afinidad y estados de proceso.",
+        "Relacionar memoria virtual, page faults y copy-on-write con rendimiento.",
+        "Trazar llamadas al sistema entre aplicación, kernel y dispositivo.",
+        "Comparar page cache, sistema de archivos, bloques y durabilidad.",
+        "Auditar compilación, enlace, carga y opciones de optimización.",
+        "Distinguir procesos, máquinas virtuales y contenedores.",
+        "Diseñar experimentos que separen CPU, kernel, almacenamiento y compilación."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Procesos, hilos y planificación",
+          "paragraphs": [
+            "Un proceso combina espacio de direcciones, recursos y contexto. Los hilos comparten memoria y descriptores, pero mantienen registros y pila propios.",
+            "El planificador mueve tareas entre estados listo, ejecutando y bloqueado. Prioridad, quantum y afinidad modifican latencia y throughput.",
+            "Un cambio de contexto conserva estado y perturba caché, TLB y predictores. Un benchmark con tareas pequeñas puede medir planificación en lugar del algoritmo.",
+            "La afinidad puede mejorar localidad y reproducibilidad o crear desbalance. En NUMA debe analizarse junto con la ubicación de páginas."
+          ],
+          "key_points": [
+            "Proceso e hilo comparten recursos distintos.",
+            "Planificación modifica latencia y throughput.",
+            "El cambio de contexto tiene costes microarquitectónicos.",
+            "Afinidad y memoria deben evaluarse juntas."
+          ]
+        },
+        {
+          "heading": "Memoria virtual, syscalls y archivos",
+          "paragraphs": [
+            "Las llamadas al sistema cruzan la frontera aplicación-kernel para solicitar memoria, archivos, red o procesos. El buffering de bibliotecas puede ocultar la frecuencia real de llamadas.",
+            "La memoria virtual permite aislamiento, memory mapping y copy-on-write. Los page faults menores y mayores tienen causas y costes diferentes.",
+            "El sistema de archivos organiza nombres y metadatos; el almacenamiento opera con bloques y colas. La page cache puede convertir lecturas posteriores en accesos a RAM.",
+            "mmap, flush, fsync y renombrado atómico ofrecen propiedades diferentes. Un pipeline debe declarar cuándo considera durable una salida."
+          ],
+          "key_points": [
+            "Las bibliotecas pueden ocultar syscalls.",
+            "Los page faults no forman una categoría homogénea.",
+            "Page cache y almacenamiento son niveles distintos.",
+            "Visibilidad y durabilidad no son equivalentes."
+          ]
+        },
+        {
+          "heading": "Compilación, carga y contenedores",
+          "paragraphs": [
+            "Compilación, enlace y carga transforman fuente, objetos y bibliotecas en un proceso ejecutable. Vectorización y optimización interprocedural pueden cambiar el trabajo real.",
+            "Las opciones rápidas pueden reordenar flotantes o asumir ausencia de desbordamiento. Toda mejora debe contrastar código generado, exactitud y compatibilidad.",
+            "Una máquina virtual virtualiza hardware; un contenedor comparte el kernel y aísla mediante namespaces, cgroups y sistemas de archivos.",
+            "Una imagen fija dependencias, pero no microarquitectura, kernel, drivers ni aceleradores. La reproducción requiere registrar también el host y los límites de recursos."
+          ],
+          "key_points": [
+            "Compilador, enlazador y loader son etapas distintas.",
+            "Optimización puede cambiar semántica numérica.",
+            "Los contenedores comparten el kernel.",
+            "La imagen no fija hardware ni drivers."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Page cache en un benchmark",
+          "problem": "La segunda lectura de un archivo es diez veces más rápida.",
+          "solution": "Separar caché caliente y fría, medir faults, syscalls y bytes, y declarar si se estudia almacenamiento o reutilización en RAM."
+        },
+        {
+          "title": "Contenedor con rendimiento variable",
+          "problem": "La misma imagen produce tiempos incompatibles en dos hosts.",
+          "solution": "Comparar CPU, kernel, cgroups, almacenamiento, afinidad, drivers y aceleradores; la imagen no controla esos factores."
+        }
+      ],
+      "practical_workshops": [
+        {
+          "title": "Procesos y planificación",
+          "tasks": [
+            "Comparar proceso, hilo y pool.",
+            "Registrar cambios de contexto.",
+            "Aplicar afinidad.",
+            "Comparar latencia y throughput."
+          ]
+        },
+        {
+          "title": "Kernel, compilación y contenedor",
+          "tasks": [
+            "Trazar syscalls.",
+            "Comparar page cache caliente y fría.",
+            "Compilar con varias opciones.",
+            "Ejecutar en host y contenedor."
+          ]
+        }
+      ],
+      "mastery_questions": [
+        "¿Qué comparten los hilos?",
+        "¿Qué mide un cambio de contexto?",
+        "¿Por qué la afinidad puede perjudicar?",
+        "¿Qué diferencia fault menor y mayor?",
+        "¿Qué función cumple page cache?",
+        "¿Qué garantiza fsync?",
+        "¿Qué etapas separan compilador y loader?",
+        "¿Qué no controla un contenedor?"
+      ]
+    },
+    {
+      "module_id": "AC-S02",
+      "title": "Coherencia, NUMA y paralelismo distribuido",
+      "learning_outcomes": [
+        "Distinguir coherencia y consistencia de memoria.",
+        "Explicar invalidación y propiedad de líneas de caché.",
+        "Detectar false sharing y tráfico de coherencia.",
+        "Relacionar atomics, locks, fences y happens-before.",
+        "Analizar first-touch, afinidad y acceso remoto NUMA.",
+        "Comparar memoria compartida y distribuida.",
+        "Modelar comunicación, sincronización y desbalance.",
+        "Validar escalabilidad y reproducibilidad numérica."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Coherencia, consistencia y sincronización",
+          "paragraphs": [
+            "La coherencia mantiene un orden compatible de escrituras sobre una ubicación entre cachés. Los protocolos transfieren propiedad o invalidan copias.",
+            "La consistencia especifica qué órdenes pueden observarse entre ubicaciones. Compilador y procesador pueden reordenar dentro de sus reglas.",
+            "Happens-before conecta eventos cuya visibilidad debe estar ordenada. Una carrera aparece cuando accesos conflictivos carecen de sincronización.",
+            "False sharing surge cuando variables independientes comparten línea. Padding puede reducir invalidaciones, pero no corrige carreras de datos."
+          ],
+          "key_points": [
+            "Coherencia trata ubicaciones individuales.",
+            "Consistencia define órdenes observables.",
+            "Happens-before exige primitivas adecuadas.",
+            "False sharing y carrera son problemas distintos."
+          ]
+        },
+        {
+          "heading": "NUMA, afinidad y localidad",
+          "paragraphs": [
+            "En NUMA cada procesador accede más rápido a cierta memoria. First-touch suele colocar páginas cerca del hilo que las inicializa.",
+            "Afinidad fija hilos; políticas bind, interleave o migración controlan páginas. Ninguna estrategia es universal.",
+            "Accesos locales y remotos, ancho de banda y latencia permiten probar cuellos. El interconector puede saturarse antes que los núcleos.",
+            "Replicar lectura reduce accesos remotos y aumenta memoria. Particionar ayuda cuando las fronteras requieren poca comunicación."
+          ],
+          "key_points": [
+            "NUMA hace relevante la ubicación física.",
+            "First-touch conecta inicialización y colocación.",
+            "Afinidad no fija por sí sola la memoria.",
+            "Replicación intercambia memoria por localidad."
+          ]
+        },
+        {
+          "heading": "Memoria distribuida y escalabilidad",
+          "paragraphs": [
+            "En memoria distribuida cada proceso posee memoria local y comunica mensajes. Latencia, volumen y número de mensajes determinan coste.",
+            "Broadcast, reduce y all-to-all presentan patrones diferentes. La partición debe minimizar comunicación y sincronización.",
+            "El modelo alfa-beta aproxima tiempo como latencia por mensaje más bytes sobre ancho de banda. Amdahl omite desbalance y contención.",
+            "Las reducciones cambian el orden flotante. El contrato debe definir tolerancia, invariantes y necesidad de reproducibilidad bit a bit."
+          ],
+          "key_points": [
+            "Comunicar tiene coste de latencia y volumen.",
+            "Las colectivas no escalan igual.",
+            "Amdahl no modela todos los costes.",
+            "La reproducibilidad numérica debe especificarse."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "False sharing en contadores",
+          "problem": "Cada hilo usa un contador privado y el rendimiento cae al añadir núcleos.",
+          "solution": "Inspeccionar líneas, separar contadores, medir tráfico y verificar ausencia de carrera."
+        },
+        {
+          "title": "Escalado NUMA de una matriz",
+          "problem": "El tiempo mejora hasta un socket y empeora después.",
+          "solution": "Controlar first-touch, afinidad, acceso remoto y partición; comparar bind, interleave y dominios locales."
+        }
+      ],
+      "practical_workshops": [
+        {
+          "title": "Coherencia compartida",
+          "tasks": [
+            "Construir false sharing.",
+            "Aplicar padding.",
+            "Comparar locks y atomics.",
+            "Validar resultados y tráfico."
+          ]
+        },
+        {
+          "title": "NUMA y mensajes",
+          "tasks": [
+            "Aplicar first-touch.",
+            "Fijar afinidad.",
+            "Modelar alfa-beta.",
+            "Medir escalado fuerte y débil."
+          ]
+        }
+      ],
+      "mastery_questions": [
+        "¿Qué diferencia coherencia y consistencia?",
+        "¿Qué establece happens-before?",
+        "¿Qué distingue false sharing de carrera?",
+        "¿Cómo actúa first-touch?",
+        "¿Qué es acceso NUMA remoto?",
+        "¿Cuándo conviene replicar?",
+        "¿Qué representa alfa-beta?",
+        "¿Por qué cambia una reducción paralela?"
+      ]
+    },
+    {
+      "module_id": "AC-S03",
+      "title": "Seguridad arquitectónica y fault injection",
+      "learning_outcomes": [
+        "Construir un modelo de amenazas.",
+        "Distinguir confidencialidad, integridad, autenticidad, disponibilidad y privacidad.",
+        "Explicar cadena de confianza y secure boot.",
+        "Analizar mínimo privilegio y superficie de ataque.",
+        "Relacionar ECC y redundancia con modos de fallo.",
+        "Diseñar campañas de fault injection con oráculos.",
+        "Cuantificar cobertura, recuperación y corrupción silenciosa.",
+        "Separar controles técnicos de validación clínica y regulatoria."
+      ],
+      "theory_sections": [
+        {
+          "heading": "Amenazas, privilegios y privacidad",
+          "paragraphs": [
+            "Un modelo de amenazas identifica activos, actores, fronteras, capacidades y consecuencias. Los controles deben vincularse con amenazas concretas.",
+            "La superficie incluye radio, puertos, parsers, actualizaciones, drivers y depuración. Deshabilitar interfaces reduce exposición y puede afectar mantenimiento.",
+            "Mínimo privilegio limita permisos y contiene fallos. Compartimentar adquisición, almacenamiento y red añade interfaces que deben autenticarse.",
+            "Privacidad depende de propósito, retención y acceso. Hashing sin secreto no anonimiza identificadores predecibles y los logs también pueden exponer datos."
+          ],
+          "key_points": [
+            "El modelo de amenazas precede a controles.",
+            "Toda interfaz amplía superficie.",
+            "Mínimo privilegio reduce impacto.",
+            "Privacidad exige analizar el flujo completo."
+          ]
+        },
+        {
+          "heading": "Arranque seguro y actualización",
+          "paragraphs": [
+            "Secure boot verifica cada etapa antes de transferir control y construye confianza desde una raíz protegida. No demuestra ausencia de vulnerabilidades.",
+            "Una actualización segura necesita firma, integridad, anti-rollback y recuperación ante corte. Esquemas A/B conservan una versión anterior.",
+            "El cifrado protege confidencialidad; MAC o firma aporta autenticidad. CRC detecta errores accidentales, pero un atacante puede recomputarlo.",
+            "La procedencia incluye fuente, toolchain, dependencias y artefacto firmado. Un SBOM mejora trazabilidad, no garantiza seguridad."
+          ],
+          "key_points": [
+            "Secure boot verifica origen e integridad.",
+            "Anti-rollback evita versiones vulnerables.",
+            "CRC y firma responden a amenazas distintas.",
+            "SBOM no equivale a seguridad demostrada."
+          ]
+        },
+        {
+          "heading": "ECC, confiabilidad e inyección de fallos",
+          "paragraphs": [
+            "Confiabilidad trata fallos accidentales; seguridad incluye acciones adversarias. Comparten mecanismos, pero no modelos idénticos.",
+            "Paridad detecta ciertos errores y ECC corrige patrones limitados. Scrubbing revisa memoria; la cobertura depende del código y de errores correlacionados.",
+            "Fault injection introduce fallos controlados en bits, mensajes, tiempo o alimentación simulada. Debe definir sitio, momento, modelo y oráculo.",
+            "Las métricas incluyen detección, recuperación, corrupción silenciosa y disponibilidad. Una campaña educativa no sustituye certificación ni validación clínica."
+          ],
+          "key_points": [
+            "Seguridad y confiabilidad tienen modelos distintos.",
+            "ECC tiene cobertura limitada.",
+            "La inyección necesita un espacio definido.",
+            "La corrupción silenciosa se mide aparte."
+          ]
+        }
+      ],
+      "worked_cases": [
+        {
+          "title": "Actualización interrumpida",
+          "problem": "Se pierde energía durante la actualización.",
+          "solution": "Usar A/B, manifiesto firmado, anti-rollback, escritura verificada y conmutación atómica; probar cortes en varias fases."
+        },
+        {
+          "title": "Corrupción silenciosa",
+          "problem": "Un bit alterado cambia la salida sin alarma.",
+          "solution": "Definir oráculo, inyectar en datos y metadatos, comparar paridad, ECC y checksum y cuantificar SDC."
+        }
+      ],
+      "practical_workshops": [
+        {
+          "title": "Amenazas y arranque",
+          "tasks": [
+            "Construir diagrama de flujo.",
+            "Enumerar amenazas.",
+            "Diseñar cadena de confianza.",
+            "Probar rollback y corte."
+          ]
+        },
+        {
+          "title": "Campaña de fallos",
+          "tasks": [
+            "Definir espacio de fallos.",
+            "Automatizar inyección.",
+            "Medir detección y recuperación.",
+            "Documentar riesgo residual."
+          ]
+        }
+      ],
+      "mastery_questions": [
+        "¿Qué contiene un modelo de amenazas?",
+        "¿Qué significa mínimo privilegio?",
+        "¿Qué garantiza secure boot?",
+        "¿Por qué se requiere anti-rollback?",
+        "¿Qué diferencia CRC y firma?",
+        "¿Qué cobertura ofrece ECC?",
+        "¿Qué requiere fault injection?",
+        "¿Qué es corrupción silenciosa?"
+      ]
+    }
+  ],
+  "integrative_assessment": {
+    "title": "Auditoría arquitectónica de una plataforma biomédica educativa",
+    "scenario": "Construir la cadena desde representación y ejecución hasta sistema operativo, paralelismo, seguridad y recuperación.",
+    "deliverables": [
+      "Matriz de requisitos, amenazas y fallos.",
+      "Modelo cuantitativo de CPU, memoria, E/S y energía.",
+      "Benchmark reproducible y versionado.",
+      "Experimento de localidad o escalabilidad.",
+      "Campaña de fallos y recuperación.",
+      "Informe con límites técnicos y clínicos."
+    ],
+    "mastery_criteria": [
+      "Relaciona decisiones con requisitos medibles.",
+      "Distingue hardware, SO, compilador y aplicación.",
+      "Incluye comunicación y sincronización.",
+      "Verifica equivalencia numérica.",
+      "Conecta controles con amenazas y fallos.",
+      "Mantiene límites académicos y clínicos."
+    ]
+  },
+  "sources": [
+    {
+      "title": "Computer Systems: A Programmer's Perspective",
+      "organization": "Carnegie Mellon University",
+      "url": "https://csapp.cs.cmu.edu/"
+    },
+    {
+      "title": "Operating Systems: Three Easy Pieces",
+      "organization": "University of Wisconsin–Madison",
+      "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/"
+    },
+    {
+      "title": "RISC-V Specifications",
+      "organization": "RISC-V International",
+      "url": "https://riscv.org/technical/specifications/"
+    },
+    {
+      "title": "Linux kernel documentation",
+      "organization": "Linux Kernel Organization",
+      "url": "https://docs.kernel.org/"
+    },
+    {
+      "title": "OpenMP Specifications",
+      "organization": "OpenMP ARB",
+      "url": "https://www.openmp.org/specifications/"
+    },
+    {
+      "title": "MPI Standard",
+      "organization": "MPI Forum",
+      "url": "https://www.mpi-forum.org/docs/"
+    },
+    {
+      "title": "CUDA C++ Programming Guide",
+      "organization": "NVIDIA",
+      "url": "https://docs.nvidia.com/cuda/cuda-c-programming-guide/"
+    },
+    {
+      "title": "NIST Secure Software Development Framework",
+      "organization": "NIST",
+      "url": "https://csrc.nist.gov/Projects/ssdf"
+    },
+    {
+      "title": "Platform Firmware Resiliency Guidelines",
+      "organization": "NIST",
+      "url": "https://csrc.nist.gov/publications/detail/sp/800-193/final"
+    },
+    {
+      "title": "OWASP IoT Security Guidance",
+      "organization": "OWASP Foundation",
+      "url": "https://owasp.org/www-project-internet-of-things/"
+    }
+  ],
+  "editorial_notice": "Material educativo sujeto a revisión experta externa. La implementación auditable no equivale a acreditación, certificación de seguridad, validación de dispositivo médico ni utilidad clínica."
+}

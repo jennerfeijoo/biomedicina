@@ -37,6 +37,12 @@ python scripts/audit_public_unit_alignment.py --strict
 
 GitHub Actions ejecuta la auditoría informativa y conserva el informe como artefacto. Mientras existan discrepancias, el estado académico debe permanecer en `review` o `generated`, nunca en `complete`.
 
+
+
+## Modelo de aprendizaje autogestionado
+
+CitoNauta organiza contenidos, prerrequisitos, actividades y criterios de dominio, pero no asigna duraciones, cargas horarias ni calendarios estándar. Cada persona avanza según sus conocimientos previos, profundidad requerida, práctica y necesidad de revisión. Completar una asignatura significa demostrar los resultados de aprendizaje y no cumplir una cantidad predeterminada de tiempo.
+
 ## Generación y validación
 
 ```bash

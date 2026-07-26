@@ -40,7 +40,6 @@ REQUIRED_TEMPLATE_KEYS = {
     "next_link",
     "biomedical_connection",
     "level",
-    "estimated_workload",
     "status",
     "status_label",
     "prerequisites",
@@ -844,7 +843,6 @@ def synthesize_course(area: dict[str, Any], subject: dict[str, Any]) -> dict[str
             if area["id"] == "ciencias-basicas"
             else "Pregrado universitario intermedio y avanzado"
         ),
-        "estimated_workload": "16 semanas; 6-8 horas semanales; 120-150 horas totales de estudio, práctica y evaluación",
         "prerequisites": prerequisites_for(area["id"], subject["id"]),
         "course_competencies": [
             f"Explicar con precisión los principios, métodos y límites de {title}.",
@@ -1028,7 +1026,7 @@ def render_theory_sections(area: dict[str, Any], course: dict[str, Any], unit: d
             f"        <p><strong>Relaciones.</strong> Este concepto se interpreta junto con {escape(relation_text)}. La conexión debe expresarse como una cadena explicable: "
             f"qué información entra, qué transformación o mecanismo ocurre, qué resultado se observa y qué evidencia permitiría comprobarlo. La ruta recomendada es: {escape(sequence)}.</p>\n"
             f"        <p><strong>Aplicación.</strong> En el caso de {escape(application.lower())}, el concepto ayuda a formular una pregunta precisa y a seleccionar observaciones o mediciones pertinentes. "
-            f"La conclusión debe apoyarse en {escape(frame['evidence'])}. Debe recordarse que {escape(frame['caution'])}.</p>\n"
+            f"La conclusión debe apoyarse en {escape(frame['evidence'])}. Debe recordarse lo siguiente: {escape(frame['caution'])}.</p>\n"
             "        <h4>Comprobación de dominio</h4>\n"
             "        <ul>\n"
             f"          <li>Definir {escape(topic.lower())} con palabras propias y delimitar qué queda fuera del concepto.</li>\n"
@@ -1331,7 +1329,6 @@ def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any],
         "next_link": render_nav_link(output_path, next_subject, "", "", "→"),
         "biomedical_connection": escape(subject.get("biomedical_connection", "Conexión biomédica pendiente de desarrollo.")),
         "level": escape(subject.get("level", "Pregrado universitario")),
-        "estimated_workload": escape(subject.get("estimated_workload", "12-16 semanas; 90-150 horas de trabajo total")),
         "status": escape(subject.get("status", "placeholder")),
         "status_label": escape(subject.get("status_label", STATUS_LABELS["placeholder"])),
         "prerequisites": render_list(subject.get("prerequisites", []), "Prerrequisitos pendientes de desarrollo."),

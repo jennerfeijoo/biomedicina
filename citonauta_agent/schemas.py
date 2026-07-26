@@ -134,7 +134,6 @@ class CourseContent(BaseModel):
     status: Literal["complete"] = "complete"
     description: str = Field(min_length=120)
     level: str = Field(min_length=10)
-    estimated_workload: str = Field(min_length=15)
     biomedical_connection: str = Field(min_length=180)
     prerequisites: list[str] = Field(min_length=3, max_length=8)
     course_competencies: list[str] = Field(min_length=4, max_length=10)

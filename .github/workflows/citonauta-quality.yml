@@ -47,25 +47,28 @@ jobs:
       - name: Validate curriculum data
         run: python scripts/validate_curriculum.py
 
+      - name: Enforce self-paced learning model
+        run: python scripts/validate_self_paced_model.py
+
       - name: Validate incremental course plans
         run: python scripts/validate_course_plan_packages.py
 
       - name: Validate generated units
         run: python scripts/validate_generated_units.py
 
-      - name: Validate every semester course architecture
+      - name: Validate every course architecture
         run: |
           set -euo pipefail
           for course in data/generated_courses/*.json; do
             python -m json.tool "$course" > /dev/null
           done
 
-      - name: Enforce semester readiness for every course
+      - name: Enforce course readiness
         run: |
           set -euo pipefail
           for course in data/generated_courses/*.json; do
             subject="$(basename "$course" .json)"
-            python scripts/audit_semester_readiness.py --subject "$subject" --strict
+            python scripts/audit_course_readiness.py --subject "$subject" --strict
           done
 
       - name: Run cross-course portfolio audit
@@ -73,29 +76,29 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p audit-artifacts
-          python scripts/audit_semester_portfolio.py \
+          python scripts/audit_course_portfolio.py \
             --strict \
-            --json-output audit-artifacts/semester-portfolio-audit.json \
-            > audit-artifacts/semester-portfolio-audit.txt 2>&1
+            --json-output audit-artifacts/course-portfolio-audit.json \
+            > audit-artifacts/course-portfolio-audit.txt 2>&1
 
-      - name: Upload semester portfolio audit
+      - name: Upload course portfolio audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: semester-portfolio-audit
+          name: course-portfolio-audit
           path: audit-artifacts/
 
-      - name: Enforce semester portfolio audit
+      - name: Enforce course portfolio audit
         if: steps.portfolio_audit.outcome != 'success'
         run: |
-          cat audit-artifacts/semester-portfolio-audit.txt
+          cat audit-artifacts/course-portfolio-audit.txt
           exit 1
 
       - name: Validate developed-unit renderer
         run: node --check assets/js/generated-units.js
 
-      - name: Validate semester-course renderer
-        run: node --check assets/js/semester-course.js
+      - name: Validate course renderer
+        run: node --check assets/js/course.js
 
       - name: Validate autonomous course content
         run: python scripts/validate_agent_content.py
