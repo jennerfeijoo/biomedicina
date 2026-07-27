@@ -1,0 +1,49 @@
+name: Diagnose Synthetic Biology readiness
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/diagnose-synbio-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rebuild-biologia-sintetica-v2
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Materialize and publish
+        run: |
+          python scripts/materialize_biologia_sintetica_v2.py
+          python scripts/publish_courses.py --subject biologia-sintetica --manifest publication-manifest.json
+
+      - name: Capture readiness audit
+        id: readiness
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/audit_course_readiness.py --strict 2>&1 | tee readiness.log
+
+      - name: Upload readiness diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synbio-readiness-diagnostic
+          path: readiness.log
+          if-no-files-found: error
+
+      - name: Enforce readiness
+        if: steps.readiness.outcome != 'success'
+        run: exit 1
