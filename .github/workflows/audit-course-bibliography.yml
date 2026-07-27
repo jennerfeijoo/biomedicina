@@ -1,0 +1,78 @@
+name: Audit course bibliography
+
+on:
+  pull_request:
+    paths:
+      - 'data/course_redevelopment/**'
+      - 'data/source_registry/**'
+      - 'scripts/audit_course_bibliography.py'
+      - 'scripts/repair_course_redevelopment_json.py'
+      - 'scripts/consolidate_course_source_registry.py'
+      - 'scripts/promote_unit_sources_to_registry.py'
+      - '.github/workflows/audit-course-bibliography.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate redevelopment JSON and LaTeX escaping
+        run: |
+          python scripts/repair_course_redevelopment_json.py \
+            --subject-id biologia-desarrollo \
+            --require-clean
+      - name: Validate source registry consolidation
+        run: |
+          python scripts/consolidate_course_source_registry.py \
+            --subject-id biologia-desarrollo \
+            --check
+      - name: Require canonical registration for unit sources
+        run: |
+          python scripts/promote_unit_sources_to_registry.py \
+            --subject-id biologia-desarrollo \
+            --check
+      - name: Build bibliography inventory
+        id: bibliography_audit
+        shell: bash
+        run: |
+          set +e
+          python scripts/audit_course_bibliography.py \
+            --subject-id biologia-desarrollo \
+            --fail-on-exact-duplicates \
+            --fail-on-incomplete \
+            --fail-on-ambiguous \
+            --json-output biologia-desarrollo-bibliography.json \
+            --markdown-output biologia-desarrollo-bibliography.md \
+            > biologia-desarrollo-bibliography.log 2>&1
+          status=$?
+          cat biologia-desarrollo-bibliography.log
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Add report to workflow summary
+        if: always() && hashFiles('biologia-desarrollo-bibliography.md') != ''
+        run: cat biologia-desarrollo-bibliography.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: biologia-desarrollo-bibliography
+          if-no-files-found: warn
+          path: |
+            biologia-desarrollo-bibliography.json
+            biologia-desarrollo-bibliography.md
+            biologia-desarrollo-bibliography.log
+      - name: Enforce bibliography audit result
+        if: always()
+        env:
+          AUDIT_EXIT_CODE: ${{ steps.bibliography_audit.outputs.exit_code }}
+        run: |
+          if [ "${AUDIT_EXIT_CODE:-2}" -ne 0 ]; then
+            echo "Bibliography audit failed with exit code ${AUDIT_EXIT_CODE:-2}."
+            exit "${AUDIT_EXIT_CODE:-2}"
+          fi

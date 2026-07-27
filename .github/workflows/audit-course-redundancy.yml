@@ -1,0 +1,37 @@
+name: Audit course redundancy
+
+on:
+  pull_request:
+    paths:
+      - 'data/course_redevelopment/**'
+      - 'scripts/audit_course_redundancy.py'
+      - '.github/workflows/audit-course-redundancy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build redundancy inventory
+        run: |
+          python scripts/audit_course_redundancy.py \
+            --subject-id biologia-desarrollo \
+            --near-limit 100 \
+            --phrase-limit 100 \
+            --json-output biologia-desarrollo-redundancy.json \
+            --markdown-output biologia-desarrollo-redundancy.md
+      - name: Add report to workflow summary
+        run: cat biologia-desarrollo-redundancy.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: biologia-desarrollo-redundancy
+          path: |
+            biologia-desarrollo-redundancy.json
+            biologia-desarrollo-redundancy.md
