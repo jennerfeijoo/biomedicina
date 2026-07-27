@@ -112,6 +112,33 @@ jobs:
       - name: Regenerate affected area and catalog indexes
         run: python scripts/generate_public_indexes.py --manifest publication-manifest.json
 
+      - name: Package generated indexes
+        run: |
+          python - <<'PY'
+          import json
+          import shutil
+          from pathlib import Path
+
+          manifest = json.loads(Path('publication-manifest.json').read_text(encoding='utf-8'))
+          output = Path('generated-indexes')
+          catalog = Path('catalogo/index.html')
+          target = output / catalog
+          target.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copyfile(catalog, target)
+          for area_id in sorted({course['area_id'] for course in manifest['courses']}):
+              source = Path(area_id) / 'index.html'
+              target = output / source
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(source, target)
+          PY
+
+      - name: Upload generated indexes
+        uses: actions/upload-artifact@v4
+        with:
+          name: redeveloped-course-indexes
+          path: generated-indexes/
+          if-no-files-found: error
+
       - name: Validate public alignment
         run: python scripts/audit_public_unit_alignment.py --strict
 
