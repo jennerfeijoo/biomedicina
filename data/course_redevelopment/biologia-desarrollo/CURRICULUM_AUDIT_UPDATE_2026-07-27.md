@@ -2,12 +2,13 @@
 
 ## 1. Estado del bloque
 
-La reconstrucción contiene 14 unidades completas, decisiones de alcance integradas, registro bibliográfico canónico, matriz de alineación, auditoría estructural de progresión y cribado léxico de redundancia. Los archivos públicos continúan sin modificaciones.
+La reconstrucción contiene 14 unidades completas, decisiones de alcance integradas, registro bibliográfico canónico, matriz de alineación, rúbricas analíticas, auditoría estructural de progresión y cribado léxico de redundancia. Los archivos públicos continúan sin modificaciones.
 
 Artefactos principales:
 
 - `SCOPE_RESOLUTIONS.md`;
 - `CURRICULUM_ALIGNMENT_MATRIX.md`;
+- `ASSESSMENT_RUBRICS.md`;
 - `CURRICULUM_AUDIT.md`;
 - `BIBLIOGRAPHY_POLICY.md`;
 - `BIBLIOGRAPHY_AUDIT_2026-07-27.md`;
@@ -142,19 +143,22 @@ Permanece pendiente una lectura disciplinar completa para valorar:
 - equilibrio entre intuición, mecanismo, cuantificación e integración;
 - carga cognitiva real del estudiante.
 
-## 6. Alineación curricular
+## 6. Alineación curricular y evaluación
 
-Se creó una matriz `resultado → unidades → evidencia → actividad → evaluación → criterio` y una estimación provisional de carga.
+Se creó una matriz `resultado → unidades → evidencia → actividad → evaluación → criterio`, una estimación provisional de carga y un conjunto de rúbricas analíticas.
 
 Avance:
 
 - [x] porcentajes de evaluación suman 100%;
 - [x] diez resultados globales están mapeados a unidades y evidencias;
 - [x] criterios de especie, estadio, réplica, causalidad y validez están incorporados;
-- [x] carga provisional de 42 horas presenciales y 62 autónomas documentada;
+- [x] carga distribuida corregida: 42 horas presenciales, 72 autónomas y 114 totales;
+- [x] diferencia de 4 horas frente a la línea base de 110 horas explicada;
 - [x] ficha alineada con las resoluciones de alcance;
+- [x] rúbricas analíticas completas para las cinco categorías de evaluación;
+- [x] reglas de topes, reproducibilidad, calibración y retroalimentación documentadas;
 - [ ] adaptar horas a créditos y calendario institucional;
-- [ ] crear rúbricas analíticas completas;
+- [ ] pilotar y calibrar las rúbricas con productos reales;
 - [ ] confirmar viabilidad de densidad mediante revisión disciplinar.
 
 ## 7. Criterios de salida actualizados
@@ -165,6 +169,8 @@ Avance:
 - [x] Brechas DOHaD, epidermis e inmunidad resueltas e integradas.
 - [x] Alcance vertebrado y biomédico delimitado.
 - [x] Matriz inicial de alineación y carga creada.
+- [x] Cálculo interno de carga corregido y transparentado.
+- [x] Rúbricas analíticas redactadas y alineadas con los resultados.
 - [x] JSON de reconstrucción válido y ecuaciones LaTeX protegidas.
 - [x] Registro bibliográfico único y cobertura canónica completa.
 - [x] Duplicados, ambigüedad e incompletitud bibliográfica controlados por CI.
@@ -172,13 +178,13 @@ Avance:
 - [x] Cribado léxico de redundancia realizado.
 - [ ] Curar lecturas obligatorias, avanzadas y de consulta.
 - [ ] Auditar licencias de materiales visuales previstos.
-- [ ] Completar rúbricas y adaptar carga institucional.
+- [ ] Pilotar rúbricas y adaptar carga institucional.
 - [ ] Obtener revisión disciplinar externa.
 - [ ] Incorporar correcciones de revisión.
 - [ ] Documentar migración, generación y reversión.
 
 ## 8. Veredicto actualizado
 
-El curso es un borrador avanzado con arquitectura, alcance, integridad técnica, trazabilidad bibliográfica y control de redundancia sustancialmente resueltos. La siguiente fase ya no consiste en añadir contenido indiscriminadamente, sino en curación pedagógica y revisión externa.
+El curso es un borrador avanzado con arquitectura, alcance, integridad técnica, trazabilidad bibliográfica, control de redundancia y diseño evaluativo sustancialmente resueltos. La siguiente fase no consiste en añadir contenido indiscriminadamente, sino en curación de lecturas, pilotaje pedagógico, adaptación institucional y revisión externa.
 
-Aún no debe migrarse a producción. CI demuestra integridad estructural y registral; no certifica suficiencia disciplinar, factibilidad de carga, calidad de rúbricas, licencias ni utilidad clínica.
+Aún no debe migrarse a producción. CI demuestra integridad estructural y registral; no certifica suficiencia disciplinar, factibilidad de carga, calidad empírica de las rúbricas, licencias ni utilidad clínica.
