@@ -1,0 +1,182 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "imagenes-biomedicas-avanzadas-ii",
+  "area_id": "ingenieria-biomedica",
+  "unit": 3,
+  "slug": "segmentacion-referencia-estandar",
+  "title": "Segmentación avanzada y referencia estándar",
+  "status": "review",
+  "purpose": "Diseñar, entrenar y evaluar segmentaciones biomédicas considerando incertidumbre de anotación, geometría, tarea clínica y consecuencias de los errores.",
+  "learning_objectives": [
+    "Distinguir anotación, referencia estándar y verdad biológica.",
+    "Diseñar protocolos de segmentación manual y asistida con trazabilidad.",
+    "Comparar métodos deformables, atlas y redes profundas según la tarea.",
+    "Seleccionar métricas de solapamiento y superficie con interpretación geométrica.",
+    "Cuantificar variabilidad entre observadores e incertidumbre predictiva.",
+    "Relacionar errores de segmentación con biomarcadores y decisiones clínicas."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Referencia estándar, anotación y variabilidad",
+      "paragraphs": [
+        "Una máscara de segmentación no es una observación directa de la anatomía, sino una representación construida mediante reglas, imágenes disponibles y juicio humano. La referencia estándar debe declarar estructura objetivo, inclusión de bordes ambiguos, tratamiento de necrosis o vasos, plano de visualización y modalidad usada. Cuando varios especialistas discrepan, la diferencia puede reflejar ambigüedad real, variación de experiencia o instrucciones insuficientes. Por ello, el protocolo de anotación forma parte del método y debe conservar versiones, identidad de anotadores, herramientas y reglas de consenso.",
+        "La variabilidad intraobservador cuantifica cuánto cambia una misma persona al repetir la tarea, mientras la variabilidad interobservador describe diferencias entre personas. Ambas pueden resumirse con métricas geométricas, pero también deben inspeccionarse por región anatómica, tamaño y dificultad. Un consenso por mayoría no elimina automáticamente el sesgo; puede borrar estructuras pequeñas o perpetuar una convención incorrecta. Métodos como STAPLE estiman una referencia latente a partir de múltiples anotaciones, aunque dependen de supuestos sobre independencia y desempeño de cada observador.",
+        "La calidad de la referencia debe vincularse al uso previsto. Una máscara suficiente para estimar volumen puede ser inadecuada para planificar márgenes quirúrgicos, dosimetría o seguimiento de lesiones pequeñas. Por tanto, el criterio de aceptación debe incluir tolerancias espaciales y consecuencias funcionales. El informe debe diferenciar regiones claramente visibles, bordes inciertos y zonas no evaluables, evitando presentar una frontera discreta como verdad absoluta cuando la imagen no la sustenta."
+      ],
+      "key_points": [
+        "La referencia estándar es una construcción documentada, no una verdad automática.",
+        "La variabilidad de anotación debe medirse y conservarse como incertidumbre.",
+        "El protocolo de inclusión y exclusión condiciona todas las métricas posteriores.",
+        "La adecuación de una máscara depende de la tarea clínica prevista."
+      ],
+      "equations": [
+        {
+          "latex": "D(A,B)=\\frac{2|A\\cap B|}{|A|+|B|}",
+          "meaning": "Coeficiente Dice de solapamiento entre dos conjuntos; puede ocultar errores locales en estructuras grandes.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Métodos clásicos, deformables y aprendizaje profundo",
+      "paragraphs": [
+        "Los métodos clásicos incluyen umbralización, crecimiento de regiones, contornos activos, level sets y modelos basados en atlas. Su ventaja principal es que hacen explícitas ciertas hipótesis sobre intensidad, suavidad y forma, lo que facilita inspeccionar por qué fallan. Sin embargo, son sensibles a artefactos, baja relación señal-ruido y variabilidad anatómica. Los modelos deformables incorporan regularización geométrica para evitar contornos irregulares, pero una penalización excesiva puede eliminar protrusiones, lesiones pequeñas o vasos estrechos.",
+        "Las redes convolucionales y arquitecturas tipo U-Net aprenden representaciones jerárquicas desde datos anotados. Su desempeño depende de la diversidad de la muestra, la calidad de las etiquetas, el preprocesamiento y la correspondencia entre entrenamiento y uso. nnU-Net automatiza decisiones de configuración, pero no elimina la necesidad de definir particiones correctas, referencias coherentes y evaluación externa. Los modelos fundacionales y segmentadores interactivos pueden reducir tiempo de anotación, aunque requieren validar si sus priors son adecuados para la modalidad y población específicas.",
+        "La comparación entre métodos debe usar el mismo conjunto de evaluación, reglas de preprocesamiento y referencia. Un método automático no debe compararse con una anotación humana sin considerar que la propia referencia contiene error. Además de métricas globales, se necesitan análisis por tamaño, centro, equipo y dificultad. La selección final debe considerar tiempo de corrección, estabilidad, latencia y posibilidad de detectar fallos, no solo el promedio de Dice."
+      ],
+      "key_points": [
+        "Los métodos clásicos hacen visibles sus supuestos geométricos e intensivos.",
+        "Las redes profundas aprenden del sesgo y la incertidumbre presentes en las etiquetas.",
+        "La automatización de arquitectura no sustituye diseño de estudio ni evaluación externa.",
+        "El tiempo de corrección y la detectabilidad del fallo forman parte del desempeño."
+      ],
+      "equations": [
+        {
+          "latex": "\\mathcal{L}=\\mathcal{L}_{datos}+\\lambda\\mathcal{R}(S)",
+          "meaning": "Objetivo con término de ajuste y regularización geométrica de la segmentación S.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Métricas geométricas y análisis de errores",
+      "paragraphs": [
+        "Dice y Jaccard resumen solapamiento, pero su valor depende del tamaño de la estructura. Un error de pocos milímetros puede producir una caída grande en una lesión pequeña y apenas modificar el Dice de un órgano voluminoso. Por ello, el análisis debe complementarse con distancias de superficie, sensibilidad de detección y errores volumétricos. La distancia de Hausdorff captura el peor desacuerdo, aunque es muy sensible a puntos atípicos; variantes percentiles y la distancia media simétrica suelen ser más estables.",
+        "Las métricas deben corresponder a la consecuencia clínica. Para radioterapia importan márgenes y superficies cercanas a órganos de riesgo; para cuantificación longitudinal puede importar el sesgo de volumen; para vasos se requieren continuidad y topología. Una puntuación agregada puede ocultar que el modelo omite sistemáticamente lesiones pequeñas o falla en una localización concreta. El análisis por caso debe incluir visualizaciones, distribución de errores y ejemplos representativos de éxito y fracaso.",
+        "La incertidumbre puede estimarse mediante variabilidad entre modelos, dropout en inferencia o mapas probabilísticos. Sin embargo, una probabilidad por vóxel no garantiza calibración espacial ni detecta todos los fallos fuera de distribución. Debe evaluarse si las regiones de alta incertidumbre coinciden con errores reales y si permiten derivar reglas de revisión humana. La mejor métrica es aquella que ayuda a anticipar consecuencias relevantes y no simplemente la que produce una cifra familiar."
+      ],
+      "key_points": [
+        "El tamaño de la estructura modifica la interpretación de las métricas de solapamiento.",
+        "Las distancias de superficie complementan los promedios volumétricos.",
+        "La métrica debe elegirse según la consecuencia funcional del error.",
+        "Los mapas de incertidumbre necesitan evaluación de calibración y utilidad."
+      ],
+      "equations": [
+        {
+          "latex": "HD_{95}(A,B)=P_{95}\\{d(a,B),d(b,A)\\}",
+          "meaning": "Percentil 95 de distancias bidireccionales entre superficies; reduce sensibilidad a un único punto extremo.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Impacto downstream, generalización y uso clínico",
+      "paragraphs": [
+        "La segmentación suele ser una etapa intermedia. Sus errores se propagan a volumen, radiomics, dosimetría, navegación y modelos pronósticos. Una evaluación completa debe repetir el análisis downstream con máscaras alternativas para medir sensibilidad. Dos segmentaciones con Dice alto pueden producir diferencias importantes en características de textura si discrepan en bordes heterogéneos, y una pequeña discontinuidad vascular puede inutilizar una simulación de flujo.",
+        "La generalización debe probarse entre centros, equipos, protocolos y poblaciones. Diferencias de contraste, espesor de corte o reconstrucción pueden degradar modelos sin que exista cambio anatómico. La validación externa debe conservar el modelo y umbrales bloqueados, documentar exclusiones y analizar subgrupos. La adaptación de dominio puede mejorar desempeño, pero si usa datos de prueba para ajustar preprocesamiento deja de ser una evaluación independiente.",
+        "En un flujo clínico, el sistema debe indicar alcance, condiciones no soportadas y necesidad de revisión. La automatización puede ahorrar tiempo, pero también desplazar carga hacia la corrección de fallos difíciles de detectar. La aceptación requiere medir desempeño técnico, tiempo total, interacción humano-sistema y consecuencias de error. Una segmentación no debe presentarse como lista para uso clínico por superar una métrica interna; necesita validación específica de tarea, integración y vigilancia."
+      ],
+      "key_points": [
+        "El error de segmentación se propaga a todos los análisis posteriores.",
+        "La evaluación externa debe mantener modelo y umbrales bloqueados.",
+        "La adaptación con datos de prueba invalida la independencia de la evaluación.",
+        "El beneficio operativo debe medirse junto con desempeño y riesgo."
+      ],
+      "equations": [
+        {
+          "latex": "\\Delta y=f(S+\\Delta S)-f(S)",
+          "meaning": "Cambio en una salida downstream y al perturbar la segmentación S.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Segmentación", "definition": "Asignación de píxeles o vóxeles a una estructura o clase."},
+    {"term": "Referencia estándar", "definition": "Representación usada para evaluar un método, construida mediante un protocolo explícito."},
+    {"term": "Variabilidad intraobservador", "definition": "Diferencia entre anotaciones repetidas por la misma persona."},
+    {"term": "Variabilidad interobservador", "definition": "Diferencia entre anotaciones producidas por personas distintas."},
+    {"term": "Dice", "definition": "Métrica de solapamiento normalizada entre dos conjuntos."},
+    {"term": "Jaccard", "definition": "Intersección dividida por la unión de dos conjuntos."},
+    {"term": "Hausdorff", "definition": "Distancia máxima entre puntos de dos superficies."},
+    {"term": "ASSD", "definition": "Distancia media simétrica entre superficies."},
+    {"term": "Level set", "definition": "Representación implícita de una frontera mediante una función de nivel."},
+    {"term": "Atlas", "definition": "Imagen o conjunto de imágenes anotadas usado como referencia anatómica."},
+    {"term": "Incertidumbre predictiva", "definition": "Estimación de falta de confianza del modelo en su salida."},
+    {"term": "Error downstream", "definition": "Cambio inducido en un análisis posterior por una segmentación imperfecta."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Mismo Dice, distinta relevancia clínica",
+      "scenario": "Dos métodos obtienen Dice 0,90 en un tumor, pero uno desplaza el borde hacia un órgano de riesgo.",
+      "reasoning_steps": ["Comparar mapas de error local.", "Calcular distancias de superficie cerca del órgano.", "Evaluar impacto en margen terapéutico.", "Relacionar la métrica con la decisión clínica."],
+      "interpretation": "El promedio de solapamiento no identifica necesariamente el error más relevante.",
+      "limitations": ["El ejemplo depende de una tarea específica.", "La referencia humana también puede ser incierta."]
+    },
+    {
+      "title": "Propagación a radiomics",
+      "scenario": "Dos observadores segmentan la misma lesión y producen volúmenes similares, pero difieren en el borde heterogéneo.",
+      "reasoning_steps": ["Extraer características con ambas máscaras.", "Calcular cambio relativo e ICC.", "Identificar familias sensibles al borde.", "Revisar si la conclusión pronóstica cambia."],
+      "interpretation": "La estabilidad volumétrica no garantiza estabilidad de textura.",
+      "limitations": ["La estabilidad no demuestra utilidad clínica.", "El preprocesamiento también contribuye a la variación."]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría reproducible de segmentación",
+      "instructions": ["Definir estructura, tarea y tolerancia clínica.", "Documentar protocolo de anotación y versiones.", "Calcular métricas de solapamiento y superficie.", "Inspeccionar casos y propagar error a una salida downstream."],
+      "problems": [
+        "Comparar Dice y Jaccard en estructuras de tamaños distintos.",
+        "Calcular una distancia de superficie y explicar su utilidad.",
+        "Diseñar un protocolo para medir variabilidad interobservador.",
+        "Proponer una referencia de consenso y declarar sus supuestos.",
+        "Analizar cuándo un alto Dice puede ser clínicamente insuficiente.",
+        "Evaluar cómo una máscara modifica volumen y textura.",
+        "Diseñar una partición externa por centro sin fuga.",
+        "Definir una regla de revisión humana basada en incertidumbre."
+      ],
+      "checking_criteria": ["La tarea clínica está definida.", "Las métricas se justifican geométricamente.", "Se inspeccionan fallos individuales.", "La conclusión conserva incertidumbre y límites."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Tratar la anotación como verdad absoluta.", "correction": "Documentar protocolo, variabilidad y regiones inciertas."},
+    {"error": "Usar solo Dice para todas las tareas.", "correction": "Añadir métricas de superficie y consecuencias downstream."},
+    {"error": "Dividir imágenes y no pacientes.", "correction": "Mantener todas las imágenes de un paciente en una sola partición."},
+    {"error": "Ajustar el método con el conjunto externo.", "correction": "Bloquear modelo y umbrales antes de evaluar."},
+    {"error": "Ignorar el tiempo de corrección humana.", "correction": "Medir el flujo completo y la detectabilidad de fallos."}
+  ],
+  "self_assessment": [
+    {"question": "¿Por qué una referencia estándar no equivale a verdad biológica?", "answer": "Porque depende de imágenes, reglas y juicio humano."},
+    {"question": "¿Qué diferencia hay entre variabilidad intra e interobservador?", "answer": "La primera compara repeticiones de una persona; la segunda compara personas."},
+    {"question": "¿Qué limita Dice en estructuras pequeñas?", "answer": "Su fuerte dependencia del tamaño y la incapacidad de localizar el error."},
+    {"question": "¿Cuándo usar una métrica de superficie?", "answer": "Cuando la distancia de borde tiene relevancia geométrica o clínica."},
+    {"question": "¿Qué riesgo tiene usar datos externos para adaptar el modelo?", "answer": "La evaluación deja de ser independiente."},
+    {"question": "¿Qué significa propagar error downstream?", "answer": "Medir cómo la variación de la máscara modifica resultados posteriores."},
+    {"question": "¿Una probabilidad por vóxel está necesariamente calibrada?", "answer": "No; debe comprobarse contra errores observados."},
+    {"question": "¿Qué debe incluir una evaluación clínica de segmentación?", "answer": "Desempeño, fallos, tiempo, interacción y consecuencias de error."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Oncología", "connection": "La delimitación tumoral afecta volumen, respuesta y radiomics."},
+    {"topic": "Radioterapia", "connection": "Los errores de superficie pueden modificar márgenes y dosis."},
+    {"topic": "Cirugía guiada", "connection": "La exactitud espacial condiciona navegación y seguridad."},
+    {"topic": "Imagen vascular", "connection": "Continuidad y topología pueden ser más importantes que el solapamiento global."}
+  ],
+  "sources": [
+    {"title": "MONAI Metrics Documentation", "organization": "MONAI Consortium", "url": "https://docs.monai.io/en/stable/metrics.html", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "3D Slicer Segmentations Documentation", "organization": "3D Slicer", "url": "https://slicer.readthedocs.io/en/latest/user_guide/modules/segmentations.html", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "Medical Segmentation Decathlon", "organization": "Nature Communications", "url": "https://www.nature.com/articles/s41467-022-30695-9", "type": "artículo de referencia", "verification_status": "metadata_verified"},
+    {"title": "nnU-Net", "organization": "Nature Methods", "url": "https://www.nature.com/articles/s41592-020-01008-z", "type": "artículo metodológico", "verification_status": "metadata_verified"},
+    {"title": "Metrics for evaluating 3D medical image segmentation", "organization": "Medical Image Analysis", "url": "https://doi.org/10.1016/j.media.2015.12.008", "type": "artículo metodológico", "verification_status": "metadata_verified"}
+  ],
+  "editorial_notice": "Material educativo en estado review. Las segmentaciones y métricas descritas no sustituyen validación específica, revisión profesional ni autorización para uso clínico."
+}
