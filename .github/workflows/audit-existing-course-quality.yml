@@ -1,0 +1,51 @@
+name: Audit existing course quality
+
+on:
+  pull_request:
+    paths:
+      - 'data/**'
+      - 'scripts/audit_redevelopment_public_sync.py'
+      - 'scripts/audit_cross_course_specificity.py'
+      - '.github/workflows/audit-existing-course-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit redevelopment publication synchronization
+        run: |
+          python scripts/audit_redevelopment_public_sync.py \
+            --fail-on-technical-errors \
+            --json-output redevelopment-public-sync.json \
+            --markdown-output redevelopment-public-sync.md
+      - name: Audit cross-course specificity
+        run: |
+          python scripts/audit_cross_course_specificity.py \
+            --fail-on-technical-errors \
+            --near-limit 100 \
+            --phrase-limit 100 \
+            --json-output cross-course-specificity.json \
+            --markdown-output cross-course-specificity.md
+      - name: Add reports to workflow summary
+        if: always()
+        run: |
+          if [ -f redevelopment-public-sync.md ]; then cat redevelopment-public-sync.md >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f cross-course-specificity.md ]; then cat cross-course-specificity.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: existing-course-quality-audits
+          if-no-files-found: warn
+          path: |
+            redevelopment-public-sync.json
+            redevelopment-public-sync.md
+            cross-course-specificity.json
+            cross-course-specificity.md
