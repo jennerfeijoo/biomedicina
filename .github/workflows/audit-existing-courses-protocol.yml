@@ -1,0 +1,40 @@
+name: Audit existing courses against protocol
+
+on:
+  pull_request:
+    paths:
+      - 'data/**'
+      - 'docs/ACADEMIC_CONTENT_DEVELOPMENT_PROTOCOL.md'
+      - 'scripts/audit_existing_courses_protocol.py'
+      - '.github/workflows/audit-existing-courses-protocol.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build protocol audit inventory
+        run: |
+          python scripts/audit_existing_courses_protocol.py \
+            --require-course-count 84 \
+            --fail-on-technical-errors \
+            --json-output existing-courses-protocol-audit.json \
+            --markdown-output existing-courses-protocol-audit.md
+      - name: Add report to workflow summary
+        if: always() && hashFiles('existing-courses-protocol-audit.md') != ''
+        run: cat existing-courses-protocol-audit.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: existing-courses-protocol-audit
+          if-no-files-found: warn
+          path: |
+            existing-courses-protocol-audit.json
+            existing-courses-protocol-audit.md
