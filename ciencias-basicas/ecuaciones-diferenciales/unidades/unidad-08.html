@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 8. Integración numérica y verificación computacional | Ecuaciones Diferenciales para Biomedicina Computacional | CitoNauta</title>
+  <meta name="description" content="Implementa y audita métodos de Euler y Runge–Kutta, control adaptativo, eventos, rigidez y pruebas de convergencia. La unidad exige derivación, interpretación, comprobación y comunicación de límites." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Ciencias Básicas</a></li>
+            <li><a href="../index.html">Ecuaciones Diferenciales para Biomedicina Computacional</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="ecuaciones-diferenciales">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Ciencias Básicas</a><span>/</span>
+        <a href="../index.html">Ecuaciones Diferenciales para Biomedicina Computacional</a><span>/</span>
+        <span>Unidad 8</span>
+      </div>
+      <p class="eyebrow">Unidad 8 de 10</p>
+      <h1>Integración numérica y verificación computacional</h1>
+      <p>Implementa y audita métodos de Euler y Runge–Kutta, control adaptativo, eventos, rigidez y pruebas de convergencia. La unidad exige derivación, interpretación, comprobación y comunicación de límites.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Ecuaciones Diferenciales para Biomedicina Computacional</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-07.html">← Unidad 7: Dinámica de segundo orden, amortiguamiento y forzamiento</a>
+        <a class="btn-link" href="unidad-09.html">Unidad 9: Parámetros, sensibilidad, identificabilidad y validación →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="8">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Implementar integradores básicos.</li>
+        <li>Comparar errores.</li>
+        <li>Detectar rigidez.</li>
+        <li>Diseñar pruebas numéricas reproducibles.</li>
+        <li>Relacionar la representación matemática con una pregunta biomédica concreta.</li>
+        <li>Comprobar unidades, dominio, condiciones e invariantes.</li>
+        <li>Implementar o verificar un ejemplo reproducible.</li>
+        <li>Distinguir resultado matemático, ajuste empírico, explicación y utilidad clínica.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Discretización y método de Euler</li>
+        <li>Runge–Kutta y control adaptativo</li>
+        <li>Estabilidad absoluta, rigidez y eventos</li>
+        <li>Verificación, pruebas y reproducibilidad</li>
+        <li>Protocolo de verificación de una simulación</li>
+        <li>Selección de solucionador y trazabilidad del cálculo</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Discretización y método de Euler</h3>
+        <p>Un integrador reemplaza la evolución continua por pasos finitos. Euler explícito usa la pendiente al inicio del paso para avanzar. Es transparente y pedagógico, pero su error global es de primer orden y puede ser inestable incluso cuando la solución exacta decae.</p>
+        <p>Reducir el paso suele disminuir el error, pero aumenta coste y no corrige una formulación errónea. Una prueba de refinamiento compara soluciones con pasos sucesivamente menores y estima el orden observado. Sin referencia exacta, la convergencia interna es evidencia de verificación, no de validez del modelo.</p>
+        <p>Euler puede violar positividad y conservación. Para x&#x27;=-kx, el avance es positivo solo si 1-kh es no negativo. Esta restricción muestra cómo propiedades numéricas dependen del producto entre paso y escala dinámica.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[x_{n+1}=x_n+h f(t_n,x_n)\]</div>
+            <figcaption>Método de Euler explícito.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Euler aproxima con la pendiente inicial.</li>
+        <li>Refinamiento evalúa error de discretización.</li>
+        <li>El paso puede violar positividad o estabilidad.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Runge–Kutta y control adaptativo</h3>
+        <p>Los métodos Runge–Kutta evalúan varias pendientes dentro del paso para lograr mayor orden sin derivadas analíticas superiores. RK4 es útil en enseñanza, pero los solucionadores modernos emplean pares embebidos que estiman error y adaptan el paso.</p>
+        <p>Las tolerancias absoluta y relativa definen una escala de error aceptada por componente. Una tolerancia única puede ser inadecuada si los estados tienen magnitudes muy distintas. Escalar variables o configurar tolerancias por estado evita que una variable grande domine el control.</p>
+        <p>El controlador de paso no conoce la verdad biológica; solo estima error numérico según el algoritmo. Tolerancias muy estrictas pueden gastar recursos sin mejorar la discrepancia estructural, mientras tolerancias laxas pueden alterar eventos o parámetros ajustados.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[e_n\approx x_{n+1}^{(p)}-x_{n+1}^{(p-1)}\]</div>
+            <figcaption>Estimación de error mediante un par embebido.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Runge–Kutta combina pendientes internas.</li>
+        <li>Las tolerancias deben reflejar escalas de estado.</li>
+        <li>Error numérico y error del modelo son distintos.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Estabilidad absoluta, rigidez y eventos</h3>
+        <p>Una región de estabilidad absoluta describe para qué valores de hλ un método reproduce decaimiento en la ecuación de prueba. Un método de alto orden puede ser inestable con pasos grandes. La selección de algoritmo requiere considerar espectro y escalas.</p>
+        <p>Un sistema rígido contiene modos rápidos que restringen el paso explícito aunque el interés esté en modos lentos. Métodos implícitos permiten pasos mayores, pero requieren resolver ecuaciones algebraicas y Jacobianos. Rigidez es una relación entre problema y método, no una etiqueta visual.</p>
+        <p>Los eventos localizan cruces de umbral, máximos o cambios de régimen. Deben definirse con dirección y tolerancia para evitar detecciones múltiples. Introducir discontinuidades exige reiniciar adecuadamente el integrador y conservar el estado.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[R(z)=1+z\quad\text{para Euler},\ |R(z)|&lt;1\]</div>
+            <figcaption>Criterio de estabilidad para la ecuación de prueba.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La estabilidad depende de hλ.</li>
+        <li>Rigidez combina escalas y algoritmo.</li>
+        <li>Los eventos requieren definición numérica precisa.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Verificación, pruebas y reproducibilidad</h3>
+        <p>Verificar software significa comprobar que las ecuaciones se resuelven como se pretendía. Se usan soluciones exactas, casos límite, conservación, positividad, comparación entre métodos y pruebas unitarias. Validar significa confrontar el modelo con el sistema real; son tareas diferentes.</p>
+        <p>Un notebook reproducible declara versión del entorno, tolerancias, parámetros, condiciones iniciales, semilla y fuente de datos. Las figuras deben poder regenerarse desde cero. Guardar solo una imagen impide auditar el cálculo.</p>
+        <p>Las pruebas de regresión detectan cambios inesperados al modificar código. No deben fijar un resultado incorrecto como verdad; se combinan con referencias analíticas y propiedades. La revisión final incluye sensibilidad a tolerancias y plataforma cuando la precisión es crítica.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[E_h=\|x_h-x_{h/2}\|\]</div>
+            <figcaption>Indicador de refinamiento cuando no hay solución exacta.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Verificación responde si se resolvió bien; validación, si el modelo representa el sistema.</li>
+        <li>El entorno forma parte del experimento computacional.</li>
+        <li>Las pruebas deben apoyarse en propiedades independientes.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 5</p>
+        <h3>Protocolo de verificación de una simulación</h3>
+        <p>Una simulación se considera verificada cuando supera una batería de pruebas, no cuando produce una figura suave. Se compara con una solución exacta o manufacturada, se realiza refinamiento, se comprueban invariantes y se examinan eventos. Cada prueba ataca una clase distinta de error.</p>
+        <p>El error de programación puede compensarse accidentalmente con un error de discretización. Por eso se comparan implementaciones independientes o bibliotecas maduras y se usan casos simples con respuesta conocida. Una coincidencia puntual no sustituye una curva de convergencia.</p>
+        <p>En sistemas rígidos, la tolerancia y el Jacobiano afectan coste y precisión. Se registran número de pasos, rechazos y evaluaciones, además del resultado. Un método que produce la misma curva con cien veces más trabajo puede ser inadecuado para inferencia repetida.</p>
+        <p>La entrega final incluye un archivo de entorno, pruebas automáticas y una tabla que separa error numérico, incertidumbre de parámetros y discrepancia del modelo. Esta separación previene la práctica de reducir tolerancias para ocultar un desacuerdo que en realidad es científico.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La verificación combina pruebas independientes.</li>
+        <li>Errores distintos pueden compensarse.</li>
+        <li>El coste forma parte de la selección de método.</li>
+        <li>Las fuentes de incertidumbre se reportan por separado.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 6</p>
+        <h3>Selección de solucionador y trazabilidad del cálculo</h3>
+        <p>No existe un integrador universalmente mejor. Un problema no rígido con eventos puede favorecer un Runge–Kutta adaptativo; uno rígido puede requerir BDF o Radau; un sistema con estructura hamiltoniana puede necesitar métodos que preserven geometría. La elección se documenta según propiedades, no por costumbre.</p>
+        <p>Los valores por defecto de una biblioteca pueden cambiar entre versiones. Por ello se registran método, tolerancias, Jacobiano, densidad de salida y tratamiento de eventos. La reproducibilidad exige más que el nombre de la función usada.</p>
+        <p>En inferencia, el error del solucionador debe ser suficientemente menor que la variación que guía la función objetivo. Si el error numérico cambia con parámetros, puede deformar la superficie de optimización. Se prueba estabilidad de estimaciones frente a tolerancias y métodos alternativos.</p>
+        <p>La precisión se reporta junto con coste computacional y propiedades preservadas. Un método que converge en una norma puede fallar en tiempos de evento o máximos, por lo que la verificación incluye las cantidades que realmente sustentan la conclusión.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La elección depende de las propiedades del problema.</li>
+        <li>Los parámetros del solucionador forman parte del método.</li>
+        <li>La inferencia puede ser sensible al error del integrador.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Refinamiento de Euler</h3>
+        <p><strong>Situación.</strong> Resolver x&#x27;=-10x, x(0)=1 hasta t=1.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Probar h=0.2,0.1,0.05.</li>
+        <li>Detectar inestabilidad o error.</li>
+        <li>Comparar con e^-10.</li>
+        <li>Estimar orden.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Un paso grande puede oscilar o cambiar signo.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>El resultado depende de los supuestos y del rango donde se aplica el modelo.</li>
+        <li>La coincidencia matemática no demuestra por sí sola utilidad clínica ni mecanismo completo.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Evento de umbral</h3>
+        <p><strong>Situación.</strong> Integrar una concentración hasta cruzar 5 unidades.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Definir función de evento.</li>
+        <li>Especificar dirección.</li>
+        <li>Usar interpolación del solucionador.</li>
+        <li>Comprobar tolerancia con refinamiento.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Muestrear solo la salida puede sesgar el evento.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>El resultado depende de los supuestos y del rango donde se aplica el modelo.</li>
+        <li>La coincidencia matemática no demuestra por sí sola utilidad clínica ni mecanismo completo.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Laboratorio acumulativo 8: Integración numérica y verificación computacional</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Reformular una pregunta biomédica que requiera específicamente discretización y no solo una curva descriptiva.</li>
+        <li>Definir variables, unidades y dominio usando paso temporal y error local cuando corresponda.</li>
+        <li>Derivar la ecuación o sistema asociado con error global y registrar cada supuesto.</li>
+        <li>Anticipar el comportamiento mediante orden antes de ejecutar una simulación.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Resolver o analizar un caso base de integración numérica y verificación computacional y comprobarlo de forma independiente.</li>
+        <li>Perturbar un parámetro relacionado con runge–kutta y explicar el cambio de régimen o escala.</li>
+        <li>Implementar el modelo en un notebook reproducible con unidades, condiciones, tolerancias y pruebas.</li>
+        <li>Comparar el resultado con una solución analítica, un límite conocido o una segunda implementación.</li>
+      </ul>
+        <h4>Entregables</h4>
+      <ul>
+        <li>Mapa de razonamiento de la unidad 8 con ecuaciones, supuestos y límites.</li>
+        <li>Notebook ejecutable y figura interpretada para «Integración numérica y verificación computacional».</li>
+        <li>Conclusión que separe resultado matemático, evidencia empírica e inferencia biomédica.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>La formulación usa correctamente discretización y paso temporal.</li>
+        <li>El análisis de error local es compatible con dominio y unidades.</li>
+        <li>La simulación conserva las propiedades relevantes de integración numérica y verificación computacional.</li>
+        <li>La conclusión declara incertidumbre y no formula una recomendación clínica.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li>Confundir discretización con paso temporal dentro de integración numérica y verificación computacional.</li>
+        <li>Usar error local sin comprobar las hipótesis matemáticas que lo permiten.</li>
+        <li>Interpretar error global como un mecanismo biológico demostrado en lugar de una propiedad del modelo.</li>
+        <li>Omitir cómo orden cambia con unidades, condiciones iniciales o rango paramétrico.</li>
+        <li>Presentar un resultado sobre runge–kutta como clínicamente válido sin validación externa.</li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué debe poder justificar el estudiante sobre «Discretización y método de Euler»?</summary>
+        <p><strong>Respuesta:</strong> Euler aproxima con la pendiente inicial. Refinamiento evalúa error de discretización. El paso puede violar positividad o estabilidad.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Qué debe poder justificar el estudiante sobre «Runge–Kutta y control adaptativo»?</summary>
+        <p><strong>Respuesta:</strong> Runge–Kutta combina pendientes internas. Las tolerancias deben reflejar escalas de estado. Error numérico y error del modelo son distintos.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Qué debe poder justificar el estudiante sobre «Estabilidad absoluta, rigidez y eventos»?</summary>
+        <p><strong>Respuesta:</strong> La estabilidad depende de hλ. Rigidez combina escalas y algoritmo. Los eventos requieren definición numérica precisa.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué debe poder justificar el estudiante sobre «Verificación, pruebas y reproducibilidad»?</summary>
+        <p><strong>Respuesta:</strong> Verificación responde si se resolvió bien; validación, si el modelo representa el sistema. El entorno forma parte del experimento computacional. Las pruebas deben apoyarse en propiedades independientes.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué debe poder justificar el estudiante sobre «Protocolo de verificación de una simulación»?</summary>
+        <p><strong>Respuesta:</strong> La verificación combina pruebas independientes. Errores distintos pueden compensarse. El coste forma parte de la selección de método. Las fuentes de incertidumbre se reportan por separado.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué debe poder justificar el estudiante sobre «Selección de solucionador y trazabilidad del cálculo»?</summary>
+        <p><strong>Respuesta:</strong> La elección depende de las propiedades del problema. Los parámetros del solucionador forman parte del método. La inferencia puede ser sensible al error del integrador.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. En el caso «Refinamiento de Euler», ¿cuál es la conclusión y su límite principal?</summary>
+        <p><strong>Respuesta:</strong> El error disminuye aproximadamente lineal con h en régimen convergente. Un paso grande puede oscilar o cambiar signo.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. En el caso «Evento de umbral», ¿cuál es la conclusión y su límite principal?</summary>
+        <p><strong>Respuesta:</strong> El tiempo de cruce debe converger con tolerancias. Muestrear solo la salida puede sesgar el evento.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Discretización</strong><p>Sustitución de un continuo por pasos, nodos o elementos finitos para calcular una aproximación.</p></li>
+        <li><strong>Paso temporal</strong><p>Intervalo usado entre actualizaciones sucesivas de un método numérico.</p></li>
+        <li><strong>Error local</strong><p>Error introducido en un solo paso suponiendo exacto el estado de partida.</p></li>
+        <li><strong>Error global</strong><p>Diferencia acumulada entre solución numérica y exacta a lo largo de varios pasos.</p></li>
+        <li><strong>Orden</strong><p>Potencia con la que disminuye el error de un método al refinar el paso.</p></li>
+        <li><strong>Runge–Kutta</strong><p>Familia de integradores que combina varias evaluaciones de pendiente dentro de cada paso.</p></li>
+        <li><strong>Tolerancia absoluta</strong><p>Límite de error referido a la escala absoluta de un estado.</p></li>
+        <li><strong>Tolerancia relativa</strong><p>Límite de error proporcional a la magnitud del estado.</p></li>
+        <li><strong>Estabilidad absoluta</strong><p>Conjunto de pasos y autovalores para los que un método numérico reproduce decaimiento de la ecuación de prueba.</p></li>
+        <li><strong>Rigidez</strong><p>Situación en la que modos rápidos restringen fuertemente métodos explícitos aunque interesen escalas lentas.</p></li>
+        <li><strong>Evento</strong><p>Condición definida durante la integración que localiza un cruce, máximo o cambio de régimen.</p></li>
+        <li><strong>Verificación</strong><p>Comprobación de que las ecuaciones y algoritmos se implementaron y resolvieron correctamente.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html" rel="noopener noreferrer">scipy.integrate.solve_ivp</a></strong><span class="course-tag">software_documentation</span></li>
+        <li><strong><a class="resource-link" href="https://docs.sciml.ai/DiffEqDocs/stable/" rel="noopener noreferrer">DifferentialEquations.jl Documentation</a></strong><span class="course-tag">software_documentation</span></li>
+        <li><strong><a class="resource-link" href="https://cran.r-project.org/package=deSolve" rel="noopener noreferrer">deSolve: Solvers for Initial Value Problems of Differential Equations</a></strong><span class="course-tag">software_documentation</span></li>
+        <li><strong><a class="resource-link" href="https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/" rel="noopener noreferrer">18.03SC Differential Equations</a></strong><span class="course-tag">official_university_course · 2011</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1007/978-3-642-31208-3" rel="noopener noreferrer">Modeling in Computational Biology and Biomedicine</a></strong><span class="course-tag">reference_book · 2013</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Implementa y audita métodos de Euler y Runge–Kutta, control adaptativo, eventos, rigidez y pruebas de convergencia. La unidad exige derivación, interpretación, comprobación y comunicación de límites. Conecta especialmente con Integración numérica y verificación computacional: Implementa y audita métodos de Euler y Runge–Kutta, control adaptativo, eventos, rigidez y pruebas de convergencia. La unidad exige derivación, interpretación, comprobación y comunicación de límites, Discretización: Se aplica a Simulación reproducible de modelos dinámicos biomédicos con control explícito del error numérico. como contexto educativo y no como inferencia clínica automática, Error local: Permite formular una predicción verificable dentro del alcance de la unidad 8, límite de traslación: La validez matemática de integración numérica y verificación computacional no demuestra representatividad poblacional, seguridad ni utilidad clínica. Material educativo sujeto a revisión académica externa. No constituye acreditación, recomendación clínica, validación de un modelo biomédico, certificación de software ni aprobación regulatoria.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-07.html">← Unidad 7: Dinámica de segundo orden, amortiguamiento y forzamiento</a><a class="btn-link" href="unidad-09.html">Unidad 9: Parámetros, sensibilidad, identificabilidad y validación →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Ecuaciones Diferenciales para Biomedicina Computacional · unidad 8 de 10.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>

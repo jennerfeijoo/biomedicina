@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 10. Dinámica espacial: difusión, advección y reacción-difusión | Ecuaciones Diferenciales para Biomedicina Computacional | CitoNauta</title>
+  <meta name="description" content="Extiende balances a variables distribuidas en el espacio e introduce condiciones de frontera, escalas y discretización de PDE biomédicas. La unidad exige derivación, interpretación, comprobación y comunicación de límites." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Ciencias Básicas</a></li>
+            <li><a href="../index.html">Ecuaciones Diferenciales para Biomedicina Computacional</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="ecuaciones-diferenciales">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Ciencias Básicas</a><span>/</span>
+        <a href="../index.html">Ecuaciones Diferenciales para Biomedicina Computacional</a><span>/</span>
+        <span>Unidad 10</span>
+      </div>
+      <p class="eyebrow">Unidad 10 de 10</p>
+      <h1>Dinámica espacial: difusión, advección y reacción-difusión</h1>
+      <p>Extiende balances a variables distribuidas en el espacio e introduce condiciones de frontera, escalas y discretización de PDE biomédicas. La unidad exige derivación, interpretación, comprobación y comunicación de límites.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Ecuaciones Diferenciales para Biomedicina Computacional</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-09.html">← Unidad 9: Parámetros, sensibilidad, identificabilidad y validación</a>
+
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="10">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Derivar ecuaciones de transporte.</li>
+        <li>Seleccionar fronteras.</li>
+        <li>Interpretar escalas espaciales.</li>
+        <li>Discretizar y verificar un problema simple.</li>
+        <li>Relacionar la representación matemática con una pregunta biomédica concreta.</li>
+        <li>Comprobar unidades, dominio, condiciones e invariantes.</li>
+        <li>Implementar o verificar un ejemplo reproducible.</li>
+        <li>Distinguir resultado matemático, ajuste empírico, explicación y utilidad clínica.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Balances locales y difusión</li>
+        <li>Condiciones iniciales y de frontera</li>
+        <li>Advección, reacción y números adimensionales</li>
+        <li>Discretización espacial y patrones</li>
+        <li>Ruta de aprendizaje para modelos espaciales</li>
+        <li>Geometría, heterogeneidad y escalas tisulares</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Balances locales y difusión</h3>
+        <p>Cuando el estado varía en el espacio, un balance se aplica a un volumen pequeño y conduce a una ecuación en derivadas parciales. La difusión describe flujo desde regiones de mayor a menor concentración bajo una ley constitutiva. El coeficiente de difusión tiene unidades de longitud cuadrada por tiempo.</p>
+        <p>La ecuación de difusión combina conservación y la ley de Fick. Su solución se suaviza con el tiempo y la distancia típica recorrida crece como la raíz de Dt. Esta escala explica por qué la difusión es rápida en células pequeñas y lenta en tejidos macroscópicos.</p>
+        <p>El coeficiente puede depender de posición, dirección o concentración. Tratarlo como constante supone un medio homogéneo. En matriz extracelular, membranas o tejidos anisótropos, esa simplificación debe justificarse.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[\frac{\partial c}{\partial t}=D\nabla^2 c\]</div>
+            <figcaption>Ecuación de difusión homogénea.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Una PDE surge de un balance local.</li>
+        <li>La distancia difusiva escala como raíz del tiempo.</li>
+        <li>D constante supone homogeneidad efectiva.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Condiciones iniciales y de frontera</h3>
+        <p>Una PDE necesita distribución inicial y condiciones en la frontera. Dirichlet fija el valor, Neumann fija el flujo y Robin combina ambos. Cada elección representa una interacción física distinta con el entorno.</p>
+        <p>Una frontera de flujo cero modela aislamiento o simetría, no necesariamente una pared biológica perfecta. Una concentración fija supone un reservorio capaz de mantener el valor pese al intercambio. Usar la condición más cómoda puede cambiar masa total y equilibrio.</p>
+        <p>La geometría determina el operador y las escalas. Un modelo radial no es equivalente a uno cartesiano porque el área disponible para el flujo cambia con la posición. La simplificación geométrica debe conservar la pregunta.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[-D\nabla c\cdot n=J_b\]</div>
+            <figcaption>Condición de flujo especificado en la frontera.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Las fronteras codifican interacción con el entorno.</li>
+        <li>Flujo cero y valor fijo tienen balances distintos.</li>
+        <li>La geometría modifica el transporte.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Advección, reacción y números adimensionales</h3>
+        <p>La advección transporta una sustancia con un campo de velocidad. Puede competir con difusión y crear frentes. El número de Péclet compara transporte advectivo y difusivo; su interpretación depende de la longitud y velocidad escogidas.</p>
+        <p>Agregar reacción produce fuentes o consumos locales. En un sistema reacción-difusión, la química cambia concentraciones y la difusión acopla posiciones. La estabilidad espacial puede diferir de la estabilidad del sistema bien mezclado.</p>
+        <p>El número de Damköhler compara tiempo de reacción y transporte. Estos cocientes ayudan a decidir simplificaciones y diseño de malla. No sustituyen la simulación cuando existen múltiples escalas o geometrías complejas.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Pe=\frac{UL}{D},\quad Da=\frac{kL^2}{D}\]</div>
+            <figcaption>Comparaciones ilustrativas de advección y reacción con difusión.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Advección y difusión compiten.</li>
+        <li>La reacción puede crear o disipar gradientes.</li>
+        <li>Los números adimensionales organizan regímenes.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Discretización espacial y patrones</h3>
+        <p>Las diferencias finitas aproximan derivadas espaciales en una malla y convierten la PDE en un sistema grande de ODE. El tamaño de malla controla resolución y coste. En métodos explícitos, el paso temporal está restringido por estabilidad difusiva.</p>
+        <p>Verificar una simulación espacial requiere refinamiento de malla y tiempo, conservación, fronteras y comparación con soluciones conocidas. Una imagen suave no demuestra convergencia. El error puede concentrarse cerca de frentes o fronteras.</p>
+        <p>Los patrones de reacción-difusión pueden surgir cuando difusión y cinética desestabilizan un estado homogéneo. Mostrar manchas en una simulación no demuestra un mecanismo de Turing en tejido. Se debe analizar estabilidad, parámetros, condiciones y evidencia experimental.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[\frac{dc_i}{dt}=D\frac{c_{i+1}-2c_i+c_{i-1}}{\Delta x^2}+R(c_i)\]</div>
+            <figcaption>Discretización unidimensional por diferencias centrales.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Discretizar espacio genera un sistema de ODE.</li>
+        <li>La convergencia se demuestra por refinamiento.</li>
+        <li>Un patrón visual no identifica su mecanismo.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 5</p>
+        <h3>Ruta de aprendizaje para modelos espaciales</h3>
+        <p>El curso comienza con difusión unidimensional porque permite conectar balance, geometría, frontera y discretización sin software especializado. Después se añade reacción y finalmente advección. Esta progresión evita presentar una PDE completa antes de comprender qué aporta cada término.</p>
+        <p>Los estudiantes comparan tres escalas: longitud de difusión, tiempo de reacción y velocidad de transporte. A partir de ellas anticipan si el perfil se homogeneiza, se consume cerca de la frontera o forma un frente. La simulación se usa para comprobar esa predicción cualitativa.</p>
+        <p>La discretización espacial introduce una nueva jerarquía de errores: malla, tiempo, geometría y frontera. Refinar solo el tiempo no corrige una malla incapaz de resolver un gradiente. La práctica exige mapas de error y balances discretos, no solo imágenes.</p>
+        <p>La unidad termina diferenciando generación de patrón y mera heterogeneidad inicial. Un patrón persistente puede provenir de fronteras, geometría, advección o inestabilidad de reacción-difusión. Identificar el mecanismo requiere controles matemáticos y experimentales adicionales.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Los términos se añaden de forma acumulativa.</li>
+        <li>Las escalas anticipan el régimen dominante.</li>
+        <li>Malla y tiempo producen errores diferentes.</li>
+        <li>Heterogeneidad visual no demuestra un mecanismo de patrón.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 6</p>
+        <h3>Geometría, heterogeneidad y escalas tisulares</h3>
+        <p>En tejidos reales, la geometría puede obtenerse de imágenes y los coeficientes pueden variar entre regiones. Introducir esa complejidad aumenta requisitos de malla, condiciones de interfaz y validación. Una geometría detallada no compensa parámetros desconocidos ni fronteras mal definidas.</p>
+        <p>Las interfaces entre materiales pueden imponer continuidad de concentración, flujo o partición según el mecanismo. Usar un único coeficiente en todo el dominio borra barreras y anisotropía. El modelo debe declarar si representa transporte extracelular, transmembrana o perfusión.</p>
+        <p>El puente a modelos multiescala consiste en acoplar dinámica celular local con transporte tisular. Antes de hacerlo se verifica cada módulo por separado y se estudia cómo sus escalas interactúan. Acoplar dos modelos no validados multiplica incertidumbres y dificulta identificar la causa de un fallo.</p>
+        <p>Los datos espaciales también contienen error de registro, segmentación y muestreo. Antes de ajustar una PDE se debe separar resolución instrumental de longitud biológica; de otro modo el coeficiente de difusión puede absorber desenfoque o promediado espacial.</p>
+        <p>La validación espacial exige datos independientes de perfiles, flujos o tiempos, no solo una imagen final. También se evalúa si el modelo reproduce masa total, velocidad de propagación y dependencia con la geometría. Una coincidencia morfológica aislada puede obtenerse con parámetros y mecanismos incompatibles.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La geometría detallada exige parámetros y fronteras compatibles.</li>
+        <li>Las interfaces requieren condiciones mecanísticas.</li>
+        <li>Los módulos multiescala se verifican antes de acoplarse.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Tiempo de difusión</h3>
+        <p><strong>Situación.</strong> Estimar el tiempo para difundir 100 μm con D=100 μm²/s.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Usar L²/(2D) como escala.</li>
+        <li>Sustituir unidades.</li>
+        <li>Obtener 50 s.</li>
+        <li>Interpretar como orden de magnitud.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Geometría y reacción pueden modificarla.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>El resultado depende de los supuestos y del rango donde se aplica el modelo.</li>
+        <li>La coincidencia matemática no demuestra por sí sola utilidad clínica ni mecanismo completo.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Malla para difusión</h3>
+        <p><strong>Situación.</strong> Discretizar un dominio 1D con frontera de flujo cero.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Definir nodos.</li>
+        <li>Usar diferencias centrales.</li>
+        <li>Implementar nodos fantasma o simetría.</li>
+        <li>Comprobar conservación.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La estabilidad explícita restringe Δt.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>El resultado depende de los supuestos y del rango donde se aplica el modelo.</li>
+        <li>La coincidencia matemática no demuestra por sí sola utilidad clínica ni mecanismo completo.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Laboratorio acumulativo 10: Dinámica espacial: difusión, advección y reacción-difusión</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Reformular una pregunta biomédica que requiera específicamente difusión y no solo una curva descriptiva.</li>
+        <li>Definir variables, unidades y dominio usando flujo y ley de fick cuando corresponda.</li>
+        <li>Derivar la ecuación o sistema asociado con advección y registrar cada supuesto.</li>
+        <li>Anticipar el comportamiento mediante reacción-difusión antes de ejecutar una simulación.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Resolver o analizar un caso base de dinámica espacial: difusión, advección y reacción-difusión y comprobarlo de forma independiente.</li>
+        <li>Perturbar un parámetro relacionado con condición de dirichlet y explicar el cambio de régimen o escala.</li>
+        <li>Implementar el modelo en un notebook reproducible con unidades, condiciones, tolerancias y pruebas.</li>
+        <li>Comparar el resultado con una solución analítica, un límite conocido o una segunda implementación.</li>
+      </ul>
+        <h4>Entregables</h4>
+      <ul>
+        <li>Mapa de razonamiento de la unidad 10 con ecuaciones, supuestos y límites.</li>
+        <li>Notebook ejecutable y figura interpretada para «Dinámica espacial: difusión, advección y reacción-difusión».</li>
+        <li>Conclusión que separe resultado matemático, evidencia empírica e inferencia biomédica.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>La formulación usa correctamente difusión y flujo.</li>
+        <li>El análisis de ley de fick es compatible con dominio y unidades.</li>
+        <li>La simulación conserva las propiedades relevantes de dinámica espacial: difusión, advección y reacción-difusión.</li>
+        <li>La conclusión declara incertidumbre y no formula una recomendación clínica.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li>Confundir difusión con flujo dentro de dinámica espacial: difusión, advección y reacción-difusión.</li>
+        <li>Usar ley de fick sin comprobar las hipótesis matemáticas que lo permiten.</li>
+        <li>Interpretar advección como un mecanismo biológico demostrado en lugar de una propiedad del modelo.</li>
+        <li>Omitir cómo reacción-difusión cambia con unidades, condiciones iniciales o rango paramétrico.</li>
+        <li>Presentar un resultado sobre condición de dirichlet como clínicamente válido sin validación externa.</li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué debe poder justificar el estudiante sobre «Balances locales y difusión»?</summary>
+        <p><strong>Respuesta:</strong> Una PDE surge de un balance local. La distancia difusiva escala como raíz del tiempo. D constante supone homogeneidad efectiva.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Qué debe poder justificar el estudiante sobre «Condiciones iniciales y de frontera»?</summary>
+        <p><strong>Respuesta:</strong> Las fronteras codifican interacción con el entorno. Flujo cero y valor fijo tienen balances distintos. La geometría modifica el transporte.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Qué debe poder justificar el estudiante sobre «Advección, reacción y números adimensionales»?</summary>
+        <p><strong>Respuesta:</strong> Advección y difusión compiten. La reacción puede crear o disipar gradientes. Los números adimensionales organizan regímenes.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué debe poder justificar el estudiante sobre «Discretización espacial y patrones»?</summary>
+        <p><strong>Respuesta:</strong> Discretizar espacio genera un sistema de ODE. La convergencia se demuestra por refinamiento. Un patrón visual no identifica su mecanismo.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué debe poder justificar el estudiante sobre «Ruta de aprendizaje para modelos espaciales»?</summary>
+        <p><strong>Respuesta:</strong> Los términos se añaden de forma acumulativa. Las escalas anticipan el régimen dominante. Malla y tiempo producen errores diferentes. Heterogeneidad visual no demuestra un mecanismo de patrón.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué debe poder justificar el estudiante sobre «Geometría, heterogeneidad y escalas tisulares»?</summary>
+        <p><strong>Respuesta:</strong> La geometría detallada exige parámetros y fronteras compatibles. Las interfaces requieren condiciones mecanísticas. Los módulos multiescala se verifican antes de acoplarse.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. En el caso «Tiempo de difusión», ¿cuál es la conclusión y su límite principal?</summary>
+        <p><strong>Respuesta:</strong> La escala es de decenas de segundos. Geometría y reacción pueden modificarla.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. En el caso «Malla para difusión», ¿cuál es la conclusión y su límite principal?</summary>
+        <p><strong>Respuesta:</strong> La suma discreta debe conservarse sin reacción. La estabilidad explícita restringe Δt.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Difusión</strong><p>Transporte neto asociado a gradientes y movimiento microscópico aleatorio.</p></li>
+        <li><strong>Flujo</strong><p>Cantidad transferida por unidad de tiempo, área o frontera según el contexto.</p></li>
+        <li><strong>Ley de Fick</strong><p>Relación constitutiva que hace el flujo difusivo proporcional al gradiente negativo de concentración.</p></li>
+        <li><strong>Advección</strong><p>Transporte de una cantidad por el movimiento de un medio con velocidad definida.</p></li>
+        <li><strong>Reacción-difusión</strong><p>Sistema espacial que combina transformaciones locales y transporte difusivo.</p></li>
+        <li><strong>Condición de Dirichlet</strong><p>Condición de frontera que fija el valor de la variable.</p></li>
+        <li><strong>Condición de Neumann</strong><p>Condición de frontera que fija el flujo o la derivada normal.</p></li>
+        <li><strong>Condición de Robin</strong><p>Condición de frontera que combina valor y flujo.</p></li>
+        <li><strong>Péclet</strong><p>Número adimensional que compara transporte advectivo con difusión.</p></li>
+        <li><strong>Damköhler</strong><p>Número adimensional que compara una escala de reacción con una de transporte.</p></li>
+        <li><strong>Malla</strong><p>Conjunto de nodos o elementos usados para discretizar el espacio.</p></li>
+        <li><strong>Patrón de Turing</strong><p>Inestabilidad espacial inducida por difusión en un sistema de reacción-difusión bajo condiciones específicas.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://doi.org/10.1007/978-3-031-36566-9" rel="noopener noreferrer">Introduction to Mathematics for Computational Biology</a></strong><span class="course-tag">reference_textbook · 2023</span></li>
+        <li><strong><a class="resource-link" href="https://link.springer.com/book/10.1007/b98868" rel="noopener noreferrer">Mathematical Biology</a></strong><span class="course-tag">reference_textbook</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1007/978-3-642-31208-3" rel="noopener noreferrer">Modeling in Computational Biology and Biomedicine</a></strong><span class="course-tag">reference_book · 2013</span></li>
+        <li><strong><a class="resource-link" href="https://docs.sciml.ai/DiffEqDocs/stable/" rel="noopener noreferrer">DifferentialEquations.jl Documentation</a></strong><span class="course-tag">software_documentation</span></li>
+        <li><strong><a class="resource-link" href="https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/" rel="noopener noreferrer">18.03SC Differential Equations</a></strong><span class="course-tag">official_university_course · 2011</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Extiende balances a variables distribuidas en el espacio e introduce condiciones de frontera, escalas y discretización de PDE biomédicas. La unidad exige derivación, interpretación, comprobación y comunicación de límites. Conecta especialmente con Dinámica espacial: difusión, advección y reacción-difusión: Extiende balances a variables distribuidas en el espacio e introduce condiciones de frontera, escalas y discretización de PDE biomédicas. La unidad exige derivación, interpretación, comprobación y comunicación de límites, Difusión: Se aplica a Transporte de solutos, gradientes tisulares, difusión de fármacos y patrones de reacción-difusión como modelos educativos. como contexto educativo y no como inferencia clínica automática, Ley de Fick: Permite formular una predicción verificable dentro del alcance de la unidad 10, límite de traslación: La validez matemática de dinámica espacial: difusión, advección y reacción-difusión no demuestra representatividad poblacional, seguridad ni utilidad clínica. Material educativo sujeto a revisión académica externa. No constituye acreditación, recomendación clínica, validación de un modelo biomédico, certificación de software ni aprobación regulatoria.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-09.html">← Unidad 9: Parámetros, sensibilidad, identificabilidad y validación</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Ecuaciones Diferenciales para Biomedicina Computacional · unidad 10 de 10.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>
