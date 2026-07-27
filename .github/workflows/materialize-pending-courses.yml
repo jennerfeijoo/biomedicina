@@ -3,14 +3,18 @@ name: Materialize pending courses
 on:
   pull_request:
     paths:
-      - scripts/generate_fisiologia_i_bioinformatica_redevelopment.py
-      - .github/workflows/materialize-pending-courses.yml
+      - 'scripts/generate_fisiologia_i_bioinformatica_redevelopment.py'
+      - 'scripts/recover_fisiologia_bioinformatica_package.py'
+      - 'data/bootstrap/fisiologia-bioinformatica/**'
+      - '.github/workflows/materialize-pending-courses.yml'
   push:
     branches:
       - agent/complete-fisiologia-i-bioinformatica
     paths:
-      - scripts/generate_fisiologia_i_bioinformatica_redevelopment.py
-      - .github/workflows/materialize-pending-courses.yml
+      - 'scripts/generate_fisiologia_i_bioinformatica_redevelopment.py'
+      - 'scripts/recover_fisiologia_bioinformatica_package.py'
+      - 'data/bootstrap/fisiologia-bioinformatica/**'
+      - '.github/workflows/materialize-pending-courses.yml'
   workflow_dispatch:
 
 permissions:
@@ -41,14 +45,17 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/generate_fisiologia_i_bioinformatica_redevelopment.py 2>&1 | tee materializer-diagnostic.txt
+          python scripts/recover_fisiologia_bioinformatica_package.py \
+            2>&1 | tee materializer-diagnostic.txt
 
       - name: Upload materializer diagnostic
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pending-courses-materializer-diagnostic
-          path: materializer-diagnostic.txt
+          path: |
+            materializer-diagnostic.txt
+            partial-recovery/
           if-no-files-found: error
 
       - name: Enforce materialization
@@ -69,9 +76,18 @@ jobs:
 
       - name: Generate public pages
         run: |
-          python scripts/generate_site.py --force --subject fisiologia-humana-i --with-units --force-authored-units
-          python scripts/generate_site.py --force --subject bioinformatica --with-units --force-authored-units
-          python scripts/generate_public_indexes.py --manifest publication-manifest.json
+          python scripts/generate_site.py \
+            --force \
+            --subject fisiologia-humana-i \
+            --with-units \
+            --force-authored-units
+          python scripts/generate_site.py \
+            --force \
+            --subject bioinformatica \
+            --with-units \
+            --force-authored-units
+          python scripts/generate_public_indexes.py \
+            --manifest publication-manifest.json
 
       - name: Validate publication
         run: |
@@ -81,7 +97,9 @@ jobs:
             --subject fisiologia-humana-i \
             --subject bioinformatica \
             --check-public
-          python scripts/generate_public_indexes.py --manifest publication-manifest.json --check
+          python scripts/generate_public_indexes.py \
+            --manifest publication-manifest.json \
+            --check
 
       - name: Audit curriculum and portfolio
         run: |
@@ -94,35 +112,21 @@ jobs:
       - name: Remove temporary materializer
         run: |
           git rm scripts/generate_fisiologia_i_bioinformatica_redevelopment.py
+          git rm scripts/recover_fisiologia_bioinformatica_package.py
+          git rm -r data/bootstrap/fisiologia-bioinformatica
           git rm .github/workflows/materialize-pending-courses.yml
+          rm -rf partial-recovery
+          rm -f materializer-diagnostic.txt publication-manifest.json
 
       - name: Commit source and public courses
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A \
-            scripts/publish_courses.py \
-            data/course_redevelopment/fisiologia-humana-i \
-            data/course_revelopment/bioinformatica \
-            data/course_redevelopment/bioinformatica \
-            data/source_registry/fisiologia-humana-i.json \
-            data/source_registry/bioinformatica.json \
-            data/curriculum_decisions/fisiologia-humana-i.json \
-            data/curriculum_decisions/bioinformatica.json \
-            data/subjects/biologicas-medicas/fisiologia-humana-i.json \
-            data/subjects/ingenieria-biomedica/bioinformatica.json \
-            data/generated_courses/fisiologia-humana-i.json \
-            data/generated_courses/bioinformatica.json \
-            data/generated_units/fisiologia-humana-i \
-            data/generated_units/bioinformatica \
-            biologicas-medicas/fisiologia-humana-i \
-            ingenieria-biomedica/bioinformatica \
-            biologicas-medicas/index.html \
-            ingenieria-biomedica/index.html \
-            catalogo/index.html \
-            data/course_audits/DEVELOPED_COURSES_AUDIT_2026-07-27.json \
-            data/course_audits/DEVELOPED_COURSES_AUDIT_2026-07-27.md \
-            scripts/generate_fisiologia_i_bioinformatica_redevelopment.py \
-            .github/workflows/materialize-pending-courses.yml
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No hay cambios que registrar."
+            exit 0
+          fi
           git commit -m "Completar Fisiología Humana I y Bioinformática"
           git push origin HEAD:agent/complete-fisiologia-i-bioinformatica
