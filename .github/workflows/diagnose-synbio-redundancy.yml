@@ -1,0 +1,54 @@
+name: Diagnose Synthetic Biology redundancy
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/diagnose-synbio-redundancy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  redundancy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rebuild-biologia-sintetica-v2
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Materialize, patch and publish
+        run: |
+          python scripts/materialize_biologia_sintetica_v2.py
+          python scripts/patch_formal_course_readiness.py
+          python scripts/publish_courses.py \
+            --subject biologia-sintetica \
+            --subject biologia-desarrollo \
+            --subject ecuaciones-diferenciales \
+            --manifest publication-manifest.json
+
+      - name: Capture redundancy audit
+        id: redundancy
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/audit_course_redundancy.py --strict 2>&1 | tee redundancy.log
+
+      - name: Upload redundancy diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synbio-redundancy-diagnostic
+          path: redundancy.log
+          if-no-files-found: error
+
+      - name: Enforce redundancy audit
+        if: steps.redundancy.outcome != 'success'
+        run: exit 1
