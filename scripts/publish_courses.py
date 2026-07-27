@@ -254,6 +254,11 @@ def expected_generated_course(package: CoursePackage, existing: dict[str, Any]) 
             "course_competencies": course["course_competencies"],
             "learning_outcomes": course["learning_outcomes"],
             "assessment_plan": assessment_plan(course),
+            "study_method": course.get("study_method", []),
+            "diagnostic_assessment": course.get("diagnostic_assessment", {}),
+            "assessment_principles": course.get("assessment_principles", []),
+            "final_project": course.get("final_project", {}),
+            "core_resources": course.get("core_resources", []),
         }
     )
     return updated
