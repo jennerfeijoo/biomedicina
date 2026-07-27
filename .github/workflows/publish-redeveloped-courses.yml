@@ -43,10 +43,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -112,33 +113,6 @@ jobs:
       - name: Regenerate affected area and catalog indexes
         run: python scripts/generate_public_indexes.py --manifest publication-manifest.json
 
-      - name: Package generated indexes
-        run: |
-          python - <<'PY'
-          import json
-          import shutil
-          from pathlib import Path
-
-          manifest = json.loads(Path('publication-manifest.json').read_text(encoding='utf-8'))
-          output = Path('generated-indexes')
-          catalog = Path('catalogo/index.html')
-          target = output / catalog
-          target.parent.mkdir(parents=True, exist_ok=True)
-          shutil.copyfile(catalog, target)
-          for area_id in sorted({course['area_id'] for course in manifest['courses']}):
-              source = Path(area_id) / 'index.html'
-              target = output / source
-              target.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copyfile(source, target)
-          PY
-
-      - name: Upload generated indexes
-        uses: actions/upload-artifact@v4
-        with:
-          name: redeveloped-course-indexes
-          path: generated-indexes/
-          if-no-files-found: error
-
       - name: Validate public alignment
         run: python scripts/audit_public_unit_alignment.py --strict
 
@@ -177,9 +151,40 @@ jobs:
           cat audit-artifacts/developed-courses-summary.txt
           exit 1
 
+      - name: Package generated indexes
+        run: |
+          python - <<'PY'
+          import json
+          import shutil
+          from pathlib import Path
+
+          manifest = json.loads(Path('publication-manifest.json').read_text(encoding='utf-8'))
+          output = Path('generated-indexes')
+          catalog = Path('catalogo/index.html')
+          target = output / catalog
+          target.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copyfile(catalog, target)
+          for area_id in sorted({course['area_id'] for course in manifest['courses']}):
+              source = Path(area_id) / 'index.html'
+              target = output / source
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(source, target)
+          PY
+
+      - name: Upload generated indexes
+        uses: actions/upload-artifact@v4
+        with:
+          name: redeveloped-course-indexes
+          path: generated-indexes/
+          if-no-files-found: error
+
       - name: Commit public publication
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        if: >-
+          (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+          (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))
         shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || 'main' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -200,4 +205,4 @@ jobs:
           fi
           subjects=$(paste -sd, publication-subjects.txt)
           git commit -m "Publish redeveloped courses: ${subjects}"
-          git push origin HEAD:main
+          git push origin HEAD:"$TARGET_BRANCH"
