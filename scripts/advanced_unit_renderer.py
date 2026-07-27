@@ -29,10 +29,39 @@ def as_dict_list(value: Any) -> list[dict[str, Any]]:
     return []
 
 
+def text_value(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (int, float)):
+        return str(value).strip()
+    if not isinstance(value, dict):
+        return ""
+
+    label = next(
+        (
+            str(value.get(key)).strip()
+            for key in ("topic", "title", "name", "domain")
+            if isinstance(value.get(key), str) and str(value.get(key)).strip()
+        ),
+        "",
+    )
+    detail = next(
+        (
+            str(value.get(key)).strip()
+            for key in ("connection", "description", "application", "text", "value")
+            if isinstance(value.get(key), str) and str(value.get(key)).strip()
+        ),
+        "",
+    )
+    if label and detail:
+        return f"{label}: {detail}"
+    return detail or label
+
+
 def as_text_list(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
-    return [str(item).strip() for item in value if str(item).strip()]
+    return [text for item in value if (text := text_value(item))]
 
 
 def load_advanced_unit(root: Path, subject_id: str, unit_number: int) -> dict[str, Any] | None:

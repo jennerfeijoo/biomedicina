@@ -10,9 +10,25 @@
     return node;
   }
 
+  function textValue(value) {
+    if (typeof value === "string" || typeof value === "number") return String(value).trim();
+    if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+
+    const label = [value.topic, value.title, value.name, value.domain]
+      .find((candidate) => typeof candidate === "string" && candidate.trim());
+    const detail = [value.connection, value.description, value.application, value.text, value.value]
+      .find((candidate) => typeof candidate === "string" && candidate.trim());
+
+    if (label && detail) return `${label.trim()}: ${detail.trim()}`;
+    return String(detail || label || "").trim();
+  }
+
   function appendList(parent, items, className = "") {
     const list = element("ul", className);
-    for (const item of items || []) list.appendChild(element("li", "", item));
+    for (const item of items || []) {
+      const text = textValue(item);
+      if (text) list.appendChild(element("li", "", text));
+    }
     parent.appendChild(list);
     return list;
   }
