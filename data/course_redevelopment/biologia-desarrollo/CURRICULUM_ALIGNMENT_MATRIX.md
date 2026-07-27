@@ -9,11 +9,11 @@
 La matriz utiliza la arquitectura de 14 unidades y los porcentajes definidos en `course.json`. Para poder comprobar coherencia se adopta una carga provisional:
 
 - 14 bloques docentes × 3 horas presenciales = **42 horas**;
-- 14 bloques × 4 horas de trabajo autónomo = **56 horas**;
+- línea base de 14 bloques × 4 horas de trabajo autónomo = **56 horas**;
 - proyecto reproducible, defensa y revisión por pares = **12 horas adicionales**;
-- carga total provisional = **110 horas**.
+- carga de referencia antes de intensificar unidades = **110 horas**.
 
-La estimación sirve para detectar saturación y distribuir actividades. Debe recalcularse cuando se conozcan créditos, calendario, duración de sesiones y política institucional.
+La distribución operativa asigna una hora autónoma adicional a las unidades 6, 7, 12 y 13 por su carga de modelado, análisis mecanoquímico, benchmarking y evaluación causal. Por ello, la carga realmente distribuida es superior a la línea base. La estimación debe recalcularse cuando se conozcan créditos, calendario, duración de sesiones y política institucional.
 
 ## 2. Evaluación global
 
@@ -62,7 +62,14 @@ Total: **100%**.
 | 14 | 3 h | 4 h | síntesis evo-devo y plasticidad |
 | Proyecto y defensa | — | 12 h | informe reproducible, revisión por pares y defensa |
 
-Carga calculada con esta distribución: **42 horas presenciales + 62 horas autónomas = 104 horas**. La diferencia respecto del supuesto inicial de 110 horas muestra que se requieren aproximadamente **6 horas de contingencia** para retroalimentación, correcciones o evaluación. Este margen no debe asignarse automáticamente hasta conocer el calendario institucional.
+La suma explícita de la tabla es:
+
+- trabajo autónomo de las 14 unidades: **60 horas**;
+- proyecto, revisión por pares y defensa: **12 horas**;
+- trabajo autónomo total: **72 horas**;
+- carga total distribuida: **42 horas presenciales + 72 horas autónomas = 114 horas**.
+
+La distribución supera en **4 horas** la carga de referencia de 110 horas porque cuatro unidades reciben una hora autónoma adicional. Este excedente debe conservarse como decisión pedagógica explícita o reducirse durante la adaptación institucional; no debe presentarse como contingencia inexistente.
 
 ## 5. Secuencia de evaluación sugerida
 
