@@ -10,9 +10,24 @@
     return node;
   }
 
+  function listItemText(item) {
+    if (item === null || item === undefined) return "";
+    if (typeof item !== "object") return String(item).trim();
+
+    const topic = String(item.topic || item.title || item.label || "").trim();
+    const connection = String(
+      item.connection || item.description || item.text || item.value || ""
+    ).trim();
+    if (topic && connection) return `${topic}: ${connection}`;
+    return topic || connection;
+  }
+
   function appendList(parent, items, className = "") {
     const list = element("ul", className);
-    for (const item of items || []) list.appendChild(element("li", "", item));
+    for (const item of items || []) {
+      const text = listItemText(item);
+      if (text) list.appendChild(element("li", "", text));
+    }
     parent.appendChild(list);
     return list;
   }

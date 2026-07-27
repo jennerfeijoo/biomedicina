@@ -35,6 +35,29 @@ def as_text_list(value: Any) -> list[str]:
     return [str(item).strip() for item in value if str(item).strip()]
 
 
+def as_biomedical_connection_list(value: Any) -> list[str]:
+    """Normaliza conexiones biomédicas sin exponer representaciones internas."""
+    if not isinstance(value, list):
+        return []
+    output: list[str] = []
+    for item in value:
+        if isinstance(item, dict):
+            topic = str(item.get("topic") or item.get("title") or item.get("label") or "").strip()
+            connection = str(
+                item.get("connection")
+                or item.get("description")
+                or item.get("text")
+                or item.get("value")
+                or ""
+            ).strip()
+            text = f"{topic}: {connection}" if topic and connection else topic or connection
+        else:
+            text = str(item or "").strip()
+        if text:
+            output.append(text)
+    return output
+
+
 def load_advanced_unit(root: Path, subject_id: str, unit_number: int) -> dict[str, Any] | None:
     path = root / ADVANCED_UNIT_ROOT / subject_id / f"unit-{unit_number:02d}.json"
     if not path.exists():
@@ -321,7 +344,7 @@ def render_topics(unit: dict[str, Any]) -> str:
 
 def render_synthesis(unit: dict[str, Any]) -> str:
     purpose = str(unit.get("purpose") or "").strip()
-    connections = as_text_list(unit.get("biomedical_connections"))
+    connections = as_biomedical_connection_list(unit.get("biomedical_connections"))
     notice = str(unit.get("editorial_notice") or "").strip()
     parts: list[str] = []
     if purpose:
