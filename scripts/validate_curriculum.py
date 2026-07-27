@@ -174,8 +174,14 @@ def validate_complete_course(area: dict[str, Any], subject: dict[str, Any], erro
             add_error(errors, f"{key}.{field} requiere al menos {minimum} elementos; tiene {length}")
 
     units = course.get("detailed_units", [])
-    if isinstance(units, list) and len(units) > 10:
-        add_error(errors, f"{key}.detailed_units debe contener entre 6 y 10 unidades; tiene {len(units)}")
+    if isinstance(units, list):
+        numbers = [int(unit.get("unit", 0)) for unit in units if isinstance(unit, dict)]
+        expected_numbers = list(range(1, len(units) + 1))
+        if numbers != expected_numbers:
+            add_error(
+                errors,
+                f"{key}.detailed_units debe usar una secuencia consecutiva; tiene {numbers} y se esperaba {expected_numbers}",
+            )
     for unit_index, unit in enumerate(units, start=1):
         if not isinstance(unit, dict):
             add_error(errors, f"{key}.detailed_units[{unit_index}] debe ser un objeto")
