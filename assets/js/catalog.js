@@ -21,6 +21,13 @@
     "gestion-etica-comunicacion",
   ];
 
+  const statusOptions = [
+    ["", "Todos los estados"],
+    ["developed", "Contenido desarrollado"],
+    ["complete", "Revisión disciplinar completa"],
+    ["pending", "Contenido pendiente"],
+  ];
+
   function currentArea() {
     const segments = window.location.pathname.split("/").filter(Boolean);
     return areaIds.find((areaId) => segments.includes(areaId)) || "";
@@ -38,6 +45,37 @@
     return membership;
   }
 
+  function statusFromLabel(label) {
+    const value = normalize(label);
+    if (value.includes("contenido revisado por especialista")) return "complete";
+    if (
+      value.includes("unidades desarrolladas") ||
+      value.includes("programa curricular estructurado") ||
+      value.includes("revision pendiente") ||
+      value.includes("revision experta pendiente")
+    ) {
+      return "developed";
+    }
+    return "pending";
+  }
+
+  function annotateCardStatus(card) {
+    const chips = Array.from(card.querySelectorAll(".catalog-chip, .course-tag"));
+    const statusChip = chips.find((chip) => {
+      const value = normalize(chip.textContent);
+      return (
+        value.includes("contenido pendiente") ||
+        value.includes("borrador") ||
+        value.includes("revision") ||
+        value.includes("unidades desarrolladas") ||
+        value.includes("contenido revisado")
+      );
+    });
+    const label = statusChip?.textContent || "Contenido pendiente";
+    card.dataset.status = statusFromLabel(label);
+    card.dataset.search = `${card.dataset.search || ""} ${label}`.trim();
+  }
+
   function buildCourseCard(subject, membership) {
     const card = document.createElement("a");
     card.className = "link-card course-card";
@@ -46,6 +84,7 @@
     card.dataset.subject = subject.id;
     card.dataset.area = subject.area_id;
     card.dataset.tracks = (membership.get(subject.id) || []).join(" ");
+    card.dataset.status = "pending";
     card.dataset.search = [
       subject.title,
       subject.description,
@@ -79,6 +118,7 @@
   function assignTrackMembership(grid, membership) {
     grid.querySelectorAll("[data-course-card]").forEach((card) => {
       card.dataset.tracks = (membership.get(card.dataset.subject) || []).join(" ");
+      annotateCardStatus(card);
     });
   }
 
@@ -96,6 +136,42 @@
     if (selected && tracks.some((track) => track.id === selected)) {
       select.value = selected;
     }
+  }
+
+  function ensureStatusSelect(root) {
+    let select = root.querySelector("[data-status-filter]");
+    if (select) return select;
+
+    const controls = root.querySelector(".catalog-controls");
+    const reset = root.querySelector("[data-catalog-reset]");
+    if (!controls) return null;
+
+    const field = document.createElement("label");
+    field.className = "catalog-field";
+
+    const label = document.createElement("span");
+    label.textContent = "Estado editorial";
+
+    select = document.createElement("select");
+    select.dataset.statusFilter = "";
+    statusOptions.forEach(([value, text]) => select.append(new Option(text, value)));
+
+    field.append(label, select);
+    controls.insertBefore(field, reset || null);
+    return select;
+  }
+
+  function ensureStatusSummary(root) {
+    const summary = root.querySelector(".catalog-summary");
+    if (!summary) return null;
+
+    let detail = summary.querySelector("[data-status-summary]");
+    if (!detail) {
+      detail = document.createElement("span");
+      detail.dataset.statusSummary = "";
+      summary.append(document.createTextNode(" "), detail);
+    }
+    return detail;
   }
 
   function renderTrackGrid(tracks) {
@@ -146,12 +222,12 @@
       : null;
 
     if (introDescription) {
-      introDescription.textContent = `Explora las ${count} asignaturas mediante búsqueda, áreas y rutas interdisciplinarias. Las rutas conectan problemas y métodos; no prescriben una duración ni un orden único.`;
+      introDescription.textContent = `Explora las ${count} asignaturas mediante búsqueda, áreas, estado editorial y rutas interdisciplinarias. Las rutas conectan problemas y métodos; no prescriben una duración ni un orden único.`;
     }
 
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.content = `Busca y explora las ${count} asignaturas abiertas de CitoNauta por área y ruta interdisciplinaria.`;
+      metaDescription.content = `Busca y explora las ${count} asignaturas abiertas de CitoNauta por área, estado editorial y ruta interdisciplinaria.`;
     }
   }
 
@@ -183,7 +259,11 @@
       )
       .forEach((card) => grid.append(card));
 
-    document.querySelectorAll("[data-catalog]").forEach((root) => populateTrackSelect(root, tracks));
+    document.querySelectorAll("[data-catalog]").forEach((root) => {
+      populateTrackSelect(root, tracks);
+      ensureStatusSelect(root);
+      ensureStatusSummary(root);
+    });
     renderTrackGrid(tracks);
     updatePublicCounts(grid, tracks);
   }
@@ -193,22 +273,29 @@
     const search = root.querySelector("[data-course-search]");
     const area = root.querySelector("[data-area-filter]");
     const track = root.querySelector("[data-track-filter]");
+    const status = ensureStatusSelect(root);
     const reset = root.querySelector("[data-catalog-reset]");
     const count = root.querySelector("[data-result-count]");
+    const statusSummary = ensureStatusSummary(root);
     const empty = document.querySelector("[data-empty-state]");
 
-    if (!cards.length || !search || !track || !count) return;
+    cards.forEach(annotateCardStatus);
+
+    if (!cards.length || !search || !track || !status || !count) return;
 
     const params = new URLSearchParams(window.location.search);
     if (params.has("q")) search.value = params.get("q") || "";
     if (area && params.has("area")) area.value = params.get("area") || "";
     if (params.has("track")) track.value = params.get("track") || "";
+    if (params.has("status")) status.value = params.get("status") || "";
 
     const apply = () => {
       const queryTokens = normalize(search.value).split(/\s+/).filter(Boolean);
       const selectedArea = area ? area.value : "";
       const selectedTrack = track.value;
+      const selectedStatus = status.value;
       let visible = 0;
+      let developedVisible = 0;
 
       cards.forEach((card) => {
         const searchable = normalize(card.dataset.search);
@@ -216,16 +303,33 @@
           !queryTokens.length || queryTokens.every((token) => searchable.includes(token));
         const matchesArea = !selectedArea || card.dataset.area === selectedArea;
         const matchesTrack = !selectedTrack || tokens(card.dataset.tracks).includes(selectedTrack);
-        const show = matchesSearch && matchesArea && matchesTrack;
+        const matchesStatus =
+          !selectedStatus ||
+          card.dataset.status === selectedStatus ||
+          (selectedStatus === "developed" && card.dataset.status === "complete");
+        const show = matchesSearch && matchesArea && matchesTrack && matchesStatus;
         card.hidden = !show;
-        if (show) visible += 1;
+        if (show) {
+          visible += 1;
+          if (card.dataset.status === "developed" || card.dataset.status === "complete") {
+            developedVisible += 1;
+          }
+        }
       });
 
       count.textContent = String(visible);
+      if (statusSummary) {
+        statusSummary.textContent = `(${developedVisible} con contenido desarrollado).`;
+      }
       if (empty) empty.hidden = visible !== 0;
 
       const next = new URL(window.location.href);
-      const values = { q: search.value.trim(), area: selectedArea, track: selectedTrack };
+      const values = {
+        q: search.value.trim(),
+        area: selectedArea,
+        track: selectedTrack,
+        status: selectedStatus,
+      };
       Object.entries(values).forEach(([key, value]) => {
         if (value) next.searchParams.set(key, value);
         else next.searchParams.delete(key);
@@ -236,10 +340,12 @@
     search.addEventListener("input", apply);
     if (area) area.addEventListener("change", apply);
     track.addEventListener("change", apply);
+    status.addEventListener("change", apply);
     reset?.addEventListener("click", () => {
       search.value = "";
       if (area) area.value = "";
       track.value = "";
+      status.value = "";
       apply();
       search.focus();
     });
@@ -267,7 +373,11 @@
       document.querySelectorAll("[data-catalog]").forEach(initCatalog);
     } catch (error) {
       console.error("No se pudo iniciar el catálogo.", error);
-      document.querySelectorAll("[data-catalog]").forEach(initCatalog);
+      document.querySelectorAll("[data-catalog]").forEach((root) => {
+        ensureStatusSelect(root);
+        ensureStatusSummary(root);
+        initCatalog(root);
+      });
     }
   }
 
