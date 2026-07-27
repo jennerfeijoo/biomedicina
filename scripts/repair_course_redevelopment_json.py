@@ -3,10 +3,12 @@
 
 The tool is intentionally conservative. It only:
 
-1. doubles invalid JSON backslashes inside values assigned to ``latex``;
+1. normalizes single backslashes inside values assigned to ``latex`` so every
+   LaTeX command survives JSON decoding as a literal backslash;
 2. closes a final object immediately before an array terminator when that
    object starts with ``{`` and is missing its closing ``}``;
-3. validates every unit with ``json.loads`` before writing any file.
+3. validates every unit with ``json.loads`` and rejects control characters in
+   decoded LaTeX values before writing any file.
 
 It does not reformat JSON or change academic prose.
 """
@@ -17,16 +19,24 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 REDEVELOPMENT_ROOT = ROOT / "data" / "course_redevelopment"
 LATEX_VALUE_RE = re.compile(r'("latex"\s*:\s*")((?:[^"\\]|\\.)*)(")')
-VALID_JSON_ESCAPE_STARTS = set('"\\/bfnrtu')
 OBJECT_ARRAY_KEYS = {"common_errors", "biomedical_connections"}
+FORBIDDEN_LATEX_CONTROLS = {"\b", "\f", "\n", "\r", "\t"}
 
 
-def sanitize_latex_payload(payload: str) -> str:
-    """Double only backslashes that do not start a valid JSON escape."""
+def normalize_latex_payload(payload: str) -> str:
+    """Double every single LaTeX backslash while preserving JSON pairs.
+
+    A lexical pair ``\\\\`` already represents one literal backslash after JSON
+    decoding and is kept unchanged. An escaped quote is also preserved. Any
+    other single backslash is doubled, including sequences such as ``\\frac``,
+    ``\\nabla`` and ``\\tau`` that JSON would otherwise decode as control
+    escapes when their first letter happens to be ``f``, ``n`` or ``t``.
+    """
     output: list[str] = []
     index = 0
     while index < len(payload):
@@ -35,15 +45,15 @@ def sanitize_latex_payload(payload: str) -> str:
             output.append(character)
             index += 1
             continue
-        if (
-            index + 1 < len(payload)
-            and payload[index + 1] in VALID_JSON_ESCAPE_STARTS
-        ):
+
+        if index + 1 < len(payload) and payload[index + 1] in {"\\", '"'}:
             output.extend((payload[index], payload[index + 1]))
             index += 2
             continue
+
         output.extend(("\\", "\\"))
         index += 1
+
     return "".join(output)
 
 
@@ -51,7 +61,7 @@ def repair_latex_values(text: str) -> str:
     return LATEX_VALUE_RE.sub(
         lambda match: (
             match.group(1)
-            + sanitize_latex_payload(match.group(2))
+            + normalize_latex_payload(match.group(2))
             + match.group(3)
         ),
         text,
@@ -103,11 +113,31 @@ def repair_text(text: str) -> str:
     return repair_truncated_final_objects(repair_latex_values(text))
 
 
+def iter_latex_values(value: Any, location: str = "root"):
+    if isinstance(value, dict):
+        for key, item in value.items():
+            child_location = f"{location}.{key}"
+            if key == "latex" and isinstance(item, str):
+                yield child_location, item
+            yield from iter_latex_values(item, child_location)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from iter_latex_values(item, f"{location}[{index}]")
+
+
 def validate_json(path: Path, text: str) -> None:
     try:
-        json.loads(text)
+        data = json.loads(text)
     except json.JSONDecodeError as exc:
         raise ValueError(f"{path}: {exc}") from exc
+
+    for location, latex in iter_latex_values(data):
+        controls = sorted({character for character in latex if character in FORBIDDEN_LATEX_CONTROLS})
+        if controls:
+            names = ", ".join(repr(character) for character in controls)
+            raise ValueError(
+                f"{path}: {location} contiene controles JSON incompatibles con LaTeX: {names}"
+            )
 
 
 def process(subject_id: str, write: bool) -> tuple[list[Path], list[str]]:
@@ -169,7 +199,11 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
-    print(f"validated_units: {len(list((REDEVELOPMENT_ROOT / args.subject_id / 'units').glob('unit-*.json')))}")
+
+    unit_count = len(
+        list((REDEVELOPMENT_ROOT / args.subject_id / "units").glob("unit-*.json"))
+    )
+    print(f"validated_units: {unit_count}")
     print(f"changed_units: {len(changed)}")
     return 0
 
