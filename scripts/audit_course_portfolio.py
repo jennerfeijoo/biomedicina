@@ -17,30 +17,15 @@ ASSET_ROOT = ROOT / "assets" / "js"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 SPACE_RE = re.compile(r"\s+")
 COURSE_TIME_KEYS = {
-    "estimated_workload",
-    "duration_weeks",
-    "weekly_hours",
-    "total_workload_hours",
-    "semester_plan",
+    "estimated_workload", "duration_weeks", "weekly_hours",
+    "total_workload_hours", "semester_plan",
 }
 UNIT_TIME_KEYS = {"estimated_hours", "weeks"}
-
 FORBIDDEN_PUBLIC_PHRASES = (
-    "contenido desarrollado",
-    "unidades desarrolladas",
-    "ejemplo desarrollado",
-    "en revisión académica",
-    "pendiente de ampliación",
-    "generado automáticamente",
+    "contenido desarrollado", "unidades desarrolladas", "ejemplo desarrollado",
+    "en revisión académica", "pendiente de ampliación", "generado automáticamente",
 )
-GENERIC_SOURCE_PATHS = {
-    "",
-    "/",
-    "/books/",
-    "/books",
-    "/search/",
-    "/search",
-}
+GENERIC_SOURCE_PATHS = {"", "/", "/books/", "/books", "/search/", "/search"}
 MIN_SOURCE_ORIGINS_PER_UNIT = 3
 MIN_COURSE_RESOURCE_DOMAINS = 4
 MIN_DUPLICATE_PARAGRAPH_CHARS = 180
@@ -58,15 +43,11 @@ def normalized(text: str) -> str:
 
 
 def source_domain(url: str) -> str:
-    host = urlparse(url).netloc.casefold()
-    return host.removeprefix("www.")
+    return urlparse(url).netloc.casefold().removeprefix("www.")
 
 
 def is_generic_source(url: str) -> bool:
-    if not url:
-        return False
-    parsed = urlparse(url)
-    return parsed.path.casefold() in GENERIC_SOURCE_PATHS
+    return bool(url) and urlparse(url).path.casefold() in GENERIC_SOURCE_PATHS
 
 
 def normalize_doi(value: str) -> str:
@@ -78,6 +59,7 @@ def normalize_doi(value: str) -> str:
 
 
 def bibliographic_identity(source: dict[str, Any]) -> str:
+    """Devuelve la identidad más específica disponible para detectar duplicados reales."""
     doi = normalize_doi(str(source.get("doi") or ""))
     if doi:
         return "doi:" + doi
@@ -87,23 +69,20 @@ def bibliographic_identity(source: dict[str, Any]) -> str:
     isbn = re.sub(r"[^0-9xX]", "", str(source.get("isbn") or ""))
     if isbn:
         return "isbn:" + isbn.casefold()
-    registry = str(source.get("registry_id") or source.get("id") or "").strip().casefold()
-    if registry:
-        return "registry:" + registry
     url = str(source.get("url") or "").strip().casefold().rstrip("/")
     if url:
         return "url:" + url
+    registry = str(source.get("registry_id") or source.get("id") or "").strip().casefold()
+    if registry:
+        return "registry:" + registry
     citation = normalized(str(source.get("citation") or source.get("title") or ""))
-    if citation:
-        return "citation:" + citation
-    return ""
+    return "citation:" + citation if citation else ""
 
 
 def bibliographic_origin(source: dict[str, Any]) -> str:
     doi = normalize_doi(str(source.get("doi") or ""))
     if doi:
-        prefix = doi.split("/", 1)[0]
-        return "doi-prefix:" + prefix
+        return "doi-prefix:" + doi.split("/", 1)[0]
     url = str(source.get("url") or "").strip()
     domain = source_domain(url)
     if domain and domain != "doi.org":
@@ -111,28 +90,20 @@ def bibliographic_origin(source: dict[str, Any]) -> str:
     organization = normalized(str(source.get("organization") or ""))
     if organization:
         return "organization:" + organization
-    pmid = str(source.get("pmid") or "").strip()
-    if pmid:
+    if str(source.get("pmid") or "").strip():
         return "index:pubmed"
-    isbn = str(source.get("isbn") or "").strip()
-    if isbn:
+    if str(source.get("isbn") or "").strip():
         return "format:isbn"
     registry = str(source.get("registry_id") or "").strip().casefold()
-    if registry:
-        return "registry:" + registry.split("-", 1)[0]
-    return ""
+    return "registry:" + registry.split("-", 1)[0] if registry else ""
 
 
 def unit_paths(subject_id: str) -> list[Path]:
     return sorted((UNIT_ROOT / subject_id).glob("unit-*.json"))
 
 
-def redevelopment_unit_path(subject_id: str, unit_path: Path) -> Path:
-    return REDEVELOPMENT_ROOT / subject_id / "units" / unit_path.name
-
-
 def is_exact_redevelopment_mirror(subject_id: str, unit_path: Path) -> bool:
-    source = redevelopment_unit_path(subject_id, unit_path)
+    source = REDEVELOPMENT_ROOT / subject_id / "units" / unit_path.name
     return source.exists() and source.read_bytes() == unit_path.read_bytes()
 
 
@@ -155,7 +126,6 @@ def audit_public_hygiene(errors: list[str]) -> None:
         for phrase in FORBIDDEN_PUBLIC_PHRASES:
             if phrase in text:
                 errors.append(f"INTERFAZ {path.relative_to(ROOT)} contiene frase interna: {phrase}")
-
     workflow = ROOT / ".github" / "workflows" / "citonauta-quality.yml"
     if workflow.exists() and "contents: write" in workflow.read_text(encoding="utf-8"):
         errors.append("CI conserva permiso contents: write; los quality gates deben ser de solo lectura")
@@ -168,35 +138,29 @@ def audit_unit_sources(
     errors: list[str],
     warnings: list[str],
 ) -> tuple[list[str], set[str]]:
-    number = int(unit["unit"])
-    prefix = f"{subject_id}/unit-{number:02d}"
+    prefix = f"{subject_id}/unit-{int(unit['unit']):02d}"
     sources = [source for source in unit.get("sources", []) if isinstance(source, dict)]
     identities = [bibliographic_identity(source) for source in sources]
-    missing_identity = sum(not identity for identity in identities)
-    if missing_identity:
-        errors.append(f"{prefix}: {missing_identity} fuente(s) sin identidad bibliográfica estable")
-    stable_identities = [identity for identity in identities if identity]
-    duplicate_count = sum(count - 1 for count in Counter(stable_identities).values() if count > 1)
-    if duplicate_count:
-        errors.append(f"{prefix}: contiene {duplicate_count} referencia(s) bibliográfica(s) duplicada(s)")
+    missing = sum(not identity for identity in identities)
+    if missing:
+        errors.append(f"{prefix}: {missing} fuente(s) sin identidad bibliográfica estable")
+    stable = [identity for identity in identities if identity]
+    duplicates = sum(count - 1 for count in Counter(stable).values() if count > 1)
+    if duplicates:
+        errors.append(f"{prefix}: contiene {duplicates} referencia(s) bibliográfica(s) duplicada(s)")
 
-    origins = {
-        origin
-        for source in sources
-        if (origin := bibliographic_origin(source))
-    }
+    origins = {origin for source in sources if (origin := bibliographic_origin(source))}
     if len(origins) < MIN_SOURCE_ORIGINS_PER_UNIT:
         message = f"{prefix}: bibliografía concentrada en {len(origins)} origen(es)"
         if is_exact_redevelopment_mirror(subject_id, unit_path):
             warnings.append(message + "; revisar diversidad editorial en la próxima revisión disciplinar")
         else:
             errors.append(message)
-
     for source in sources:
         url = str(source.get("url") or "").strip()
         if url and is_generic_source(url):
             warnings.append(f"{prefix}: fuente con URL genérica: {url}")
-    return stable_identities, origins
+    return stable, origins
 
 
 def audit_course(
@@ -210,104 +174,86 @@ def audit_course(
     course = load_json(course_path)
     paths = unit_paths(subject_id)
     units = [load_json(path) for path in paths]
-    prefix = subject_id
 
     if course.get("subject_id") != subject_id:
-        errors.append(f"{prefix}: subject_id del curso no coincide con el archivo")
+        errors.append(f"{subject_id}: subject_id del curso no coincide con el archivo")
     if course.get("schema_version") != "2.0":
-        errors.append(f"{prefix}: arquitectura sin schema_version 2.0")
+        errors.append(f"{subject_id}: arquitectura sin schema_version 2.0")
     if course.get("status") != "review":
-        errors.append(f"{prefix}: status interno debe permanecer en review hasta revisión humana externa")
+        errors.append(f"{subject_id}: status interno debe permanecer en review hasta revisión humana externa")
     if not units:
-        errors.append(f"{prefix}: no tiene unidades")
+        errors.append(f"{subject_id}: no tiene unidades")
         return
 
     numbers = [int(unit.get("unit", 0) or 0) for unit in units]
-    expected_numbers = list(range(1, len(units) + 1))
-    if numbers != expected_numbers:
-        errors.append(f"{prefix}: numeración de unidades no consecutiva: {numbers}")
+    if numbers != list(range(1, len(units) + 1)):
+        errors.append(f"{subject_id}: numeración de unidades no consecutiva: {numbers}")
     if any(unit.get("subject_id") != subject_id for unit in units):
-        errors.append(f"{prefix}: alguna unidad tiene subject_id inconsistente")
+        errors.append(f"{subject_id}: alguna unidad tiene subject_id inconsistente")
     if any(unit.get("schema_version") != "2.0" for unit in units):
-        errors.append(f"{prefix}: todas las unidades deben usar schema_version 2.0")
+        errors.append(f"{subject_id}: todas las unidades deben usar schema_version 2.0")
     if any(unit.get("status") != "review" for unit in units):
-        errors.append(f"{prefix}: todas las unidades deben conservar status review")
+        errors.append(f"{subject_id}: todas las unidades deben conservar status review")
 
     forbidden = sorted(COURSE_TIME_KEYS & course.keys())
     if forbidden:
-        errors.append(f"{prefix}: conserva metadatos temporales: {', '.join(forbidden)}")
+        errors.append(f"{subject_id}: conserva metadatos temporales: {', '.join(forbidden)}")
 
-    assessment = course.get("assessment_plan", [])
     assessment_total = sum(
         float(item.get("weight_percent", 0) or 0)
-        for item in assessment
-        if isinstance(item, dict)
+        for item in course.get("assessment_plan", []) if isinstance(item, dict)
     )
     if abs(assessment_total - 100.0) > 1e-9:
-        errors.append(f"{prefix}: evaluación suma {assessment_total:g} %, no 100 %")
-    rubric = course.get("final_project", {}).get("rubric", [])
+        errors.append(f"{subject_id}: evaluación suma {assessment_total:g} %, no 100 %")
     rubric_total = sum(
         float(item.get("weight_percent", 0) or 0)
-        for item in rubric
-        if isinstance(item, dict)
+        for item in course.get("final_project", {}).get("rubric", []) if isinstance(item, dict)
     )
     if abs(rubric_total - 100.0) > 1e-9:
-        errors.append(f"{prefix}: rúbrica suma {rubric_total:g} %, no 100 %")
+        errors.append(f"{subject_id}: rúbrica suma {rubric_total:g} %, no 100 %")
 
-    resources = course.get("core_resources", [])
-    resource_urls = [str(item.get("url", "")) for item in resources if isinstance(item, dict)]
+    resource_urls = [
+        str(item.get("url", "")) for item in course.get("core_resources", []) if isinstance(item, dict)
+    ]
     resource_domains = {source_domain(url) for url in resource_urls if source_domain(url)}
     if len(resource_domains) < MIN_COURSE_RESOURCE_DOMAINS:
-        errors.append(f"{prefix}: bibliografía central usa solo {len(resource_domains)} dominios")
+        errors.append(f"{subject_id}: bibliografía central usa solo {len(resource_domains)} dominios")
     for url in resource_urls:
         if is_generic_source(url):
-            warnings.append(f"{prefix}: recurso central con URL genérica: {url}")
+            warnings.append(f"{subject_id}: recurso central con URL genérica: {url}")
 
-    all_source_identities: list[str] = []
+    all_identities: list[str] = []
     all_origins: set[str] = set()
     total_words = 0
     equation_count = 0
     for unit_path, unit in zip(paths, units, strict=True):
-        number = int(unit["unit"])
-        unit_prefix = f"{prefix}/unit-{number:02d}"
+        unit_prefix = f"{subject_id}/unit-{int(unit['unit']):02d}"
         forbidden = sorted(UNIT_TIME_KEYS & unit.keys())
         if forbidden:
             errors.append(f"{unit_prefix}: conserva metadatos temporales: {', '.join(forbidden)}")
-
         identities, origins = audit_unit_sources(subject_id, unit_path, unit, errors, warnings)
-        all_source_identities.extend(identities)
+        all_identities.extend(identities)
         all_origins.update(origins)
-
         theory = unit.get("theory_sections", [])
         equation_count += sum(
-            len(section.get("equations", []))
-            for section in theory
-            if isinstance(section, dict)
+            len(section.get("equations", [])) for section in theory if isinstance(section, dict)
         )
         total_words += len(WORD_RE.findall(json.dumps(unit, ensure_ascii=False)))
 
-        glossary_terms = [
-            normalized(str(item.get("term", ""))) for item in unit.get("glossary", [])
-        ]
-        if len(glossary_terms) != len(set(glossary_terms)):
+        glossary = [normalized(str(item.get("term", ""))) for item in unit.get("glossary", [])]
+        if len(glossary) != len(set(glossary)):
             errors.append(f"{unit_prefix}: glosario con términos duplicados")
         questions = [
-            normalized(str(item.get("question", "")))
-            for item in unit.get("self_assessment", [])
+            normalized(str(item.get("question", ""))) for item in unit.get("self_assessment", [])
         ]
         if len(questions) != len(set(questions)):
             errors.append(f"{unit_prefix}: autoevaluación con preguntas duplicadas")
 
     if equation_count == 0:
-        errors.append(f"{prefix}: curso cuantitativo sin ecuaciones estructuradas para MathJax")
-    repeated_source_count = sum(
-        count - 1 for count in Counter(all_source_identities).values() if count > 1
-    )
-    if repeated_source_count > len(units) * 3:
-        warnings.append(
-            f"{prefix}: bibliografía muy repetitiva entre unidades "
-            f"({repeated_source_count} repeticiones)"
-        )
+        errors.append(f"{subject_id}: curso cuantitativo sin ecuaciones estructuradas para MathJax")
+    repeated = sum(count - 1 for count in Counter(all_identities).values() if count > 1)
+    if repeated > len(units) * 3:
+        warnings.append(f"{subject_id}: bibliografía muy repetitiva entre unidades ({repeated} repeticiones)")
 
     all_paragraphs.extend(paragraph_records(subject_id, units))
     metrics[subject_id] = {
@@ -315,7 +261,7 @@ def audit_course(
         "words": total_words,
         "equations": equation_count,
         "source_origins": len(all_origins),
-        "bibliographic_identities": len(set(all_source_identities)),
+        "bibliographic_identities": len(set(all_identities)),
     }
 
 
@@ -330,25 +276,15 @@ def audit_duplicate_paragraphs(records: list[tuple[str, str]], errors: list[str]
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Audita coherencia y calidad transversal del portafolio de cursos."
-    )
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Devuelve error si existen hallazgos críticos.",
-    )
-    parser.add_argument(
-        "--json-output",
-        help="Ruta opcional para guardar el informe JSON.",
-    )
+    parser = argparse.ArgumentParser(description="Audita coherencia y calidad transversal del portafolio.")
+    parser.add_argument("--strict", action="store_true")
+    parser.add_argument("--json-output")
     args = parser.parse_args()
 
     errors: list[str] = []
     warnings: list[str] = []
     metrics: dict[str, Any] = {}
-    all_paragraphs: list[tuple[str, str]] = []
-
+    paragraphs: list[tuple[str, str]] = []
     course_paths = sorted(COURSE_ROOT.glob("*.json"))
     if not course_paths:
         print("No hay cursos generados para auditar.")
@@ -356,11 +292,10 @@ def main() -> int:
 
     for course_path in course_paths:
         try:
-            audit_course(course_path, errors, warnings, metrics, all_paragraphs)
+            audit_course(course_path, errors, warnings, metrics, paragraphs)
         except (ValueError, TypeError, KeyError, json.JSONDecodeError) as error:
             errors.append(f"{course_path.stem}: auditoría interrumpida: {error}")
-
-    audit_duplicate_paragraphs(all_paragraphs, errors)
+    audit_duplicate_paragraphs(paragraphs, errors)
     audit_public_hygiene(errors)
 
     report = {
@@ -389,10 +324,7 @@ def main() -> int:
         print(f"ADVERTENCIA: {warning}")
     for error in errors:
         print(f"ERROR: {error}")
-    print(
-        f"Resumen: {len(course_paths)} cursos · {len(errors)} errores · "
-        f"{len(warnings)} advertencias"
-    )
+    print(f"Resumen: {len(course_paths)} cursos · {len(errors)} errores · {len(warnings)} advertencias")
     return 1 if args.strict and errors else 0
 
 
