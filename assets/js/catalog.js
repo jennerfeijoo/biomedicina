@@ -22,12 +22,12 @@
   ];
   const statusOptions = [
     ["", "Todos los estados"],
-    ["developed", "Contenido desarrollado"],
+    ["developed", "Material lectivo disponible"],
     ["complete", "Revisión disciplinar completa"],
     ["pending", "Contenido pendiente"],
   ];
   const statusLabels = {
-    developed: "Contenido desarrollado · revisión pendiente",
+    developed: "Material lectivo disponible · revisión disciplinar pendiente",
     complete: "Contenido revisado por especialista",
     pending: "Contenido pendiente",
   };
@@ -266,7 +266,7 @@
       });
 
       count.textContent = String(visible);
-      if (statusSummary) statusSummary.textContent = `(${developedVisible} con contenido desarrollado).`;
+      if (statusSummary) statusSummary.textContent = `(${developedVisible} con material lectivo disponible).`;
       if (empty) empty.hidden = visible !== 0;
 
       const next = new URL(window.location.href);
