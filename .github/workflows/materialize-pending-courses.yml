@@ -36,7 +36,26 @@ jobs:
           python-version: '3.12'
 
       - name: Materialize academic source packages
-        run: python scripts/generate_fisiologia_i_bioinformatica_redevelopment.py
+        id: materialize
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/generate_fisiologia_i_bioinformatica_redevelopment.py 2>&1 | tee materializer-diagnostic.txt
+
+      - name: Upload materializer diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pending-courses-materializer-diagnostic
+          path: materializer-diagnostic.txt
+          if-no-files-found: error
+
+      - name: Enforce materialization
+        if: steps.materialize.outcome != 'success'
+        run: |
+          cat materializer-diagnostic.txt
+          exit 1
 
       - name: Promote both courses
         run: |
@@ -84,6 +103,7 @@ jobs:
           git add -A \
             scripts/publish_courses.py \
             data/course_redevelopment/fisiologia-humana-i \
+            data/course_revelopment/bioinformatica \
             data/course_redevelopment/bioinformatica \
             data/source_registry/fisiologia-humana-i.json \
             data/source_registry/bioinformatica.json \
