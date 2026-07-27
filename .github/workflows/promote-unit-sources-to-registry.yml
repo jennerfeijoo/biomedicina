@@ -1,0 +1,51 @@
+name: Promote unit sources to registry
+
+on:
+  push:
+    branches:
+      - agent/biologia-desarrollo-evidence-based
+    paths:
+      - 'scripts/promote_unit_sources_to_registry.py'
+      - '.github/workflows/promote-unit-sources-to-registry.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/biologia-desarrollo-evidence-based
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Promote, validate and audit
+        run: |
+          python scripts/promote_unit_sources_to_registry.py \
+            --subject-id biologia-desarrollo \
+            --write
+          python scripts/promote_unit_sources_to_registry.py \
+            --subject-id biologia-desarrollo \
+            --check
+          python scripts/consolidate_course_source_registry.py \
+            --subject-id biologia-desarrollo \
+            --check
+          python scripts/audit_course_bibliography.py \
+            --subject-id biologia-desarrollo \
+            --fail-on-exact-duplicates \
+            --fail-on-incomplete \
+            --fail-on-ambiguous
+          git diff --check
+      - name: Commit canonical unit sources
+        run: |
+          if git diff --quiet; then
+            echo 'No source promotion changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/source_registry/biologia-desarrollo.json
+          git commit -m 'Promote unit sources to canonical registry'
+          git push origin HEAD:agent/biologia-desarrollo-evidence-based
