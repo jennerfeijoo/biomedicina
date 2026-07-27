@@ -4,14 +4,14 @@ Esta auditoría separa publicación técnica, desarrollo lectivo y revisión aca
 
 ## Resumen
 
-- Paquetes reconstruidos: 4
-- Paquetes publicados y sincronizados: 4
+- Paquetes reconstruidos: 5
+- Paquetes publicados y sincronizados: 5
 - Paquetes sin publicar o desincronizados: 0
 - Paquetes con revisión académica completa: 0
 - Asignaturas del catálogo con contenido desarrollado: 29
 - Asignaturas completamente desarrolladas: 29
 - Asignaturas parcialmente desarrolladas: 0
-- Unidades avanzadas: 193
+- Unidades avanzadas: 195
 - Unidades autorales: 0
 - Unidades fallback dentro de cursos desarrollados: 0
 - Páginas ausentes dentro de cursos desarrollados: 0
@@ -22,6 +22,7 @@ Esta auditoría separa publicación técnica, desarrollo lectivo y revisión aca
 |---|---|---:|---:|---:|---:|---:|
 | Bioinformática (`bioinformatica`) | review | 6 | sí | sí | sí | no |
 | Biología del Desarrollo (`biologia-desarrollo`) | review | 14 | sí | sí | sí | no |
+| Biología Sintética e Ingeniería Biológica: diseño, circuitos y gobernanza responsable (`biologia-sintetica`) | review | 8 | sí | sí | sí | no |
 | Ecuaciones Diferenciales para Biomedicina Computacional (`ecuaciones-diferenciales`) | review | 10 | sí | sí | sí | no |
 | Fisiología Humana I (`fisiologia-humana-i`) | review | 6 | sí | sí | sí | no |
 
@@ -35,7 +36,7 @@ Esta auditoría separa publicación técnica, desarrollo lectivo y revisión aca
 | biologicas-medicas | Biología II (`biologia-ii`) | 6 | 0 | 0 | 0 | 6 | sí |
 | biologicas-medicas | Biología Molecular (`biologia-molecular`) | 6 | 0 | 0 | 0 | 6 | sí |
 | biologicas-medicas | Biología Molecular y Celular Aplicada (`biologia-molecular-celular-aplicada`) | 6 | 0 | 0 | 0 | 6 | sí |
-| biologicas-medicas | Biología Sintética (`biologia-sintetica`) | 6 | 0 | 0 | 0 | 6 | sí |
+| biologicas-medicas | Biología Sintética e Ingeniería Biológica: diseño, circuitos y gobernanza responsable (`biologia-sintetica`) | 8 | 0 | 0 | 0 | 8 | sí |
 | biologicas-medicas | Bioquímica (`bioquimica`) | 6 | 0 | 0 | 0 | 6 | sí |
 | biologicas-medicas | Fisiología Humana I (`fisiologia-humana-i`) | 6 | 0 | 0 | 0 | 6 | sí |
 | biologicas-medicas | Fisiología Humana II (`fisiologia-humana-ii`) | 6 | 0 | 0 | 0 | 6 | sí |
