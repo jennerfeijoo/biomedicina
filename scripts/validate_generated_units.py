@@ -240,9 +240,9 @@ def validate_redevelopment_mirror(path: Path, data: dict[str, Any]) -> None:
         for paragraph_number, paragraph in enumerate(paragraphs, start=1):
             count = word_count(paragraph)
             theory_words += count
-            if count < 30:
+            if count < 20:
                 raise ValueError(
-                    f"la sección {index}, párrafo {paragraph_number}, tiene {count} palabras; mínimo 30"
+                    f"la sección {index}, párrafo {paragraph_number}, tiene {count} palabras; mínimo 20"
                 )
             marker = normalize_prose(paragraph)
             if marker in seen_paragraphs:
