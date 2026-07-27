@@ -4,10 +4,17 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+import validate_generated_units  # noqa: E402
+
 UNIT_ROOT = ROOT / "data" / "generated_units"
 COURSE_ROOT = ROOT / "data" / "generated_courses"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
@@ -19,18 +26,8 @@ COURSE_TIME_KEYS = {
     "total_workload_hours",
     "semester_plan",
 }
-UNIT_TIME_KEYS = {"estimated_hours", "weeks"}
 
 MIN_UNITS = 6
-MIN_THEORY_SECTIONS = 4
-MIN_OBJECTIVES = 5
-MIN_GLOSSARY = 12
-MIN_SELF_ASSESSMENT = 8
-MIN_SOURCES = 5
-MIN_WORKED_EXAMPLES = 2
-MIN_GUIDED_ACTIVITIES = 1
-MIN_PRACTICE_ITEMS = 8
-MIN_COMMON_ERRORS = 5
 MIN_DIAGNOSTIC_QUESTIONS = 10
 MIN_COURSE_OUTCOMES = 6
 MIN_COURSE_COMPETENCIES = 5
@@ -69,56 +66,6 @@ def collect_text(value: Any, *, key: str = "") -> list[str]:
 
 def count_words(data: dict[str, Any]) -> int:
     return len(WORD_RE.findall(" ".join(collect_text(data))))
-
-
-def as_list(data: dict[str, Any], singular: str, plural: str) -> list[Any]:
-    plural_value = data.get(plural)
-    if isinstance(plural_value, list):
-        return plural_value
-    singular_value = data.get(singular)
-    return [singular_value] if isinstance(singular_value, dict) else []
-
-
-def practice_item_count(data: dict[str, Any]) -> int:
-    total = 0
-    for activity in as_list(data, "guided_activity", "guided_activities"):
-        if not isinstance(activity, dict):
-            continue
-        for key in ("problems", "tasks", "exercises"):
-            value = activity.get(key)
-            if isinstance(value, list):
-                total += len(value)
-    for practice_set in data.get("practice_sets", []):
-        if isinstance(practice_set, dict) and isinstance(practice_set.get("problems"), list):
-            total += len(practice_set["problems"])
-    return total
-
-
-def audit_unit(data: dict[str, Any]) -> tuple[int, list[str]]:
-    words = count_words(data)
-    issues: list[str] = []
-    forbidden = sorted(UNIT_TIME_KEYS & data.keys())
-    if forbidden:
-        issues.append("conserva metadatos temporales: " + ", ".join(forbidden))
-    if len(data.get("learning_objectives", [])) < MIN_OBJECTIVES:
-        issues.append(f"menos de {MIN_OBJECTIVES} objetivos")
-    if len(data.get("theory_sections", [])) < MIN_THEORY_SECTIONS:
-        issues.append(f"menos de {MIN_THEORY_SECTIONS} secciones teóricas")
-    if len(data.get("glossary", [])) < MIN_GLOSSARY:
-        issues.append(f"menos de {MIN_GLOSSARY} términos de glosario")
-    if len(data.get("self_assessment", [])) < MIN_SELF_ASSESSMENT:
-        issues.append(f"menos de {MIN_SELF_ASSESSMENT} preguntas de autoevaluación")
-    if len(data.get("sources", [])) < MIN_SOURCES:
-        issues.append(f"menos de {MIN_SOURCES} fuentes")
-    if len(as_list(data, "worked_example", "worked_examples")) < MIN_WORKED_EXAMPLES:
-        issues.append(f"menos de {MIN_WORKED_EXAMPLES} ejemplos resueltos")
-    if len(as_list(data, "guided_activity", "guided_activities")) < MIN_GUIDED_ACTIVITIES:
-        issues.append("falta actividad guiada")
-    if practice_item_count(data) < MIN_PRACTICE_ITEMS:
-        issues.append(f"menos de {MIN_PRACTICE_ITEMS} problemas o tareas")
-    if len(data.get("common_errors", [])) < MIN_COMMON_ERRORS:
-        issues.append(f"menos de {MIN_COMMON_ERRORS} errores frecuentes")
-    return words, issues
 
 
 def audit_course_architecture(subject_id: str) -> list[str]:
@@ -185,9 +132,30 @@ def audit_course_architecture(subject_id: str) -> list[str]:
     return issues
 
 
+def audit_units(subject_id: str) -> tuple[list[Path], int, set[str], int, list[str]]:
+    paths = sorted((UNIT_ROOT / subject_id).glob("unit-*.json"))
+    total_words = 0
+    schema_versions: set[str] = set()
+    mirrored_units = 0
+    issues: list[str] = []
+    for path in paths:
+        try:
+            data = load_json(path)
+            schema_versions.add(str(data.get("schema_version", "")))
+            total_words += count_words(data)
+            _, mirrored = validate_generated_units.validate_unit(path)
+            mirrored_units += int(mirrored)
+        except (ValueError, TypeError, json.JSONDecodeError) as error:
+            issues.append(f"{path.name}: {error}")
+    return paths, total_words, schema_versions, mirrored_units, issues
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Audita la integridad de la arquitectura del curso sin usar extensión textual como criterio de completitud."
+        description=(
+            "Audita la arquitectura de curso y reutiliza el validador canónico de unidades. "
+            "La extensión textual se informa, pero no determina completitud."
+        )
     )
     parser.add_argument("--subject", help="Limita la auditoría a un subject_id.")
     parser.add_argument(
@@ -206,21 +174,7 @@ def main() -> int:
 
     failed_subjects = 0
     for subject_id in generated_subjects:
-        paths = sorted((UNIT_ROOT / subject_id).glob("unit-*.json"))
-        total_words = 0
-        unit_issues: list[str] = []
-        schema_versions: set[str] = set()
-        for path in paths:
-            try:
-                data = load_json(path)
-                schema_versions.add(str(data.get("schema_version", "")))
-                words, issues = audit_unit(data)
-                total_words += words
-                if issues:
-                    unit_issues.append(f"{path.name}: " + "; ".join(issues))
-            except (ValueError, TypeError, json.JSONDecodeError) as error:
-                unit_issues.append(f"{path.name}: JSON inválido: {error}")
-
+        paths, total_words, schema_versions, mirrored_units, unit_issues = audit_units(subject_id)
         course_issues = audit_course_architecture(subject_id)
         if len(paths) < MIN_UNITS:
             course_issues.append(f"{len(paths)} unidades; mínimo estructural {MIN_UNITS}")
@@ -231,7 +185,8 @@ def main() -> int:
         state = "ARQUITECTURA DEL CURSO VÁLIDA" if ready else "ESTRUCTURA PENDIENTE"
         print(f"\n{subject_id}: {state}")
         print(
-            f"  unidades={len(paths)} · extensión descriptiva={total_words} palabras · "
+            f"  unidades={len(paths)} · reconstrucciones trazables={mirrored_units} · "
+            f"extensión descriptiva={total_words} palabras · "
             f"esquemas={','.join(sorted(schema_versions)) or 'ninguno'}"
         )
         for issue in course_issues:
