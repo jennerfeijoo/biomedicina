@@ -1,13 +1,13 @@
 # Auditoría de progresión y redundancia — Biología del Desarrollo
 
 **Fecha:** 2026-07-27  
-**Estado:** primera pasada estructural completada; revisión léxica automatizada pendiente  
+**Estado:** revisión estructural y cribado léxico completados; revisión disciplinar de progresión pendiente  
 **Rama:** `agent/biologia-desarrollo-evidence-based`  
 **PR:** #113
 
 ## 1. Alcance de esta auditoría
 
-Esta auditoría evalúa la progresión conceptual entre las 14 unidades, los solapamientos declarados y la función pedagógica de conceptos recurrentes. No afirma todavía que dos párrafos sean duplicados palabra por palabra. La revisión léxica y la comparación sistemática de frases requieren una pasada automatizada adicional.
+Esta auditoría evalúa la progresión conceptual entre las 14 unidades, los solapamientos declarados y la función pedagógica de conceptos recurrentes. Se complementa con `LEXICAL_REDUNDANCY_AUDIT_2026-07-27.md`, que examinó 1.838 bloques pedagógicos y no detectó duplicación textual sustancial entre unidades.
 
 Se considera repetición justificada cuando un concepto:
 
@@ -38,7 +38,7 @@ La secuencia es coherente: los conceptos abstractos aparecen antes de su impleme
 
 **Solapamiento:** marcador, linaje, perturbación, rescate, función, pseudorreplicación, single-cell y spatial reaparecen en casi todas las unidades.
 
-**Función correcta:** la Unidad 1 debe contener las definiciones canónicas y la jerarquía general de evidencia.
+**Función correcta:** la Unidad 1 contiene las definiciones canónicas y la jerarquía general de evidencia.
 
 **Regla editorial:** las unidades posteriores no deben redefinir la jerarquía completa. Deben indicar qué inferencia específica cambia en el sistema estudiado.
 
@@ -56,7 +56,7 @@ Ejemplo de progresión válida:
 
 **Riesgo de repetición:** volver a explicar meiosis o gametogénesis completa dentro de la organogénesis gonadal.
 
-**Resolución:** la Unidad 11 debe comenzar desde la llegada o presencia de progenitores germinales y centrarse en la interacción con el primordio somático. Los detalles meióticos permanecen en la Unidad 2.
+**Resolución:** la Unidad 11 comienza desde la llegada o presencia de progenitores germinales y se centra en la interacción con el primordio somático. Los detalles meióticos permanecen en la Unidad 2.
 
 ### 3.3 Unidades 4 y 13: implantación, trofoblasto y placenta
 
@@ -76,7 +76,7 @@ Ejemplo de progresión válida:
 
 **Riesgo de repetición:** repetir la teoría matemática del oscilador en la Unidad 9.
 
-**Resolución:** la Unidad 9 debe usar el modelo como prerrequisito y concentrarse en la conversión de fase oscilatoria en frontera anatómica, identidad somítica y derivados.
+**Resolución:** la Unidad 9 usa el modelo como prerrequisito y se concentra en la conversión de fase oscilatoria en frontera anatómica, identidad somítica y derivados.
 
 ### 3.5 Unidad 7 frente a las unidades 8–11
 
@@ -100,7 +100,7 @@ Ejemplo de progresión válida:
 
 **Riesgo de repetición:** incluir en cada unidad una lista completa de limitaciones generales de organoides.
 
-**Resolución:** cada unidad específica debe conservar solo las omisiones propias del sistema. La Unidad 12 debe ser la referencia canónica para principios generales de validación.
+**Resolución:** cada unidad específica conserva solo las omisiones propias del sistema. La Unidad 12 es la referencia canónica para principios generales de validación.
 
 ### 3.7 Unidades 13 y 14: ambiente y plasticidad
 
@@ -118,7 +118,7 @@ Ejemplo de progresión válida:
 
 Debe mantenerse donde el error cambie la interpretación del sistema, pero no como frase idéntica en todas las unidades.
 
-Variantes operativas recomendadas:
+Variantes operativas:
 
 - identidad molecular sin linaje demostrado;
 - linaje sin necesidad funcional;
@@ -126,13 +126,15 @@ Variantes operativas recomendadas:
 - actividad celular sin órgano maduro;
 - asociación molecular sin mediación causal.
 
+El cribado léxico no detectó bloques exactos ni casi duplicados asociados con este principio, lo que indica que la aplicación ya está contextualizada.
+
 ### 4.2 Trayectoria computacional no equivale a linaje
 
-Debe introducirse formalmente en la Unidad 1 y reaparecer solo cuando el tipo de trayectoria añada un problema particular: bifurcación, muestreo transversal, ciclo celular, convergencia de estados o ausencia de validación espacial.
+Se introduce formalmente en la Unidad 1 y reaparece cuando el sistema añade un problema particular: bifurcación, muestreo transversal, ciclo celular, convergencia de estados o ausencia de validación espacial.
 
 ### 4.3 Especie y estadio
 
-Es un criterio transversal obligatorio, no una advertencia decorativa. Debe integrarse en tablas, ejemplos o criterios de actividad y evitar repetirse como cierre genérico de cada sección.
+Es un criterio transversal obligatorio, no una advertencia decorativa. Debe integrarse en tablas, ejemplos o criterios de actividad y evitar repetirse como cierre genérico.
 
 ### 4.4 Unidad experimental y pseudorreplicación
 
@@ -147,7 +149,7 @@ La Unidad 1 establece la regla. Las unidades posteriores especifican la jerarqu�
 
 ### 4.5 Conexión biomédica sin inferencia clínica
 
-Debe conservarse porque el curso tiene orientación biomédica. Sin embargo, el aviso general puede centralizarse en la ficha y en los avisos editoriales. Las conexiones por unidad deben concentrarse en el mecanismo y en el límite específico.
+Debe conservarse por la orientación biomédica del curso. El aviso general se centraliza en la ficha y en avisos editoriales; las conexiones por unidad se concentran en el mecanismo y en el límite específico.
 
 ## 5. Progresión de métodos
 
@@ -160,43 +162,53 @@ Debe conservarse porque el curso tiene orientación biomédica. Sin embargo, el 
 | Single-cell y spatial | Unidad 1 | Desarrollo temprano | Atlas de órganos, placenta, timo y comparación evolutiva |
 | Organoides y SCBEM | Contexto temprano en 4–5 | Modelos por órgano | Marco de validación completo en 12 y límites humanos en 13 |
 
-La progresión es adecuada si cada reaparición aumenta la exigencia. La edición final debe evitar presentar cada método desde cero.
+La progresión es adecuada si cada reaparición aumenta la exigencia. El cribado léxico confirma que estas reapariciones no usan bloques textuales duplicados.
 
-## 6. Acciones editoriales requeridas
+## 6. Cribado léxico reproducible
 
-### Prioridad alta
+El workflow `Audit course redundancy` ejecuta `scripts/audit_course_redundancy.py`.
 
-- [ ] Sustituir definiciones repetidas por referencias breves a la unidad canónica.
-- [ ] Revisar las fronteras temporales entre Unidades 4 y 13.
-- [ ] Revisar la frontera conceptual entre oscilador general en Unidad 6 y somitogénesis en Unidad 9.
-- [ ] Mantener meiosis y gametogénesis fuera de la explicación principal de la Unidad 11.
-- [ ] Limitar en Unidades 4–11 las advertencias generales sobre organoides que ya pertenecen a la Unidad 12.
-- [ ] Distinguir explícitamente plasticidad evolutiva de asociación DOHaD entre Unidades 13 y 14.
+Resultados del 27 de julio de 2026:
 
-### Prioridad media
+- 14 unidades analizadas;
+- 1.838 bloques pedagógicos;
+- 0 grupos exactos entre unidades;
+- 0 pares casi duplicados sobre umbral;
+- 2 frases solapadas del mismo patrón de actividad en unidades 4, 8 y 11.
 
-- [ ] Variar la formulación de advertencias recurrentes según la inferencia concreta.
-- [ ] Añadir referencias cruzadas entre unidades en la futura versión pública.
-- [ ] Revisar nomenclatura de genes, proteínas y vías por especie.
-- [ ] Comprobar que ejemplos cuantitativos avanzan desde interpretación hasta diseño y crítica.
+El patrón combina trazado de linaje y perturbación. Se conserva porque representa una competencia experimental transversal aplicada con variantes específicas.
 
-### Automatización pendiente
+## 7. Acciones editoriales restantes
 
-- [ ] Extraer n-gramas y frases normalizadas para detectar coincidencias textuales.
-- [ ] Excluir términos técnicos inevitables y encabezados del análisis de similitud.
-- [ ] Revisar manualmente cada coincidencia antes de editar.
-- [ ] Generar una matriz de referencias cruzadas entre secciones.
+### Revisión disciplinar
 
-## 7. Criterio de cierre
+- [ ] Confirmar que la frontera entre Unidades 4 y 13 es clara para estudiantes.
+- [ ] Confirmar que la Unidad 9 presupone, sin repetir, el modelo de la Unidad 6.
+- [ ] Verificar que la Unidad 11 no reenseñe meiosis ni gametogénesis completa.
+- [ ] Comprobar que las menciones de organoides por sistema remitan conceptualmente a la Unidad 12.
+- [ ] Verificar que DOHaD y plasticidad evolutiva permanezcan separados.
+- [ ] Evaluar densidad, continuidad y carga cognitiva de cada unidad.
 
-La auditoría de progresión se considerará completa cuando:
+### Versión pública futura
 
-1. exista un informe léxico reproducible;
-2. cada solapamiento principal tenga una unidad canónica;
-3. las unidades aplicadas no repitan marcos generales sin añadir inferencia;
-4. se incorporen referencias cruzadas;
-5. un revisor disciplinar confirme que la reducción de repetición no eliminó contexto necesario.
+- [ ] Añadir referencias cruzadas entre unidades.
+- [ ] Diseñar rutas de lectura básica, intermedia y avanzada.
+- [ ] Mantener una definición canónica para cada concepto transversal.
+- [ ] Evitar eliminar contexto necesario al abreviar advertencias.
 
-## 8. Veredicto
+## 8. Criterio de cierre
 
-La arquitectura presenta una progresión académica coherente y los solapamientos mayores tienen funciones distinguibles. El principal riesgo no es una duplicación temática estructural, sino la repetición de advertencias metodológicas y límites generales. La corrección adecuada consiste en centralizar definiciones, mantener aplicaciones específicas y añadir referencias cruzadas; no en eliminar los principios transversales.
+- [x] Auditoría estructural de solapamientos.
+- [x] Unidad canónica asignada a cada solapamiento principal.
+- [x] Cribado exacto entre unidades.
+- [x] Cribado de similitud cercana.
+- [x] Detección y revisión de frases recurrentes.
+- [x] Ausencia de duplicación textual sustancial.
+- [ ] Revisión disciplinar completa de progresión y densidad.
+- [ ] Referencias cruzadas incorporadas en la futura versión pública.
+
+## 9. Veredicto
+
+La arquitectura presenta progresión académica coherente y no contiene duplicación textual sustancial. Los solapamientos mayores cumplen funciones distinguibles y la única recurrencia léxica detectada corresponde a diseño experimental transversal.
+
+La auditoría de redundancia queda cerrada a nivel estructural y automatizado. La revisión pendiente requiere juicio disciplinar sobre densidad, secuencia y carga cognitiva; no se resolverá mediante eliminación automática de texto.
