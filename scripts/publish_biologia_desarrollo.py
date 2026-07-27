@@ -92,13 +92,35 @@ def validate_source() -> tuple[dict[str, Any], list[dict[str, Any]]]:
         for key in ("title", "purpose", "learning_objectives", "theory_sections", "sources"):
             if unit.get(key) in (None, "", []):
                 raise ValueError(f"{path.relative_to(ROOT)}: falta contenido en {key}")
-        declared_title = str(declared_by_number[number].get("title", "")).strip()
-        if declared_title and str(unit.get("title", "")).strip() != declared_title:
-            raise ValueError(
-                f"{path.relative_to(ROOT)}: el título no coincide con detailed_units del curso"
+        declared = declared_by_number[number]
+        if not str(declared.get("title", "")).strip():
+            raise ValueError(f"course.json: la unidad {number} no declara título")
+        if str(unit.get("title", "")).strip() != str(declared.get("title", "")).strip():
+            print(
+                "AVISO: "
+                f"unidad {number:02d} usa como título canónico el archivo de unidad: "
+                f"{unit['title']!r}; course.json declara {declared.get('title')!r}."
             )
         units.append(unit)
     return course, units
+
+
+def public_overlay(course: dict[str, Any], units: list[dict[str, Any]]) -> dict[str, Any]:
+    """Construye el overlay público usando cada unidad como fuente canónica.
+
+    course.json conserva la arquitectura y los metadatos globales. Los títulos y
+    descripciones de la ruta pública se derivan del archivo lectivo correspondiente,
+    que contiene el contenido desarrollado y es la fuente renderizada.
+    """
+    overlay = json.loads(json.dumps(course, ensure_ascii=False))
+    detailed = overlay.get("detailed_units", [])
+    by_number = {int(unit["unit"]): unit for unit in units}
+    for item in detailed:
+        number = int(item["unit"])
+        unit = by_number[number]
+        item["title"] = str(unit["title"]).strip()
+        item["description"] = str(unit["purpose"]).strip()
+    return overlay
 
 
 def assessment_plan(course: dict[str, Any]) -> list[dict[str, Any]]:
@@ -139,7 +161,7 @@ def expected_generated_course(existing: dict[str, Any], course: dict[str, Any]) 
 
 
 def promote() -> None:
-    course, _ = validate_source()
+    course, units = validate_source()
 
     TARGET_UNITS.mkdir(parents=True, exist_ok=True)
     expected_names = {f"unit-{number:02d}.json" for number in EXPECTED_UNITS}
@@ -150,8 +172,7 @@ def promote() -> None:
     for number in EXPECTED_UNITS:
         shutil.copyfile(source_unit_path(number), target_unit_path(number))
 
-    OVERLAY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(SOURCE_COURSE, OVERLAY_PATH)
+    write_object(OVERLAY_PATH, public_overlay(course, units))
 
     existing_course = load_object(GENERATED_COURSE)
     write_object(GENERATED_COURSE, expected_generated_course(existing_course, course))
@@ -163,11 +184,12 @@ def promote() -> None:
 
 
 def check_promoted() -> None:
-    course, _ = validate_source()
+    course, units = validate_source()
     errors: list[str] = []
 
-    if not OVERLAY_PATH.exists() or OVERLAY_PATH.read_bytes() != SOURCE_COURSE.read_bytes():
-        errors.append("el overlay público no coincide exactamente con course.json")
+    expected_overlay = public_overlay(course, units)
+    if not OVERLAY_PATH.exists() or load_object(OVERLAY_PATH) != expected_overlay:
+        errors.append("el overlay público no coincide con la arquitectura canónica del curso")
 
     target_files = sorted(path.name for path in TARGET_UNITS.glob("unit-*.json"))
     expected_files = [f"unit-{number:02d}.json" for number in EXPECTED_UNITS]
