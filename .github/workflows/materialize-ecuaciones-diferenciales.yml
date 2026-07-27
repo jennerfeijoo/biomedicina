@@ -37,11 +37,33 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Reassemble and verify redevelopment package
+      - name: Reassemble redevelopment transport
         shell: bash
         run: |
           set -euo pipefail
           cat data/bootstrap/ecuaciones-diferenciales/part-*.txt > /tmp/edo.bundle.b64
+          {
+            echo 'Expected base64 bytes: 68216'
+            echo 'Expected base64 SHA-256: 3b82a3909345c28eaa93e15689ab385b364630e506046dff1d4522b7ec09543e'
+            wc -c /tmp/edo.bundle.b64
+            sha256sum /tmp/edo.bundle.b64
+            wc -c data/bootstrap/ecuaciones-diferenciales/part-*.txt
+            sha256sum data/bootstrap/ecuaciones-diferenciales/part-*.txt
+          } > /tmp/edo-transport-diagnostic.txt
+          cat /tmp/edo-transport-diagnostic.txt
+
+      - name: Upload transport diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: differential-equations-transport-diagnostic
+          path: /tmp/edo-transport-diagnostic.txt
+          if-no-files-found: error
+
+      - name: Verify and extract redevelopment package
+        shell: bash
+        run: |
+          set -euo pipefail
           echo '3b82a3909345c28eaa93e15689ab385b364630e506046dff1d4522b7ec09543e  /tmp/edo.bundle.b64' | sha256sum -c -
           base64 -d /tmp/edo.bundle.b64 > /tmp/edo.bundle.tar.gz
           echo 'd31f23fbf3f570a879820a89f9c14a4c402af6ac2b22dd3b9098c5ca53b12fd3  /tmp/edo.bundle.tar.gz' | sha256sum -c -
