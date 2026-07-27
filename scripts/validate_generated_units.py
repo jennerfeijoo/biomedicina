@@ -8,8 +8,10 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 UNIT_ROOT = ROOT / "data" / "generated_units"
+REDEVELOPMENT_ROOT = ROOT / "data" / "course_redevelopment"
 URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
+
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -17,6 +19,7 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("la raíz debe ser un objeto JSON")
     return data
+
 
 
 def collect_text(value: Any, *, key: str = "") -> list[str]:
@@ -39,12 +42,14 @@ def collect_text(value: Any, *, key: str = "") -> list[str]:
     return []
 
 
+
 def as_list(data: dict[str, Any], singular: str, plural: str) -> list[Any]:
     plural_value = data.get(plural)
     if isinstance(plural_value, list):
         return plural_value
     singular_value = data.get(singular)
     return [singular_value] if isinstance(singular_value, dict) else []
+
 
 
 def practice_count(data: dict[str, Any]) -> int:
@@ -59,6 +64,17 @@ def practice_count(data: dict[str, Any]) -> int:
         if isinstance(practice_set, dict) and isinstance(practice_set.get("problems"), list):
             total += len(practice_set["problems"])
     return total
+
+
+
+def normalize_prose(value: Any) -> str:
+    return " ".join(str(value or "").split()).casefold()
+
+
+
+def word_count(value: Any) -> int:
+    return len(WORD_RE.findall(str(value or "")))
+
 
 
 def validate_common(path: Path, data: dict[str, Any]) -> None:
@@ -96,6 +112,7 @@ def validate_common(path: Path, data: dict[str, Any]) -> None:
             raise ValueError(f"marcador incompleto detectado: {marker}")
 
 
+
 def validate_transitional(data: dict[str, Any]) -> None:
     if data["status"] != "complete":
         raise ValueError("en schema 1.0, status debe ser complete")
@@ -116,7 +133,9 @@ def validate_transitional(data: dict[str, Any]) -> None:
         raise ValueError("se requieren al menos tres fuentes")
 
 
+
 def validate_course(data: dict[str, Any]) -> None:
+    """Mantiene el contrato genérico existente para unidades schema 2.0."""
     if data["status"] not in {"review", "complete"}:
         raise ValueError("en schema 2.0, status debe ser review o complete")
     if len(data["learning_objectives"]) < 5:
@@ -142,18 +161,106 @@ def validate_course(data: dict[str, Any]) -> None:
         raise ValueError("schema 2.0 requiere al menos ocho problemas o tareas")
 
 
-def validate_unit(path: Path) -> int:
+
+def redevelopment_source_path(path: Path, data: dict[str, Any]) -> Path:
+    return REDEVELOPMENT_ROOT / str(data["subject_id"]) / "units" / path.name
+
+
+
+def is_exact_redevelopment_mirror(path: Path, data: dict[str, Any]) -> bool:
+    source = redevelopment_source_path(path, data)
+    return source.exists() and source.read_bytes() == path.read_bytes()
+
+
+
+def validate_redevelopment_mirror(path: Path, data: dict[str, Any]) -> None:
+    """Valida una copia exacta de una reconstrucción académica trazable.
+
+    Este perfil no altera el contrato genérico. Admite la arquitectura editorial
+    de tres párrafos y tres puntos por sección solo cuando el archivo público es
+    idéntico a su fuente en course_redevelopment, y añade controles de densidad,
+    unicidad y completitud que el contrato genérico no verifica.
+    """
+    source = redevelopment_source_path(path, data)
+    if not source.exists() or source.read_bytes() != path.read_bytes():
+        raise ValueError("la unidad no es una copia exacta de course_redevelopment")
+    if data["status"] not in {"review", "complete"}:
+        raise ValueError("la reconstrucción debe conservar status review o complete")
+    if len(data["learning_objectives"]) < 5:
+        raise ValueError("la reconstrucción requiere al menos cinco objetivos")
+
+    sections = data["theory_sections"]
+    if len(sections) < 4:
+        raise ValueError("la reconstrucción requiere al menos cuatro secciones teóricas")
+
+    seen_paragraphs: set[str] = set()
+    seen_key_points: set[str] = set()
+    theory_words = 0
+    for index, section in enumerate(sections, start=1):
+        paragraphs = section.get("paragraphs", [])
+        key_points = section.get("key_points", [])
+        if len(paragraphs) < 3:
+            raise ValueError(f"la sección teórica {index} necesita al menos tres párrafos")
+        if len(key_points) < 3:
+            raise ValueError(f"la sección teórica {index} necesita al menos tres puntos clave")
+
+        for paragraph_number, paragraph in enumerate(paragraphs, start=1):
+            count = word_count(paragraph)
+            theory_words += count
+            if count < 35:
+                raise ValueError(
+                    f"la sección {index}, párrafo {paragraph_number}, tiene {count} palabras; mínimo 35"
+                )
+            marker = normalize_prose(paragraph)
+            if marker in seen_paragraphs:
+                raise ValueError(f"párrafo teórico duplicado en la sección {index}")
+            seen_paragraphs.add(marker)
+
+        for point_number, point in enumerate(key_points, start=1):
+            if word_count(point) < 4:
+                raise ValueError(
+                    f"la sección {index}, punto clave {point_number}, es demasiado breve"
+                )
+            marker = normalize_prose(point)
+            if marker in seen_key_points:
+                raise ValueError(f"punto clave duplicado en la sección {index}")
+            seen_key_points.add(marker)
+
+    if theory_words < 750:
+        raise ValueError(f"desarrollo teórico insuficiente: {theory_words} palabras; mínimo 750")
+    if len(data["glossary"]) < 12:
+        raise ValueError("la reconstrucción requiere al menos doce términos de glosario")
+    if len(as_list(data, "worked_example", "worked_examples")) < 2:
+        raise ValueError("la reconstrucción requiere al menos dos ejemplos")
+    if len(data["common_errors"]) < 5:
+        raise ValueError("la reconstrucción requiere al menos cinco errores frecuentes")
+    if len(data["self_assessment"]) < 8:
+        raise ValueError("la reconstrucción requiere al menos ocho preguntas de autoevaluación")
+    if len(data["sources"]) < 5:
+        raise ValueError("la reconstrucción requiere al menos cinco fuentes")
+    if practice_count(data) < 8:
+        raise ValueError("la reconstrucción requiere al menos ocho problemas o tareas")
+
+
+
+def validate_unit(path: Path) -> tuple[int, bool]:
     data = load_json(path)
     validate_common(path, data)
     words = len(WORD_RE.findall(" ".join(collect_text(data))))
     schema = str(data.get("schema_version"))
+    mirrored = False
     if schema == "1.0":
         validate_transitional(data)
     elif schema == "2.0":
-        validate_course(data)
+        mirrored = is_exact_redevelopment_mirror(path, data)
+        if mirrored:
+            validate_redevelopment_mirror(path, data)
+        else:
+            validate_course(data)
     else:
         raise ValueError(f"schema_version no soportado: {schema}")
-    return words
+    return words, mirrored
+
 
 
 def main() -> int:
@@ -164,11 +271,14 @@ def main() -> int:
 
     total_words = 0
     valid_count = 0
+    mirrored_count = 0
     errors: list[str] = []
     for path in paths:
         try:
-            total_words += validate_unit(path)
+            words, mirrored = validate_unit(path)
+            total_words += words
             valid_count += 1
+            mirrored_count += int(mirrored)
         except (ValueError, TypeError, json.JSONDecodeError) as error:
             errors.append(f"ERROR {path.relative_to(ROOT)}: {error}")
 
@@ -177,7 +287,10 @@ def main() -> int:
         print(f"Validación fallida: {len(errors)} archivo(s) con errores · {valid_count} válidos")
         return 1
 
-    print(f"Unidades válidas: {valid_count} · extensión descriptiva={total_words} palabras")
+    print(
+        f"Unidades válidas: {valid_count} · reconstrucciones trazables={mirrored_count} · "
+        f"extensión descriptiva={total_words} palabras"
+    )
     print("La extensión no determina completitud ni impone límites máximos.")
     return 0
 
