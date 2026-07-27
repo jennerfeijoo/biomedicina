@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-07-27  
 **Estado:** preparado para revisión; no preparado para producción  
-**Rama:** `agent/biologia-desarrollo-evidence-based`  
-**PR:** #113
+**Rama:** `agent/biologia-desarrollo-postmerge-quality`  
+**PR de mantenimiento:** #115
 
 ## 1. Paquete disponible
 
@@ -11,8 +11,9 @@ El revisor dispone de:
 
 - ficha curricular con alcance, prerrequisitos, competencias y evaluación;
 - 14 unidades completas;
-- decisión curricular y registro de fuentes;
-- matriz de resultados, actividades, evaluación y carga provisional;
+- decisiones de alcance y registro de fuentes;
+- matriz de resultados, actividades, evaluación y carga provisional corregida;
+- rúbricas analíticas para las cinco categorías de evaluación;
 - auditoría de alcance;
 - auditoría bibliográfica;
 - auditoría estructural y léxica de redundancia;
@@ -54,10 +55,13 @@ El revisor dispone de:
 
 ### Pedagogía y carga
 
-- ¿La carga provisional de 42 horas presenciales y 62 autónomas es viable?
+- ¿La carga provisional de 42 horas presenciales, 72 autónomas y 114 totales es viable?
+- ¿Debe conservarse el excedente de 4 horas frente a la línea base de 110 horas o redistribuirse durante la adaptación institucional?
 - ¿Cada unidad diferencia adecuadamente contenido nuclear, profundización y consulta?
 - ¿Los ejemplos y actividades progresan desde interpretación hasta diseño y crítica?
 - ¿Las evaluaciones producen evidencia observable de los resultados declarados?
+- ¿Los descriptores y topes de `ASSESSMENT_RUBRICS.md` son comprensibles, aplicables y proporcionales?
+- ¿La carga de corrección de las rúbricas es viable para el tamaño de grupo previsto?
 
 ## 3. Evidencia que debe entregar el revisor
 
@@ -71,6 +75,14 @@ Para cada observación se solicita:
 - corrección propuesta;
 - riesgo de la corrección, incluido contenido que podría perderse.
 
+Para las rúbricas también se solicita indicar:
+
+- criterio afectado;
+- descriptor ambiguo o no observable;
+- evidencia estudiantil que permitiría distinguir niveles;
+- posible sesgo por idioma, formato, experiencia computacional o accesibilidad;
+- ajuste propuesto de peso, nivel o límite de puntuación.
+
 ## 4. Decisiones que no debe tomar el CI
 
 Los workflows no pueden determinar:
@@ -79,7 +91,8 @@ Los workflows no pueden determinar:
 - actualidad real de todas las fuentes;
 - claridad para estudiantes reales;
 - viabilidad de carga institucional;
-- calidad de una rúbrica;
+- calidad empírica de una rúbrica;
+- consistencia entre evaluadores;
 - legitimidad de reutilizar figuras;
 - utilidad clínica;
 - preparación para publicación.
@@ -91,11 +104,12 @@ Los workflows no pueden determinar:
 - [ ] La densidad se adapta a la carga disponible.
 - [ ] Las fuentes obligatorias están revisadas a texto completo.
 - [ ] Las lecturas están clasificadas por nivel.
-- [ ] Las rúbricas evalúan resultados observables.
+- [ ] Las rúbricas evalúan resultados observables y han sido pilotadas.
+- [ ] La calibración entre evaluadores alcanza consistencia aceptable.
 - [ ] Las licencias de materiales visuales previstos están verificadas.
 - [ ] Las correcciones del revisor están incorporadas y trazadas.
 - [ ] Una segunda comprobación confirma que las correcciones no introdujeron regresiones.
 
 ## 6. Veredicto de preparación
 
-El curso está preparado para revisión académica externa porque la arquitectura, el contenido, la trazabilidad y los riesgos están documentados. No está preparado para producción: la revisión disciplinar, curación de lecturas, licencias, rúbricas y adaptación institucional siguen pendientes.
+El curso está preparado para revisión académica externa porque la arquitectura, el contenido, la trazabilidad, la carga corregida, el diseño evaluativo y los riesgos están documentados. No está preparado para producción: siguen pendientes la revisión disciplinar, la curación de lecturas, las licencias, el pilotaje de rúbricas y la adaptación institucional.
