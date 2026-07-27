@@ -1,0 +1,107 @@
+name: Validate structured biomedical connections
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/generated-units.js'
+      - 'scripts/advanced_unit_renderer.py'
+      - 'scripts/fix_structured_biomedical_connections.py'
+      - 'data/generated_units/**'
+      - 'data/course_redevelopment/**'
+      - '.github/workflows/fix-structured-biomedical-connections.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'assets/js/generated-units.js'
+      - 'scripts/advanced_unit_renderer.py'
+      - 'scripts/fix_structured_biomedical_connections.py'
+      - 'data/generated_units/**'
+      - 'data/course_redevelopment/**'
+      - '.github/workflows/fix-structured-biomedical-connections.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: structured-biomedical-connections-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-and-repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply renderer corrections
+        run: python scripts/fix_structured_biomedical_connections.py --apply
+
+      - name: Discover affected courses
+        run: |
+          python scripts/fix_structured_biomedical_connections.py --list-subjects > structured-subjects.txt
+          cat structured-subjects.txt
+
+      - name: Regenerate affected public courses
+        shell: bash
+        run: |
+          while IFS= read -r subject; do
+            [[ -z "$subject" ]] && continue
+            python scripts/generate_site.py \
+              --force \
+              --subject "$subject" \
+              --with-units \
+              --force-authored-units
+          done < structured-subjects.txt
+
+      - name: Reject object-rendering artifacts
+        run: python scripts/fix_structured_biomedical_connections.py --check-public
+
+      - name: Validate advanced units
+        run: python scripts/validate_generated_units.py
+
+      - name: Validate public alignment
+        run: python scripts/audit_public_unit_alignment.py --strict
+
+      - name: Validate internal links
+        run: python scripts/validate_links.py
+
+      - name: Commit renderer and regenerated pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/generated-units.js scripts/advanced_unit_renderer.py
+          python - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          root = Path('.')
+          for subject in Path('structured-subjects.txt').read_text(encoding='utf-8').splitlines():
+              subject = subject.strip()
+              if not subject:
+                  continue
+              files = sorted((root / 'data' / 'generated_units' / subject).glob('unit-*.json'))
+              if not files:
+                  continue
+              data = json.loads(files[0].read_text(encoding='utf-8'))
+              area = str(data['area_id'])
+              subprocess.run(['git', 'add', '-A', '--', f'{area}/{subject}'], check=True)
+          PY
+          if git diff --cached --quiet; then
+            echo "No hay cambios de renderizado pendientes."
+            exit 0
+          fi
+          git commit -m "Fix structured biomedical connection rendering"
+          git push origin HEAD:main
