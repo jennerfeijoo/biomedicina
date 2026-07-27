@@ -7,6 +7,7 @@ on:
       - 'data/source_registry/**'
       - 'scripts/audit_course_bibliography.py'
       - 'scripts/repair_course_redevelopment_json.py'
+      - 'scripts/consolidate_course_source_registry.py'
       - '.github/workflows/audit-course-bibliography.yml'
   workflow_dispatch:
 
@@ -26,6 +27,12 @@ jobs:
           python scripts/repair_course_redevelopment_json.py \
             --subject-id biologia-desarrollo \
             --require-clean
+      - name: Validate source registry consolidation
+        if: hashFiles('scripts/consolidate_course_source_registry.py') != ''
+        run: |
+          python scripts/consolidate_course_source_registry.py \
+            --subject-id biologia-desarrollo \
+            --check
       - name: Build bibliography inventory
         id: bibliography_audit
         shell: bash
@@ -33,6 +40,9 @@ jobs:
           set +e
           python scripts/audit_course_bibliography.py \
             --subject-id biologia-desarrollo \
+            --fail-on-exact-duplicates \
+            --fail-on-incomplete \
+            --fail-on-ambiguous \
             --json-output biologia-desarrollo-bibliography.json \
             --markdown-output biologia-desarrollo-bibliography.md \
             > biologia-desarrollo-bibliography.log 2>&1
