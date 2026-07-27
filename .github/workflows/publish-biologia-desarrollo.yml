@@ -1,12 +1,23 @@
 name: Publish Biología del Desarrollo
 
 on:
+  pull_request:
+    paths:
+      - 'data/course_redevelopment/biologia-desarrollo/**'
+      - 'scripts/publish_biologia_desarrollo.py'
+      - 'scripts/validate_generated_units.py'
+      - 'scripts/generate_site.py'
+      - 'scripts/advanced_unit_renderer.py'
+      - '.github/workflows/publish-biologia-desarrollo.yml'
   push:
     branches:
       - main
     paths:
+      - 'data/course_redevelopment/biologia-desarrollo/**'
       - 'scripts/publish_biologia_desarrollo.py'
       - 'scripts/validate_generated_units.py'
+      - 'scripts/generate_site.py'
+      - 'scripts/advanced_unit_renderer.py'
       - '.github/workflows/publish-biologia-desarrollo.yml'
   workflow_dispatch:
 
@@ -14,7 +25,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-biologia-desarrollo
+  group: publish-biologia-desarrollo-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -32,10 +43,46 @@ jobs:
           python-version: '3.12'
 
       - name: Promote reconstructed course
-        run: python scripts/publish_biologia_desarrollo.py
+        id: promote
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/publish_biologia_desarrollo.py 2>&1 | tee promotion-diagnostic.txt
+
+      - name: Upload promotion diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: biologia-desarrollo-promotion-diagnostic
+          path: promotion-diagnostic.txt
+
+      - name: Enforce promotion
+        if: steps.promote.outcome != 'success'
+        run: |
+          cat promotion-diagnostic.txt
+          exit 1
 
       - name: Validate advanced units
-        run: python scripts/validate_generated_units.py
+        id: validate_units
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/validate_generated_units.py 2>&1 | tee generated-units-diagnostic.txt
+
+      - name: Upload generated-unit diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: biologia-desarrollo-generated-units-diagnostic
+          path: generated-units-diagnostic.txt
+
+      - name: Enforce advanced-unit validation
+        if: steps.validate_units.outcome != 'success'
+        run: |
+          cat generated-units-diagnostic.txt
+          exit 1
 
       - name: Generate public course and fourteen unit pages
         run: |
@@ -55,6 +102,7 @@ jobs:
         run: python scripts/publish_biologia_desarrollo.py --check-public
 
       - name: Commit public publication
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"

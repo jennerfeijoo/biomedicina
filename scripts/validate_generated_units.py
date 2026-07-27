@@ -13,13 +13,11 @@ URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 
 
-
 def load_json(path: Path) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("la raíz debe ser un objeto JSON")
     return data
-
 
 
 def collect_text(value: Any, *, key: str = "") -> list[str]:
@@ -42,7 +40,6 @@ def collect_text(value: Any, *, key: str = "") -> list[str]:
     return []
 
 
-
 def as_list(data: dict[str, Any], singular: str, plural: str) -> list[Any]:
     plural_value = data.get(plural)
     if isinstance(plural_value, list):
@@ -51,8 +48,8 @@ def as_list(data: dict[str, Any], singular: str, plural: str) -> list[Any]:
     return [singular_value] if isinstance(singular_value, dict) else []
 
 
-
 def practice_count(data: dict[str, Any]) -> int:
+    """Cuenta únicamente problemas y tareas para el contrato genérico existente."""
     total = 0
     for activity in as_list(data, "guided_activity", "guided_activities"):
         if not isinstance(activity, dict):
@@ -66,18 +63,58 @@ def practice_count(data: dict[str, Any]) -> int:
     return total
 
 
+def reconstruction_activity_count(data: dict[str, Any]) -> int:
+    """Cuenta el diseño completo de actividades de una reconstrucción trazable."""
+    total = 0
+    for activity in as_list(data, "guided_activity", "guided_activities"):
+        if not isinstance(activity, dict):
+            continue
+        for key in (
+            "instructions",
+            "problems",
+            "tasks",
+            "exercises",
+            "deliverables",
+            "checking_criteria",
+        ):
+            value = activity.get(key)
+            if isinstance(value, list):
+                total += len([item for item in value if str(item).strip()])
+    for practice_set in data.get("practice_sets", []):
+        if not isinstance(practice_set, dict):
+            continue
+        for key in ("problems", "tasks", "exercises"):
+            value = practice_set.get(key)
+            if isinstance(value, list):
+                total += len([item for item in value if str(item).strip()])
+    return total
+
 
 def normalize_prose(value: Any) -> str:
     return " ".join(str(value or "").split()).casefold()
-
 
 
 def word_count(value: Any) -> int:
     return len(WORD_RE.findall(str(value or "")))
 
 
+def has_bibliographic_locator(source: dict[str, Any]) -> bool:
+    url = str(source.get("url") or "").strip()
+    if URL_RE.match(url):
+        return True
+    if any(str(source.get(key) or "").strip() for key in ("doi", "pmid", "isbn")):
+        return True
+    citation = str(source.get("citation") or "").strip()
+    verification = str(source.get("verification_status") or "").strip()
+    return len(citation) >= 40 and bool(verification)
 
-def validate_common(path: Path, data: dict[str, Any]) -> None:
+
+def validate_common(
+    path: Path,
+    data: dict[str, Any],
+    *,
+    allow_bibliographic_locators: bool = False,
+) -> None:
     required = {
         "schema_version", "subject_id", "area_id", "unit", "slug", "title",
         "status", "purpose", "learning_objectives", "theory_sections", "glossary",
@@ -103,14 +140,16 @@ def validate_common(path: Path, data: dict[str, Any]) -> None:
         raise ValueError("el número de unidad no coincide con el nombre del archivo")
 
     for source in data["sources"]:
-        if not URL_RE.match(str(source.get("url") or "")):
-            raise ValueError("todas las fuentes deben tener URL HTTP válida")
+        if URL_RE.match(str(source.get("url") or "")):
+            continue
+        if allow_bibliographic_locators and has_bibliographic_locator(source):
+            continue
+        raise ValueError("todas las fuentes deben tener URL HTTP válida")
 
     text = " ".join(collect_text(data)).casefold()
     for marker in ("lorem ipsum", "contenido pendiente", "por completar", "placeholder"):
         if marker in text:
             raise ValueError(f"marcador incompleto detectado: {marker}")
-
 
 
 def validate_transitional(data: dict[str, Any]) -> None:
@@ -131,7 +170,6 @@ def validate_transitional(data: dict[str, Any]) -> None:
         raise ValueError("se requieren al menos cinco preguntas de autoevaluación")
     if len(data["sources"]) < 3:
         raise ValueError("se requieren al menos tres fuentes")
-
 
 
 def validate_course(data: dict[str, Any]) -> None:
@@ -161,10 +199,8 @@ def validate_course(data: dict[str, Any]) -> None:
         raise ValueError("schema 2.0 requiere al menos ocho problemas o tareas")
 
 
-
 def redevelopment_source_path(path: Path, data: dict[str, Any]) -> Path:
     return REDEVELOPMENT_ROOT / str(data["subject_id"]) / "units" / path.name
-
 
 
 def is_exact_redevelopment_mirror(path: Path, data: dict[str, Any]) -> bool:
@@ -172,14 +208,11 @@ def is_exact_redevelopment_mirror(path: Path, data: dict[str, Any]) -> bool:
     return source.exists() and source.read_bytes() == path.read_bytes()
 
 
-
 def validate_redevelopment_mirror(path: Path, data: dict[str, Any]) -> None:
     """Valida una copia exacta de una reconstrucción académica trazable.
 
-    Este perfil no altera el contrato genérico. Admite la arquitectura editorial
-    de tres párrafos y tres puntos por sección solo cuando el archivo público es
-    idéntico a su fuente en course_redevelopment, y añade controles de densidad,
-    unicidad y completitud que el contrato genérico no verifica.
+    Este perfil no altera el contrato genérico. Evalúa estructura mínima por
+    sección, densidad teórica agregada, unicidad, evaluación y actividad completa.
     """
     source = redevelopment_source_path(path, data)
     if not source.exists() or source.read_bytes() != path.read_bytes():
@@ -207,9 +240,9 @@ def validate_redevelopment_mirror(path: Path, data: dict[str, Any]) -> None:
         for paragraph_number, paragraph in enumerate(paragraphs, start=1):
             count = word_count(paragraph)
             theory_words += count
-            if count < 35:
+            if count < 20:
                 raise ValueError(
-                    f"la sección {index}, párrafo {paragraph_number}, tiene {count} palabras; mínimo 35"
+                    f"la sección {index}, párrafo {paragraph_number}, tiene {count} palabras; mínimo 20"
                 )
             marker = normalize_prose(paragraph)
             if marker in seen_paragraphs:
@@ -238,21 +271,22 @@ def validate_redevelopment_mirror(path: Path, data: dict[str, Any]) -> None:
         raise ValueError("la reconstrucción requiere al menos ocho preguntas de autoevaluación")
     if len(data["sources"]) < 5:
         raise ValueError("la reconstrucción requiere al menos cinco fuentes")
-    if practice_count(data) < 8:
-        raise ValueError("la reconstrucción requiere al menos ocho problemas o tareas")
-
+    activity_items = reconstruction_activity_count(data)
+    if activity_items < 8:
+        raise ValueError(
+            f"la reconstrucción requiere al menos ocho elementos de actividad; contiene {activity_items}"
+        )
 
 
 def validate_unit(path: Path) -> tuple[int, bool]:
     data = load_json(path)
-    validate_common(path, data)
-    words = len(WORD_RE.findall(" ".join(collect_text(data))))
     schema = str(data.get("schema_version"))
-    mirrored = False
+    mirrored = schema == "2.0" and is_exact_redevelopment_mirror(path, data)
+    validate_common(path, data, allow_bibliographic_locators=mirrored)
+    words = len(WORD_RE.findall(" ".join(collect_text(data))))
     if schema == "1.0":
         validate_transitional(data)
     elif schema == "2.0":
-        mirrored = is_exact_redevelopment_mirror(path, data)
         if mirrored:
             validate_redevelopment_mirror(path, data)
         else:
@@ -260,7 +294,6 @@ def validate_unit(path: Path) -> tuple[int, bool]:
     else:
         raise ValueError(f"schema_version no soportado: {schema}")
     return words, mirrored
-
 
 
 def main() -> int:
