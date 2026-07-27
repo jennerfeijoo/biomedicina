@@ -1,0 +1,40 @@
+name: Academic audit snapshot
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/academic-audit-snapshot.yml
+      - docs/academic-audit/**
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Package developed course sources
+        run: |
+          mkdir -p audit-snapshot
+          cp data/citonauta_curriculum.json audit-snapshot/
+          cp data/course_outlines.json audit-snapshot/ || true
+          cp -R data/generated_courses audit-snapshot/
+          cp -R data/generated_units audit-snapshot/
+          cp -R data/subjects audit-snapshot/
+          cp -R data/course_redevelopment audit-snapshot/ || true
+          cp -R data/source_registry audit-snapshot/ || true
+          cp -R data/curriculum_decisions audit-snapshot/ || true
+          cp docs/DEVELOPED_COURSES_AUDIT.md audit-snapshot/ || true
+          tar -czf academic-audit-snapshot.tar.gz audit-snapshot
+
+      - name: Upload snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: academic-audit-snapshot
+          path: academic-audit-snapshot.tar.gz
+          retention-days: 7
