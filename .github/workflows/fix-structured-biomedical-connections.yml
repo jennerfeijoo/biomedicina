@@ -70,7 +70,39 @@ jobs:
         run: python scripts/validate_generated_units.py
 
       - name: Validate public alignment
-        run: python scripts/audit_public_unit_alignment.py --strict
+        id: alignment
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/audit_public_unit_alignment.py --strict 2>&1 | tee structured-alignment.txt
+
+      - name: Capture regenerated diff
+        if: always()
+        shell: bash
+        run: |
+          git status --short > structured-git-status.txt
+          git diff --stat > structured-diff-stat.txt
+          git diff -- assets/js/generated-units.js scripts/advanced_unit_renderer.py > structured-renderer.diff
+
+      - name: Upload structured-rendering diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: structured-biomedical-connections-diagnostic
+          path: |
+            structured-subjects.txt
+            structured-alignment.txt
+            structured-git-status.txt
+            structured-diff-stat.txt
+            structured-renderer.diff
+          if-no-files-found: warn
+
+      - name: Enforce public alignment
+        if: steps.alignment.outcome != 'success'
+        run: |
+          cat structured-alignment.txt
+          exit 1
 
       - name: Validate internal links
         run: python scripts/validate_links.py
