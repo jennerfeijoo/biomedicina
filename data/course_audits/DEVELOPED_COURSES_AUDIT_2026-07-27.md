@@ -4,14 +4,14 @@ Esta auditoría separa publicación técnica, desarrollo lectivo y revisión aca
 
 ## Resumen
 
-- Paquetes reconstruidos: 3
-- Paquetes publicados y sincronizados: 3
+- Paquetes reconstruidos: 4
+- Paquetes publicados y sincronizados: 4
 - Paquetes sin publicar o desincronizados: 0
 - Paquetes con revisión académica completa: 0
 - Asignaturas del catálogo con contenido desarrollado: 29
 - Asignaturas completamente desarrolladas: 29
 - Asignaturas parcialmente desarrolladas: 0
-- Unidades avanzadas: 189
+- Unidades avanzadas: 193
 - Unidades autorales: 0
 - Unidades fallback dentro de cursos desarrollados: 0
 - Páginas ausentes dentro de cursos desarrollados: 0
@@ -22,6 +22,7 @@ Esta auditoría separa publicación técnica, desarrollo lectivo y revisión aca
 |---|---|---:|---:|---:|---:|---:|
 | Bioinformática (`bioinformatica`) | review | 6 | sí | sí | sí | no |
 | Biología del Desarrollo (`biologia-desarrollo`) | review | 14 | sí | sí | sí | no |
+| Ecuaciones Diferenciales para Biomedicina Computacional (`ecuaciones-diferenciales`) | review | 10 | sí | sí | sí | no |
 | Fisiología Humana I (`fisiologia-humana-i`) | review | 6 | sí | sí | sí | no |
 
 ## Asignaturas con contenido desarrollado
@@ -48,7 +49,7 @@ Esta auditoría separa publicación técnica, desarrollo lectivo y revisión aca
 | ciencias-basicas | Bioestadística (`bioestadistica`) | 8 | 0 | 0 | 0 | 8 | sí |
 | ciencias-basicas | Biofísica (`biofisica`) | 6 | 0 | 0 | 0 | 6 | sí |
 | ciencias-basicas | Cálculo (`calculo`) | 6 | 0 | 0 | 0 | 6 | sí |
-| ciencias-basicas | Ecuaciones Diferenciales (`ecuaciones-diferenciales`) | 6 | 0 | 0 | 0 | 6 | sí |
+| ciencias-basicas | Ecuaciones Diferenciales para Biomedicina Computacional (`ecuaciones-diferenciales`) | 10 | 0 | 0 | 0 | 10 | sí |
 | ciencias-basicas | Física I (`fisica-i`) | 7 | 0 | 0 | 0 | 7 | sí |
 | ciencias-basicas | Física II (`fisica-ii`) | 6 | 0 | 0 | 0 | 6 | sí |
 | ciencias-basicas | Fundamentos de Programación (`fundamentos-programacion`) | 6 | 0 | 0 | 0 | 6 | sí |
