@@ -25,7 +25,7 @@ La distribución operativa asigna una hora autónoma adicional a las unidades 6,
 | Proyecto reproducible | 25% | responder una pregunta mediante literatura, datos o simulación trazable |
 | Defensa y revisión por pares | 5% | justificar decisiones, límites y comunicación de incertidumbre |
 
-Total: **100%**.
+Total: **100%**. Los descriptores de desempeño, límites de puntuación y procedimientos de calibración se detallan en `ASSESSMENT_RUBRICS.md`.
 
 ## 3. Resultados, evidencias y evaluación
 
@@ -96,7 +96,7 @@ Toda evaluación sustantiva debe revisar:
 ## 7. Brechas que la matriz no resuelve
 
 - La carga debe adaptarse a créditos y normativa de la institución que publique el curso.
-- Falta diseñar rúbricas analíticas completas para talleres, proyecto y defensa.
+- Las rúbricas analíticas están redactadas; falta pilotarlas, calibrarlas entre evaluadores y someterlas a revisión pedagógica externa.
 - Falta seleccionar conjuntos de datos y artículos obligatorios compatibles con licencias y nivel.
 - La revisión disciplinar debe confirmar que la densidad de las unidades es viable.
 
