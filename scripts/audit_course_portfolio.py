@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 COURSE_ROOT = ROOT / "data" / "generated_courses"
 UNIT_ROOT = ROOT / "data" / "generated_units"
+REDEVELOPMENT_ROOT = ROOT / "data" / "course_redevelopment"
 ASSET_ROOT = ROOT / "assets" / "js"
 WORD_RE = re.compile(r"\b[\wÁÉÍÓÚÜÑáéíóúüñ]+\b", re.UNICODE)
 SPACE_RE = re.compile(r"\s+")
@@ -40,7 +41,7 @@ GENERIC_SOURCE_PATHS = {
     "/search/",
     "/search",
 }
-MIN_SOURCE_DOMAINS_PER_UNIT = 3
+MIN_SOURCE_ORIGINS_PER_UNIT = 3
 MIN_COURSE_RESOURCE_DOMAINS = 4
 MIN_DUPLICATE_PARAGRAPH_CHARS = 180
 
@@ -62,12 +63,77 @@ def source_domain(url: str) -> str:
 
 
 def is_generic_source(url: str) -> bool:
+    if not url:
+        return False
     parsed = urlparse(url)
     return parsed.path.casefold() in GENERIC_SOURCE_PATHS
 
 
+def normalize_doi(value: str) -> str:
+    doi = value.strip().casefold()
+    for prefix in ("https://doi.org/", "http://doi.org/", "doi:"):
+        if doi.startswith(prefix):
+            doi = doi[len(prefix):]
+    return doi.strip()
+
+
+def bibliographic_identity(source: dict[str, Any]) -> str:
+    doi = normalize_doi(str(source.get("doi") or ""))
+    if doi:
+        return "doi:" + doi
+    pmid = str(source.get("pmid") or "").strip().casefold()
+    if pmid:
+        return "pmid:" + pmid
+    isbn = re.sub(r"[^0-9xX]", "", str(source.get("isbn") or ""))
+    if isbn:
+        return "isbn:" + isbn.casefold()
+    registry = str(source.get("registry_id") or source.get("id") or "").strip().casefold()
+    if registry:
+        return "registry:" + registry
+    url = str(source.get("url") or "").strip().casefold().rstrip("/")
+    if url:
+        return "url:" + url
+    citation = normalized(str(source.get("citation") or source.get("title") or ""))
+    if citation:
+        return "citation:" + citation
+    return ""
+
+
+def bibliographic_origin(source: dict[str, Any]) -> str:
+    doi = normalize_doi(str(source.get("doi") or ""))
+    if doi:
+        prefix = doi.split("/", 1)[0]
+        return "doi-prefix:" + prefix
+    url = str(source.get("url") or "").strip()
+    domain = source_domain(url)
+    if domain and domain != "doi.org":
+        return "domain:" + domain
+    organization = normalized(str(source.get("organization") or ""))
+    if organization:
+        return "organization:" + organization
+    pmid = str(source.get("pmid") or "").strip()
+    if pmid:
+        return "index:pubmed"
+    isbn = str(source.get("isbn") or "").strip()
+    if isbn:
+        return "format:isbn"
+    registry = str(source.get("registry_id") or "").strip().casefold()
+    if registry:
+        return "registry:" + registry.split("-", 1)[0]
+    return ""
+
+
 def unit_paths(subject_id: str) -> list[Path]:
     return sorted((UNIT_ROOT / subject_id).glob("unit-*.json"))
+
+
+def redevelopment_unit_path(subject_id: str, unit_path: Path) -> Path:
+    return REDEVELOPMENT_ROOT / subject_id / "units" / unit_path.name
+
+
+def is_exact_redevelopment_mirror(subject_id: str, unit_path: Path) -> bool:
+    source = redevelopment_unit_path(subject_id, unit_path)
+    return source.exists() and source.read_bytes() == unit_path.read_bytes()
 
 
 def paragraph_records(subject_id: str, units: list[dict[str, Any]]) -> list[tuple[str, str]]:
@@ -76,10 +142,7 @@ def paragraph_records(subject_id: str, units: list[dict[str, Any]]) -> list[tupl
         label = f"{subject_id}/unit-{int(unit.get('unit', 0)):02d}"
         for section in unit.get("theory_sections", []):
             for paragraph in section.get("paragraphs", []):
-                if (
-                    isinstance(paragraph, str)
-                    and len(normalized(paragraph)) >= MIN_DUPLICATE_PARAGRAPH_CHARS
-                ):
+                if isinstance(paragraph, str) and len(normalized(paragraph)) >= MIN_DUPLICATE_PARAGRAPH_CHARS:
                     records.append((label, paragraph))
     return records
 
@@ -96,6 +159,44 @@ def audit_public_hygiene(errors: list[str]) -> None:
     workflow = ROOT / ".github" / "workflows" / "citonauta-quality.yml"
     if workflow.exists() and "contents: write" in workflow.read_text(encoding="utf-8"):
         errors.append("CI conserva permiso contents: write; los quality gates deben ser de solo lectura")
+
+
+def audit_unit_sources(
+    subject_id: str,
+    unit_path: Path,
+    unit: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+) -> tuple[list[str], set[str]]:
+    number = int(unit["unit"])
+    prefix = f"{subject_id}/unit-{number:02d}"
+    sources = [source for source in unit.get("sources", []) if isinstance(source, dict)]
+    identities = [bibliographic_identity(source) for source in sources]
+    missing_identity = sum(not identity for identity in identities)
+    if missing_identity:
+        errors.append(f"{prefix}: {missing_identity} fuente(s) sin identidad bibliográfica estable")
+    stable_identities = [identity for identity in identities if identity]
+    duplicate_count = sum(count - 1 for count in Counter(stable_identities).values() if count > 1)
+    if duplicate_count:
+        errors.append(f"{prefix}: contiene {duplicate_count} referencia(s) bibliográfica(s) duplicada(s)")
+
+    origins = {
+        origin
+        for source in sources
+        if (origin := bibliographic_origin(source))
+    }
+    if len(origins) < MIN_SOURCE_ORIGINS_PER_UNIT:
+        message = f"{prefix}: bibliografía concentrada en {len(origins)} origen(es)"
+        if is_exact_redevelopment_mirror(subject_id, unit_path):
+            warnings.append(message + "; revisar diversidad editorial en la próxima revisión disciplinar")
+        else:
+            errors.append(message)
+
+    for source in sources:
+        url = str(source.get("url") or "").strip()
+        if url and is_generic_source(url):
+            warnings.append(f"{prefix}: fuente con URL genérica: {url}")
+    return stable_identities, origins
 
 
 def audit_course(
@@ -162,26 +263,20 @@ def audit_course(
         if is_generic_source(url):
             warnings.append(f"{prefix}: recurso central con URL genérica: {url}")
 
-    all_source_urls: list[str] = []
+    all_source_identities: list[str] = []
+    all_origins: set[str] = set()
     total_words = 0
     equation_count = 0
-    for unit in units:
+    for unit_path, unit in zip(paths, units, strict=True):
         number = int(unit["unit"])
         unit_prefix = f"{prefix}/unit-{number:02d}"
         forbidden = sorted(UNIT_TIME_KEYS & unit.keys())
         if forbidden:
             errors.append(f"{unit_prefix}: conserva metadatos temporales: {', '.join(forbidden)}")
-        sources = unit.get("sources", [])
-        urls = [str(item.get("url", "")) for item in sources if isinstance(item, dict)]
-        domains = {source_domain(url) for url in urls if source_domain(url)}
-        if len(domains) < MIN_SOURCE_DOMAINS_PER_UNIT:
-            errors.append(f"{unit_prefix}: fuentes concentradas en {len(domains)} dominio(s)")
-        if len(urls) != len(set(urls)):
-            errors.append(f"{unit_prefix}: contiene fuentes duplicadas")
-        for url in urls:
-            if is_generic_source(url):
-                warnings.append(f"{unit_prefix}: fuente con URL genérica: {url}")
-        all_source_urls.extend(urls)
+
+        identities, origins = audit_unit_sources(subject_id, unit_path, unit, errors, warnings)
+        all_source_identities.extend(identities)
+        all_origins.update(origins)
 
         theory = unit.get("theory_sections", [])
         equation_count += sum(
@@ -206,7 +301,7 @@ def audit_course(
     if equation_count == 0:
         errors.append(f"{prefix}: curso cuantitativo sin ecuaciones estructuradas para MathJax")
     repeated_source_count = sum(
-        count - 1 for count in Counter(all_source_urls).values() if count > 1
+        count - 1 for count in Counter(all_source_identities).values() if count > 1
     )
     if repeated_source_count > len(units) * 3:
         warnings.append(
@@ -219,15 +314,12 @@ def audit_course(
         "units": len(units),
         "words": total_words,
         "equations": equation_count,
-        "source_domains": len(
-            {source_domain(url) for url in all_source_urls if source_domain(url)}
-        ),
+        "source_origins": len(all_origins),
+        "bibliographic_identities": len(set(all_source_identities)),
     }
 
 
-def audit_duplicate_paragraphs(
-    records: list[tuple[str, str]], errors: list[str]
-) -> None:
+def audit_duplicate_paragraphs(records: list[tuple[str, str]], errors: list[str]) -> None:
     by_text: dict[str, list[str]] = defaultdict(list)
     for label, paragraph in records:
         by_text[normalized(paragraph)].append(label)
@@ -290,7 +382,8 @@ def main() -> int:
     for subject_id, data in sorted(metrics.items()):
         print(
             f"- {subject_id}: unidades={data['units']} · palabras={data['words']} · "
-            f"ecuaciones={data['equations']} · dominios={data['source_domains']}"
+            f"ecuaciones={data['equations']} · orígenes={data['source_origins']} · "
+            f"referencias={data['bibliographic_identities']}"
         )
     for warning in warnings:
         print(f"ADVERTENCIA: {warning}")
