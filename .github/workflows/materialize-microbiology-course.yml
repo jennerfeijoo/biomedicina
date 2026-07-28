@@ -1,0 +1,78 @@
+name: Materialize medical microbiology course
+
+on:
+  push:
+    branches:
+      - agent/rebuild-microbiologia-medica-enfermedades-infecciosas
+    paths:
+      - '.github/workflows/materialize-microbiology-course.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/rebuild-microbiologia-medica-enfermedades-infecciosas
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify and extract validated course package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/materialize-microbiology/part*.b64 > /tmp/microbiology.b64
+          echo 'e03f4b1b61338fa92db4b2706ddd99197c6691769b07d6367900d78767f4808d  /tmp/microbiology.b64' | sha256sum -c -
+          base64 --decode /tmp/microbiology.b64 > /tmp/microbiology.tar.gz
+          echo 'a1f5b6a5a9d7f6535d5db547b583a97fcfd50f82704194b640bf2322886ec2e6  /tmp/microbiology.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/microbiology.tar.gz -C .
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          subject = 'microbiologia-medica-enfermedades-infecciosas'
+          package = Path('data/course_redevelopment') / subject
+          expected = [
+              package / 'course.json',
+              Path('data/curriculum_decisions') / f'{subject}.json',
+              Path('data/curriculum_coverage') / f'{subject}-2026.json',
+              Path('data/source_registry') / f'{subject}.json',
+          ]
+          expected.extend(package / 'units' / f'unit-{number:02d}.json' for number in range(1, 9))
+          expected.extend([
+              package / 'SCOPE_RESOLUTIONS.md',
+              package / 'ASSESSMENT_RUBRICS.md',
+              package / 'REVIEW_READINESS.md',
+          ])
+
+          for path in expected:
+              if not path.exists():
+                  raise FileNotFoundError(path)
+              if path.suffix == '.json':
+                  data = json.loads(path.read_text(encoding='utf-8'))
+                  if not isinstance(data, dict):
+                      raise ValueError(f'{path}: la raíz no es un objeto JSON')
+                  print('OK', path)
+
+          units = sorted((package / 'units').glob('unit-*.json'))
+          if len(units) != 8:
+              raise ValueError(f'se esperaban 8 unidades y se encontraron {len(units)}')
+          PY
+          rm -rf .github/materialize-microbiology
+          rm -f .github/workflows/materialize-microbiology-course.yml
+
+      - name: Commit course package
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Materialize medical microbiology course package'
+          git push origin HEAD:agent/rebuild-microbiologia-medica-enfermedades-infecciosas
