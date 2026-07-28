@@ -28,11 +28,13 @@ El curso permanece en `review`. Los validadores automáticos pueden comprobar es
 - ¿Las guías de reporte se usan como estándares de transparencia y no como escalas de calidad?
 - ¿Riesgo de sesgo, síntesis y certeza se interpretan sin sobrestimar precisión estadística?
 
-## Validación técnica pendiente de cierre
+## Validación técnica materializada
 
-El paquete contiene descriptor, decisión curricular, registro de fuentes, ocho unidades, resoluciones de alcance y rúbricas. La publicación automática debe promover el curso, generar JSON y HTML derivados, actualizar currículo, catálogo e índices y ejecutar los controles integrales antes de considerar el artefacto técnicamente cerrado.
+El paquete fuente y sus ocho unidades fueron promovidos y publicados en la rama de revisión. La publicación automática generó los JSON y HTML derivados, retiró la asignatura del inventario provisional, la incorporó al currículo canónico y actualizó catálogo, área, índices y estado editorial.
 
-Esta evidencia técnica no constituirá aprobación ética, certificación GCP, asesoramiento regulatorio ni revisión disciplinar externa. Las referencias internacionales deben adaptarse a legislación, autoridades, comités y procedimientos locales cuando se utilicen en investigación real.
+La ronda integral comprobó esquema 2.0, densidad teórica, ecuaciones estructuradas, actividades, bibliografía, diversidad de fuentes, redundancia, conexiones biomédicas, matriz de cobertura, arquitectura del curso, alineación pública, enlaces internos y contrato de publicación. También confirmó que el contenido permanece en `review` y que no se presenta una guía de reporte, la aleatorización ni un método de ajuste como certificación automática de validez.
+
+Esta evidencia técnica no constituye aprobación ética, certificación GCP, asesoramiento regulatorio ni revisión disciplinar externa. Las referencias internacionales deben adaptarse a legislación, autoridades, comités y procedimientos locales cuando se utilicen en investigación real.
 
 ## Evidencia mínima para promover a `complete`
 
