@@ -1,0 +1,189 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "omicas-celula-unica-biologia-espacial",
+  "area_id": "biologicas-medicas",
+  "unit": 7,
+  "slug": "arquitectura-espacial-imagenes-registro-segmentacion",
+  "title": "Arquitectura espacial, imágenes, registro y segmentación",
+  "status": "review",
+  "purpose": "Representar y auditar datos espaciales multimodales conservando tecnología, imagen, escala, sistema de coordenadas, transformaciones, segmentación, tablas moleculares y procedencia.",
+  "learning_objectives": [
+    "Comparar tecnologías spot-based, bead-based e imaging-based según resolución y cobertura.",
+    "Relacionar spots, moléculas, células, segmentos e imágenes con la unidad observada.",
+    "Conservar sistemas de coordenadas, escala, orientación y transformaciones entre elementos.",
+    "Evaluar registro entre histología, canales moleculares y secciones o rondas.",
+    "Analizar segmentación nuclear o celular mediante métricas y consecuencias downstream.",
+    "Construir objetos SpatialData interoperables con imágenes, puntos, formas y tablas versionadas."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Tecnologías espaciales, resolución y unidad observada",
+      "paragraphs": [
+        "Las tecnologías espaciales difieren en cómo capturan moléculas y posición. Las plataformas spot-based asignan conteos a áreas que pueden contener varias células; las bead-based usan unidades más pequeñas y distribución irregular; las imaging-based detectan moléculas mediante ciclos de hibridación o secuenciación in situ con paneles definidos. La resolución nominal no equivale siempre a resolución celular: difusión, tamaño del spot, densidad y segmentación determinan qué unidad puede interpretarse.",
+        "La cobertura también cambia. Un método de captura no dirigida puede medir miles de genes con menor resolución celular, mientras una tecnología imaging-based ofrece localización subcelular para un panel limitado. La elección depende de si la pregunta requiere descubrimiento transcriptómico, identificación de nichos, arquitectura anatómica o validación de genes. Preservación, espesor, autofluorescencia, permeabilización y calidad histológica condicionan el resultado.",
+        "La unidad observada debe declararse. En un spot, el perfil es una mezcla y no debe etiquetarse automáticamente como célula. En métodos con moléculas individuales, la asignación a células depende de segmentación y expansión de fronteras. En datos sin segmentar pueden analizarse campos moleculares o bins. Las inferencias deben corresponder a la unidad real y a su incertidumbre, evitando convertir una alta resolución gráfica en certeza biológica."
+      ],
+      "key_points": [
+        "Resolución nominal y resolución biológica no son equivalentes.",
+        "Spot, bead, molécula y célula representan unidades distintas.",
+        "Cobertura génica y resolución espacial suelen implicar compromisos.",
+        "La tecnología se elige según la pregunta y la validación disponible."
+      ],
+      "equations": [
+        {
+          "latex": "SpotExpression_s = sum_k CellContribution_s,k + Background_s",
+          "meaning": "Un spot puede mezclar contribuciones de varias poblaciones y señal de fondo.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Imágenes, escalas y sistemas de coordenadas",
+      "paragraphs": [
+        "Un experimento espacial puede incluir histología, fluorescencia, canales de proteínas, puntos moleculares, polígonos celulares y tablas. Cada elemento tiene resolución, origen, orientación y sistema de coordenadas. Los píxeles de una imagen de alta resolución no coinciden automáticamente con coordenadas de spots o moléculas. Deben conservarse factores de escala, unidades físicas, transformaciones y el nivel piramidal usado para visualizar o calcular.",
+        "Las imágenes multiescala permiten explorar tejidos grandes sin cargar todos los píxeles, pero un análisis cuantitativo necesita especificar el nivel original y cualquier remuestreo. Rotaciones, flips y crops realizados para figuras pueden desalinear datos si no se registran como transformaciones. El eje y puede aumentar hacia abajo en imágenes y hacia arriba en coordenadas cartesianas. La orientación anatómica debe documentarse y no inferirse solo de una captura de pantalla.",
+        "SpatialData organiza imágenes, labels, puntos, formas y tablas con transformaciones entre sistemas. Esto permite mantener coordenadas nativas y crear vistas comunes sin sobrescribir. La serialización interoperable facilita trabajar con conjuntos grandes y varias herramientas. El contrato se valida comprobando que centroides caen dentro de segmentos, spots sobre el tejido y moléculas en el campo esperado. Cualquier transformación manual debe versionarse y revisarse visualmente."
+      ],
+      "key_points": [
+        "Cada elemento espacial tiene escala, origen y orientación propios.",
+        "Recortes y flips deben representarse como transformaciones, no como ediciones silenciosas.",
+        "Las imágenes multiescala no eliminan la necesidad de unidades físicas.",
+        "SpatialData conserva elementos nativos y transformaciones interoperables."
+      ],
+      "equations": [
+        {
+          "latex": "x_target = Transform_source_to_target(x_source)",
+          "meaning": "Las coordenadas se convierten mediante una transformación explícita y versionada entre sistemas.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Registro, deformación y validación geométrica",
+      "paragraphs": [
+        "El registro alinea imágenes o modalidades mediante transformaciones rígidas, afines o deformables. Una transformación rígida modela rotación y traslación; una afín añade escala y cizallamiento; una deformable captura distorsiones locales. Mayor flexibilidad puede mejorar apariencia y a la vez introducir deformaciones no plausibles. El modelo se elige según preparación, cortes, rondas y anatomía, y se valida con landmarks independientes y error espacial.",
+        "La histología y los canales moleculares pueden diferir en contraste, artefactos y tejido perdido. Los algoritmos basados en intensidad pueden fallar si las modalidades no comparten patrones. Landmarks, bordes, núcleos o estructuras anatómicas ayudan. La inspección visual es necesaria pero insuficiente; se cuantifican distancias de puntos, solapamiento de regiones y errores por zona. Un error pequeño promedio puede ocultar fallos locales cerca de una estructura de interés.",
+        "Al registrar secciones consecutivas no se asume correspondencia célula a célula, porque representan planos distintos y el tejido se deforma. Las comparaciones se realizan a nivel de regiones o patrones con tolerancia. La propagación de error debe considerarse en cualquier conclusión de colocalización o distancia. La transformación original, inversa, parámetros y software se conservan para reconstruir el análisis y evitar aplicar dos veces una alineación."
+      ],
+      "key_points": [
+        "Más flexibilidad geométrica no garantiza un registro más verdadero.",
+        "Landmarks independientes permiten cuantificar error.",
+        "El error espacial varía localmente y se propaga a análisis posteriores.",
+        "Secciones consecutivas no contienen las mismas células."
+      ],
+      "equations": [
+        {
+          "latex": "TRE = mean_i distance(Transform(p_i), q_i)",
+          "meaning": "Target registration error medio entre landmarks correspondientes; debe acompañarse de distribución y errores locales.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Segmentación, asignación molecular y control de calidad espacial",
+      "paragraphs": [
+        "La segmentación define núcleos, células o regiones y condiciona el perfil molecular asignado. La segmentación nuclear puede ser robusta, pero omite citoplasma; expandir fronteras aproxima células y puede mezclar vecinas. Marcadores de membrana mejoran contornos en ciertos tejidos, aunque no todas las células expresan el panel. La anatomía, densidad y calidad de imagen determinan el método. Se conservan máscaras, probabilidades y versión.",
+        "Las métricas geométricas como Dice o distancia de superficie comparan con una referencia, pero el impacto downstream también importa. Dos máscaras similares pueden asignar diferentes moléculas cerca del borde y cambiar anotación o interacción. Se evalúan conteos por segmento, tamaño, forma, solapamiento, moléculas no asignadas y mezcla de marcadores incompatibles. Un segmento enorme o con varios núcleos puede ser merge; uno muy pequeño puede ser fragmento.",
+        "El control de calidad espacial incluye cobertura de tejido, densidad molecular, fondo, saturación, intensidad, artefactos, regiones dañadas y diferencias entre secciones. Los filtros no deben eliminar zonas patológicas solo por ser densas, necróticas o autofluorescentes. Se crean máscaras de exclusión con motivo y revisión histológica. La auditoría conecta imagen, moléculas, segmentos, metadatos y transformaciones, y verifica que la selección no cree patrones espaciales artificiales."
+      ],
+      "key_points": [
+        "La segmentación determina qué moléculas se atribuyen a cada célula.",
+        "Núcleo, célula y región son objetivos geométricos diferentes.",
+        "El impacto molecular complementa métricas de solapamiento.",
+        "El filtrado espacial debe respetar patología y anatomía."
+      ],
+      "equations": [
+        {
+          "latex": "AssignedCounts_g,c = number of molecules g falling inside Segment_c",
+          "meaning": "Los conteos celulares dependen directamente de la geometría y reglas de asignación del segmento.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Spot-based", "definition": "Tecnología que agrega señal molecular en áreas espaciales discretas."},
+    {"term": "Imaging-based", "definition": "Tecnología que localiza moléculas mediante ciclos de imagen o detección in situ."},
+    {"term": "Resolución espacial", "definition": "Escala mínima a la que puede distinguirse señal con fiabilidad."},
+    {"term": "Sistema de coordenadas", "definition": "Marco de referencia con origen, ejes, orientación y unidades."},
+    {"term": "Transformación", "definition": "Función que mapea posiciones entre sistemas de coordenadas."},
+    {"term": "Imagen multiescala", "definition": "Pirámide de resoluciones de una misma imagen."},
+    {"term": "Registro", "definition": "Alineamiento geométrico de imágenes o modalidades."},
+    {"term": "Transformación afín", "definition": "Mapeo con traslación, rotación, escala y cizallamiento."},
+    {"term": "Landmark", "definition": "Punto anatómico o geométrico usado para alinear o validar."},
+    {"term": "TRE", "definition": "Error de registro medido en landmarks de destino."},
+    {"term": "Segmentación", "definition": "Delimitación de núcleos, células o regiones en una imagen."},
+    {"term": "SpatialData", "definition": "Modelo interoperable para imágenes, puntos, formas, labels, tablas y transformaciones."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Spot etiquetado como tipo celular",
+      "scenario": "Un spot de 55 micrómetros expresa marcadores de epitelio y macrófagos y se etiqueta como macrófago.",
+      "reasoning_steps": ["Reconocer mezcla multicelular.", "Revisar histología y tamaño.", "Aplicar deconvolución con referencia.", "Reportar proporciones e incertidumbre."],
+      "interpretation": "La etiqueta única ocultaba una mezcla esperable por resolución del spot.",
+      "limitations": ["La referencia puede no contener todos los estados.", "La deconvolución no produce conteos celulares observados."
+      ]
+    },
+    {
+      "title": "Registro visualmente correcto con error local",
+      "scenario": "Una imagen alineada parece adecuada globalmente, pero landmarks cerca del tumor tienen errores de 40 micrómetros.",
+      "reasoning_steps": ["Calcular TRE por región.", "Inspeccionar deformación local.", "Comparar modelo más simple.", "Propagar incertidumbre al análisis de vecindad."],
+      "interpretation": "La apariencia global no garantizaba precisión en la región clínicamente relevante.",
+      "limitations": ["Los landmarks también tienen error.", "La deformación tisular puede impedir correspondencia exacta."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Construcción de un objeto espacial trazable",
+      "instructions": ["Definir tecnología y unidad observada.", "Registrar imágenes y coordenadas.", "Evaluar segmentación.", "Crear SpatialData con procedencia."],
+      "problems": [
+        "Comparar spot-based e imaging-based para una pregunta.",
+        "Distinguir resolución nominal y celular.",
+        "Definir sistemas de coordenadas para imagen y moléculas.",
+        "Construir una transformación afín conceptual.",
+        "Calcular TRE de landmarks.",
+        "Evaluar segmentación nuclear frente a celular.",
+        "Detectar merges y fragmentos mediante métricas.",
+        "Diseñar un control de calidad que preserve regiones patológicas."
+      ],
+      "checking_criteria": ["La unidad observada es explícita.", "Las transformaciones están versionadas.", "El registro tiene validación geométrica.", "La segmentación se evalúa por geometría y efecto molecular."
+      ]
+    }
+  ],
+  "common_errors": [
+    {"error": "Llamar célula a cada spot.", "correction": "Interpretar la unidad según resolución y mezcla."},
+    {"error": "Guardar coordenadas sin escala ni orientación.", "correction": "Conservar sistema, unidades y transformaciones."},
+    {"error": "Elegir registro por apariencia visual.", "correction": "Usar landmarks y errores locales."},
+    {"error": "Tratar secciones consecutivas como las mismas células.", "correction": "Comparar regiones y patrones con tolerancia."},
+    {"error": "Validar segmentación solo con Dice.", "correction": "Añadir asignación molecular y consecuencias downstream."
+    }
+  ],
+  "self_assessment": [
+    {"question": "¿Un spot equivale a una célula?", "answer": "No; puede contener varias células y fondo."},
+    {"question": "¿Qué limita un panel imaging-based?", "answer": "Solo detecta genes o proteínas seleccionados."},
+    {"question": "¿Qué define un sistema de coordenadas?", "answer": "Origen, ejes, orientación, escala y unidades."},
+    {"question": "¿Qué aporta una imagen multiescala?", "answer": "Visualización y acceso eficiente a varias resoluciones."},
+    {"question": "¿Qué diferencia hay entre registro rígido y deformable?", "answer": "El deformable permite cambios locales además de rotación y traslación."},
+    {"question": "¿Qué mide TRE?", "answer": "Distancia entre landmarks alineados y su objetivo."},
+    {"question": "¿Por qué segmentar afecta expresión?", "answer": "Determina qué moléculas se asignan a cada célula."},
+    {"question": "¿Qué conserva SpatialData?", "answer": "Elementos espaciales, tablas, sistemas y transformaciones."
+    }
+  ],
+  "biomedical_connections": [
+    {"topic": "Histología", "connection": "Imagen, anatomía y registro contextualizan perfiles moleculares."},
+    {"topic": "Microambiente tumoral", "connection": "Resolución y segmentación condicionan mezcla y vecindad celular."},
+    {"topic": "Neuroanatomía", "connection": "Sistemas de coordenadas permiten relacionar expresión y regiones."},
+    {"topic": "Patología digital", "connection": "La validación geométrica conecta datos espaciales con estructuras diagnósticas."
+    }
+  ],
+  "sources": [
+    {"title": "SpatialData", "organization": "scverse", "url": "https://spatialdata.scverse.org/en/stable/", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "SpatialData design document", "organization": "scverse", "url": "https://spatialdata.scverse.org/en/latest/design_doc.html", "type": "especificación técnica", "verification_status": "verified_directly"},
+    {"title": "Squidpy", "organization": "scverse", "url": "https://squidpy.readthedocs.io/en/stable/", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "Single-cell best practices", "organization": "Single-cell Best Practices Consortium", "url": "https://www.sc-best-practices.org/", "type": "recurso metodológico", "verification_status": "verified_directly"},
+    {"title": "Best practices for single-cell analysis across modalities", "organization": "Nature Reviews Genetics", "url": "https://www.nature.com/articles/s41576-023-00586-w", "type": "revisión metodológica", "verification_status": "metadata_verified"}
+  ],
+  "editorial_notice": "Material educativo en estado review. La resolución gráfica, el registro y la segmentación no garantizan correspondencia celular ni relevancia clínica sin validación geométrica, histológica y biológica."
+}

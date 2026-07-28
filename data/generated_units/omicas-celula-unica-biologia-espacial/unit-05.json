@@ -1,0 +1,189 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "omicas-celula-unica-biologia-espacial",
+  "area_id": "biologicas-medicas",
+  "unit": 5,
+  "slug": "inferencia-muestras-composicion",
+  "title": "Inferencia entre muestras y composición celular",
+  "status": "review",
+  "purpose": "Comparar condiciones biológicas respetando donantes o muestras como réplicas, mediante pseudobulk, modelos de estado diferencial, abundancia diferencial, covariables y análisis de sensibilidad.",
+  "learning_objectives": [
+    "Explicar por qué las células de una muestra son observaciones dependientes.",
+    "Construir conteos pseudobulk por muestra y población celular.",
+    "Distinguir expresión diferencial, estado diferencial y abundancia diferencial.",
+    "Diseñar modelos con condición, covariables, pares, centros y efectos jerárquicos.",
+    "Evaluar composición celular sin confundir proporciones y conteos absolutos.",
+    "Interpretar multiplicidad, tamaños de efecto, heterogeneidad y sensibilidad de anotación."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Pseudorreplicación y niveles de inferencia",
+      "paragraphs": [
+        "En un estudio multimuesta, las células están anidadas dentro de donantes, animales, cultivos o secciones. Comparten genética, ambiente, procesamiento y exposición. Una prueba que trata cada célula como réplica independiente subestima la variación entre muestras y produce p-valores artificialmente pequeños. El número de células mejora la estimación del perfil de una muestra, pero la generalización a una población depende de cuántas unidades biológicas independientes fueron observadas.",
+        "La pregunta debe especificar el nivel de inferencia. Puede describirse heterogeneidad dentro de una muestra, comparar perfiles medios entre donantes, evaluar si una población cambia de estado o si su abundancia varía. Cada pregunta requiere una unidad y un modelo. Un estudio con un donante por grupo puede describir diferencias observadas, pero no estimar variación poblacional ni atribuirlas a la condición con confianza.",
+        "La dependencia también aparece en medidas repetidas, biopsias múltiples, regiones y lotes. Un paciente puede aportar varias muestras antes y después de tratamiento. El modelo debe conservar emparejamiento y niveles jerárquicos. Agregar sin considerar pares pierde eficiencia; tratar regiones como pacientes aumenta falsos positivos. El diseño estadístico se deriva del experimento y se registra antes de inspeccionar los contrastes más favorables."
+      ],
+      "key_points": [
+        "La muestra o donante suele ser la réplica para comparar condiciones.",
+        "Más células mejoran precisión dentro de muestra, no número de réplicas.",
+        "La unidad de inferencia depende de la pregunta y el diseño.",
+        "Pares, regiones y medidas repetidas deben modelarse explícitamente."
+      ],
+      "equations": [
+        {
+          "latex": "Cell_ij is nested within Sample_i",
+          "meaning": "La célula j comparte efectos de la muestra i y no es independiente de otras células del mismo origen.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Pseudobulk y expresión diferencial por población",
+      "paragraphs": [
+        "El enfoque pseudobulk suma conteos de células de una población dentro de cada muestra. El resultado es una matriz genes por muestras que puede analizarse con métodos establecidos para conteos bulk, preservando la unidad experimental. La agregación se realiza con conteos crudos y etiquetas definidas antes del contraste. Se conserva el número de células y la cobertura para diagnosticar poblaciones con información insuficiente.",
+        "La expresión diferencial pseudobulk pregunta si el perfil medio de una población cambia entre condiciones. El modelo puede incluir lote, edad, sexo, centro, pareja o interacción, siempre que el número de muestras permita estimarlos. Los factores de normalización se calculan sobre agregados y deben considerar cambios globales. Una población con muy pocas células en varias muestras puede producir conteos inestables; se predefinen mínimos o se modela con cautela.",
+        "La lista de genes se interpreta mediante tamaño de efecto, intervalo, consistencia y plausibilidad, no solo FDR. Un gran número de células no corrige una condición representada por pocos donantes. Se inspeccionan perfiles por muestra para detectar un único donante dominante. Los análisis pueden repetirse excluyendo muestras influyentes o usando anotaciones alternativas. Los genes usados para definir la población requieren atención a circularidad cuando también son resultado del contraste."
+      ],
+      "key_points": [
+        "Pseudobulk agrega conteos por muestra y población celular.",
+        "La inferencia usa métodos de conteo con réplicas biológicas.",
+        "Número de células y cobertura se conservan como diagnósticos.",
+        "Tamaño de efecto y consistencia entre muestras acompañan al FDR."
+      ],
+      "equations": [
+        {
+          "latex": "Pseudobulk_g,i,k = sum_{cells c in sample i and type k} Count_g,c",
+          "meaning": "Conteo agregado del gen g para la población k dentro de la muestra i.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Estado diferencial, heterogeneidad y modelos jerárquicos",
+      "paragraphs": [
+        "Un promedio puede ocultar que solo una fracción de células responde o que aparecen varios estados. El análisis de estado diferencial busca cambios dentro de una población, usando pseudobulk por estado, modelos de distribución, scores o factores latentes. Las células siguen anidadas en muestras; por ello, la variación entre donantes debe incorporarse mediante agregación, efectos aleatorios o procedimientos que respeten la estructura.",
+        "Los modelos jerárquicos pueden representar variación celular y de muestra simultáneamente, pero requieren suficiente información y supuestos verificables. Incluir miles de células no resuelve la estimación de un efecto aleatorio con tres donantes. La convergencia, dispersión, balance y complejidad se revisan. En muchos casos, un pseudobulk bien especificado es más robusto y transparente que un modelo celular demasiado complejo.",
+        "Los estados pueden definirse mediante clusters, programas o variables continuas. Si se crean usando toda la cohorte, la comparación posterior puede ser parcialmente circular. Conviene validar que el estado aparece en múltiples muestras y repetir con definiciones alternativas. Las interacciones condición por tipo permiten comparar respuestas diferenciales, pero la interpretación requiere escalas compatibles. Una diferencia de significación entre tipos no demuestra una diferencia significativa entre efectos."
+      ],
+      "key_points": [
+        "El promedio puede ocultar respuestas parciales o multimodales.",
+        "Los modelos celulares deben conservar variación entre muestras.",
+        "Complejidad estadística no sustituye número de donantes.",
+        "Comparar p-valores no equivale a comparar efectos."
+      ],
+      "equations": [
+        {
+          "latex": "Expression_g,i,c = FixedEffects_i + SampleRandomEffect_i + CellResidual_i,c",
+          "meaning": "Modelo conceptual que separa efectos de condición, variación entre muestras y variación celular.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Abundancia diferencial, composición y multiplicidad",
+      "paragraphs": [
+        "La composición celular puede cambiar por expansión, pérdida, reclutamiento o sesgos de captura. Las proporciones suman uno, por lo que un aumento relativo de una población obliga a disminuir otras aunque sus conteos absolutos no cambien. Los métodos composicionales modelan esta dependencia mediante log-ratios, distribuciones multinomiales, vecindades o modelos jerárquicos. La interpretación especifica si se estudian proporciones, abundancias relativas o conteos absolutos apoyados por otra medición.",
+        "La abundancia diferencial puede evaluarse sobre tipos anotados o vecindades en un grafo. Los tipos facilitan interpretación, pero dependen de etiquetas; las vecindades detectan cambios localizados sin fronteras rígidas, aunque aumentan multiplicidad y dependencia. Se requiere replicación por muestra, ajuste de covariables y visualización por donante. Una población ausente en una muestra puede ser biología, baja captura o filtrado.",
+        "Miles de genes, tipos, estados y contrastes crean una carga de multiplicidad. El control FDR se define para familias de hipótesis y no elimina necesidad de priorización. Los análisis exploratorios se distinguen de los confirmatorios. Se reportan resultados negativos y sensibilidad a filtrado, anotación, integración y mínimos de células. Una conclusión robusta combina efecto reproducido, evidencia entre muestras, validación ortogonal y una interpretación que no confunde composición con función."
+      ],
+      "key_points": [
+        "Las proporciones celulares son composicionales y dependientes.",
+        "Abundancia relativa no equivale a conteo absoluto.",
+        "Vecindades detectan cambios continuos pero aumentan multiplicidad.",
+        "Sensibilidad a anotación y filtrado forma parte de la evidencia."
+      ],
+      "equations": [
+        {
+          "latex": "Proportion_i,k = CellCount_i,k / sum_j CellCount_i,j",
+          "meaning": "La proporción de una población depende del total y de todas las demás poblaciones de la muestra.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Pseudorreplicación", "definition": "Tratamiento de observaciones dependientes como réplicas independientes."},
+    {"term": "Pseudobulk", "definition": "Agregación de conteos celulares por muestra y población."},
+    {"term": "Unidad de inferencia", "definition": "Nivel al que se generaliza un contraste estadístico."},
+    {"term": "Expresión diferencial", "definition": "Cambio de abundancia de transcritos entre condiciones o grupos."},
+    {"term": "Estado diferencial", "definition": "Cambio de programas o distribuciones dentro de una población celular."},
+    {"term": "Abundancia diferencial", "definition": "Cambio de frecuencia relativa o absoluta de una población."},
+    {"term": "Modelo jerárquico", "definition": "Modelo con niveles anidados o efectos de grupo."},
+    {"term": "Efecto aleatorio", "definition": "Componente que representa variación entre unidades muestreadas."},
+    {"term": "Composición", "definition": "Vector de proporciones dependientes que suma un total fijo."},
+    {"term": "Log-ratio", "definition": "Transformación basada en la razón entre componentes composicionales."},
+    {"term": "FDR", "definition": "Tasa esperada de falsos descubrimientos entre resultados declarados."},
+    {"term": "Muestra influyente", "definition": "Unidad cuyo valor modifica sustancialmente la estimación o conclusión."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Inflación por células como réplicas",
+      "scenario": "Tres pacientes por grupo aportan 20.000 células y una prueba celular reporta miles de genes significativos.",
+      "reasoning_steps": ["Identificar seis réplicas reales.", "Agregar por paciente y tipo.", "Ajustar un modelo pseudobulk.", "Comparar tamaños de efecto e incertidumbre."],
+      "interpretation": "La prueba original confundía precisión celular con replicación poblacional y subestimaba variación entre pacientes.",
+      "limitations": ["Pseudobulk puede ocultar subestados.", "Seis muestras siguen ofreciendo potencia limitada."
+      ]
+    },
+    {
+      "title": "Aumento relativo sin expansión absoluta",
+      "scenario": "La proporción de macrófagos sube después de tratamiento, pero el número total de células recuperadas disminuye.",
+      "reasoning_steps": ["Separar proporción y conteo total.", "Examinar otras poblaciones.", "Usar medición absoluta o histología si existe.", "Limitar la conclusión a abundancia relativa."],
+      "interpretation": "La mayor proporción no demuestra expansión de macrófagos; puede reflejar pérdida de otras poblaciones.",
+      "limitations": ["La captura puede variar.", "Sin conteos absolutos no se estima cambio celular total."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Contraste multimuesta reproducible",
+      "instructions": ["Definir unidad y covariables.", "Construir pseudobulk.", "Modelar expresión y composición.", "Evaluar heterogeneidad y sensibilidad."],
+      "problems": [
+        "Detectar pseudorreplicación en tres diseños.",
+        "Construir una matriz pseudobulk por tipo.",
+        "Diseñar un contraste pareado antes-después.",
+        "Interpretar una población con pocas células por muestra.",
+        "Comparar expresión y estado diferencial.",
+        "Explicar por qué comparar p-valores es incorrecto.",
+        "Modelar una proporción composicional.",
+        "Diseñar sensibilidad a anotación y muestras influyentes."
+      ],
+      "checking_criteria": ["La réplica biológica está definida.", "Los conteos se agregan correctamente.", "Covariables y pares respetan el diseño.", "Los resultados incluyen efecto, incertidumbre y sensibilidad."
+      ]
+    }
+  ],
+  "common_errors": [
+    {"error": "Usar células como réplicas para comparar condiciones.", "correction": "Agregar o modelar la dependencia por muestra."},
+    {"error": "Creer que más células compensan pocos donantes.", "correction": "Separar precisión intramuestra y generalización poblacional."},
+    {"error": "Aplicar pseudobulk sobre datos normalizados.", "correction": "Agregar conteos crudos y modelar la distribución apropiada."},
+    {"error": "Confundir cambio de proporción con expansión absoluta.", "correction": "Considerar composición y mediciones absolutas complementarias."},
+    {"error": "Declarar diferencia de efectos por significación en un grupo.", "correction": "Probar directamente la interacción o diferencia de efectos."
+    }
+  ],
+  "self_assessment": [
+    {"question": "¿Cuál suele ser la réplica en caso-control humano?", "answer": "El donante o muestra independiente."},
+    {"question": "¿Qué es pseudobulk?", "answer": "Suma de conteos por muestra y población celular."},
+    {"question": "¿Por qué no usar datos integrados para DE?", "answer": "La corrección altera la escala y puede borrar o crear diferencias."},
+    {"question": "¿Qué diferencia hay entre DE y DA?", "answer": "DE evalúa expresión; DA evalúa frecuencia o composición de poblaciones."},
+    {"question": "¿Qué aporta un diseño pareado?", "answer": "Controla variación estable del mismo individuo y mejora precisión."},
+    {"question": "¿Qué limita un modelo jerárquico con pocos donantes?", "answer": "La variación entre muestras sigue estimándose con pocas unidades."},
+    {"question": "¿Por qué las proporciones son dependientes?", "answer": "Suman uno y el cambio de un componente afecta a los demás."},
+    {"question": "¿Qué debe acompañar un FDR?", "answer": "Tamaño de efecto, intervalo, consistencia y contexto biológico."
+    }
+  ],
+  "biomedical_connections": [
+    {"topic": "Estudios caso-control", "connection": "Pseudobulk permite comparar donantes sin inflar la muestra con células."},
+    {"topic": "Tratamientos", "connection": "Diseños pareados distinguen respuesta del individuo y variación basal."},
+    {"topic": "Inmunología", "connection": "Composición y estado pueden cambiar de forma independiente."},
+    {"topic": "Cohortes multicéntricas", "connection": "Centro, lote y población requieren covariables y heterogeneidad explícita."
+    }
+  ],
+  "sources": [
+    {"title": "Multi-Sample Single-Cell Analyses with Bioconductor", "organization": "Bioconductor", "url": "https://bioconductor.org/books/devel/OSCA.multisample/", "type": "libro ejecutable", "verification_status": "verified_directly"},
+    {"title": "Orchestrating Single-Cell Analysis with Bioconductor", "organization": "Bioconductor", "url": "https://bioconductor.org/books/devel/OSCA/", "type": "libro ejecutable", "verification_status": "verified_directly"},
+    {"title": "Single-cell best practices", "organization": "Single-cell Best Practices Consortium", "url": "https://www.sc-best-practices.org/", "type": "recurso metodológico", "verification_status": "verified_directly"},
+    {"title": "Best practices for single-cell analysis across modalities", "organization": "Nature Reviews Genetics", "url": "https://www.nature.com/articles/s41576-023-00586-w", "type": "revisión metodológica", "verification_status": "metadata_verified"},
+    {"title": "Human Cell Atlas Metadata", "organization": "Human Cell Atlas", "url": "https://data.humancellatlas.org/metadata", "type": "estándar de metadatos", "verification_status": "verified_directly"}
+  ],
+  "editorial_notice": "Material educativo en estado review. Miles de células de pocos donantes no sustentan por sí solas inferencia poblacional, causal ni clínica."
+}

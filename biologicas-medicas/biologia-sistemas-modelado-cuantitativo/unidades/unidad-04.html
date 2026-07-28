@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 4. Modelos estocásticos y ruido biológico | Biología de Sistemas y Modelado Cuantitativo | CitoNauta</title>
+  <meta name="description" content="Representar eventos moleculares discretos, distribuciones y heterogeneidad mediante procesos estocásticos, propensiones, simulación de Gillespie y análisis de ruido y tiempos de primer paso." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Biológicas y Médicas</a></li>
+            <li><a href="../index.html">Biología de Sistemas y Modelado Cuantitativo</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="biologia-sistemas-modelado-cuantitativo">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Biológicas y Médicas</a><span>/</span>
+        <a href="../index.html">Biología de Sistemas y Modelado Cuantitativo</a><span>/</span>
+        <span>Unidad 4</span>
+      </div>
+      <p class="eyebrow">Unidad 4 de 8</p>
+      <h1>Modelos estocásticos y ruido biológico</h1>
+      <p>Representar eventos moleculares discretos, distribuciones y heterogeneidad mediante procesos estocásticos, propensiones, simulación de Gillespie y análisis de ruido y tiempos de primer paso.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Biología de Sistemas y Modelado Cuantitativo</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-03.html">← Unidad 3: Retroalimentación, estabilidad y dinámica no lineal</a>
+        <a class="btn-link" href="unidad-05.html">Unidad 5: Redes biológicas, motivos y modelos nulos →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="4">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Distinguir modelos deterministas y estocásticos según escala y pregunta.</li>
+        <li>Formular estados discretos, reacciones y funciones de propensión.</li>
+        <li>Interpretar la ecuación maestra como evolución de probabilidades.</li>
+        <li>Implementar el algoritmo de Gillespie y verificar sus distribuciones.</li>
+        <li>Separar ruido intrínseco, extrínseco y heterogeneidad de parámetros.</li>
+        <li>Analizar bursting, distribuciones estacionarias y tiempos de primer paso.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Eventos discretos, propensiones y ecuación maestra</li>
+        <li>Algoritmo de Gillespie y aproximaciones de simulación</li>
+        <li>Ruido intrínseco, extrínseco y expresión en bursts</li>
+        <li>Tiempos de primer paso, rare events y validación</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Eventos discretos, propensiones y ecuación maestra</h3>
+        <p>Cuando el número de moléculas es pequeño, tratar concentraciones como variables continuas puede ocultar fluctuaciones relevantes. Un modelo estocástico de reacciones describe un estado discreto de conteos y eventos aleatorios que cambian ese estado. Cada reacción tiene una función de propensión que determina la probabilidad instantánea de ocurrir, condicionada al estado actual. La estequiometría define el salto producido por el evento.</p>
+        <p>La propensión no es idéntica a la tasa determinista, aunque están relacionadas en el límite de grandes números. Para una degradación unimolecular, la propensión es k*N porque cualquiera de las N moléculas puede degradarse. Para una reacción entre dos moléculas distintas depende del número de pares posibles y del volumen. Las unidades y factores combinatorios deben ser coherentes con el estado discreto. Aplicar directamente una constante macroscópica puede producir errores de escala.</p>
+        <p>La ecuación maestra química describe cómo cambia la probabilidad de cada estado debido a entradas y salidas por reacciones. Resolverla exactamente es difícil en redes grandes porque el espacio de estados crece rápidamente. Sin embargo, proporciona el objeto conceptual correcto: el resultado es una distribución, no una única trayectoria. Momentos como media y varianza pueden derivarse en casos simples, pero a menudo no forman un sistema cerrado sin aproximaciones.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[P(reaction r in dt | x) approximately a_r(x)*dt\]</div>
+            <figcaption>La propensión a_r determina la probabilidad instantánea de un evento r en un intervalo pequeño.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El estado estocástico usa conteos discretos y saltos de reacción.</li>
+        <li>Las propensiones dependen del estado y de combinaciones moleculares.</li>
+        <li>Las tasas macroscópicas requieren conversión al nivel discreto.</li>
+        <li>La ecuación maestra evoluciona una distribución sobre estados.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Algoritmo de Gillespie y aproximaciones de simulación</h3>
+        <p>El algoritmo de Gillespie simula exactamente un proceso de Markov de saltos bajo propensiones constantes entre eventos. En cada paso calcula la suma de propensiones, extrae el tiempo hasta el siguiente evento de una distribución exponencial y elige qué reacción ocurre proporcionalmente a su propensión. Después actualiza el estado y repite. Diferentes semillas generan trayectorias distintas que representan muestras de la misma distribución.</p>
+        <p>Una sola trayectoria no caracteriza el sistema. Se necesitan muchas réplicas para estimar distribuciones, probabilidades de transición, medias, cuantiles y tiempos de primer paso. La convergencia Monte Carlo depende del número de simulaciones y de la rareza del evento. Los intervalos deben reflejar error de muestreo. También se comprueba que el algoritmo reproduzca resultados analíticos en procesos simples de nacimiento-muerte o equilibrio.</p>
+        <p>En sistemas con muchas moléculas o eventos muy rápidos, Gillespie puede ser costoso. Tau-leaping agrupa múltiples eventos durante intervalos donde las propensiones cambian poco; aproximaciones de Langevin añaden ruido continuo; modelos híbridos tratan algunas especies de forma determinista y otras estocástica. Cada aproximación introduce errores y puede generar estados negativos o perder eventos raros. La elección depende de escala, rigidez estocástica y objetivo.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[tau = -log(u)/sum_r a_r(x)\]</div>
+            <figcaption>Tiempo de espera exponencial hasta el siguiente evento usando un uniforme u.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Gillespie genera trayectorias exactas para un modelo de saltos Markoviano.</li>
+        <li>Una trayectoria individual no representa la distribución completa.</li>
+        <li>Las estimaciones Monte Carlo necesitan réplicas e incertidumbre.</li>
+        <li>Tau-leaping y modelos híbridos intercambian exactitud por eficiencia.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Ruido intrínseco, extrínseco y expresión en bursts</h3>
+        <p>El ruido intrínseco surge del carácter aleatorio de eventos moleculares dentro de un sistema con parámetros fijos. El ruido extrínseco representa variación de tamaño celular, estado metabólico, cantidad de maquinaria, microambiente o parámetros entre células. En datos poblacionales ambos se mezclan con error de medición. Diseños con reporteros duales, medidas repetidas o modelos jerárquicos pueden ayudar a separar componentes, pero requieren supuestos.</p>
+        <p>La distribución de Poisson tiene varianza igual a la media y aparece en procesos simples de nacimiento y muerte. Muchos genes muestran sobredispersión porque la transcripción ocurre en bursts: un promotor alterna entre estados inactivo y activo y produce varias moléculas durante episodios. Esto puede generar distribuciones negativas binomiales o multimodales. Ajustar una distribución no identifica por sí solo el mecanismo; distintos modelos de heterogeneidad producen formas similares.</p>
+        <p>El coeficiente de variación depende de la media y puede disminuir al aumentar abundancia. El Fano factor compara varianza y media, pero también está afectado por mezcla de poblaciones. Para estudiar ruido se controlan estados celulares, tiempo, ciclo y tamaño. Las fluctuaciones pueden ser perjudiciales, neutras o funcionales: permiten bet-hedging, decisiones probabilísticas o sensibilidad. El modelo debe vincular una métrica de ruido con una consecuencia biológica comprobable.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[FanoFactor = Variance(N)/Mean(N)\]</div>
+            <figcaption>Relación entre varianza y media usada para describir dispersión respecto a Poisson.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Ruido intrínseco y extrínseco tienen fuentes y diseños distintos.</li>
+        <li>Poisson no describe toda la expresión génica celular.</li>
+        <li>Bursting puede generar sobredispersión y multimodalidad.</li>
+        <li>Una distribución compatible no identifica de manera única el mecanismo.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Tiempos de primer paso, rare events y validación</h3>
+        <p>Muchas decisiones biológicas dependen del tiempo hasta cruzar un umbral: activación, extinción, escape, lisis o diferenciación. El tiempo de primer paso es la primera ocasión en que una trayectoria alcanza un conjunto objetivo. Su distribución puede ser amplia y asimétrica, por lo que la media no basta. La probabilidad de alcanzar el umbral antes de un tiempo determinado puede ser más relevante que la trayectoria promedio.</p>
+        <p>Los eventos raros son difíciles de estimar por simulación directa porque requieren muchas trayectorias. Métodos de importance sampling, splitting o aproximaciones pueden acelerar, pero deben preservar probabilidades y documentar sesgos. Una transición observada en una simulación aislada no demuestra que sea frecuente. Se reportan número de réplicas, intervalos, censura y criterios del evento. Los umbrales deben corresponder a observables y no seleccionarse después de mirar resultados.</p>
+        <p>La validación estocástica compara distribuciones, no solo medias. Se evalúan histogramas, cuantiles, autocorrelación, tiempos de espera, correlación entre reporteros y dependencia de condiciones. El error de medición se modela por separado. Datos de una sola célula o una serie corta pueden no identificar tasas. Los experimentos con perturbaciones, tiempos y réplicas ayudan a distinguir fluctuaciones intrínsecas de heterogeneidad estable.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[T_A = inf{t &gt;= 0 : X(t) belongs to A}\]</div>
+            <figcaption>Definición del primer tiempo en que la trayectoria entra al conjunto objetivo A.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El tiempo de primer paso describe cuándo se alcanza un estado objetivo.</li>
+        <li>La media puede ocultar colas y probabilidades relevantes.</li>
+        <li>Los eventos raros necesitan métodos y tamaños de simulación adecuados.</li>
+        <li>La validación estocástica compara distribuciones y dependencias temporales.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Media determinista oculta extinción</h3>
+        <p><strong>Situación.</strong> Un modelo ODE predice una población estable baja, pero simulaciones discretas muestran extinción frecuente.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Reconocer conteos pequeños.</li>
+        <li>Definir nacimiento y muerte.</li>
+        <li>Simular muchas trayectorias.</li>
+        <li>Estimar probabilidad y tiempo de extinción.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La media continua no representaba una frontera absorbente relevante en el sistema discreto.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La recolonización puede romper la absorción.</li>
+        <li>Los parámetros pueden variar entre unidades.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Bimodalidad por heterogeneidad extrínseca</h3>
+        <p><strong>Situación.</strong> Una población muestra dos picos de expresión y se atribuye a un promotor biestable.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Medir tamaño y ciclo celular.</li>
+        <li>Modelar dos subpoblaciones paramétricas.</li>
+        <li>Comparar con bursting intrínseco.</li>
+        <li>Usar seguimiento temporal o reporteros duales.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La bimodalidad podía surgir de mezcla poblacional sin un switch molecular individual.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>Ambos mecanismos pueden coexistir.</li>
+        <li>Los reporteros añaden error y dinámica propia.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Simulación y análisis de ruido molecular</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Definir estados y propensiones.</li>
+        <li>Implementar Gillespie.</li>
+        <li>Comparar con ODE.</li>
+        <li>Analizar distribución y tiempos de primer paso.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Derivar propensión de degradación unimolecular.</li>
+        <li>Convertir una tasa bimolecular a conteos y volumen.</li>
+        <li>Simular un proceso nacimiento-muerte.</li>
+        <li>Comprobar media y varianza estacionarias.</li>
+        <li>Implementar un promotor de dos estados.</li>
+        <li>Separar ruido intrínseco y extrínseco conceptualmente.</li>
+        <li>Estimar tiempo de extinción.</li>
+        <li>Comparar Gillespie y tau-leaping.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>Las propensiones son dimensionalmente coherentes.</li>
+        <li>Se usan múltiples trayectorias.</li>
+        <li>Las distribuciones se comparan con referencias.</li>
+        <li>Los eventos raros incluyen incertidumbre.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Usar una tasa determinista como propensión sin conversión.</strong><p>Considerar conteos, volumen y combinatoria.</p></li>
+        <li><strong>Interpretar una trayectoria como comportamiento promedio.</strong><p>Simular réplicas y estimar distribuciones.</p></li>
+        <li><strong>Llamar intrínseca a toda variación celular.</strong><p>Separar parámetros, entorno y error de medición.</p></li>
+        <li><strong>Inferir un mecanismo por una distribución ajustada.</strong><p>Comparar modelos y datos temporales o perturbaciones.</p></li>
+        <li><strong>Estimar eventos raros con pocas simulaciones.</strong><p>Cuantificar convergencia, intervalos y métodos especializados.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué define una propensión?</summary>
+        <p><strong>Respuesta:</strong> La tasa instantánea de un evento dado el estado actual.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Qué evoluciona la ecuación maestra?</summary>
+        <p><strong>Respuesta:</strong> La probabilidad de los estados del sistema.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Qué genera Gillespie?</summary>
+        <p><strong>Respuesta:</strong> Trayectorias exactas del proceso de saltos definido.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Por qué una trayectoria no basta?</summary>
+        <p><strong>Respuesta:</strong> No caracteriza la distribución ni la probabilidad de eventos.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué diferencia ruido intrínseco y extrínseco?</summary>
+        <p><strong>Respuesta:</strong> Aleatoriedad interna frente a variación de parámetros o entorno.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué indica Fano mayor que uno?</summary>
+        <p><strong>Respuesta:</strong> Sobredispersión respecto a Poisson, sin identificar por sí sola la causa.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Qué es un tiempo de primer paso?</summary>
+        <p><strong>Respuesta:</strong> El primer momento en que se alcanza un estado objetivo.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Qué limita tau-leaping?</summary>
+        <p><strong>Respuesta:</strong> Supone propensiones casi constantes durante el salto y puede perder discreción o positividad.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Proceso de salto</strong><p>Proceso estocástico con eventos discretos que cambian el estado.</p></li>
+        <li><strong>Propensión</strong><p>Tasa instantánea de ocurrencia de una reacción condicionada al estado.</p></li>
+        <li><strong>Ecuación maestra</strong><p>Ecuación para la evolución de probabilidades sobre estados.</p></li>
+        <li><strong>Gillespie</strong><p>Algoritmo exacto de simulación de reacciones estocásticas Markovianas.</p></li>
+        <li><strong>Tau-leaping</strong><p>Aproximación que agrupa eventos durante intervalos.</p></li>
+        <li><strong>Ruido intrínseco</strong><p>Variación por aleatoriedad de eventos dentro de un sistema fijo.</p></li>
+        <li><strong>Ruido extrínseco</strong><p>Variación de parámetros o entorno entre unidades.</p></li>
+        <li><strong>Poisson</strong><p>Distribución con media y varianza iguales en un proceso simple.</p></li>
+        <li><strong>Bursting</strong><p>Producción episódica asociada con cambios de estado del promotor.</p></li>
+        <li><strong>Fano factor</strong><p>Varianza dividida por media.</p></li>
+        <li><strong>Tiempo de primer paso</strong><p>Primer tiempo en que una trayectoria alcanza un objetivo.</p></li>
+        <li><strong>Evento raro</strong><p>Transición de baja probabilidad bajo el modelo.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://copasi.org/" rel="noopener noreferrer">COPASI</a></strong><span class="course-tag">COPASI Project · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.ebi.ac.uk/biomodels/" rel="noopener noreferrer">BioModels</a></strong><span class="course-tag">EMBL-EBI · repositorio oficial</span></li>
+        <li><strong><a class="resource-link" href="https://sbml.org/" rel="noopener noreferrer">SBML</a></strong><span class="course-tag">SBML.org · estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://combine-org.github.io/standards/" rel="noopener noreferrer">COMBINE Standards</a></strong><span class="course-tag">COMBINE · colección de estándares</span></li>
+        <li><strong><a class="resource-link" href="https://models.physiomeproject.org/" rel="noopener noreferrer">Physiome Model Repository</a></strong><span class="course-tag">Physiome Project · repositorio oficial</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Representar eventos moleculares discretos, distribuciones y heterogeneidad mediante procesos estocásticos, propensiones, simulación de Gillespie y análisis de ruido y tiempos de primer paso. Conecta especialmente con Expresión génica: Bursting y conteos bajos producen variabilidad entre células, Resistencia microbiana: Eventos raros y bet-hedging pueden permitir supervivencia, Apoptosis: Tiempos de primer paso representan activación variable de un umbral, Infección: Extinción temprana y expansión pueden depender de eventos discretos. Material educativo en estado review. Una distribución simulada no demuestra la fuente del ruido ni la frecuencia real de eventos raros sin datos, réplicas y validación.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-03.html">← Unidad 3: Retroalimentación, estabilidad y dinámica no lineal</a><a class="btn-link" href="unidad-05.html">Unidad 5: Redes biológicas, motivos y modelos nulos →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Biología de Sistemas y Modelado Cuantitativo · unidad 4 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>

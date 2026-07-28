@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 2. Procesamiento inicial y control de calidad | Ómicas de Célula Única y Biología Espacial | CitoNauta</title>
+  <meta name="description" content="Convertir datos iniciales en una matriz auditable y seleccionar observaciones de calidad mediante decisiones por muestra, controlando empty droplets, RNA ambiente, doublets y artefactos de tejido sin aplicar filtros universales." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Biológicas y Médicas</a></li>
+            <li><a href="../index.html">Ómicas de Célula Única y Biología Espacial</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="omicas-celula-unica-biologia-espacial">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Biológicas y Médicas</a><span>/</span>
+        <a href="../index.html">Ómicas de Célula Única y Biología Espacial</a><span>/</span>
+        <span>Unidad 2</span>
+      </div>
+      <p class="eyebrow">Unidad 2 de 8</p>
+      <h1>Procesamiento inicial y control de calidad</h1>
+      <p>Convertir datos iniciales en una matriz auditable y seleccionar observaciones de calidad mediante decisiones por muestra, controlando empty droplets, RNA ambiente, doublets y artefactos de tejido sin aplicar filtros universales.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Ómicas de Célula Única y Biología Espacial</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-01.html">← Unidad 1: Diseño experimental, tecnologías y objetos de datos</a>
+        <a class="btn-link" href="unidad-03.html">Unidad 3: Normalización, selección de características y representación →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="2">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Auditar procesamiento desde FASTQ o archivos cuantificados hasta matrices de barcodes y genes.</li>
+        <li>Distinguir empty droplets, células de baja calidad y poblaciones biológicas con poco RNA.</li>
+        <li>Evaluar RNA ambiente y contaminación cruzada antes de interpretar marcadores.</li>
+        <li>Detectar doublets mediante diseño, carga, expresión y métodos computacionales.</li>
+        <li>Seleccionar umbrales por muestra usando distribuciones, contexto y controles.</li>
+        <li>Realizar análisis de sensibilidad para medir cómo el filtrado altera composición y conclusiones.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>De lecturas y barcodes a una matriz auditable</li>
+        <li>Métricas celulares, genes y umbrales dependientes del contexto</li>
+        <li>RNA ambiente, estrés de disociación y contaminación</li>
+        <li>Doublets, muestras atípicas y control de calidad multiescala</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>De lecturas y barcodes a una matriz auditable</h3>
+        <p>El control de calidad comienza antes de filtrar células. Se revisan calidad de lecturas, contenido de adaptadores, asignación de índices, saturación, fracción mapeada, distribución de UMI y compatibilidad con la referencia. Un pipeline puede producir una matriz sin fallar y aun contener una referencia incorrecta, muestras intercambiadas o una fracción inesperada de lecturas no asignadas. Los informes iniciales se conservan por biblioteca y se relacionan con lote, tecnología y fecha.</p>
+        <p>En plataformas droplet, el resultado incluye barcodes con diferentes cantidades de RNA. Algunos corresponden a células o núcleos, otros a gotas vacías que capturaron RNA libre. El algoritmo de llamada celular usa la distribución de conteos y, a veces, perfiles de expresión para distinguirlos. Una lista filtrada del proveedor no debe aceptarse sin inspección; poblaciones pequeñas o de bajo contenido pueden quedar fuera, mientras gotas contaminadas pueden entrar.</p>
+        <p>La matriz cruda de todos los barcodes permite evaluar el fondo y aplicar métodos alternativos. Deben conservarse identificadores, conteos y decisión de inclusión. En muestras multiplexadas se añade demultiplexado de etiquetas genéticas o de anticuerpos y clasificación de singlets, doublets y negativos. Las tasas de asignación y conflictos son métricas del experimento. El objeto final debe indicar qué barcodes fueron descartados y por qué, no solo contener el subconjunto restante.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[TotalCounts_c = sum_g Counts_g,c\]</div>
+            <figcaption>El total de UMI por barcode es una métrica útil, pero no separa por sí solo células reales y gotas vacías.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Una matriz generada no garantiza que referencia, índices y muestras sean correctos.</li>
+        <li>La llamada celular es una inferencia sobre barcodes y fondo.</li>
+        <li>La matriz sin filtrar conserva información necesaria para auditar empty droplets.</li>
+        <li>Cada exclusión debe quedar registrada y reproducible.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Métricas celulares, genes y umbrales dependientes del contexto</h3>
+        <p>Las métricas habituales incluyen total de UMI, número de genes detectados y proporción mitocondrial, ribosomal o de genes específicos. Una célula dañada puede perder RNA citoplasmático y mostrar una proporción mitocondrial elevada, pero ciertos tipos celulares tienen fisiológicamente más transcritos mitocondriales o menos RNA total. Un umbral fijo aplicado a todos los tejidos puede eliminar poblaciones reales y alterar la composición. Las distribuciones se examinan por muestra y, cuando es posible, por lote o región.</p>
+        <p>Los valores atípicos pueden detectarse mediante mediana y desviación absoluta mediana, modelos de mezcla o reglas informadas por controles. La decisión debe combinar varias métricas: un barcode con pocos genes y bajo total puede ser vacío o un tipo pequeño; uno con conteos extremadamente altos puede ser doublet. Los genes detectados en muy pocas células pueden retirarse para reducir memoria, pero se debe comprobar que no se eliminen marcadores raros relevantes para la pregunta.</p>
+        <p>El filtrado no es una etapa irreversible y ciega. Se evalúa qué tipos, muestras y condiciones se pierden. Si una condición presenta más daño real, filtrar hasta igualar distribuciones puede borrar un efecto biológico o crear selección. Conviene conservar banderas de calidad y comparar análisis con criterios razonables alternativos. Después de una anotación preliminar puede revisarse si una población completa fue penalizada por métricas intrínsecas.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[MitoFraction_c = MitoCounts_c / TotalCounts_c\]</div>
+            <figcaption>La fracción mitocondrial es un indicador contextual de calidad, no un criterio universal de exclusión.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Las métricas de calidad mezclan técnica y biología.</li>
+        <li>Los umbrales deben adaptarse por muestra, tecnología y tejido.</li>
+        <li>Varias métricas juntas son más informativas que una regla aislada.</li>
+        <li>El análisis de sensibilidad revela si el filtrado cambia la historia biológica.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>RNA ambiente, estrés de disociación y contaminación</h3>
+        <p>La lisis durante disociación libera RNA al medio y las gotas vacías capturan un perfil ambiente. Las células también reciben una fracción de ese fondo. Genes muy abundantes de células frágiles pueden aparecer en poblaciones donde no se expresan realmente. En tejido pancreático, tumoral o rico en eritrocitos, esta contaminación puede dominar marcadores. La matriz de gotas vacías ayuda a estimar el perfil ambiente; los métodos de corrección requieren supuestos y no deben aplicarse sin inspección.</p>
+        <p>La corrección estima una fracción contaminante y ajusta conteos, pero puede eliminar expresión verdadera compartida. Deben compararse perfiles antes y después, marcadores negativos y controles conocidos. Las etiquetas celulares no deben asignarse usando genes susceptibles de contaminación sin evidencia adicional. La presencia simultánea de marcadores incompatibles puede indicar RNA ambiente, doublet o transición real; estas hipótesis se distinguen con patrón global, intensidad, replicación y validación.</p>
+        <p>La disociación también induce programas de estrés, respuesta inmediata, hipoxia o inflamación. Estos programas pueden correlacionarse con tiempo de procesamiento, tejido o condición. Si todos los casos tardaron más en procesarse, el estrés queda confundido con enfermedad. Se registran tiempo, temperatura, enzima y viabilidad. Los scores de estrés pueden ayudar a diagnosticar, pero regresarlos automáticamente puede borrar una respuesta biológica. La mejor prevención es el diseño y el procesamiento consistente.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[ObservedProfile_c = (1-rho_c)*CellProfile_c + rho_c*AmbientProfile\]</div>
+            <figcaption>Modelo conceptual de mezcla entre expresión celular y RNA ambiente con fracción rho.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El RNA ambiente puede crear marcadores falsos en múltiples poblaciones.</li>
+        <li>La corrección de contaminación necesita controles y comparación antes-después.</li>
+        <li>Expresión incompatible puede reflejar ambiente, doublet o biología real.</li>
+        <li>Los programas de disociación deben relacionarse con metadatos de procesamiento.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Doublets, muestras atípicas y control de calidad multiescala</h3>
+        <p>Un doublet aparece cuando dos células comparten barcode o gota. Puede mostrar conteos altos y una combinación de marcadores de tipos distintos, aunque doublets homotípicos son difíciles de detectar porque mezclan células similares. La tasa esperada depende de carga y plataforma. Los métodos computacionales generan vecinos sintéticos, clasifican puntuaciones o buscan perfiles incompatibles, pero ningún método identifica todos los casos. En multiplexado, barcodes con dos etiquetas de muestra ayudan a detectar doublets heterotípicos entre donantes.</p>
+        <p>La eliminación debe ser prudente. Estados transicionales, células activadas o tipos raros pueden parecer mezclas. Se comparan puntuaciones, conteos, clusters, marcadores y reproducibilidad entre muestras. Un cluster presente solo en la muestra con mayor carga y enriquecido en genes de dos linajes es sospechoso. Sin embargo, eliminar toda coexpresión impide descubrir biología legítima. La clasificación puede conservar una categoría ambigua para revisión y evitar forzar etiquetas.</p>
+        <p>El control de calidad también ocurre a nivel de muestra. Una biblioteca con pocas células, baja complejidad, composición extrema o alta contaminación puede no ser comparable. Eliminarla reduce réplicas y puede introducir selección, por lo que se predefinen criterios y se informa el impacto. Se revisan correlaciones agregadas, distribución de tipos y metadatos. El resultado final es un informe multiescala: lecturas, bibliotecas, barcodes, células, genes, muestras y composición, con todas las decisiones versionadas.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[ExpectedDoublets increases with NumberLoadedCells and platform-specific loading rate\]</div>
+            <figcaption>La tasa esperada de doublets crece con la carga y debe interpretarse con información del experimento.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Los doublets heterotípicos y homotípicos tienen detectabilidad distinta.</li>
+        <li>Los métodos computacionales de doublets son probabilísticos.</li>
+        <li>Estados transicionales no deben eliminarse solo por coexpresión.</li>
+        <li>La calidad se evalúa también por muestra, no únicamente por célula.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Umbral mitocondrial que elimina una población</h3>
+        <p><strong>Situación.</strong> Un filtro global de 10% elimina la mayoría de cardiomiocitos pero conserva otros tipos.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Comparar distribuciones por muestra y tipo preliminar.</li>
+        <li>Evaluar otras métricas de daño.</li>
+        <li>Probar umbrales adaptativos.</li>
+        <li>Revisar composición y marcadores después del filtrado.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La métrica reflejaba parte de la biología del tipo celular y no solo mala calidad.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>Algunos cardiomiocitos pueden estar dañados.</li>
+        <li>La anotación preliminar también puede ser incierta.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Marcador de acinar en células inmunes</h3>
+        <p><strong>Situación.</strong> Genes acinares abundantes aparecen débilmente en casi todos los clusters inmunes de páncreas.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Examinar gotas vacías.</li>
+        <li>Estimar perfil ambiente.</li>
+        <li>Comparar marcadores negativos y positivos.</li>
+        <li>Aplicar corrección y comprobar sensibilidad.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La expresión difusa era compatible con contaminación ambiental, no transdiferenciación generalizada.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La corrección puede retirar expresión verdadera.</li>
+        <li>Se necesita validación ortogonal para casos ambiguos.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Auditoría multiescala de calidad</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Revisar métricas de biblioteca.</li>
+        <li>Llamar células y evaluar fondo.</li>
+        <li>Diagnosticar contaminación y doublets.</li>
+        <li>Comparar filtros mediante sensibilidad.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Interpretar una curva de barcodes y proponer cell calling.</li>
+        <li>Comparar umbrales globales y adaptativos por muestra.</li>
+        <li>Distinguir célula pequeña y empty droplet usando varias métricas.</li>
+        <li>Diseñar un control para RNA ambiente.</li>
+        <li>Interpretar coexpresión compatible con doublet heterotípico.</li>
+        <li>Explicar por qué un doublet homotípico es difícil de detectar.</li>
+        <li>Definir criterios de exclusión de una muestra completa.</li>
+        <li>Crear un informe de sensibilidad de composición y marcadores.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>Las decisiones se realizan por muestra.</li>
+        <li>Se conserva la matriz cruda.</li>
+        <li>Contaminación y doublets se evalúan separadamente.</li>
+        <li>El impacto del filtrado se cuantifica.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Aceptar sin revisión la matriz filtrada del proveedor.</strong><p>Conservar barcodes crudos y auditar cell calling y fondo.</p></li>
+        <li><strong>Aplicar el mismo umbral a todos los tejidos.</strong><p>Usar distribuciones, contexto y sensibilidad por muestra.</p></li>
+        <li><strong>Regresar automáticamente genes de estrés.</strong><p>Relacionarlos con diseño y decidir según la pregunta biológica.</p></li>
+        <li><strong>Eliminar toda coexpresión como doublet.</strong><p>Comparar puntuaciones, carga, replicación y plausibilidad biológica.</p></li>
+        <li><strong>Evaluar calidad solo por célula.</strong><p>Auditar también lecturas, bibliotecas, genes, muestras y composición.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué es cell calling?</summary>
+        <p><strong>Respuesta:</strong> La inferencia de qué barcodes representan células o núcleos reales.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Por qué conservar gotas vacías?</summary>
+        <p><strong>Respuesta:</strong> Permiten estimar fondo y RNA ambiente.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿La fracción mitocondrial tiene un corte universal?</summary>
+        <p><strong>Respuesta:</strong> No; depende de tejido, tipo, tecnología y distribución por muestra.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué riesgo tiene un filtro muy estricto?</summary>
+        <p><strong>Respuesta:</strong> Eliminar tipos reales, sesgar composición y reducir muestras o condiciones.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué es RNA ambiente?</summary>
+        <p><strong>Respuesta:</strong> RNA libre que contamina gotas y perfiles celulares.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué diferencia hay entre doublet homo y heterotípico?</summary>
+        <p><strong>Respuesta:</strong> El primero mezcla tipos similares; el segundo tipos distintos y suele ser más detectable.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Por qué revisar calidad por muestra?</summary>
+        <p><strong>Respuesta:</strong> Una biblioteca completa puede tener problemas que no se resuelven filtrando células.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Qué demuestra un análisis de sensibilidad?</summary>
+        <p><strong>Respuesta:</strong> Si composición, clusters o conclusiones dependen excesivamente del filtrado elegido.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Empty droplet</strong><p>Gota sin célula que puede contener RNA ambiental.</p></li>
+        <li><strong>Cell calling</strong><p>Proceso de decidir qué barcodes representan células o núcleos.</p></li>
+        <li><strong>RNA ambiente</strong><p>RNA libre capturado junto con una célula o en una gota vacía.</p></li>
+        <li><strong>Doublet</strong><p>Barcode que contiene señal de dos o más células.</p></li>
+        <li><strong>Doublet homotípico</strong><p>Mezcla de células del mismo tipo, difícil de distinguir.</p></li>
+        <li><strong>Doublet heterotípico</strong><p>Mezcla de tipos distintos con marcadores combinados.</p></li>
+        <li><strong>Complejidad</strong><p>Diversidad de moléculas o genes detectados en una biblioteca o célula.</p></li>
+        <li><strong>Fracción mitocondrial</strong><p>Proporción de conteos asignados a genes mitocondriales.</p></li>
+        <li><strong>MAD</strong><p>Desviación absoluta mediana, medida robusta para detectar valores atípicos.</p></li>
+        <li><strong>Demultiplexado</strong><p>Asignación de lecturas o células a muestras mediante índices o etiquetas.</p></li>
+        <li><strong>Estrés de disociación</strong><p>Programa transcripcional inducido por extracción y procesamiento del tejido.</p></li>
+        <li><strong>Análisis de sensibilidad</strong><p>Comparación de resultados bajo decisiones de filtrado alternativas.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://www.sc-best-practices.org/preprocessing_visualization/quality_control.html" rel="noopener noreferrer">Single-cell best practices: Quality Control</a></strong><span class="course-tag">Single-cell Best Practices Consortium · recurso metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://bioconductor.org/books/devel/OSCA/" rel="noopener noreferrer">Orchestrating Single-Cell Analysis with Bioconductor</a></strong><span class="course-tag">Bioconductor · libro ejecutable</span></li>
+        <li><strong><a class="resource-link" href="https://www.sc-best-practices.org/introduction/raw_data_processing.html" rel="noopener noreferrer">Single-cell best practices: Raw data processing</a></strong><span class="course-tag">Single-cell Best Practices Consortium · recurso metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://www.nature.com/articles/s41576-023-00586-w" rel="noopener noreferrer">Best practices for single-cell analysis across modalities</a></strong><span class="course-tag">Nature Reviews Genetics · revisión metodológica</span></li>
+        <li><strong><a class="resource-link" href="https://data.humancellatlas.org/metadata" rel="noopener noreferrer">Human Cell Atlas Metadata</a></strong><span class="course-tag">Human Cell Atlas · estándar de metadatos</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Convertir datos iniciales en una matriz auditable y seleccionar observaciones de calidad mediante decisiones por muestra, controlando empty droplets, RNA ambiente, doublets y artefactos de tejido sin aplicar filtros universales. Conecta especialmente con Muestras clínicas: Viabilidad, retraso y tejido limitado requieren decisiones de calidad transparentes, Tumores: Necrosis, RNA ambiente y doublets pueden crear poblaciones o marcadores falsos, Tejido congelado: snRNA-seq requiere métricas y expectativas distintas de células completas, Inmunología: Poblaciones pequeñas o activadas pueden perderse bajo filtros universales. Material educativo en estado review. El filtrado debe conservar trazabilidad y no presentar la eliminación de datos como una decisión neutral o universal.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-01.html">← Unidad 1: Diseño experimental, tecnologías y objetos de datos</a><a class="btn-link" href="unidad-03.html">Unidad 3: Normalización, selección de características y representación →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Ómicas de Célula Única y Biología Espacial · unidad 2 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>
