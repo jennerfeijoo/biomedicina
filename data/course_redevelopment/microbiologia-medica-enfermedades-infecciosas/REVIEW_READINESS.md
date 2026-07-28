@@ -31,11 +31,13 @@ El curso permanece en `review`. Los validadores automáticos pueden comprobar es
 - ¿One Health integra sectores sin atribuciones causales simplistas?
 - ¿El contenido evita diagnóstico o tratamiento individual?
 
-## Materialización técnica verificada
+## Validación técnica materializada
 
 El paquete fuente fue reconstruido desde fragmentos sometidos a verificación SHA-256 individual y global. El archivo comprimido resultante también coincidió con su hash de referencia, se extrajo correctamente y permitió cargar como objetos JSON el descriptor, la decisión curricular, la matriz de cobertura, el registro de fuentes y las ocho unidades. El proceso retiró en el mismo commit todos los archivos y workflows temporales de transporte.
 
-La rama contiene ahora únicamente los artefactos académicos que deben ser revisados y publicados: descriptor, ocho unidades, resoluciones de alcance, rúbricas, preparación disciplinar, decisión curricular, matriz de cobertura y registro de fuentes. Los workflows ordinarios del repositorio deben promoverlos, generar las capas derivadas y validar currículo, catálogo, páginas públicas, enlaces y contratos editoriales.
+El publicador promovió la asignatura al currículo canónico, retiró el placeholder, generó el descriptor y las ocho unidades derivadas, construyó las páginas públicas y actualizó área, catálogo, índices, navegación y estados editoriales. La ejecución comprobó alineación pública, enlaces internos, contrato de publicación y auditoría de cursos desarrollados.
+
+La ronda técnica pasó Quality Gates, completitud curricular, bibliografía, redundancia, conexiones biomédicas, validación general, sincronización y alineación pública. El estado `review` se conserva porque ninguna de estas comprobaciones sustituye revisión disciplinar humana.
 
 La validación técnica no constituye diagnóstico, interpretación clínica individual, selección de antimicrobianos ni aprobación de bioseguridad para una instalación concreta.
 
