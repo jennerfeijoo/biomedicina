@@ -25,6 +25,13 @@ def load_manifest(path: Path) -> dict[str, Any]:
     return data
 
 
+def relative_path(raw: Any, field: str, subject_id: str) -> Path:
+    value = Path(str(raw or "").strip())
+    if not str(value) or value.is_absolute() or ".." in value.parts:
+        raise ValueError(f"{subject_id}: ruta inválida en {field}: {raw}")
+    return value
+
+
 def copy_file(relative: Path, output: Path) -> None:
     source = ROOT / relative
     if not source.is_file():
@@ -63,14 +70,22 @@ def package(manifest: dict[str, Any], output: Path) -> list[str]:
             raise ValueError("Cada entrada courses debe ser un objeto")
         subject_id = str(raw_course.get("subject_id", "")).strip()
         area_id = str(raw_course.get("area_id", "")).strip()
-        public_path = Path(str(raw_course.get("public_path", "")).strip())
-        if not subject_id or not area_id or public_path.name != "index.html":
+        if not subject_id or not area_id:
             raise ValueError(f"Entrada de curso inválida: {raw_course}")
 
-        copy_file(Path("data/subjects") / area_id / f"{subject_id}.json", output)
-        copy_file(Path("data/generated_courses") / f"{subject_id}.json", output)
-        copy_directory(Path("data/generated_units") / subject_id, output)
-        copy_directory(public_path.parent, output)
+        overlay_path = relative_path(raw_course.get("overlay_path"), "overlay_path", subject_id)
+        generated_course_path = relative_path(
+            raw_course.get("generated_course_path"), "generated_course_path", subject_id
+        )
+        generated_units_path = relative_path(
+            raw_course.get("generated_units_path"), "generated_units_path", subject_id
+        )
+        public_path = relative_path(raw_course.get("public_path"), "public_path", subject_id)
+
+        copy_file(overlay_path, output)
+        copy_file(generated_course_path, output)
+        copy_directory(generated_units_path, output)
+        copy_directory(public_path, output)
         area_ids.add(area_id)
         packaged_subjects.append(subject_id)
 
