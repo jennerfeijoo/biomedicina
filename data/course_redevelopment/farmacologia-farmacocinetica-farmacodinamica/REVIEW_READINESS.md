@@ -34,6 +34,8 @@ El paquete fuente, sus ocho unidades, la decisión curricular, el registro de fu
 
 La ronda técnica verificó `schema_version: 2.0`, densidad lectiva, ecuaciones estructuradas, actividades, glosarios, casos, autoevaluación, bibliografía, diversidad de fuentes, redundancia, conexiones biomédicas, cobertura curricular, alineación pública, enlaces internos y contrato de publicación. La corrección posterior añadió seis criterios ponderados al 100 % en la rúbrica del proyecto final: mecanismo, farmacocinética, PK/PD, variabilidad, seguridad y reproducibilidad/MIDD.
 
+La auditoría transversal detectó inicialmente que los recursos centrales procedían de solo tres dominios institucionales. Se añadió **WHO Pharmacovigilance** al descriptor y al registro de fuentes, incorporando un cuarto dominio independiente específicamente vinculado con detección, evaluación, comprensión y prevención de problemas de seguridad durante el uso real.
+
 Esta validación técnica no constituye prescripción, revisión regulatoria de un producto, autorización de uso ni aprobación disciplinar externa. El material no permite iniciar, suspender o ajustar tratamientos para una persona concreta.
 
 ## Evidencia mínima para promover a `complete`
