@@ -1,0 +1,186 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "imagenes-biomedicas-avanzadas-ii",
+  "area_id": "ingenieria-biomedica",
+  "unit": 6,
+  "slug": "generalizacion-sesgo-evaluacion-externa",
+  "title": "Generalización, sesgo y evaluación externa",
+  "status": "review",
+  "purpose": "Evaluar de forma independiente cómo cambia el desempeño de sistemas de imagen entre centros, equipos, periodos y subgrupos, y definir límites y respuestas ante degradación.",
+  "learning_objectives": [
+    "Distinguir validación interna, temporal, geográfica y prospectiva.",
+    "Caracterizar cambios de dominio en adquisición, población, referencia y práctica.",
+    "Diseñar evaluaciones externas con modelo, umbral y protocolo bloqueados.",
+    "Analizar desempeño, calibración y errores por subgrupos con incertidumbre explícita.",
+    "Evaluar adaptación, armonización y aprendizaje federado sin contaminar la prueba.",
+    "Definir límites de uso y criterios de recalibración, restricción o retirada."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Cambio de dominio y fuentes de degradación",
+      "paragraphs": [
+        "La generalización describe el desempeño en datos generados fuera del proceso de desarrollo. En imagen médica, el dominio incluye fabricante, protocolo, reconstrucción, resolución, población, prevalencia, vía de derivación y referencia estándar. Un cambio visible en histogramas puede ser menos importante que una modificación silenciosa en selección de pacientes o práctica diagnóstica. El análisis debe mapear la cadena completa desde adquisición hasta desenlace.",
+        "El data drift modifica la distribución de entradas, mientras el concept drift altera la relación entre entrada y desenlace. También existe label drift cuando cambia prevalencia y measurement drift cuando equipos o software modifican la medición. Estas categorías se solapan y rara vez se identifican con una sola prueba. Comparar medias de píxeles no detecta cambios en protocolos de reporte o tratamiento.",
+        "Los atajos aprendidos durante desarrollo suelen aparecer al cambiar de centro. Marcas, campos de visión, dispositivos o texto pueden correlacionarse con el desenlace sin relación clínica. El modelo puede parecer robusto en una partición aleatoria si la misma infraestructura aparece en todos los conjuntos. Particiones por centro, tiempo o equipo ayudan a exponer atajos, aunque no garantizan cobertura de futuros escenarios.",
+        "Además, el dominio puede cambiar por decisiones organizativas que no aparecen en los metadatos técnicos. La introducción de una nueva ruta de derivación, una campaña de cribado o una modificación en los criterios de biopsia altera el espectro de casos y la referencia disponible. Estos cambios requieren colaboración clínica para interpretarse y no deben reducirse a una distancia estadística entre tensores."
+      ],
+      "key_points": [
+        "El dominio incluye adquisición, población, práctica y referencia.",
+        "Data, label, concept y measurement drift describen cambios diferentes.",
+        "Los atajos pueden permanecer ocultos en particiones aleatorias.",
+        "La mitigación debe diseñarse antes de inspeccionar la prueba externa."
+      ],
+      "equations": [
+        {
+          "latex": "D_{KL}(P\\|Q)=\\sum_x P(x)\\log\\frac{P(x)}{Q(x)}",
+          "meaning": "Divergencia entre distribuciones; puede señalar cambios representacionales, pero no determina relevancia clínica.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Diseño de evaluación externa bloqueada",
+      "paragraphs": [
+        "Una evaluación externa utiliza datos que no participaron en selección de variables, arquitectura, hiperparámetros, preprocesamiento aprendido, calibración ni elección de umbral. El protocolo debe fijarse antes de acceder a resultados e incluir criterios de inclusión, desenlaces, métricas y análisis de faltantes. Validación geográfica prueba otros centros; validación temporal evalúa cambios posteriores; una evaluación prospectiva comprueba el flujo en tiempo real.",
+        "El tamaño muestral debe permitir estimar métricas con precisión y representar eventos o subgrupos relevantes. Reportar solo el promedio puede ocultar intervalos amplios o ausencia de casos difíciles. La evaluación debe conservar todos los casos elegibles o documentar exclusiones y fallos técnicos. Cuando faltan referencias, debe analizarse si la ausencia depende de la predicción o del desenlace.",
+        "Si el modelo se recalibra, armoniza o adapta con datos del nuevo centro, esa cohorte deja de ser una prueba completamente independiente. Puede dividirse en una porción de adaptación y otra de evaluación posterior, o realizar una nueva validación. Repetir ajustes hasta lograr una métrica satisfactoria produce sobreajuste al centro externo. El informe distingue evaluación bloqueada, adaptación local y reevaluación.",
+        "Una evaluación externa también debe comprobar la integridad operativa del flujo. Archivos incompletos, etiquetas DICOM inconsistentes, fallos de transferencia y estudios duplicados pueden modificar la población realmente procesada. Registrar denominadores desde elegibilidad hasta salida permite distinguir desempeño algorítmico de disponibilidad técnica y evita excluir silenciosamente los casos que más desafían al sistema."
+      ],
+      "key_points": [
+        "Modelo, preprocesamiento, calibración y umbral permanecen bloqueados.",
+        "Geografía, tiempo y prospectividad evalúan dimensiones distintas.",
+        "Las exclusiones y referencias faltantes conservan trazabilidad.",
+        "Adaptar con datos externos exige evaluación independiente posterior."
+      ],
+      "equations": [
+        {
+          "latex": "SE(\\hat{p})\\approx\\sqrt{\\frac{\\hat{p}(1-\\hat{p})}{n}}",
+          "meaning": "Aproximación del error estándar de una proporción; no reemplaza métodos adecuados en muestras pequeñas o agrupadas.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Subgrupos, sesgo y equidad clínica",
+      "paragraphs": [
+        "El análisis de subgrupos identifica diferencias relevantes en desempeño, calibración, cobertura y consecuencias. Sexo, edad, centro, dispositivo, comorbilidad y calidad de imagen pueden ser pertinentes, pero las categorías deben justificarse. Una comparación exploratoria con pocos eventos produce estimaciones inestables y múltiples falsos hallazgos. Los intervalos de confianza y el número de casos acompañan cada métrica.",
+        "La equidad no se reduce a igualar una métrica entre grupos. Sensibilidad equivalente puede coexistir con valores predictivos distintos por prevalencia, y calibración común puede entrar en tensión con tasas de error. El criterio debe relacionarse con el uso previsto y las consecuencias. También debe evaluarse acceso: un modelo preciso en imágenes de alta calidad puede excluir centros con equipos antiguos.",
+        "Cuando se detecta una disparidad, primero se investiga su origen: muestreo, referencia, calidad, prevalencia, tratamiento o atajos. Reponderación y ajuste de umbrales pueden modificar métricas, pero no corrigen una referencia sesgada. Deben compararse estrategias y documentar a quién benefician o perjudican. Los grupos pequeños pueden requerir recolección adicional y supervisión específica.",
+        "Los análisis de equidad deben considerar intersecciones y no solo atributos aislados. Un grupo definido por edad puede comportarse de forma distinta según centro, protocolo o comorbilidad. Sin embargo, estratificar excesivamente produce celdas pequeñas e inestables. El plan debe priorizar hipótesis justificadas, combinar estimaciones cuantitativas con revisión de fallos y documentar dimensiones que no pudieron evaluarse."
+      ],
+      "key_points": [
+        "Los subgrupos necesitan justificación, tamaño e intervalos.",
+        "Equidad depende del uso previsto y consecuencias de error.",
+        "Igualar una métrica puede empeorar otras dimensiones.",
+        "Las disparidades requieren diagnóstico antes de mitigación."
+      ],
+      "equations": [
+        {
+          "latex": "\\Delta Se=Se_g-Se_{ref}",
+          "meaning": "Diferencia de sensibilidad entre un grupo y un referente; debe acompañarse de incertidumbre y prevalencia.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Robustez, incertidumbre y decisiones ante degradación",
+      "paragraphs": [
+        "La robustez evalúa cambios de desempeño ante perturbaciones plausibles: ruido, movimiento, pérdida de cortes, variación de contraste, compresión o artefactos. Las pruebas deben preservar la etiqueta y representar condiciones posibles; perturbaciones arbitrarias pueden medir una propiedad sin relevancia clínica. También se necesitan casos extremos y fuera de alcance. Un modelo robusto a ruido sintético puede fallar frente a un protocolo nuevo.",
+        "La incertidumbre y la detección fuera de distribución pueden activar revisión, pero no existe una puntuación universal que detecte todos los escenarios. Los métodos deben validarse con cambios conocidos y casos clínicos reales. Una política de abstención se evalúa mediante riesgo-cobertura y por subgrupos, porque puede rechazar desproporcionadamente imágenes de ciertos centros. La interfaz debe comunicar la acción posterior.",
+        "Las respuestas ante degradación incluyen continuar con vigilancia, recalibrar, restringir alcance, reentrenar o retirar temporalmente. Los umbrales deben definirse antes del despliegue y considerar incertidumbre, volumen y gravedad del daño. Reentrenar automáticamente puede introducir regresiones y requiere un conjunto de pruebas bloqueado. Cada cambio crea una nueva versión con trazabilidad y reevaluación.",
+        "Cuando se implementa una respuesta, la nueva versión debe compararse contra la anterior en un conjunto de regresión que incluya casos frecuentes, límites y fallos históricos. Una mejora agregada no compensa automáticamente una degradación grave en un subgrupo. La decisión de liberar cambios necesita criterios de aceptación, responsables y capacidad de revertir de forma segura si aparecen incidentes."
+      ],
+      "key_points": [
+        "Las perturbaciones deben ser plausibles y preservar el desenlace.",
+        "Ningún detector fuera de distribución cubre todos los fallos.",
+        "La abstención se evalúa por riesgo, cobertura y subgrupos.",
+        "Recalibración, restricción y retirada requieren criterios previos."
+      ],
+      "equations": [
+        {
+          "latex": "Coverage(c)=P(U\\leq c)",
+          "meaning": "Fracción de casos aceptados por una política basada en incertidumbre; se interpreta junto con el riesgo.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Generalización", "definition": "Desempeño en datos generados fuera del desarrollo."},
+    {"term": "Dominio", "definition": "Condiciones de adquisición, población, práctica y referencia."},
+    {"term": "Data drift", "definition": "Cambio en la distribución de entradas."},
+    {"term": "Concept drift", "definition": "Cambio en la relación entre entradas y desenlace."},
+    {"term": "Label drift", "definition": "Cambio en prevalencia o distribución del desenlace."},
+    {"term": "Measurement drift", "definition": "Cambio en el proceso o escala de medición."},
+    {"term": "Validación geográfica", "definition": "Evaluación en centros distintos del desarrollo."},
+    {"term": "Validación temporal", "definition": "Evaluación en un periodo posterior."},
+    {"term": "Adaptación de dominio", "definition": "Ajuste para mejorar desempeño bajo otra distribución."},
+    {"term": "Subgrupo", "definition": "Conjunto predefinido con una característica relevante."},
+    {"term": "Riesgo-cobertura", "definition": "Relación entre error y proporción de casos aceptados."},
+    {"term": "Fuera de distribución", "definition": "Caso diferente de las condiciones de desarrollo."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Degradación tras cambio de reconstrucción",
+      "scenario": "Una actualización del kernel reduce sensibilidad en lesiones pequeñas.",
+      "reasoning_steps": ["Confirmar versión y fecha.", "Estratificar por tamaño.", "Revisar calidad y representaciones.", "Aplicar criterios de restricción."],
+      "interpretation": "La degradación corresponde a measurement drift y exige reevaluar el alcance.",
+      "limitations": ["Otros cambios temporales pueden coincidir.", "Puede haber pocos eventos posteriores."]
+    },
+    {
+      "title": "Adaptación que contamina la evaluación",
+      "scenario": "Un equipo ajusta normalización y umbral usando el único hospital externo.",
+      "reasoning_steps": ["Registrar decisiones.", "Reclasificar como adaptación.", "Bloquear el pipeline.", "Obtener otra cohorte independiente."],
+      "interpretation": "El resultado describe ajuste local, no generalización independiente.",
+      "limitations": ["Otra cohorte puede compartir infraestructura.", "Ajustar métricas no corrige atajos."]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Diseño de evaluación externa y respuesta",
+      "instructions": ["Mapear diferencias entre dominios.", "Preespecificar métricas y subgrupos.", "Mantener el modelo bloqueado.", "Proponer acciones ante degradación."],
+      "problems": [
+        "Clasificar cambios como data, label, concept o measurement drift.",
+        "Diseñar una validación temporal bloqueada.",
+        "Calcular incertidumbre de sensibilidad en un subgrupo.",
+        "Comparar desempeño por fabricante sin atribuir causalidad.",
+        "Definir una prueba de robustez para movimiento.",
+        "Diseñar una política de abstención y riesgo-cobertura.",
+        "Separar adaptación y evaluación en un nuevo hospital.",
+        "Establecer criterios de recalibración, restricción y retirada."
+      ],
+      "checking_criteria": ["La prueba no participa en desarrollo.", "Los subgrupos incluyen incertidumbre.", "Las perturbaciones son plausibles.", "Las acciones tienen umbrales definidos."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Llamar externa a una cohorte usada para ajustar.", "correction": "Separar adaptación y evaluación posterior."},
+    {"error": "Comparar solo promedios entre centros.", "correction": "Analizar calibración, fallos y subgrupos."},
+    {"error": "Interpretar ausencia de significación como equivalencia.", "correction": "Reportar intervalos y márgenes relevantes."},
+    {"error": "Mitigar antes de diagnosticar disparidad.", "correction": "Investigar muestreo, referencia y calidad."},
+    {"error": "Reentrenar automáticamente al detectar drift.", "correction": "Usar cambios controlados y pruebas bloqueadas."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué diferencia hay entre data y concept drift?", "answer": "El primero cambia entradas; el segundo su relación con el desenlace."},
+    {"question": "¿Qué permanece bloqueado externamente?", "answer": "Modelo, preprocesamiento, calibración, umbral y protocolo."},
+    {"question": "¿Qué evalúa validación temporal?", "answer": "Desempeño en un periodo posterior."},
+    {"question": "¿Por qué adaptar elimina independencia?", "answer": "Porque la cohorte influye en parámetros o decisiones."},
+    {"question": "¿No hallar diferencias demuestra equidad?", "answer": "No; puede existir baja potencia o métricas incompletas."},
+    {"question": "¿Qué riesgo tiene igualar sensibilidad?", "answer": "Puede empeorar calibración o especificidad."},
+    {"question": "¿Qué acompaña una abstención?", "answer": "Riesgo, cobertura, subgrupos y acción posterior."},
+    {"question": "¿Cuándo retirar temporalmente?", "answer": "Cuando se superan umbrales predefinidos de riesgo."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Radiología multicéntrica", "connection": "Fabricantes y protocolos modifican el dominio."},
+    {"topic": "Vigilancia clínica", "connection": "Cambios temporales alteran prevalencia y práctica."},
+    {"topic": "Equidad en salud", "connection": "Acceso y errores pueden distribuirse de modo desigual."},
+    {"topic": "Gestión de dispositivos", "connection": "La degradación exige criterios de cambio o retirada."}
+  ],
+  "sources": [
+    {"title": "CLAIM 2024 Update", "organization": "RSNA", "url": "https://pubs.rsna.org/doi/10.1148/ryai.240300", "type": "guía de reporte", "verification_status": "verified_directly"},
+    {"title": "FDA AI-Enabled Device Software Functions", "organization": "U.S. FDA", "url": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/artificial-intelligence-enabled-device-software-functions-lifecycle-management-and-marketing", "type": "guía regulatoria", "verification_status": "verified_directly"},
+    {"title": "NIST AI Risk Management Framework", "organization": "NIST", "url": "https://www.nist.gov/itl/ai-risk-management-framework", "type": "marco oficial", "verification_status": "verified_directly"},
+    {"title": "Ethics and governance of AI for health", "organization": "WHO", "url": "https://www.who.int/publications/i/item/9789240029200", "type": "guía internacional", "verification_status": "verified_directly"},
+    {"title": "DECIDE-AI Reporting Guideline", "organization": "Nature Medicine", "url": "https://doi.org/10.1038/s41591-022-01772-9", "type": "guía clínica", "verification_status": "metadata_verified"}
+  ],
+  "editorial_notice": "Material educativo en estado review. La validación externa descrita no autoriza despliegue ni sustituye evaluación clínica y gestión de riesgos."
+}
