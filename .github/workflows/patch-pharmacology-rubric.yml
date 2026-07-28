@@ -1,0 +1,76 @@
+name: Patch pharmacology project rubric
+
+on:
+  push:
+    branches:
+      - agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
+    paths:
+      - '.github/workflows/patch-pharmacology-rubric.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Add structured final-project rubric
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('data/course_redevelopment/farmacologia-farmacocinetica-farmacodinamica/course.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          project = data.setdefault('final_project', {})
+          project['rubric'] = [
+              {
+                  'criterion': 'Diana, mecanismo y fundamento farmacodinámico',
+                  'weight_percent': 15,
+                  'description': 'Justifica diana, mecanismo, respuesta y límites sin confundir afinidad, ocupación, potencia y eficacia.'
+              },
+              {
+                  'criterion': 'Farmacocinética, unidades y verificación',
+                  'weight_percent': 20,
+                  'description': 'Relaciona ADME, aclaramiento, volumen, semivida y exposición mediante cálculos y modelos dimensionalmente coherentes.'
+              },
+              {
+                  'criterion': 'Modelo PK/PD y exposición-respuesta',
+                  'weight_percent': 20,
+                  'description': 'Integra exposición y efecto, compara modelos rivales y evalúa predicciones, diagnósticos e incertidumbre.'
+              },
+              {
+                  'criterion': 'Variabilidad, covariables e interacciones',
+                  'weight_percent': 15,
+                  'description': 'Analiza población, función orgánica, edad, genética e interacciones sin convertir asociaciones en reglas universales.'
+              },
+              {
+                  'criterion': 'Seguridad y beneficio-riesgo',
+                  'weight_percent': 15,
+                  'description': 'Conecta exposición, mecanismo, susceptibilidad, señales y monitorización con límites clínicos explícitos.'
+              },
+              {
+                  'criterion': 'Reproducibilidad, MIDD y comunicación',
+                  'weight_percent': 15,
+                  'description': 'Documenta contexto de uso, riesgo del modelo, procedencia, versiones, decisiones y evidencia necesaria para actualizar conclusiones.'
+              }
+          ]
+          if sum(item['weight_percent'] for item in project['rubric']) != 100:
+              raise ValueError('la rúbrica no suma 100 %')
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          rm -f .github/workflows/patch-pharmacology-rubric.yml
+      - name: Commit rubric correction
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add pharmacology final-project rubric'
+          git push origin HEAD:agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
