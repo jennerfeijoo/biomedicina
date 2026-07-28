@@ -4,6 +4,8 @@
 
 El curso permanece en `review`. Los controles automáticos pueden comprobar estructura, densidad, enlaces, bibliografía, sincronización y redundancia, pero no certifican interpretación jurídica, estrategia regulatoria, seguridad clínica, suficiencia de evidencia, conformidad con normas ni aceptabilidad del beneficio-riesgo.
 
+Toda revisión disciplinar debe registrar jurisdicción, versión, fecha de consulta y alcance de cada fuente normativa o técnica utilizada para justificar una observación.
+
 ## Perfiles de revisión recomendados
 
 1. Profesional de asuntos regulatorios para dispositivos médicos.
