@@ -34,6 +34,8 @@ El paquete fuente y sus ocho unidades fueron promovidos y publicados en la rama 
 
 La ronda integral comprobó esquema 2.0, densidad teórica, ecuaciones estructuradas, actividades, bibliografía, diversidad de fuentes, redundancia, conexiones biomédicas, matriz de cobertura, arquitectura del curso, alineación pública, enlaces internos y contrato de publicación. También confirmó que el contenido permanece en `review` y que no se presenta una guía de reporte, la aleatorización ni un método de ajuste como certificación automática de validez.
 
+La auditoría transversal detectó que CONSORT 2025 y SPIRIT 2025 compartían una única URL institucional en la Unidad 6. Ambas se consolidaron como una sola identidad bibliográfica combinada, conservando su alcance de reporte y protocolo y eliminando la duplicación sin reducir el mínimo de cinco fuentes específicas.
+
 Esta evidencia técnica no constituye aprobación ética, certificación GCP, asesoramiento regulatorio ni revisión disciplinar externa. Las referencias internacionales deben adaptarse a legislación, autoridades, comités y procedimientos locales cuando se utilicen en investigación real.
 
 ## Evidencia mínima para promover a `complete`
