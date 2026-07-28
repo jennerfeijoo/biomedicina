@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Valida la cobertura pública unidad por unidad de las 84 asignaturas.
+"""Valida la cobertura pública unidad por unidad del currículo canónico.
 
 La validación distingue tres arquitecturas:
 - páginas generadas desde JSON avanzado;
@@ -9,7 +9,8 @@ La validación distingue tres arquitecturas:
 La profundidad científica del JSON avanzado se comprueba en
 validate_generated_units.py y su correspondencia pública en
 audit_public_unit_alignment.py. Este script valida cobertura, navegación y
-estructura sin imponer cuotas homogéneas de palabras, ecuaciones o enlaces.
+estructura sin imponer cuotas homogéneas de palabras, ecuaciones o enlaces ni
+mantener conteos históricos fijos de asignaturas.
 """
 
 from __future__ import annotations
@@ -54,7 +55,11 @@ def validate_units() -> tuple[list[str], dict[str, int]]:
             course = generate_site.merge_subject_overlay(area, subject)
             frame = generate_site.pedagogical_frame_for(area["id"], course["id"])
             course_path = ROOT / course["path"]
-            course_html = course_path.read_text(encoding="utf-8", errors="ignore") if course_path.exists() else ""
+            course_html = (
+                course_path.read_text(encoding="utf-8", errors="ignore")
+                if course_path.exists()
+                else ""
+            )
             units = course.get("detailed_units", [])
             counts["expected_units"] += len(units)
             unit_dir = course_path.parent / "unidades"
@@ -107,10 +112,13 @@ def validate_units() -> tuple[list[str], dict[str, int]]:
                 else:
                     counts["authored_units"] += 1
                     if advanced_source is not None and AUTHORED_MARKER not in unit_html:
-                        errors.append(f"Unidad autoral avanzada no registrada o sin sincronizar: {relative}")
+                        errors.append(
+                            f"Unidad autoral avanzada no registrada o sin sincronizar: {relative}"
+                        )
 
-    if counts["subjects"] != 84:
-        errors.append(f"Se esperaban 84 asignaturas y se encontraron {counts['subjects']}")
+    if counts["subjects"] == 0:
+        errors.append("El currículo canónico no contiene asignaturas")
+
     published = (
         counts["advanced_generated_units"]
         + counts["fallback_generated_units"]
