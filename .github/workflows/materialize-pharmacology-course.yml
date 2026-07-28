@@ -28,8 +28,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Assemble verified base64 package
+        id: assemble
+        continue-on-error: true
+        shell: bash
         run: |
-          python - <<'PY'
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee materialization-diagnostic.txt
           from pathlib import Path
 
           root = Path('.github/materialize-pharmacology')
@@ -41,6 +45,7 @@ jobs:
           chunks = []
           for name in names:
               path = root / name
+              print('checking', path, 'exists=', path.exists())
               if not path.exists():
                   raise FileNotFoundError(path)
               value = path.read_text(encoding='utf-8')
@@ -48,6 +53,7 @@ jobs:
               chunks.append(value)
 
           final_path = root / 'part07.b64'
+          print('checking', final_path, 'exists=', final_path.exists())
           if not final_path.exists():
               raise FileNotFoundError(final_path)
           final_value = final_path.read_text(encoding='utf-8')
@@ -63,8 +69,20 @@ jobs:
           output.write_text(assembled, encoding='utf-8')
           print('assembled_length', len(assembled))
           PY
-          wc -c /tmp/pharm.b64
-          sha256sum /tmp/pharm.b64
+          wc -c /tmp/pharm.b64 2>&1 | tee -a materialization-diagnostic.txt
+          sha256sum /tmp/pharm.b64 2>&1 | tee -a materialization-diagnostic.txt
+      - name: Upload materialization diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pharmacology-materialization-diagnostic
+          path: materialization-diagnostic.txt
+          if-no-files-found: error
+      - name: Enforce assembly
+        if: steps.assemble.outcome != 'success'
+        run: |
+          cat materialization-diagnostic.txt
+          exit 1
       - name: Verify complete base64 hash
         run: echo 'd2349fedddaf81aac9d7d7a26203b268a632b9c877d2865f59f020c83a506a1c  /tmp/pharm.b64' | sha256sum -c -
       - name: Decode course archive
@@ -104,6 +122,7 @@ jobs:
         run: |
           rm -rf .github/materialize-pharmacology
           rm -f .github/workflows/materialize-pharmacology-course.yml
+          rm -f materialization-diagnostic.txt
       - name: Commit course package
         shell: bash
         run: |
