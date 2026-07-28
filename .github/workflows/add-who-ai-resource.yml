@@ -1,0 +1,59 @@
+name: Add WHO AI governance resource
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/add-who-ai-resource.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: add-who-ai-resource-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  add-resource:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull-request branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Add WHO guidance
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('data/course_redevelopment/machine-learning-biomedico-validacion-clinica/course.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          resources = data.setdefault('core_resources', [])
+          title = 'WHO Ethics and governance of artificial intelligence for health'
+          if not any(isinstance(item, dict) and item.get('title') == title for item in resources):
+              resources.append({
+                  'title': title,
+                  'url': 'https://www.who.int/publications/i/item/9789240029200',
+              })
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
+      - name: Commit WHO guidance
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/course_redevelopment/machine-learning-biomedico-validacion-clinica/course.json
+          if git diff --cached --quiet; then
+            echo "La guía de la OMS ya estaba registrada."
+            exit 0
+          fi
+          git commit -m "Add WHO AI governance guidance"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
