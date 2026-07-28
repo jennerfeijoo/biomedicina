@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 2. Datos clínicos, cohortes, etiquetas y fuga de información | Machine Learning Biomédico y Validación de Modelos Clínicos | CitoNauta</title>
+  <meta name="description" content="Auditar cómo el proceso asistencial genera datos, ausencias y etiquetas, y diseñar una cohorte y particiones que permitan evaluar un modelo sin sesgo evitable ni fuga de información." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Ingeniería Biomédica Aplicada</a></li>
+            <li><a href="../index.html">Machine Learning Biomédico y Validación de Modelos Clínicos</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="machine-learning-biomedico-validacion-clinica">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Ingeniería Biomédica Aplicada</a><span>/</span>
+        <a href="../index.html">Machine Learning Biomédico y Validación de Modelos Clínicos</a><span>/</span>
+        <span>Unidad 2</span>
+      </div>
+      <p class="eyebrow">Unidad 2 de 8</p>
+      <h1>Datos clínicos, cohortes, etiquetas y fuga de información</h1>
+      <p>Auditar cómo el proceso asistencial genera datos, ausencias y etiquetas, y diseñar una cohorte y particiones que permitan evaluar un modelo sin sesgo evitable ni fuga de información.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Machine Learning Biomédico y Validación de Modelos Clínicos</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-01.html">← Unidad 1: Pregunta clínica, uso previsto y estimando predictivo</a>
+        <a class="btn-link" href="unidad-03.html">Unidad 3: Desarrollo de modelos y referentes clínicos →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="2">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Representar el proceso de generación de datos clínicos antes de modelar.</li>
+        <li>Distinguir población fuente, cohorte analítica y población objetivo.</li>
+        <li>Evaluar etiquetas, sesgo de verificación y errores de medición.</li>
+        <li>Analizar mecanismos de datos faltantes y decisiones de imputación.</li>
+        <li>Detectar leakage por paciente, tiempo, centro, preprocesamiento y selección.</li>
+        <li>Construir particiones reproducibles compatibles con el uso previsto.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Proceso asistencial y generación de datos</li>
+        <li>Selección, representatividad y diseño de cohorte</li>
+        <li>Etiquetas, referencia estándar y datos faltantes</li>
+        <li>Leakage, particiones y procedencia</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Proceso asistencial y generación de datos</h3>
+        <p>Los datos clínicos no son una muestra neutra de la biología. Son el resultado de quién accede al sistema, qué profesionales solicitan pruebas, qué dispositivos se utilizan, qué variables se registran y cómo se codifican decisiones. Una medición puede faltar porque no era necesaria, porque el paciente estaba demasiado grave, porque un centro no dispone de la prueba o porque ocurrió un fallo técnico. Estas causas contienen información y pueden cambiar entre desarrollo y despliegue.</p>
+        <p>Antes de construir una tabla conviene dibujar el flujo desde la población fuente hasta la cohorte analítica. Deben identificarse criterios de elegibilidad, puntos de entrada, exclusiones, duplicados, ventanas temporales y fuentes enlazadas. La fecha de extracción y la versión de cada sistema importan: los códigos, equipos y prácticas pueden cambiar. El diccionario de datos debe documentar significado, unidad, frecuencia, límites plausibles y relación temporal con el tiempo cero.</p>
+        <p>La observación también depende de la intervención clínica. Los pacientes con mayor sospecha reciben más pruebas, y quienes sobreviven más tiempo generan más registros. Por ello, la densidad de datos puede funcionar como proxy de gravedad o atención. Un modelo puede aprender intensidad de vigilancia en lugar de fisiología. El análisis debe distinguir variables clínicas intencionadas de rastros operativos y evaluar si esas señales existirán de forma estable en el entorno previsto.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Observed data = Biology + Care process + Measurement + Recording\]</div>
+            <figcaption>Representación conceptual de las fuentes que determinan una variable clínica observada.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Los datos reflejan biología, acceso, práctica y tecnología.</li>
+        <li>La cohorte analítica surge de múltiples filtros y decisiones.</li>
+        <li>La ausencia de una medición puede ser informativa.</li>
+        <li>Los rastros operativos pueden convertirse en atajos inestables.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Selección, representatividad y diseño de cohorte</h3>
+        <p>La población fuente incluye a quienes podrían haber sido elegibles en el entorno definido. La cohorte analítica contiene a quienes finalmente aparecen después de aplicar disponibilidad de datos, exclusiones y enlazado. Si estas etapas dependen del desenlace, los predictores o la capacidad de acceso, la muestra puede no representar la población objetivo. La representatividad no exige copiar cada proporción poblacional, pero sí comprender qué relaciones y rangos deben transportarse.</p>
+        <p>Las cohortes retrospectivas son útiles, aunque su tiempo cero y elegibilidad deben reconstruirse con reglas reproducibles. Los diseños caso-control o las muestras enriquecidas pueden servir para desarrollo, pero alteran prevalencia y requieren cuidado al estimar probabilidades y valores predictivos. El muestreo por conveniencia puede excluir centros pequeños, pacientes con datos incompletos o grupos que reciben atención diferente. Cada exclusión necesita cantidad, motivo y comparación básica con los incluidos.</p>
+        <p>La separación por centro o tiempo puede ser parte del diseño, no solo una técnica de validación. Reservar un periodo posterior permite evaluar cambios temporales; reservar centros completos prueba transportabilidad geográfica. Sin embargo, si un centro aporta casi todos los eventos o utiliza una práctica exclusiva, centro y desenlace quedan confundidos. El protocolo debe describir solapamiento de poblaciones, distribución de predictores y si la evaluación responde al uso previsto o a una pregunta distinta.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Selection probability = P(Included = 1 | X, Y, Care process)\]</div>
+            <figcaption>La inclusión puede depender de predictores, desenlace y proceso asistencial, generando diferencias entre cohorte y población objetivo.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Población fuente, cohorte analítica y población objetivo no son equivalentes.</li>
+        <li>Las exclusiones deben cuantificarse y justificarse.</li>
+        <li>Muestras enriquecidas alteran prevalencia y calibración.</li>
+        <li>Centro, tiempo y desenlace pueden quedar confundidos.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Etiquetas, referencia estándar y datos faltantes</h3>
+        <p>Una etiqueta puede provenir de adjudicación clínica, prueba de laboratorio, informe, código administrativo o regla computacional. Cada fuente tiene sensibilidad, especificidad y variación temporal. Los códigos de facturación pueden ser reproducibles pero no representar exactamente la condición clínica. Una prueba confirmatoria puede ser más específica, aunque solo se aplica a pacientes con alta sospecha. Cuando la probabilidad de verificar depende del modelo de atención, la evaluación puede sobrestimar o subestimar desempeño.</p>
+        <p>Las etiquetas derivadas de decisiones humanas pueden incorporar sesgos previos. Predecir ingreso, derivación o tratamiento puede reproducir disponibilidad de recursos y práctica local. El desenlace debe alinearse con el objetivo: predecir una decisión existente no es igual que predecir necesidad clínica. La revisión debe documentar cegamiento de evaluadores, concordancia, resolución de discrepancias y relación entre predictores y proceso de etiquetado.</p>
+        <p>Los datos faltantes se describen por mecanismo y contexto, no solo por porcentaje. Bajo ausencia completamente aleatoria, los faltantes no dependen de variables observadas ni no observadas; bajo ausencia al azar, pueden explicarse por información observada; bajo ausencia no al azar, dependen de valores no observados o del propio proceso. La imputación debe ajustarse dentro del entrenamiento y respetar tiempo, unidades y plausibilidad. Añadir indicadores de ausencia puede mejorar predicción, pero también aprender una práctica local que no se transporta.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Observed label = True state + Measurement error + Verification process\]</div>
+            <figcaption>Representación conceptual de cómo referencia y verificación condicionan la etiqueta utilizada.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La etiqueta es una medición con error, no una verdad automática.</li>
+        <li>El sesgo de verificación aparece cuando no todos reciben la referencia.</li>
+        <li>Decisiones clínicas históricas pueden codificar desigualdad o capacidad.</li>
+        <li>La imputación debe formar parte del pipeline de entrenamiento.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Leakage, particiones y procedencia</h3>
+        <p>Existe fuga cuando el desarrollo utiliza información que no estaría disponible al aplicar el modelo o que pertenece a la evaluación reservada. La fuga directa incluye variables posteriores al desenlace. La fuga indirecta aparece cuando se normaliza, imputa, selecciona variables o armoniza usando toda la base antes de dividir. También ocurre cuando el mismo paciente, familia, dispositivo, hospital o episodio relacionado aparece en entrenamiento y prueba. El resultado suele ser una estimación optimista difícil de reproducir.</p>
+        <p>La partición debe corresponder al nivel de independencia y al objetivo de generalización. Para imágenes o registros repetidos, todas las observaciones de un paciente permanecen juntas. Para evaluar un nuevo hospital, se reservan centros completos. Para pronóstico temporal, el entrenamiento precede a la prueba y las variables se construyen sin mirar al futuro. La estratificación puede preservar eventos, pero no debe romper agrupaciones. Las decisiones de partición se registran antes de ajustar modelos.</p>
+        <p>La procedencia permite reconstruir qué datos, reglas y versiones produjeron cada conjunto. Deben conservarse identificadores pseudonimizados, fechas de extracción, hashes, consultas, criterios, transformaciones y exclusiones. Un conjunto de prueba pierde valor si se consulta repetidamente para elegir modelos; con el tiempo se convierte en parte del entrenamiento intelectual. Por ello, los resultados externos se inspeccionan después de bloquear pipeline, umbrales y plan de análisis, y cualquier ajuste posterior se evalúa en una cohorte nueva.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Train entities intersect Test entities = empty set\]</div>
+            <figcaption>Las entidades dependientes definidas por paciente, centro, familia u otro nivel relevante no deben cruzar particiones.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Leakage incluye variables, transformaciones y relaciones entre observaciones.</li>
+        <li>La unidad de partición depende del objetivo de generalización.</li>
+        <li>El conjunto de prueba debe permanecer bloqueado.</li>
+        <li>La procedencia conecta la cohorte publicada con las fuentes originales.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Imputación antes de dividir</h3>
+        <p><strong>Situación.</strong> Se calcula la mediana de cada variable con toda la cohorte y después se separan entrenamiento y prueba.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Identificar qué parámetros aprendió la imputación.</li>
+        <li>Reconocer que la prueba influyó en esos parámetros.</li>
+        <li>Dividir primero por paciente.</li>
+        <li>Ajustar la imputación solo en entrenamiento.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La transformación produjo fuga indirecta y una evaluación optimista, aunque nunca se usó explícitamente la etiqueta de prueba.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>El efecto puede ser pequeño en algunos datos.</li>
+        <li>Todas las transformaciones aprendidas deben revisarse, no solo la imputación.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Etiqueta administrativa de complicación</h3>
+        <p><strong>Situación.</strong> El desenlace se define mediante un código de facturación que varía entre hospitales.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Comparar reglas de codificación por centro.</li>
+        <li>Validar una muestra contra revisión clínica.</li>
+        <li>Estimar error de clasificación.</li>
+        <li>Analizar desempeño por centro y fuente de etiqueta.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> El modelo puede aprender diferencias administrativas y no únicamente riesgo clínico.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La revisión clínica también puede discrepar.</li>
+        <li>La validación parcial debe considerar selección.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Auditoría de cohorte y leakage</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Dibujar el proceso de generación de datos.</li>
+        <li>Definir población fuente, objetivo y analítica.</li>
+        <li>Auditar etiqueta y faltantes.</li>
+        <li>Diseñar particiones y procedencia.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Identificar tres rastros operativos que podrían actuar como atajos.</li>
+        <li>Construir un diagrama de selección desde población fuente hasta cohorte.</li>
+        <li>Evaluar sesgo de verificación en una prueba confirmatoria.</li>
+        <li>Clasificar ejemplos de faltantes como MCAR, MAR o MNAR con cautela.</li>
+        <li>Corregir un pipeline que escala variables antes de dividir.</li>
+        <li>Diseñar una partición por paciente y centro.</li>
+        <li>Proponer una validación temporal con tiempo cero coherente.</li>
+        <li>Crear un registro mínimo de procedencia y exclusiones.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>La selección está cuantificada.</li>
+        <li>La etiqueta tiene fuente y limitaciones.</li>
+        <li>Las transformaciones se ajustan en entrenamiento.</li>
+        <li>Las entidades dependientes no cruzan particiones.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Asumir que la base representa la población objetivo.</strong><p>Mapear selección, acceso, exclusiones y cambios de práctica.</p></li>
+        <li><strong>Tratar la etiqueta como verdad perfecta.</strong><p>Documentar referencia, verificación, error y concordancia.</p></li>
+        <li><strong>Imputar o escalar antes de dividir.</strong><p>Ajustar cada transformación dentro del entrenamiento.</p></li>
+        <li><strong>Dividir registros y no pacientes.</strong><p>Mantener entidades dependientes en una sola partición.</p></li>
+        <li><strong>Consultar repetidamente el conjunto de prueba.</strong><p>Bloquear plan y reservar una nueva cohorte para ajustes posteriores.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Por qué los datos clínicos no son neutrales?</summary>
+        <p><strong>Respuesta:</strong> Porque reflejan acceso, decisiones, medición, registro y tecnología además de biología.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Qué diferencia hay entre población fuente y analítica?</summary>
+        <p><strong>Respuesta:</strong> La analítica resulta de filtros, disponibilidad y enlazado aplicados a la fuente.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Qué es sesgo de verificación?</summary>
+        <p><strong>Respuesta:</strong> Distorsión cuando la referencia depende de sospecha, predictores o desenlace.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Un código administrativo es una etiqueta perfecta?</summary>
+        <p><strong>Respuesta:</strong> No; puede variar por práctica, facturación y centro.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Por qué la ausencia puede ser predictiva?</summary>
+        <p><strong>Respuesta:</strong> Porque la decisión de medir depende del estado y del proceso asistencial.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué transformación puede producir leakage?</summary>
+        <p><strong>Respuesta:</strong> Cualquier imputación, escalado, selección o armonización ajustada con la prueba.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Cuál es la unidad mínima de partición con visitas repetidas?</summary>
+        <p><strong>Respuesta:</strong> El paciente, salvo que exista una agrupación aún más amplia relevante.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Qué ocurre si se ajusta tras ver la prueba externa?</summary>
+        <p><strong>Respuesta:</strong> Esa cohorte deja de ser una evaluación independiente del modelo final.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Población fuente</strong><p>Conjunto del cual pueden surgir las personas elegibles.</p></li>
+        <li><strong>Cohorte analítica</strong><p>Muestra final utilizada después de criterios, enlazado y disponibilidad.</p></li>
+        <li><strong>Población objetivo</strong><p>Población en la que se pretende usar o evaluar el modelo.</p></li>
+        <li><strong>Referencia estándar</strong><p>Procedimiento usado para establecer el desenlace o condición evaluada.</p></li>
+        <li><strong>Sesgo de verificación</strong><p>Distorsión causada porque la referencia no se aplica de igual forma a todos.</p></li>
+        <li><strong>Error de etiquetado</strong><p>Diferencia entre la etiqueta registrada y el estado definido de interés.</p></li>
+        <li><strong>MCAR</strong><p>Ausencia independiente de variables observadas y no observadas.</p></li>
+        <li><strong>MAR</strong><p>Ausencia explicable condicionalmente por variables observadas.</p></li>
+        <li><strong>MNAR</strong><p>Ausencia dependiente de información no observada o del valor faltante.</p></li>
+        <li><strong>Leakage</strong><p>Uso indebido de información futura o reservada para evaluación.</p></li>
+        <li><strong>Procedencia</strong><p>Registro del origen, selección y transformación de los datos.</p></li>
+        <li><strong>Atajo</strong><p>Señal fácil y potencialmente espuria que el modelo utiliza en lugar del fenómeno deseado.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://www.bmj.com/content/385/bmj-2023-078378" rel="noopener noreferrer">TRIPOD+AI</a></strong><span class="course-tag">The BMJ · guía de reporte</span></li>
+        <li><strong><a class="resource-link" href="https://www.bmj.com/content/388/bmj-2024-082505" rel="noopener noreferrer">PROBAST+AI</a></strong><span class="course-tag">The BMJ · herramienta metodológica</span></li>
+        <li><strong><a class="resource-link" href="https://www.nature.com/articles/s41591-022-01772-9" rel="noopener noreferrer">DECIDE-AI</a></strong><span class="course-tag">Nature Medicine · guía de evaluación clínica</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles" rel="noopener noreferrer">Good Machine Learning Practice</a></strong><span class="course-tag">IMDRF / FDA · principios regulatorios</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/software-medical-device-samd/transparency-machine-learning-enabled-medical-devices-guiding-principles" rel="noopener noreferrer">Transparency for Machine Learning-Enabled Medical Devices</a></strong><span class="course-tag">FDA, Health Canada y MHRA · principios de transparencia</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Auditar cómo el proceso asistencial genera datos, ausencias y etiquetas, y diseñar una cohorte y particiones que permitan evaluar un modelo sin sesgo evitable ni fuga de información. Conecta especialmente con Historia clínica electrónica: Registro y solicitud de pruebas generan faltantes y proxies operativos, Diagnóstico: La verificación selectiva condiciona las etiquetas y métricas, Ómicas: Batch, centro y preprocesamiento pueden confundirse con el desenlace, Salud digital: Wearables y aplicaciones presentan pérdidas, adherencia y selección dependientes del usuario. Material educativo en estado review. Una cohorte retrospectiva técnicamente limpia no demuestra por sí sola aplicabilidad, seguridad o utilidad clínica.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-01.html">← Unidad 1: Pregunta clínica, uso previsto y estimando predictivo</a><a class="btn-link" href="unidad-03.html">Unidad 3: Desarrollo de modelos y referentes clínicos →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Machine Learning Biomédico y Validación de Modelos Clínicos · unidad 2 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>

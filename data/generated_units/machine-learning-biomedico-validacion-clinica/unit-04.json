@@ -1,0 +1,183 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "machine-learning-biomedico-validacion-clinica",
+  "area_id": "ingenieria-biomedica",
+  "unit": 4,
+  "slug": "validacion-interna-optimismo-incertidumbre",
+  "title": "Validación interna, optimismo e incertidumbre",
+  "status": "review",
+  "purpose": "Estimar el desempeño esperado del procedimiento de desarrollo sin reutilizar información, cuantificando optimismo, variabilidad e inestabilidad antes de cualquier evaluación externa.",
+  "learning_objectives": [
+    "Distinguir rendimiento aparente, validación interna y evaluación externa.",
+    "Elegir bootstrap, validación cruzada o partición interna según objetivo y tamaño.",
+    "Aplicar validación anidada cuando existe selección de hiperparámetros.",
+    "Cuantificar optimismo e incertidumbre del procedimiento completo.",
+    "Relacionar tamaño muestral, número de eventos, complejidad e inestabilidad.",
+    "Bloquear un modelo después del desarrollo sin usar la prueba para corregirlo."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Rendimiento aparente, generalización y optimismo",
+      "paragraphs": [
+        "El rendimiento aparente se calcula en los mismos datos utilizados para ajustar el modelo. Tiende a ser optimista porque parámetros, variables e hiperparámetros fueron elegidos para explicar particularidades de esa muestra. El optimismo aumenta con flexibilidad, número de decisiones, predictores candidatos y ruido. Un resultado perfecto en desarrollo puede indicar fuga, sobreajuste o una tarea demasiado cercana al desenlace, no una solución clínica excelente.",
+        "La validación interna estima cuánto se degradaría el procedimiento al aplicarse a nuevas observaciones de una población similar. No demuestra transportabilidad a otros centros o periodos. Debe reproducir todas las decisiones del desarrollo: imputación, selección, tuning, calibración y umbral. Validar solo el algoritmo después de fijar transformaciones con toda la cohorte evalúa un proceso diferente y mantiene optimismo oculto.",
+        "La evaluación debe dirigirse al procedimiento que se pretende repetir. Si el objetivo es estimar un modelo final construido con todos los datos, el resampling puede estimar corrección por optimismo. Si se comparan algoritmos, se necesita una capa separada para selección. La pregunta no es qué técnica es universalmente mejor, sino qué estimación responde al diseño, volumen de datos y decisiones realizadas."
+      ],
+      "key_points": [
+        "El desempeño aparente reutiliza datos de ajuste y suele ser optimista.",
+        "La validación interna evalúa una población similar, no transportabilidad.",
+        "Todas las decisiones del pipeline deben repetirse dentro del resampling.",
+        "La unidad evaluada es el procedimiento de desarrollo completo."
+      ],
+      "equations": [
+        {
+          "latex": "Optimism = ApparentPerformance - TestPerformance",
+          "meaning": "Diferencia entre desempeño en datos usados para ajustar y desempeño en observaciones no utilizadas por ese ajuste.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Bootstrap, validación cruzada y partición simple",
+      "paragraphs": [
+        "El bootstrap genera muestras con reemplazo del mismo tamaño que la cohorte. En cada repetición se ajusta el procedimiento y se compara desempeño en la muestra bootstrap y en los datos originales o fuera de bolsa según el estimador. Permite estimar optimismo y estabilidad utilizando eficientemente los datos. Sin embargo, debe respetar agrupaciones por paciente, centro o familia; remuestrear filas dependientes rompe la estructura y subestima variación.",
+        "La validación cruzada divide los datos en pliegues. Cada pliegue actúa como evaluación mientras los demás entrenan. Repetir el proceso reduce dependencia de una única división y permite examinar variabilidad. El número de pliegues equilibra tamaño de entrenamiento, coste y correlación entre estimaciones. En datos longitudinales o multicéntricos puede requerirse validación agrupada o temporal, porque una división aleatoria no representa el objetivo de generalización.",
+        "Una partición simple de entrenamiento y validación es fácil de comunicar, pero desperdicia información y produce una estimación muy dependiente del azar, especialmente en muestras pequeñas. Puede ser razonable en conjuntos grandes con muchos eventos y cuando existe una evaluación externa independiente, pero no debe convertirse en regla automática de 70/30. La elección se justifica por eventos, agrupación, recursos y finalidad."
+      ],
+      "key_points": [
+        "Bootstrap usa eficientemente datos y puede estimar optimismo.",
+        "La validación cruzada necesita respetar agrupaciones y tiempo.",
+        "Una sola partición puede ser inestable y desperdiciar eventos.",
+        "La técnica de resampling debe corresponder al objetivo de generalización."
+      ],
+      "equations": [
+        {
+          "latex": "CV estimate = mean_k Metric(model trained without fold k, fold k)",
+          "meaning": "Promedio de desempeño en pliegues no utilizados para ajustar el modelo correspondiente.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Validación anidada, selección y double dipping",
+      "paragraphs": [
+        "Cuando se eligen hiperparámetros, variables o algoritmos, los mismos datos no deben servir simultáneamente para seleccionar y estimar desempeño final. La validación anidada utiliza un bucle interno para elegir configuración y uno externo para evaluar el procedimiento de selección. El resultado externo refleja que en la práctica también se tomarían decisiones de tuning con datos limitados.",
+        "El double dipping aparece cuando se inspeccionan resultados de validación y se modifica el pipeline repetidamente, pero se sigue reportando esa misma estimación como independiente. También ocurre al elegir la semilla, el horizonte o el subgrupo que mejor funciona. Cada iteración informada por la evaluación incorpora esa información al desarrollo. La solución es preespecificar, usar resampling anidado y conservar una evaluación verdaderamente reservada.",
+        "La comparación de muchos modelos necesita considerar multiplicidad y sesgo del ganador. El mejor promedio puede deberse al azar y mostrar alta inestabilidad entre folds. Conviene reportar distribución de diferencias pareadas, no solo rankings. Una regla de selección puede preferir el modelo más simple cuyo desempeño sea compatible con el máximo dentro de una tolerancia. Esto reduce decisiones oportunistas y mejora mantenibilidad."
+      ],
+      "key_points": [
+        "El bucle interno selecciona; el externo evalúa el procedimiento de selección.",
+        "Modificar tras mirar validación convierte esa información en desarrollo.",
+        "El ganador entre muchas configuraciones presenta optimismo adicional.",
+        "Las diferencias pareadas y la estabilidad son más informativas que un ranking."
+      ],
+      "equations": [
+        {
+          "latex": "OuterScore_j = Metric(Fit(SelectHyperparameters(InnerData_j)), OuterFold_j)",
+          "meaning": "Cada fold externo evalúa un modelo cuyo tuning se realizó únicamente dentro de los datos internos correspondientes.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Tamaño muestral, intervalos y estabilidad del modelo",
+      "paragraphs": [
+        "El tamaño muestral útil depende del número de eventos, prevalencia, número efectivo de parámetros, fuerza de señal, heterogeneidad y desempeño esperado. Reglas fijas como diez eventos por variable son insuficientes para todos los contextos. Los modelos flexibles pueden tener una complejidad efectiva elevada incluso con pocos hiperparámetros visibles. La planificación debe considerar precisión de calibración, estimación de riesgo basal y sobreajuste admisible.",
+        "Los intervalos de confianza describen incertidumbre de métricas bajo supuestos y diseño determinados. Deben respetar agrupación y dependencia. Para AUC, sensibilidad o calibración, un intervalo amplio puede hacer compatibles conclusiones muy distintas. Reportar solo la media de validación cruzada oculta variabilidad entre pliegues y pacientes. Bootstrap o métodos analíticos pueden complementar, pero ninguna técnica corrige una cohorte pequeña o poco representativa.",
+        "La estabilidad se evalúa repitiendo desarrollo y observando variación en predicciones, variables seleccionadas, coeficientes y métricas. Un modelo puede tener AUC promedio aceptable y producir probabilidades muy diferentes entre repeticiones. Esa inestabilidad afecta decisiones individuales y actualización. Antes de bloquear, deben revisarse curvas de aprendizaje, sensibilidad a semillas, casos influyentes y distribución de predicciones. Si el modelo es inestable, la respuesta puede ser simplificar, recopilar datos o limitar el uso."
+      ],
+      "key_points": [
+        "El tamaño muestral depende de eventos, complejidad, señal y precisión requerida.",
+        "Las reglas universales de eventos por variable son insuficientes.",
+        "Los intervalos deben respetar dependencia y diseño.",
+        "La estabilidad de predicciones individuales importa además de la métrica promedio."
+      ],
+      "equations": [
+        {
+          "latex": "Uncertainty = Sampling variation + Model selection variation + Measurement variation",
+          "meaning": "Representación conceptual de componentes que afectan la incertidumbre del desempeño y de las predicciones.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Rendimiento aparente", "definition": "Desempeño calculado en los datos utilizados para ajustar el modelo."},
+    {"term": "Optimismo", "definition": "Sobreestimación del desempeño causada por reutilización y adaptación a la muestra."},
+    {"term": "Validación interna", "definition": "Estimación del desempeño en nuevas observaciones de una población similar mediante resampling."},
+    {"term": "Bootstrap", "definition": "Remuestreo con reemplazo usado para estimar variación y optimismo."},
+    {"term": "Validación cruzada", "definition": "Esquema que alterna pliegues de entrenamiento y evaluación."},
+    {"term": "Fold", "definition": "Subconjunto utilizado como entrenamiento o evaluación en resampling."},
+    {"term": "Validación anidada", "definition": "Resampling con bucles separados para selección y evaluación."},
+    {"term": "Double dipping", "definition": "Uso repetido de los mismos datos para tomar decisiones y estimar desempeño."},
+    {"term": "Sesgo del ganador", "definition": "Optimismo del modelo elegido como mejor entre muchas alternativas."},
+    {"term": "Estabilidad", "definition": "Consistencia de parámetros, predicciones y desempeño ante cambios de muestra o semilla."},
+    {"term": "Curva de aprendizaje", "definition": "Relación entre cantidad de datos y desempeño estimado."},
+    {"term": "Modelo bloqueado", "definition": "Versión fija posterior al desarrollo y previa a evaluación independiente."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Tuning y evaluación en los mismos folds",
+      "scenario": "Se prueban cien configuraciones con validación cruzada y se reporta el mejor promedio como desempeño final.",
+      "reasoning_steps": ["Reconocer selección sobre los folds.", "Crear bucle externo.", "Repetir tuning solo internamente.", "Reportar distribución externa pareada."],
+      "interpretation": "El mejor promedio original estaba sesgado por selección entre muchas configuraciones.",
+      "limitations": ["La validación anidada aumenta coste.", "Sigue siendo interna y no prueba transportabilidad."]
+    },
+    {
+      "title": "Partición 70/30 con pocos eventos",
+      "scenario": "Una cohorte con 120 eventos reserva 30% para validación y obtiene estimaciones muy variables.",
+      "reasoning_steps": ["Contar eventos por partición.", "Evaluar bootstrap o cross-validation repetida.", "Mantener agrupación por paciente.", "Planificar evaluación externa separada."],
+      "interpretation": "La partición simple desperdició información y produjo una estimación dependiente del azar.",
+      "limitations": ["El resampling no crea información nueva.", "La muestra puede seguir siendo insuficiente para el modelo."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Diseño de validación interna",
+      "instructions": ["Enumerar decisiones del pipeline.", "Elegir esquema de resampling.", "Separar tuning y evaluación.", "Cuantificar variabilidad y estabilidad."],
+      "problems": [
+        "Distinguir desempeño aparente de validación interna.",
+        "Diseñar bootstrap agrupado por paciente.",
+        "Elegir número de folds y justificarlo.",
+        "Convertir una validación simple en anidada.",
+        "Detectar double dipping tras inspeccionar resultados.",
+        "Comparar modelos mediante diferencias pareadas.",
+        "Proponer una curva de aprendizaje.",
+        "Definir criterios para bloquear o simplificar el modelo."
+      ],
+      "checking_criteria": ["El pipeline completo se repite.", "Selección y evaluación están separadas.", "Se respeta dependencia.", "Se reportan incertidumbre e inestabilidad."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Reportar desempeño aparente como validado.", "correction": "Usar resampling del procedimiento completo."},
+    {"error": "Repetir solo el ajuste del algoritmo.", "correction": "Repetir imputación, selección, tuning y calibración."},
+    {"error": "Usar una división 70/30 por costumbre.", "correction": "Elegir según eventos, tamaño, agrupación y objetivo."},
+    {"error": "Seleccionar y evaluar en los mismos folds.", "correction": "Aplicar validación anidada o evaluación independiente."},
+    {"error": "Ignorar inestabilidad individual.", "correction": "Examinar variación de predicciones, coeficientes y variables seleccionadas."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué es desempeño aparente?", "answer": "El calculado en los datos usados para ajustar el modelo."},
+    {"question": "¿Qué estima la validación interna?", "answer": "Generalización a observaciones similares bajo el procedimiento evaluado."},
+    {"question": "¿Qué ventaja tiene bootstrap?", "answer": "Usa eficientemente datos y permite estimar optimismo y estabilidad."},
+    {"question": "¿Cuándo se necesita validación anidada?", "answer": "Cuando se seleccionan hiperparámetros, variables o modelos."},
+    {"question": "¿Qué es double dipping?", "answer": "Usar la misma información para decidir y luego tratarla como evaluación independiente."},
+    {"question": "¿Por qué una sola partición puede ser mala?", "answer": "Desperdicia datos y depende fuertemente del azar."},
+    {"question": "¿Qué debe incluir un intervalo?", "answer": "La estructura de dependencia y el diseño de evaluación."},
+    {"question": "¿Qué indica inestabilidad de predicciones?", "answer": "Que pequeñas variaciones de muestra producen decisiones individuales diferentes."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Modelos de riesgo", "connection": "Bootstrap permite estimar optimismo y estabilidad de probabilidades."},
+    {"topic": "Ómicas", "connection": "Selección de alta dimensionalidad requiere resampling anidado."},
+    {"topic": "Datos longitudinales", "connection": "Folds aleatorios pueden violar tiempo y dependencia."},
+    {"topic": "Validación clínica", "connection": "La validación interna prepara el modelo, pero no sustituye una cohorte externa."}
+  ],
+  "sources": [
+    {"title": "TRIPOD+AI", "organization": "The BMJ", "url": "https://www.bmj.com/content/385/bmj-2023-078378", "type": "guía de reporte", "verification_status": "verified_directly"},
+    {"title": "PROBAST+AI", "organization": "The BMJ", "url": "https://www.bmj.com/content/388/bmj-2024-082505", "type": "herramienta metodológica", "verification_status": "verified_directly"},
+    {"title": "Good Machine Learning Practice", "organization": "IMDRF / FDA", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles", "type": "principios regulatorios", "verification_status": "verified_directly"},
+    {"title": "scikit-learn Cross-validation Guide", "organization": "scikit-learn", "url": "https://scikit-learn.org/stable/modules/cross_validation.html", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "scikit-learn Model Selection", "organization": "scikit-learn", "url": "https://scikit-learn.org/stable/model_selection.html", "type": "documentación oficial", "verification_status": "verified_directly"}
+  ],
+  "editorial_notice": "Material educativo en estado review. La validación interna no demuestra transportabilidad, impacto clínico ni seguridad en un entorno asistencial."
+}

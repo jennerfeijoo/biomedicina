@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 6. Discriminación, calibración y utilidad clínica | Machine Learning Biomédico y Validación de Modelos Clínicos | CitoNauta</title>
+  <meta name="description" content="Evaluar modelos predictivos con métricas alineadas con prevalencia, umbrales y consecuencias clínicas, evitando reducir la evidencia a una única medida de discriminación." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Ingeniería Biomédica Aplicada</a></li>
+            <li><a href="../index.html">Machine Learning Biomédico y Validación de Modelos Clínicos</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="machine-learning-biomedico-validacion-clinica">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Ingeniería Biomédica Aplicada</a><span>/</span>
+        <a href="../index.html">Machine Learning Biomédico y Validación de Modelos Clínicos</a><span>/</span>
+        <span>Unidad 6</span>
+      </div>
+      <p class="eyebrow">Unidad 6 de 8</p>
+      <h1>Discriminación, calibración y utilidad clínica</h1>
+      <p>Evaluar modelos predictivos con métricas alineadas con prevalencia, umbrales y consecuencias clínicas, evitando reducir la evidencia a una única medida de discriminación.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Machine Learning Biomédico y Validación de Modelos Clínicos</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-05.html">← Unidad 5: Validación externa, transportabilidad y actualización</a>
+        <a class="btn-link" href="unidad-07.html">Unidad 7: Sesgo, equidad, explicabilidad y equipo humano-IA →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="6">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Interpretar sensibilidad, especificidad y valores predictivos según umbral y prevalencia.</li>
+        <li>Comparar ROC y precision-recall en eventos frecuentes e infrecuentes.</li>
+        <li>Evaluar calibración mediante gráficos, intercepto, pendiente y error probabilístico.</li>
+        <li>Seleccionar umbrales a partir de consecuencias y capacidad asistencial.</li>
+        <li>Aplicar decision curve analysis y net benefit con supuestos explícitos.</li>
+        <li>Comparar el modelo con práctica habitual y alternativas treat-all y treat-none.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Matriz de confusión, prevalencia y umbrales</li>
+        <li>Discriminación: ROC, precision-recall y ranking</li>
+        <li>Calibración y error probabilístico</li>
+        <li>Utilidad clínica, net benefit y comparación con la práctica</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Matriz de confusión, prevalencia y umbrales</h3>
+        <p>La sensibilidad y especificidad describen el comportamiento de una regla de decisión en un umbral. La sensibilidad es la proporción de eventos detectados y la especificidad la proporción de no eventos correctamente descartados. No son propiedades absolutas del algoritmo: cambian con umbral, espectro de pacientes, referencia y calidad de medición. Una sensibilidad alta puede acompañarse de muchos falsos positivos cuando el evento es infrecuente.</p>
+        <p>Los valores predictivos responden a la pregunta clínica posterior a una predicción. El valor predictivo positivo indica la proporción de positivos que presentan el evento; el negativo, la proporción de negativos sin evento. Ambos dependen de prevalencia y no se transportan automáticamente entre poblaciones. Una prueba con sensibilidad y especificidad estables puede producir valores predictivos muy diferentes entre atención primaria y un centro de referencia.</p>
+        <p>El umbral convierte probabilidad en acción y debe relacionarse con consecuencias. En triaje, un falso negativo puede ser más costoso que una evaluación adicional; en una intervención invasiva, los falsos positivos pueden ser graves. También importa la capacidad: un umbral que genera mil alertas diarias puede ser impracticable. Por ello, el punto operativo se preespecifica o se selecciona con costes, recursos y ruta confirmatoria, no solo mediante Youden o F1. Además, debe reevaluarse cuando cambien la prevalencia, la capacidad o la ruta confirmatoria, porque una regla previamente razonable puede dejar de ser segura.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[PPV = (Sensitivity * Prevalence) / ((Sensitivity * Prevalence) + ((1-Specificity)*(1-Prevalence)))\]</div>
+            <figcaption>El valor predictivo positivo depende de prevalencia además de sensibilidad y especificidad.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Sensibilidad y especificidad dependen del umbral y del espectro de casos.</li>
+        <li>Los valores predictivos cambian con prevalencia.</li>
+        <li>El umbral representa una decisión y sus consecuencias.</li>
+        <li>La capacidad del servicio limita puntos operativos plausibles.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Discriminación: ROC, precision-recall y ranking</h3>
+        <p>La discriminación describe la capacidad de ordenar individuos con mayor y menor riesgo. El AUC ROC puede interpretarse como la probabilidad de que un caso con evento reciba una puntuación mayor que uno sin evento. Resume todos los umbrales, pero no indica calibración ni consecuencias. Un modelo puede tener AUC alta y probabilidades sistemáticamente demasiado elevadas, lo que sería problemático para decisiones basadas en riesgo absoluto.</p>
+        <p>En eventos raros, la curva precision-recall muestra la relación entre sensibilidad y valor predictivo positivo. Su baseline depende de prevalencia, por lo que comparar áreas entre poblaciones requiere cautela. ROC puede parecer favorable aunque la mayoría de alertas sean falsas. Ninguna curva sustituye una tabla de desempeño en umbrales relevantes, con intervalos y denominadores.</p>
+        <p>Las métricas de ranking son sensibles a mezcla de casos. Añadir individuos extremadamente sanos y extremadamente enfermos puede aumentar AUC sin mejorar decisiones en la zona clínica difícil. Conviene analizar rangos de riesgo y subpoblaciones relevantes. La diferencia de AUC entre modelos correlacionados necesita incertidumbre y no captura necesariamente valor incremental. También deben examinarse reclasificación, calibración y net benefit.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[AUC = P(score_event &gt; score_nonevent)\]</div>
+            <figcaption>Interpretación probabilística de discriminación entre un individuo con evento y otro sin evento.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>AUC resume ranking, no probabilidades ni utilidad.</li>
+        <li>Precision-recall es informativa en eventos infrecuentes.</li>
+        <li>Las curvas deben complementarse con umbrales clínicos.</li>
+        <li>La mezcla de casos puede modificar discriminación sin mejorar decisiones.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Calibración y error probabilístico</h3>
+        <p>La calibración evalúa si las probabilidades predichas corresponden a frecuencias observadas. Debe examinarse gráficamente a lo largo del rango, no solo con una prueba global. La calibración en el grande compara riesgo promedio; la pendiente resume si las predicciones son demasiado extremas o conservadoras. Una curva flexible puede revelar problemas locales ocultos por estas medidas.</p>
+        <p>El Brier score es el promedio del error cuadrático entre probabilidad y desenlace. Combina calibración y discriminación y depende de prevalencia. Debe compararse con un referente, como predecir el riesgo basal. La log-loss penaliza fuertemente probabilidades seguras e incorrectas. Estas métricas propias incentivan probabilidades honestas, aunque su valor agregado no muestra dónde ocurre el error.</p>
+        <p>La calibración se evalúa en cada población y periodo. Un modelo puede estar bien calibrado globalmente y mal en subgrupos, o viceversa por tamaños pequeños. Agrupar predicciones en deciles facilita visualización pero puede ocultar estructura y depende de cortes. Los intervalos y métodos suavizados ayudan, sin reemplazar revisión de casos y densidad de datos en cada rango.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Brier = mean((p_i - y_i)^2)\]</div>
+            <figcaption>Error cuadrático medio de probabilidades; menor es mejor bajo el mismo desenlace y población.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La calibración necesita gráfico y medidas complementarias.</li>
+        <li>Intercepto y pendiente describen aspectos distintos.</li>
+        <li>Brier y log-loss evalúan probabilidades pero dependen del contexto.</li>
+        <li>La calibración puede variar por población, tiempo y subgrupo.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Utilidad clínica, net benefit y comparación con la práctica</h3>
+        <p>La utilidad clínica pregunta si usar el modelo mejora decisiones frente a alternativas. Decision curve analysis expresa consecuencias mediante un umbral de probabilidad que representa la relación entre daño de falsos positivos y beneficio de verdaderos positivos. El net benefit combina ambos en una escala comparable con estrategias de tratar a todos o a nadie. La interpretación requiere que el umbral corresponda a una acción y a preferencias plausibles.</p>
+        <p>Una curva de decisión no demuestra efecto real sobre pacientes; estima utilidad bajo supuestos de acción correcta, adherencia y consecuencias. Debe complementarse con capacidad, tiempos, pruebas confirmatorias y flujo. Un modelo puede tener net benefit positivo en un rango, pero generar demasiadas alertas o desplazar recursos desde otros pacientes. Los umbrales se presentan con número de intervenciones y eventos detectados para facilitar interpretación.</p>
+        <p>La comparación principal debe incluir práctica habitual y baseline. Si el modelo reemplaza juicio clínico, se evalúa el equipo humano-modelo y no solo el algoritmo. Si añade una alerta, importa cuántas se revisan, cuánto tiempo consumen y qué cambios producen. La evidencia retrospectiva de utilidad debe describirse como potencial; el beneficio real requiere evaluación prospectiva y, cuando corresponde, comparación controlada.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[NetBenefit = TP/N - FP/N * threshold/(1-threshold)\]</div>
+            <figcaption>Balance de verdaderos y falsos positivos ponderado por el umbral de decisión.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Net benefit conecta umbral, verdaderos positivos y falsos positivos.</li>
+        <li>La utilidad depende de acciones y consecuencias plausibles.</li>
+        <li>La capacidad y la carga de alertas forman parte del valor.</li>
+        <li>El impacto real requiere evaluación prospectiva del sistema en uso.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>AUC alta con alertas poco útiles</h3>
+        <p><strong>Situación.</strong> Un modelo tiene AUC 0,91 en un evento de 1%, pero en el umbral operativo solo 8% de alertas son verdaderas.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Calcular PPV con prevalencia real.</li>
+        <li>Examinar precision-recall.</li>
+        <li>Cuantificar alertas por día.</li>
+        <li>Comparar net benefit y capacidad.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La discriminación global no garantizaba una carga de alertas aceptable.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>Otro umbral puede ser útil.</li>
+        <li>La ruta confirmatoria puede cambiar consecuencias.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Modelo bien discriminado y mal calibrado</h3>
+        <p><strong>Situación.</strong> El ranking es estable, pero las probabilidades duplican el riesgo observado.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Graficar calibración.</li>
+        <li>Estimar intercepto y pendiente.</li>
+        <li>Evaluar umbrales afectados.</li>
+        <li>Recalibrar y reevaluar utilidad.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> El modelo podía ordenar pacientes, pero sus probabilidades no debían usarse directamente.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La recalibración necesita datos locales.</li>
+        <li>Puede persistir mal desempeño en subgrupos.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Informe multidimensional de desempeño</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Definir prevalencia y umbrales.</li>
+        <li>Calcular discriminación y calibración.</li>
+        <li>Evaluar net benefit.</li>
+        <li>Comparar con baseline y capacidad.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Construir una matriz de confusión para dos umbrales.</li>
+        <li>Calcular PPV al cambiar prevalencia.</li>
+        <li>Comparar ROC y precision-recall en evento raro.</li>
+        <li>Interpretar una AUC sin sobreafirmar utilidad.</li>
+        <li>Calcular Brier frente a un referente basal.</li>
+        <li>Interpretar intercepto y pendiente de calibración.</li>
+        <li>Calcular net benefit en un umbral.</li>
+        <li>Traducir métricas a alertas y acciones por cien pacientes.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>Las métricas se relacionan con prevalencia.</li>
+        <li>Los umbrales tienen consecuencias explícitas.</li>
+        <li>La calibración se presenta gráficamente.</li>
+        <li>La utilidad se compara con alternativas reales.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Reportar solo AUC.</strong><p>Añadir calibración, umbrales, valores predictivos y utilidad.</p></li>
+        <li><strong>Transportar PPV entre poblaciones.</strong><p>Recalcular con prevalencia y mezcla de casos locales.</p></li>
+        <li><strong>Elegir umbral por Youden automáticamente.</strong><p>Usar consecuencias, capacidad y ruta confirmatoria.</p></li>
+        <li><strong>Usar una prueba global de calibración como único análisis.</strong><p>Mostrar curva, intercepto, pendiente e incertidumbre.</p></li>
+        <li><strong>Interpretar net benefit como impacto demostrado.</strong><p>Presentarlo como utilidad estimada y confirmar prospectivamente.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿De qué depende PPV?</summary>
+        <p><strong>Respuesta:</strong> Sensibilidad, especificidad y prevalencia.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Qué mide AUC?</summary>
+        <p><strong>Respuesta:</strong> Capacidad de ranking entre casos con y sin evento.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Por qué PR es útil en eventos raros?</summary>
+        <p><strong>Respuesta:</strong> Muestra directamente la relación entre sensibilidad y proporción de alertas verdaderas.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué significa calibración?</summary>
+        <p><strong>Respuesta:</strong> Concordancia entre probabilidades y frecuencias observadas.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué resume Brier?</summary>
+        <p><strong>Respuesta:</strong> Error cuadrático de probabilidades, influido por calibración y discriminación.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué representa un umbral?</summary>
+        <p><strong>Respuesta:</strong> La relación entre beneficio y daño que activa una acción.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Qué compara net benefit?</summary>
+        <p><strong>Respuesta:</strong> Verdaderos y falsos positivos ponderados frente a alternativas.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿DCA demuestra beneficio real?</summary>
+        <p><strong>Respuesta:</strong> No; estima utilidad bajo supuestos y requiere evaluación prospectiva.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Sensibilidad</strong><p>Proporción de eventos correctamente identificados.</p></li>
+        <li><strong>Especificidad</strong><p>Proporción de no eventos correctamente descartados.</p></li>
+        <li><strong>PPV</strong><p>Proporción de predicciones positivas con evento observado.</p></li>
+        <li><strong>NPV</strong><p>Proporción de predicciones negativas sin evento observado.</p></li>
+        <li><strong>Umbral</strong><p>Punto de probabilidad o puntuación que activa una acción.</p></li>
+        <li><strong>ROC</strong><p>Curva de sensibilidad frente a uno menos especificidad.</p></li>
+        <li><strong>Precision-recall</strong><p>Curva de valor predictivo positivo frente a sensibilidad.</p></li>
+        <li><strong>AUC</strong><p>Resumen del ranking a través de umbrales.</p></li>
+        <li><strong>Calibración</strong><p>Correspondencia entre probabilidades predichas y frecuencias observadas.</p></li>
+        <li><strong>Brier score</strong><p>Error cuadrático medio de predicciones probabilísticas.</p></li>
+        <li><strong>Decision curve</strong><p>Evaluación de net benefit a través de umbrales.</p></li>
+        <li><strong>Net benefit</strong><p>Balance de verdaderos y falsos positivos ponderado por consecuencias.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://www.bmj.com/content/385/bmj-2023-078378" rel="noopener noreferrer">TRIPOD+AI</a></strong><span class="course-tag">The BMJ · guía de reporte</span></li>
+        <li><strong><a class="resource-link" href="https://www.bmj.com/content/388/bmj-2024-082505" rel="noopener noreferrer">PROBAST+AI</a></strong><span class="course-tag">The BMJ · herramienta metodológica</span></li>
+        <li><strong><a class="resource-link" href="https://www.nature.com/articles/s41591-022-01772-9" rel="noopener noreferrer">DECIDE-AI</a></strong><span class="course-tag">Nature Medicine · guía de evaluación clínica</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles" rel="noopener noreferrer">Good Machine Learning Practice</a></strong><span class="course-tag">IMDRF / FDA · principios regulatorios</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/software-medical-device-samd/transparency-machine-learning-enabled-medical-devices-guiding-principles" rel="noopener noreferrer">Transparency for Machine Learning-Enabled Medical Devices</a></strong><span class="course-tag">FDA, Health Canada y MHRA · principios de transparencia</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Evaluar modelos predictivos con métricas alineadas con prevalencia, umbrales y consecuencias clínicas, evitando reducir la evidencia a una única medida de discriminación. Conecta especialmente con Triaje: Sensibilidad, capacidad y carga de falsos positivos determinan el umbral, Diagnóstico: Valores predictivos dependen de prevalencia y contexto de derivación, Pronóstico: Probabilidades calibradas son necesarias para comunicar riesgo absoluto, Gestión hospitalaria: La utilidad incluye alertas, recursos y flujo de confirmación. Material educativo en estado review. Las métricas retrospectivas no sustituyen evaluación del flujo, factores humanos, seguridad ni resultados clínicos reales.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-05.html">← Unidad 5: Validación externa, transportabilidad y actualización</a><a class="btn-link" href="unidad-07.html">Unidad 7: Sesgo, equidad, explicabilidad y equipo humano-IA →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Machine Learning Biomédico y Validación de Modelos Clínicos · unidad 6 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>

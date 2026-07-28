@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 3. Desarrollo de modelos y referentes clínicos | Machine Learning Biomédico y Validación de Modelos Clínicos | CitoNauta</title>
+  <meta name="description" content="Construir modelos predictivos biomédicos reproducibles y comparables con referentes clínicos simples, controlando complejidad, transformaciones, desbalance y selección de hiperparámetros." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Ingeniería Biomédica Aplicada</a></li>
+            <li><a href="../index.html">Machine Learning Biomédico y Validación de Modelos Clínicos</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="machine-learning-biomedico-validacion-clinica">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Ingeniería Biomédica Aplicada</a><span>/</span>
+        <a href="../index.html">Machine Learning Biomédico y Validación de Modelos Clínicos</a><span>/</span>
+        <span>Unidad 3</span>
+      </div>
+      <p class="eyebrow">Unidad 3 de 8</p>
+      <h1>Desarrollo de modelos y referentes clínicos</h1>
+      <p>Construir modelos predictivos biomédicos reproducibles y comparables con referentes clínicos simples, controlando complejidad, transformaciones, desbalance y selección de hiperparámetros.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Machine Learning Biomédico y Validación de Modelos Clínicos</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-02.html">← Unidad 2: Datos clínicos, cohortes, etiquetas y fuga de información</a>
+        <a class="btn-link" href="unidad-04.html">Unidad 4: Validación interna, optimismo e incertidumbre →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="3">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Definir baselines clínicos y estadísticos antes de comparar algoritmos complejos.</li>
+        <li>Construir pipelines que integren preprocesamiento, selección, entrenamiento y predicción.</li>
+        <li>Comparar regresión penalizada, árboles, boosting y redes según datos y uso previsto.</li>
+        <li>Relacionar regularización, complejidad, sesgo y varianza.</li>
+        <li>Gestionar desbalance sin alterar la interpretación de probabilidades en evaluación.</li>
+        <li>Versionar datos, código, parámetros y artefactos para reproducir el modelo bloqueado.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Baselines, objetivo de aprendizaje y valor incremental</li>
+        <li>Pipelines, preprocesamiento e ingeniería de predictores</li>
+        <li>Familias de modelos, regularización y complejidad</li>
+        <li>Desbalance, tuning, reproducibilidad y bloqueo</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Baselines, objetivo de aprendizaje y valor incremental</h3>
+        <p>Un modelo candidato debe compararse con una alternativa realista. El baseline puede ser prevalencia, una regla clínica, un modelo logístico con pocos predictores, una puntuación existente o la práctica habitual. Comparar solo contra azar exagera el valor de algoritmos complejos. El referente debe utilizar información disponible en el mismo momento y evaluarse en las mismas particiones. Si el modelo candidato añade variables costosas o tardías, esa diferencia también forma parte de la comparación.</p>
+        <p>La función objetivo utilizada para entrenar no es necesariamente la métrica clínica final. La log-loss favorece probabilidades informativas, mientras pérdidas ponderadas pueden priorizar errores particulares. Optimizar exactitud en un evento infrecuente puede producir un clasificador que predice siempre la clase mayoritaria. La elección debe considerar si se necesitan probabilidades, ranking, detección o estimación de tiempo. Una pérdida técnica se justifica por su relación con el estimando y no porque sea la opción predeterminada de una biblioteca.</p>
+        <p>El valor incremental debe medirse sobre el referente y en varias dimensiones. Una mejora pequeña de discriminación puede acompañarse de peor calibración, mayor latencia o necesidad de datos no disponibles. Un baseline simple también ayuda a detectar atajos: si el centro o una variable administrativa explican casi todo el desempeño, el modelo puede estar aprendiendo diferencias de proceso. La comparación debe incluir incertidumbre y análisis de casos donde ambos modelos discrepan.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[LogLoss = -mean(y*log(p) + (1-y)*log(1-p))\]</div>
+            <figcaption>Pérdida probabilística que penaliza predicciones seguras e incorrectas; no sustituye evaluación de calibración y utilidad.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El baseline representa una alternativa clínica o estadística creíble.</li>
+        <li>La función de pérdida debe corresponder al tipo de salida requerida.</li>
+        <li>Superar azar no demuestra valor clínico incremental.</li>
+        <li>La comparación incluye datos, coste, latencia y estabilidad.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Pipelines, preprocesamiento e ingeniería de predictores</h3>
+        <p>El pipeline debe representar exactamente las transformaciones que se aplicarán a un nuevo paciente. Incluye selección de columnas, unidades, limpieza, imputación, codificación, escalado, reducción de dimensionalidad y modelo. Cada transformación que aprende parámetros se ajusta solo con entrenamiento dentro de cada resample. Aplicar selección de variables o normalización antes de validación permite que la información de evaluación influya en el desarrollo y produce optimismo.</p>
+        <p>La ingeniería de predictores debe respetar tiempo cero. Agregados como máximo, tendencia o número de mediciones requieren una ventana histórica definida. Una tendencia calculada con observaciones posteriores produce fuga. Variables categóricas con niveles raros necesitan reglas para categorías nuevas. En señales y series temporales deben fijarse frecuencia, filtrado, longitud, alineación y manejo de segmentos ausentes. Las variables derivadas se documentan con fórmula, unidad y versión.</p>
+        <p>La selección de predictores no debe basarse únicamente en significación univariada. Una variable débil aislada puede ser útil en combinación, y una variable fuerte puede duplicar información o introducir inestabilidad. El conocimiento clínico ayuda a evitar predictores imposibles de obtener o proxies problemáticos. La reducción de dimensionalidad y la selección supervisada se consideran parte del modelo y deben reestimarse dentro del entrenamiento.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Pipeline(X) = Model(Transform_k(...Transform_2(Transform_1(X))))\]</div>
+            <figcaption>La predicción depende de una secuencia versionada de transformaciones y del modelo final.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El pipeline completo se ajusta dentro de cada partición de entrenamiento.</li>
+        <li>La ingeniería temporal requiere ventanas definidas antes del evento.</li>
+        <li>Las variables derivadas necesitan procedencia, fórmula y unidades.</li>
+        <li>La selección univariada previa puede eliminar información y producir fuga.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Familias de modelos, regularización y complejidad</h3>
+        <p>La regresión logística proporciona probabilidades mediante una relación paramétrica entre predictores y log-odds. Puede incorporar términos no lineales e interacciones, y con penalización funciona como baseline competitivo en datos tabulares. L1 favorece coeficientes exactamente cero; L2 reduce magnitudes; elastic net combina ambas. Estas penalizaciones controlan complejidad, pero sus parámetros deben seleccionarse dentro del desarrollo y los predictores deben escalarse cuando la penalización depende de magnitudes.</p>
+        <p>Los árboles dividen el espacio mediante reglas y capturan interacciones sin especificarlas manualmente. Un árbol individual es interpretable pero inestable. Random forests reducen varianza promediando árboles, mientras boosting construye secuencias que corrigen errores. Estos métodos pueden manejar no linealidad y mezclas de variables, aunque requieren controlar profundidad, tasa de aprendizaje, número de árboles y tratamiento de faltantes. La importancia de variables puede estar sesgada por cardinalidad y correlación.</p>
+        <p>Las redes neuronales son útiles cuando existen representaciones complejas, grandes volúmenes o datos no estructurados. En cohortes tabulares pequeñas no son automáticamente superiores. El número de parámetros, la regularización, el preentrenamiento y la calidad de datos condicionan su desempeño. La elección de familia debe considerar tamaño muestral efectivo, estructura del dato, latencia, necesidad de actualización y posibilidad de validación. La complejidad solo se justifica si mejora evidencia relevante y no solo el ajuste interno.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Objective = Loss(y, f(X)) + lambda * Penalty(parameters)\]</div>
+            <figcaption>La regularización añade una penalización controlada por lambda para limitar complejidad y mejorar estabilidad.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La regresión penalizada es un referente fuerte para datos tabulares.</li>
+        <li>Árboles y boosting capturan no linealidad pero requieren tuning controlado.</li>
+        <li>La importancia de variables no equivale a causalidad ni estabilidad.</li>
+        <li>Modelos profundos necesitan datos y validación acordes a su complejidad.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Desbalance, tuning, reproducibilidad y bloqueo</h3>
+        <p>En eventos infrecuentes, el desbalance afecta aprendizaje y evaluación. Ponderar la pérdida, sobremuestrear o submuestrear puede ayudar, pero estas operaciones ocurren solo en entrenamiento. La prevalencia de la prueba debe representar el objetivo de evaluación; modificarla altera valores predictivos y calibración. Técnicas sintéticas pueden crear ejemplos poco plausibles y deben validarse según estructura biomédica, no solo por mejora de una métrica.</p>
+        <p>El tuning compara configuraciones dentro de un resampling interno. Probar muchas combinaciones y reportar la mejor puntuación en los mismos folds introduce optimismo. La búsqueda debe definir espacio, presupuesto, métrica y regla de selección. También puede preferirse el modelo más simple dentro de una tolerancia del mejor resultado. Las semillas ayudan a reproducir procesos estocásticos, pero no garantizan estabilidad; conviene repetir ajustes y analizar variación.</p>
+        <p>El modelo final se bloquea después de seleccionar pipeline, hiperparámetros, umbral y reglas de exclusión. Deben conservarse versiones de datos, entorno, dependencias, código, artefactos y metadatos. Un archivo serializado sin procedencia no es un modelo clínicamente auditable. La ficha del modelo documenta uso previsto, población, entradas, salidas, desempeño, límites y condiciones no soportadas. Cualquier cambio posterior crea una versión nueva que requiere evaluación proporcional.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Best configuration = argmin_h ValidationLoss(h | training only)\]</div>
+            <figcaption>Los hiperparámetros h se seleccionan usando solo información interna del conjunto de desarrollo.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El balance de entrenamiento no debe confundirse con prevalencia de evaluación.</li>
+        <li>El tuning pertenece al desarrollo y necesita evaluación separada.</li>
+        <li>Semillas reproducen ejecuciones, no garantizan generalización.</li>
+        <li>El modelo bloqueado incluye pipeline, umbral y artefactos versionados.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Modelo complejo sin ganancia sobre baseline</h3>
+        <p><strong>Situación.</strong> Un boosting obtiene AUC 0,812 y una regresión penalizada 0,808, con calibración similar.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Estimar incertidumbre de la diferencia.</li>
+        <li>Comparar latencia y mantenimiento.</li>
+        <li>Evaluar utilidad en umbrales clínicos.</li>
+        <li>Preferir complejidad solo si aporta beneficio relevante.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La diferencia puntual no justifica automáticamente el modelo más complejo.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>Podrían existir subgrupos con diferencias.</li>
+        <li>La evaluación externa puede cambiar la comparación.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Sobremuestreo antes de dividir</h3>
+        <p><strong>Situación.</strong> Se generan ejemplos sintéticos con toda la cohorte antes de crear entrenamiento y prueba.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Identificar dependencia entre ejemplos sintéticos y originales.</li>
+        <li>Dividir primero por paciente.</li>
+        <li>Aplicar sobremuestreo solo en entrenamiento.</li>
+        <li>Evaluar en prevalencia natural.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La prueba dejó de ser independiente y la calibración no representa la población objetivo.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>El sobremuestreo puede seguir creando casos poco plausibles.</li>
+        <li>La utilidad debe evaluarse con costes clínicos.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Comparación reproducible de modelos</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Definir baseline y modelo candidato.</li>
+        <li>Construir pipeline sin fuga.</li>
+        <li>Seleccionar hiperparámetros internamente.</li>
+        <li>Bloquear y documentar el modelo.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Elegir un baseline para una predicción de readmisión.</li>
+        <li>Identificar transformaciones que deben vivir dentro del pipeline.</li>
+        <li>Comparar L1, L2 y elastic net conceptualmente.</li>
+        <li>Explicar cuándo un árbol individual sería insuficiente.</li>
+        <li>Diseñar un espacio de tuning limitado y justificable.</li>
+        <li>Corregir un sobremuestreo aplicado antes de dividir.</li>
+        <li>Redactar una regla para elegir el modelo más simple.</li>
+        <li>Crear una ficha mínima del modelo bloqueado.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>Existe baseline explícito.</li>
+        <li>No hay transformaciones ajustadas con prueba.</li>
+        <li>El tuning está separado de evaluación.</li>
+        <li>El modelo final es reproducible y versionado.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Comparar el modelo solo contra azar.</strong><p>Usar práctica vigente o baseline clínico reproducible.</p></li>
+        <li><strong>Aplicar selección antes del resampling.</strong><p>Incluir selección y preprocesamiento dentro del pipeline.</p></li>
+        <li><strong>Elegir deep learning por prestigio.</strong><p>Relacionar complejidad con estructura, tamaño y utilidad.</p></li>
+        <li><strong>Alterar la prevalencia de la prueba.</strong><p>Evaluar en una distribución compatible con el uso previsto.</p></li>
+        <li><strong>Guardar solo el archivo del modelo.</strong><p>Versionar datos, entorno, transformaciones, umbral y documentación.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué debe representar un baseline?</summary>
+        <p><strong>Respuesta:</strong> Una alternativa clínica o estadística creíble bajo las mismas condiciones.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Por qué el preprocesamiento pertenece al pipeline?</summary>
+        <p><strong>Respuesta:</strong> Porque aprende parámetros que deben estimarse sin información de evaluación.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Qué efecto tiene L1?</summary>
+        <p><strong>Respuesta:</strong> Penaliza valores absolutos y puede llevar coeficientes a cero.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Cuándo son útiles los árboles?</summary>
+        <p><strong>Respuesta:</strong> Cuando hay no linealidad e interacciones, con control de complejidad.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Por qué una red no siempre supera regresión?</summary>
+        <p><strong>Respuesta:</strong> Puede necesitar más datos y añadir varianza sin señal suficiente.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Dónde se aplica sobremuestreo?</summary>
+        <p><strong>Respuesta:</strong> Solo dentro de las particiones de entrenamiento.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Qué se bloquea antes de evaluar externamente?</summary>
+        <p><strong>Respuesta:</strong> Pipeline, hiperparámetros, coeficientes, umbral y reglas.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Qué demuestra una semilla fija?</summary>
+        <p><strong>Respuesta:</strong> Reproducibilidad de una ejecución, no estabilidad ni generalización.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Baseline</strong><p>Modelo o práctica de referencia para estimar valor incremental.</p></li>
+        <li><strong>Pipeline</strong><p>Secuencia completa de transformaciones y modelo aplicada a nuevos datos.</p></li>
+        <li><strong>Función de pérdida</strong><p>Criterio optimizado durante el entrenamiento.</p></li>
+        <li><strong>Regularización</strong><p>Penalización o restricción destinada a controlar complejidad.</p></li>
+        <li><strong>L1</strong><p>Penalización por suma de valores absolutos de coeficientes.</p></li>
+        <li><strong>L2</strong><p>Penalización por suma de cuadrados de coeficientes.</p></li>
+        <li><strong>Boosting</strong><p>Ensamble secuencial que corrige errores de modelos previos.</p></li>
+        <li><strong>Random forest</strong><p>Ensamble de árboles construidos con remuestreo y subconjuntos de variables.</p></li>
+        <li><strong>Hiperparámetro</strong><p>Configuración elegida fuera del ajuste directo de parámetros del modelo.</p></li>
+        <li><strong>Desbalance</strong><p>Distribución desigual de clases o eventos.</p></li>
+        <li><strong>Modelo bloqueado</strong><p>Versión fija de pipeline, parámetros, umbral y reglas preparada para evaluación.</p></li>
+        <li><strong>Ficha del modelo</strong><p>Documento de uso, datos, desempeño, límites y condiciones del sistema.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://www.bmj.com/content/385/bmj-2023-078378" rel="noopener noreferrer">TRIPOD+AI</a></strong><span class="course-tag">The BMJ · guía de reporte</span></li>
+        <li><strong><a class="resource-link" href="https://www.bmj.com/content/388/bmj-2024-082505" rel="noopener noreferrer">PROBAST+AI</a></strong><span class="course-tag">The BMJ · herramienta metodológica</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles" rel="noopener noreferrer">Good Machine Learning Practice</a></strong><span class="course-tag">IMDRF / FDA · principios regulatorios</span></li>
+        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/user_guide.html" rel="noopener noreferrer">scikit-learn User Guide</a></strong><span class="course-tag">scikit-learn · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/software-medical-device-samd/transparency-machine-learning-enabled-medical-devices-guiding-principles" rel="noopener noreferrer">Transparency for Machine Learning-Enabled Medical Devices</a></strong><span class="course-tag">FDA, Health Canada y MHRA · principios de transparencia</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Construir modelos predictivos biomédicos reproducibles y comparables con referentes clínicos simples, controlando complejidad, transformaciones, desbalance y selección de hiperparámetros. Conecta especialmente con Predicción clínica tabular: Baselines penalizados suelen ser comparadores sólidos y auditables, Ómicas: Alta dimensionalidad exige regularización y selección dentro del resampling, Señales biomédicas: Ventanas, filtrado y extracción de características forman parte del pipeline, Software médico: El modelo bloqueado necesita procedencia, versión y condiciones de uso. Material educativo en estado review. Entrenar un modelo reproducible no demuestra generalización, beneficio clínico ni autorización para desplegarlo.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-02.html">← Unidad 2: Datos clínicos, cohortes, etiquetas y fuga de información</a><a class="btn-link" href="unidad-04.html">Unidad 4: Validación interna, optimismo e incertidumbre →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Machine Learning Biomédico y Validación de Modelos Clínicos · unidad 3 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>
