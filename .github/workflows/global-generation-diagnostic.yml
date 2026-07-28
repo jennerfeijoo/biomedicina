@@ -1,0 +1,46 @@
+name: Diagnose global site generation
+
+on:
+  pull_request:
+    paths:
+      - 'data/**'
+      - 'scripts/**'
+      - 'templates/**'
+      - '.github/workflows/global-generation-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate all pages
+        id: generate_all
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/generate_site.py --force --with-units 2>&1 | tee global-generation-diagnostic.txt
+
+      - name: Upload global-generation diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-generation-diagnostic
+          path: global-generation-diagnostic.txt
+          if-no-files-found: error
+
+      - name: Enforce global generation
+        if: steps.generate_all.outcome != 'success'
+        run: |
+          cat global-generation-diagnostic.txt
+          exit 1
