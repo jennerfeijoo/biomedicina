@@ -35,17 +35,24 @@ jobs:
               r'\in': '∈',
               r'\;': ' ',
           }
+          slash = chr(92)
           changed = []
           for path in sorted(root.glob('unit-*.json')):
               text = path.read_text(encoding='utf-8')
-              normalized = text
-              for old, new in replacements.items():
-                  normalized = normalized.replace(old, new)
+              lines = []
+              for line in text.splitlines(keepends=True):
+                  if '"latex"' in line:
+                      for old, new in replacements.items():
+                          line = line.replace(old, new)
+                      if slash in line:
+                          raise ValueError(f'{path}: barra invertida restante en línea de ecuación: {line.strip()}')
+                  lines.append(line)
+              normalized = ''.join(lines)
               data = json.loads(normalized)
               for section in data.get('theory_sections', []):
                   for equation in section.get('equations', []):
                       latex = str(equation.get('latex', ''))
-                      if '\\' in latex:
+                      if slash in latex:
                           raise ValueError(f'{path}: barra invertida restante en ecuación: {latex!r}')
               if normalized != text:
                   path.write_text(normalized, encoding='utf-8')
