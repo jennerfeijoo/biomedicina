@@ -27,39 +27,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Assemble core base64 fragments
-        shell: bash
-        run: |
-          set -euo pipefail
-          ls -la .github/materialize-pharmacology
-          cat \
-            .github/materialize-pharmacology/part00.b64 \
-            .github/materialize-pharmacology/part01.b64 \
-            .github/materialize-pharmacology/part02.b64 \
-            .github/materialize-pharmacology/part03.b64 \
-            .github/materialize-pharmacology/part04.b64 \
-            .github/materialize-pharmacology/part05.b64 \
-            .github/materialize-pharmacology/part05b0.b64 \
-            .github/materialize-pharmacology/part05b1.b64 \
-            .github/materialize-pharmacology/part05b2.b64 \
-            .github/materialize-pharmacology/part05c.b64 \
-            .github/materialize-pharmacology/part05d.b64 \
-            .github/materialize-pharmacology/part06.b64 \
-            > /tmp/pharm.b64
-          wc -c /tmp/pharm.b64
-      - name: Repair and append final base64 fragment
+      - name: Assemble verified base64 package
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          value = Path('.github/materialize-pharmacology/part07.b64').read_text(encoding='utf-8')
-          print('part07_length', len(value))
-          corrected = value[:220] + value[228:]
-          print('corrected_length', len(corrected))
-          if len(value) != 244 or len(corrected) != 236:
-              raise ValueError('longitudes inesperadas al reparar part07')
-          with Path('/tmp/pharm.b64').open('a', encoding='utf-8') as handle:
-              handle.write(corrected)
+          root = Path('.github/materialize-pharmacology')
+          names = [
+              'part00.b64', 'part01.b64', 'part02.b64', 'part03.b64',
+              'part04.b64', 'part05.b64', 'part05b0.b64', 'part05b1.b64',
+              'part05b2.b64', 'part05c.b64', 'part05d.b64', 'part06.b64',
+          ]
+          chunks = []
+          for name in names:
+              path = root / name
+              if not path.exists():
+                  raise FileNotFoundError(path)
+              value = path.read_text(encoding='utf-8')
+              print(name, len(value))
+              chunks.append(value)
+
+          final_path = root / 'part07.b64'
+          if not final_path.exists():
+              raise FileNotFoundError(final_path)
+          final_value = final_path.read_text(encoding='utf-8')
+          print('part07.b64', len(final_value))
+          if len(final_value) != 244:
+              raise ValueError(f'part07 debe contener 244 caracteres; contiene {len(final_value)}')
+          corrected_final = final_value[:220] + final_value[228:]
+          if len(corrected_final) != 236:
+              raise ValueError('la reparación determinista de part07 no produjo 236 caracteres')
+
+          assembled = ''.join(chunks) + corrected_final
+          output = Path('/tmp/pharm.b64')
+          output.write_text(assembled, encoding='utf-8')
+          print('assembled_length', len(assembled))
           PY
           wc -c /tmp/pharm.b64
           sha256sum /tmp/pharm.b64
