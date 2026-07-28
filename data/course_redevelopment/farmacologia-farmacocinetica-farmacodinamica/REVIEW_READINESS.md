@@ -28,11 +28,13 @@ El curso permanece en `review`. Los validadores automáticos pueden comprobar es
 - ¿ICH M15 se usa como marco de contexto y riesgo, no como sello de validez?
 - ¿El contenido evita recomendaciones clínicas o de administración?
 
-## Validación técnica pendiente de cierre
+## Validación técnica materializada
 
-El paquete contiene descriptor, decisión curricular, registro de fuentes, ocho unidades, resoluciones de alcance, rúbricas y matriz de cobertura. La publicación automática debe promover el curso, generar JSON y HTML derivados, actualizar currículo, catálogo e índices y ejecutar los controles integrales antes de considerar el artefacto técnicamente cerrado.
+El paquete fuente, sus ocho unidades, la decisión curricular, el registro de fuentes, las resoluciones de alcance, las rúbricas y la matriz de cobertura fueron promovidos y publicados en la rama de revisión. La publicación automática generó los JSON y HTML derivados, retiró la asignatura del inventario provisional, la incorporó al currículo canónico y actualizó catálogo, área, índices, navegación y estado editorial.
 
-La validación técnica no constituirá prescripción, revisión regulatoria de un producto, autorización de uso ni aprobación disciplinar externa.
+La ronda técnica verificó `schema_version: 2.0`, densidad lectiva, ecuaciones estructuradas, actividades, glosarios, casos, autoevaluación, bibliografía, diversidad de fuentes, redundancia, conexiones biomédicas, cobertura curricular, alineación pública, enlaces internos y contrato de publicación. La corrección posterior añadió seis criterios ponderados al 100 % en la rúbrica del proyecto final: mecanismo, farmacocinética, PK/PD, variabilidad, seguridad y reproducibilidad/MIDD.
+
+Esta validación técnica no constituye prescripción, revisión regulatoria de un producto, autorización de uso ni aprobación disciplinar externa. El material no permite iniciar, suspender o ajustar tratamientos para una persona concreta.
 
 ## Evidencia mínima para promover a `complete`
 
