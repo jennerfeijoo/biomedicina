@@ -1,0 +1,109 @@
+name: Materialize pharmacology course
+
+on:
+  push:
+    branches:
+      - agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
+    paths:
+      - '.github/workflows/materialize-pharmacology-course.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/materialize-pharmacology-course.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble verified base64 fragments
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            .github/materialize-pharmacology/part00.b64 \
+            .github/materialize-pharmacology/part01.b64 \
+            .github/materialize-pharmacology/part02.b64 \
+            .github/materialize-pharmacology/part03.b64 \
+            .github/materialize-pharmacology/part04.b64 \
+            .github/materialize-pharmacology/part05.b64 \
+            .github/materialize-pharmacology/part05b0.b64 \
+            .github/materialize-pharmacology/part05b1.b64 \
+            .github/materialize-pharmacology/part05b2.b64 \
+            .github/materialize-pharmacology/part05c.b64 \
+            .github/materialize-pharmacology/part05d.b64 \
+            .github/materialize-pharmacology/part06.b64 \
+            > /tmp/pharm.b64
+          python - <<'PY'
+          from pathlib import Path
+
+          value = Path('.github/materialize-pharmacology/part07.b64').read_text(encoding='utf-8')
+          if len(value) != 244:
+              raise ValueError(f'part07 debe contener 244 caracteres antes de reparación; contiene {len(value)}')
+          corrected = value[:220] + value[228:]
+          if len(corrected) != 236:
+              raise ValueError('la reparación determinista de part07 no produjo 236 caracteres')
+          with Path('/tmp/pharm.b64').open('a', encoding='utf-8') as handle:
+              handle.write(corrected)
+          PY
+          wc -c /tmp/pharm.b64
+          sha256sum /tmp/pharm.b64
+      - name: Verify complete base64 hash
+        run: echo 'd2349fedddaf81aac9d7d7a26203b268a632b9c877d2865f59f020c83a506a1c  /tmp/pharm.b64' | sha256sum -c -
+      - name: Decode course archive
+        run: base64 --decode /tmp/pharm.b64 > /tmp/pharm.tgz
+      - name: Verify course archive hash
+        run: echo '64b69f297daaf5e861554b66bcd2b22a06d540e9f3f77ba57c6465514de22b0b  /tmp/pharm.tgz' | sha256sum -c -
+      - name: Extract course archive
+        run: tar -xzf /tmp/pharm.tgz -C .
+      - name: Validate materialized JSON package
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          subject = 'farmacologia-farmacocinetica-farmacodinamica'
+          package = Path('data/course_redevelopment') / subject
+          expected = [package / 'course.json'] + [
+              package / 'units' / f'unit-{number:02d}.json'
+              for number in range(1, 9)
+          ]
+          expected += [
+              Path('data/curriculum_decisions') / f'{subject}.json',
+              Path('data/curriculum_coverage') / f'{subject}-2026.json',
+          ]
+          for path in expected:
+              if not path.exists():
+                  raise FileNotFoundError(path)
+              data = json.loads(path.read_text(encoding='utf-8'))
+              if not isinstance(data, dict):
+                  raise ValueError(f'{path}: la raíz no es un objeto')
+              print('OK', path)
+          units = sorted((package / 'units').glob('unit-*.json'))
+          if len(units) != 8:
+              raise ValueError(f'se esperaban 8 unidades y se encontraron {len(units)}')
+          PY
+      - name: Remove temporary materialization files
+        run: |
+          rm -rf .github/materialize-pharmacology
+          rm -f .github/workflows/materialize-pharmacology-course.yml
+      - name: Commit course package
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Materialize pharmacology course package'
+          git push origin HEAD:agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
