@@ -176,7 +176,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
-    parser.add_argument("--require-course-count", type=int, default=84)
+    parser.add_argument(
+        "--require-course-count",
+        type=int,
+        help="Cardinalidad opcional para auditorías históricas; el flujo normal no fija un total.",
+    )
     parser.add_argument("--fail-on-missing-pages", action="store_true")
     args = parser.parse_args()
 
@@ -194,7 +198,10 @@ def main() -> int:
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     errors: list[str] = []
-    if summary["course_count"] != args.require_course_count:
+    if (
+        args.require_course_count is not None
+        and summary["course_count"] != args.require_course_count
+    ):
         errors.append(
             f"se esperaban {args.require_course_count} asignaturas y se encontraron "
             f"{summary['course_count']}"
