@@ -1,0 +1,187 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "imagenes-biomedicas-avanzadas-ii",
+  "area_id": "ingenieria-biomedica",
+  "unit": 5,
+  "slug": "aprendizaje-automatico-imagen-clinica",
+  "title": "Aprendizaje automático para clasificación, detección y pronóstico",
+  "status": "review",
+  "purpose": "Diseñar y evaluar modelos de aprendizaje automático basados en imagen desde un uso previsto explícito hasta una comparación clínica reproducible, calibrada y libre de fuga de información.",
+  "learning_objectives": [
+    "Traducir una necesidad clínica en población, uso previsto, desenlace y unidad de análisis.",
+    "Diferenciar clasificación, detección, localización y pronóstico según la salida requerida.",
+    "Construir particiones por paciente, centro y tiempo que eviten fuga de información.",
+    "Seleccionar métricas de discriminación, calibración y utilidad según prevalencia y consecuencias.",
+    "Comparar modelos contra referentes clínicos y técnicos preespecificados.",
+    "Evaluar explicaciones e incertidumbre sin confundirlas con causalidad o razonamiento humano."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Uso previsto, población y referencia estándar",
+      "paragraphs": [
+        "Un modelo de imagen clínica debe comenzar con una declaración de uso previsto que especifique quién empleará la salida, en qué población, en qué punto del flujo asistencial y para apoyar qué decisión. La misma arquitectura puede servir para triaje, detección o pronóstico, pero cada uso requiere una referencia, un horizonte temporal y una tolerancia al error diferentes. Definir solo una etiqueta binaria favorece modelos técnicamente correctos pero clínicamente irrelevantes.",
+        "La referencia estándar puede proceder de histopatología, seguimiento, consenso experto o registros clínicos, y cada fuente introduce errores específicos. Las etiquetas derivadas de informes pueden reflejar prácticas locales y no necesariamente la presencia biológica del hallazgo. Cuando existe verificación diferencial, los casos positivos reciben pruebas más completas que los negativos. La incertidumbre de la referencia debe documentarse y las discrepancias deben analizarse en lugar de resolverse silenciosamente.",
+        "La población de desarrollo debe representar el contexto de uso y permitir estudiar límites. Prevalencia, gravedad, comorbilidades, calidad de adquisición y vías de derivación cambian el significado de las métricas. Un conjunto enriquecido puede ser útil para entrenar, pero no estima directamente valores predictivos en práctica. La evaluación debe conservar una cohorte independiente con muestreo documentado y subgrupos clínicamente relevantes."
+      ],
+      "key_points": [
+        "El uso previsto define población, usuario, momento y decisión apoyada.",
+        "La referencia estándar contiene incertidumbre y posibles sesgos de verificación.",
+        "La prevalencia modifica la interpretación de las métricas predictivas.",
+        "La selección de datos es una decisión metodológica del sistema."
+      ],
+      "equations": [
+        {
+          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
+          "meaning": "El valor predictivo positivo depende de sensibilidad, especificidad y prevalencia; no se transporta automáticamente entre poblaciones.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Particiones, entrenamiento y prevención de fuga",
+      "paragraphs": [
+        "La partición debe realizarse en el nivel de independencia relevante. Si imágenes, cortes o estudios del mismo paciente aparecen en entrenamiento y prueba, el modelo puede reconocer características individuales en lugar de generalizar. También existe fuga por centro, dispositivo, preprocesamiento, anotador o fecha. Las transformaciones que aprenden parámetros, como normalización, selección o armonización, deben ajustarse solo con datos de entrenamiento.",
+        "La validación cruzada estima variabilidad interna, pero no sustituye una evaluación externa. Cuando se seleccionan hiperparámetros, la validación debe ser anidada: los pliegues internos eligen configuraciones y los externos estiman desempeño. La augmentación puede mejorar robustez si representa variaciones plausibles; transformaciones irreales pueden alterar etiquetas o crear atajos. Semillas, versiones, parámetros y exclusiones deben conservarse para reproducir cada ejecución.",
+        "El desbalance exige separar estrategia de entrenamiento y evaluación. Ponderar la pérdida, remuestrear o usar focal loss puede ayudar a aprender eventos infrecuentes, pero no cambia la prevalencia real de la prueba. La elección del umbral debe relacionarse con costes de falsos positivos y negativos, capacidad del servicio y ruta de confirmación. Optimizar F1 o Youden sin consecuencias puede producir un punto operativo impracticable."
+      ],
+      "key_points": [
+        "Todas las observaciones de un paciente deben permanecer en una sola partición.",
+        "Preprocesamiento y selección se ajustan únicamente dentro del entrenamiento.",
+        "La validación anidada separa ajuste y estimación interna.",
+        "El umbral debe justificarse por consecuencias y capacidad operativa."
+      ],
+      "equations": [
+        {
+          "latex": "\\mathcal{L}_{w}=-\\sum_i w_{y_i}\\log p(y_i\\mid x_i)",
+          "meaning": "Pérdida ponderada que modifica el entrenamiento sin alterar la prevalencia de evaluación.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Discriminación, calibración y utilidad clínica",
+      "paragraphs": [
+        "La discriminación mide cuánto separa el modelo casos con desenlaces distintos. La curva ROC resume sensibilidad y especificidad a través de umbrales, pero puede parecer favorable cuando el evento es raro. La curva precision-recall muestra mejor el compromiso entre sensibilidad y valor predictivo positivo en escenarios desbalanceados. Ninguna curva identifica por sí sola un umbral clínico, por lo que deben informarse matrices de confusión y comparaciones con referentes simples.",
+        "La calibración evalúa si las probabilidades predichas corresponden con frecuencias observadas. Un modelo puede discriminar bien y asignar riesgos excesivos o insuficientes. Intercepto, pendiente, curvas de calibración y Brier score describen dimensiones complementarias. Recalibrar con datos de evaluación invalida la independencia; debe estimarse en un conjunto separado y comprobarse nuevamente. Si la salida solo ordena casos, no debe presentarse como riesgo absoluto.",
+        "La utilidad clínica compara consecuencias de actuar con el modelo frente a estrategias alternativas. Las curvas de decisión expresan beneficio neto a distintos umbrales, aunque dependen de supuestos sobre daños. También deben medirse carga de trabajo, tiempo, casos adicionales detectados y procedimientos innecesarios. Una mejora pequeña de AUC puede carecer de valor operativo, mientras una calibración estable en el rango decisional puede resultar más importante."
+      ],
+      "key_points": [
+        "ROC y precision-recall responden preguntas distintas bajo desbalance.",
+        "La calibración es independiente de la capacidad de ordenar pacientes.",
+        "El conjunto externo no debe usarse para recalibrar el modelo evaluado.",
+        "La utilidad compara consecuencias frente a estrategias alternativas."
+      ],
+      "equations": [
+        {
+          "latex": "BS=\\frac{1}{n}\\sum_{i=1}^{n}(p_i-y_i)^2",
+          "meaning": "Brier score para probabilidades binarias; combina calibración y resolución.",
+          "variables": {}
+        },
+        {
+          "latex": "NB=\\frac{TP}{n}-\\frac{FP}{n}\\frac{p_t}{1-p_t}",
+          "meaning": "Beneficio neto a un umbral de acción, ponderando falsos positivos.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Explicaciones, incertidumbre y comunicación de límites",
+      "paragraphs": [
+        "Grad-CAM, integrated gradients y otros métodos de atribución resaltan regiones asociadas con una salida, pero no demuestran que el modelo use conceptos clínicos válidos. Los mapas pueden ser sensibles a capas, escala y perturbaciones, y parecer plausibles incluso cuando el modelo depende de atajos. Su evaluación necesita controles de eliminación, comparación con anotaciones pertinentes y controles negativos. Una explicación visual no prueba causalidad ni razonamiento humano.",
+        "La incertidumbre aleatoria refleja variabilidad de datos o etiquetas, mientras la epistemológica se relaciona con conocimiento limitado. Ensambles, inferencia estocástica y métodos conformales cuantifican aspectos distintos y dependen de supuestos de estabilidad. Una puntuación de baja confianza puede orientar revisión humana si está calibrada y detecta fallos relevantes. Rechazar casos inciertos también puede concentrar errores en subgrupos y debe evaluarse por cobertura y riesgo residual.",
+        "La comunicación final debe distinguir desempeño retrospectivo, validación externa, utilidad prospectiva y autorización clínica. Deben reportarse exclusiones, datos faltantes, versiones, intervalos de confianza y fallos representativos. CLAIM orienta transparencia, pero una lista de verificación no corrige un diseño deficiente. La conclusión debe limitarse a la población y tarea evaluadas, declarar evidencia faltante y evitar presentar explicabilidad o precisión media como garantía de seguridad."
+      ],
+      "key_points": [
+        "Las atribuciones visuales muestran asociación con la salida, no mecanismo causal.",
+        "La incertidumbre solo es útil si está calibrada y vinculada a una acción.",
+        "La abstención debe evaluarse por cobertura, riesgo residual y subgrupos.",
+        "El reporte separa validación retrospectiva, utilidad y autorización clínica."
+      ],
+      "equations": [
+        {
+          "latex": "R(c)=P(\\hat{Y}\\neq Y\\mid U\\leq c)",
+          "meaning": "Riesgo condicionado a aceptar predicciones con incertidumbre menor o igual a un umbral.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Uso previsto", "definition": "Contexto, población, usuario y decisión para los que se propone un sistema."},
+    {"term": "Unidad de análisis", "definition": "Entidad independiente sobre la que se calcula una predicción."},
+    {"term": "Referencia estándar", "definition": "Procedimiento usado para asignar el desenlace de evaluación."},
+    {"term": "Fuga de información", "definition": "Uso de información reservada o no disponible durante el uso real."},
+    {"term": "Validación anidada", "definition": "Esquema separado para ajuste y estimación interna del desempeño."},
+    {"term": "Discriminación", "definition": "Capacidad de separar observaciones con desenlaces diferentes."},
+    {"term": "Calibración", "definition": "Correspondencia entre probabilidades predichas y frecuencias observadas."},
+    {"term": "Brier score", "definition": "Error cuadrático medio de predicciones probabilísticas binarias."},
+    {"term": "Curva de decisión", "definition": "Análisis de beneficio neto a través de umbrales."},
+    {"term": "Atribución", "definition": "Estimación de la contribución de regiones a una salida."},
+    {"term": "Incertidumbre epistemológica", "definition": "Incertidumbre asociada con conocimiento insuficiente del modelo."},
+    {"term": "Abstención", "definition": "Política por la que el sistema no emite decisión en ciertos casos."}
+  ],
+  "worked_examples": [
+    {
+      "title": "AUC alta con calibración deficiente",
+      "scenario": "Un clasificador obtiene AUC 0,91 en un hospital externo, pero predice riesgos del 80 % cuando la frecuencia observada es 35 %.",
+      "reasoning_steps": ["Confirmar independencia externa.", "Examinar intercepto y pendiente.", "Comparar umbrales clínicos.", "Separar ordenación y riesgo absoluto."],
+      "interpretation": "El modelo discrimina, pero sus probabilidades no deben usarse como riesgo absoluto sin recalibración independiente.",
+      "limitations": ["La calibración cambia con prevalencia y tiempo.", "Recalibrar no corrige sesgo de selección."]
+    },
+    {
+      "title": "Fuga por estudios del mismo paciente",
+      "scenario": "Una base longitudinal coloca imágenes del mismo paciente en entrenamiento y prueba.",
+      "reasoning_steps": ["Reconstruir identificadores.", "Particionar por paciente.", "Reentrenar todo el pipeline.", "Cuantificar el optimismo."],
+      "interpretation": "La estimación inicial medía reconocimiento parcial y no generalización a individuos nuevos.",
+      "limitations": ["Eliminar fuga no garantiza representatividad.", "Identificadores incompletos pueden ocultar duplicados."]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría de un modelo de imagen clínica",
+      "instructions": ["Definir uso previsto y referencia.", "Diagramar particiones y transformaciones.", "Preespecificar métricas y umbrales.", "Evaluar desempeño y fallos."],
+      "problems": [
+        "Redactar un uso previsto para triaje radiológico.",
+        "Detectar tres vías de fuga en datos longitudinales.",
+        "Diseñar una validación cruzada anidada.",
+        "Comparar ROC y precision-recall con prevalencia del 2 %.",
+        "Interpretar Brier score frente a un referente.",
+        "Proponer umbrales para costes de error distintos.",
+        "Evaluar una atribución mediante controles.",
+        "Diseñar abstención y medir cobertura por subgrupos."
+      ],
+      "checking_criteria": ["La partición respeta independencia.", "Las transformaciones se ajustan en entrenamiento.", "Las métricas responden al uso.", "La conclusión separa desempeño y utilidad."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Definir la tarea solo por la etiqueta disponible.", "correction": "Especificar uso previsto, población, usuario y decisión."},
+    {"error": "Particionar imágenes ignorando al paciente.", "correction": "Agrupar observaciones relacionadas en una única partición."},
+    {"error": "Ajustar normalización con toda la base.", "correction": "Estimar transformaciones únicamente en entrenamiento."},
+    {"error": "Interpretar AUC como probabilidad calibrada.", "correction": "Evaluar calibración y utilidad por separado."},
+    {"error": "Presentar Grad-CAM como explicación causal.", "correction": "Validar la atribución con controles y límites."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué incluye un uso previsto?", "answer": "Población, usuario, contexto, salida y decisión apoyada."},
+    {"question": "¿Por qué dividir por paciente?", "answer": "Para impedir observaciones relacionadas en entrenamiento y prueba."},
+    {"question": "¿Cuándo usar validación anidada?", "answer": "Cuando se ajustan hiperparámetros o selección."},
+    {"question": "¿Qué muestra precision-recall?", "answer": "El compromiso entre sensibilidad y valor predictivo positivo."},
+    {"question": "¿Puede haber buena AUC y mala calibración?", "answer": "Sí; ordenar no garantiza probabilidades correctas."},
+    {"question": "¿Qué añade una curva de decisión?", "answer": "Beneficio neto frente a estrategias alternativas."},
+    {"question": "¿Qué prueba Grad-CAM?", "answer": "Sensibilidad de la salida a regiones, no causalidad."},
+    {"question": "¿Qué acompaña la abstención?", "answer": "Cobertura, riesgo residual y análisis por subgrupos."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Triaje radiológico", "connection": "Los umbrales consideran capacidad y daño por retraso."},
+    {"topic": "Oncología", "connection": "Referencia, horizonte y tratamiento afectan modelos pronósticos."},
+    {"topic": "Detección asistida", "connection": "Se evalúan lesiones, pacientes, falsos positivos y carga."},
+    {"topic": "IA clínica", "connection": "Calibración y utilidad complementan discriminación."}
+  ],
+  "sources": [
+    {"title": "CLAIM 2024 Update", "organization": "RSNA", "url": "https://pubs.rsna.org/doi/10.1148/ryai.240300", "type": "guía de reporte", "verification_status": "verified_directly"},
+    {"title": "MONAI Documentation", "organization": "MONAI Consortium", "url": "https://docs.monai.io/en/stable/", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "scikit-learn Model Evaluation", "organization": "scikit-learn", "url": "https://scikit-learn.org/stable/modules/model_evaluation.html", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "scikit-learn Probability Calibration", "organization": "scikit-learn", "url": "https://scikit-learn.org/stable/modules/calibration.html", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "FDA AI-Enabled Device Software Functions", "organization": "U.S. FDA", "url": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/artificial-intelligence-enabled-device-software-functions-lifecycle-management-and-marketing", "type": "guía regulatoria", "verification_status": "verified_directly"}
+  ],
+  "editorial_notice": "Material educativo en estado review. El desempeño de un modelo no sustituye validación clínica, supervisión profesional, evaluación de riesgos ni autorización asistencial."
+}
