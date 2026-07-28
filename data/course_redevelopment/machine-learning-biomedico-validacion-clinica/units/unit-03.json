@@ -1,0 +1,183 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "machine-learning-biomedico-validacion-clinica",
+  "area_id": "ingenieria-biomedica",
+  "unit": 3,
+  "slug": "desarrollo-modelos-referentes-clinicos",
+  "title": "Desarrollo de modelos y referentes clínicos",
+  "status": "review",
+  "purpose": "Construir modelos predictivos biomédicos reproducibles y comparables con referentes clínicos simples, controlando complejidad, transformaciones, desbalance y selección de hiperparámetros.",
+  "learning_objectives": [
+    "Definir baselines clínicos y estadísticos antes de comparar algoritmos complejos.",
+    "Construir pipelines que integren preprocesamiento, selección, entrenamiento y predicción.",
+    "Comparar regresión penalizada, árboles, boosting y redes según datos y uso previsto.",
+    "Relacionar regularización, complejidad, sesgo y varianza.",
+    "Gestionar desbalance sin alterar la interpretación de probabilidades en evaluación.",
+    "Versionar datos, código, parámetros y artefactos para reproducir el modelo bloqueado."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Baselines, objetivo de aprendizaje y valor incremental",
+      "paragraphs": [
+        "Un modelo candidato debe compararse con una alternativa realista. El baseline puede ser prevalencia, una regla clínica, un modelo logístico con pocos predictores, una puntuación existente o la práctica habitual. Comparar solo contra azar exagera el valor de algoritmos complejos. El referente debe utilizar información disponible en el mismo momento y evaluarse en las mismas particiones. Si el modelo candidato añade variables costosas o tardías, esa diferencia también forma parte de la comparación.",
+        "La función objetivo utilizada para entrenar no es necesariamente la métrica clínica final. La log-loss favorece probabilidades informativas, mientras pérdidas ponderadas pueden priorizar errores particulares. Optimizar exactitud en un evento infrecuente puede producir un clasificador que predice siempre la clase mayoritaria. La elección debe considerar si se necesitan probabilidades, ranking, detección o estimación de tiempo. Una pérdida técnica se justifica por su relación con el estimando y no porque sea la opción predeterminada de una biblioteca.",
+        "El valor incremental debe medirse sobre el referente y en varias dimensiones. Una mejora pequeña de discriminación puede acompañarse de peor calibración, mayor latencia o necesidad de datos no disponibles. Un baseline simple también ayuda a detectar atajos: si el centro o una variable administrativa explican casi todo el desempeño, el modelo puede estar aprendiendo diferencias de proceso. La comparación debe incluir incertidumbre y análisis de casos donde ambos modelos discrepan."
+      ],
+      "key_points": [
+        "El baseline representa una alternativa clínica o estadística creíble.",
+        "La función de pérdida debe corresponder al tipo de salida requerida.",
+        "Superar azar no demuestra valor clínico incremental.",
+        "La comparación incluye datos, coste, latencia y estabilidad."
+      ],
+      "equations": [
+        {
+          "latex": "LogLoss = -mean(y*log(p) + (1-y)*log(1-p))",
+          "meaning": "Pérdida probabilística que penaliza predicciones seguras e incorrectas; no sustituye evaluación de calibración y utilidad.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Pipelines, preprocesamiento e ingeniería de predictores",
+      "paragraphs": [
+        "El pipeline debe representar exactamente las transformaciones que se aplicarán a un nuevo paciente. Incluye selección de columnas, unidades, limpieza, imputación, codificación, escalado, reducción de dimensionalidad y modelo. Cada transformación que aprende parámetros se ajusta solo con entrenamiento dentro de cada resample. Aplicar selección de variables o normalización antes de validación permite que la información de evaluación influya en el desarrollo y produce optimismo.",
+        "La ingeniería de predictores debe respetar tiempo cero. Agregados como máximo, tendencia o número de mediciones requieren una ventana histórica definida. Una tendencia calculada con observaciones posteriores produce fuga. Variables categóricas con niveles raros necesitan reglas para categorías nuevas. En señales y series temporales deben fijarse frecuencia, filtrado, longitud, alineación y manejo de segmentos ausentes. Las variables derivadas se documentan con fórmula, unidad y versión.",
+        "La selección de predictores no debe basarse únicamente en significación univariada. Una variable débil aislada puede ser útil en combinación, y una variable fuerte puede duplicar información o introducir inestabilidad. El conocimiento clínico ayuda a evitar predictores imposibles de obtener o proxies problemáticos. La reducción de dimensionalidad y la selección supervisada se consideran parte del modelo y deben reestimarse dentro del entrenamiento."
+      ],
+      "key_points": [
+        "El pipeline completo se ajusta dentro de cada partición de entrenamiento.",
+        "La ingeniería temporal requiere ventanas definidas antes del evento.",
+        "Las variables derivadas necesitan procedencia, fórmula y unidades.",
+        "La selección univariada previa puede eliminar información y producir fuga."
+      ],
+      "equations": [
+        {
+          "latex": "Pipeline(X) = Model(Transform_k(...Transform_2(Transform_1(X))))",
+          "meaning": "La predicción depende de una secuencia versionada de transformaciones y del modelo final.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Familias de modelos, regularización y complejidad",
+      "paragraphs": [
+        "La regresión logística proporciona probabilidades mediante una relación paramétrica entre predictores y log-odds. Puede incorporar términos no lineales e interacciones, y con penalización funciona como baseline competitivo en datos tabulares. L1 favorece coeficientes exactamente cero; L2 reduce magnitudes; elastic net combina ambas. Estas penalizaciones controlan complejidad, pero sus parámetros deben seleccionarse dentro del desarrollo y los predictores deben escalarse cuando la penalización depende de magnitudes.",
+        "Los árboles dividen el espacio mediante reglas y capturan interacciones sin especificarlas manualmente. Un árbol individual es interpretable pero inestable. Random forests reducen varianza promediando árboles, mientras boosting construye secuencias que corrigen errores. Estos métodos pueden manejar no linealidad y mezclas de variables, aunque requieren controlar profundidad, tasa de aprendizaje, número de árboles y tratamiento de faltantes. La importancia de variables puede estar sesgada por cardinalidad y correlación.",
+        "Las redes neuronales son útiles cuando existen representaciones complejas, grandes volúmenes o datos no estructurados. En cohortes tabulares pequeñas no son automáticamente superiores. El número de parámetros, la regularización, el preentrenamiento y la calidad de datos condicionan su desempeño. La elección de familia debe considerar tamaño muestral efectivo, estructura del dato, latencia, necesidad de actualización y posibilidad de validación. La complejidad solo se justifica si mejora evidencia relevante y no solo el ajuste interno."
+      ],
+      "key_points": [
+        "La regresión penalizada es un referente fuerte para datos tabulares.",
+        "Árboles y boosting capturan no linealidad pero requieren tuning controlado.",
+        "La importancia de variables no equivale a causalidad ni estabilidad.",
+        "Modelos profundos necesitan datos y validación acordes a su complejidad."
+      ],
+      "equations": [
+        {
+          "latex": "Objective = Loss(y, f(X)) + lambda * Penalty(parameters)",
+          "meaning": "La regularización añade una penalización controlada por lambda para limitar complejidad y mejorar estabilidad.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Desbalance, tuning, reproducibilidad y bloqueo",
+      "paragraphs": [
+        "En eventos infrecuentes, el desbalance afecta aprendizaje y evaluación. Ponderar la pérdida, sobremuestrear o submuestrear puede ayudar, pero estas operaciones ocurren solo en entrenamiento. La prevalencia de la prueba debe representar el objetivo de evaluación; modificarla altera valores predictivos y calibración. Técnicas sintéticas pueden crear ejemplos poco plausibles y deben validarse según estructura biomédica, no solo por mejora de una métrica.",
+        "El tuning compara configuraciones dentro de un resampling interno. Probar muchas combinaciones y reportar la mejor puntuación en los mismos folds introduce optimismo. La búsqueda debe definir espacio, presupuesto, métrica y regla de selección. También puede preferirse el modelo más simple dentro de una tolerancia del mejor resultado. Las semillas ayudan a reproducir procesos estocásticos, pero no garantizan estabilidad; conviene repetir ajustes y analizar variación.",
+        "El modelo final se bloquea después de seleccionar pipeline, hiperparámetros, umbral y reglas de exclusión. Deben conservarse versiones de datos, entorno, dependencias, código, artefactos y metadatos. Un archivo serializado sin procedencia no es un modelo clínicamente auditable. La ficha del modelo documenta uso previsto, población, entradas, salidas, desempeño, límites y condiciones no soportadas. Cualquier cambio posterior crea una versión nueva que requiere evaluación proporcional."
+      ],
+      "key_points": [
+        "El balance de entrenamiento no debe confundirse con prevalencia de evaluación.",
+        "El tuning pertenece al desarrollo y necesita evaluación separada.",
+        "Semillas reproducen ejecuciones, no garantizan generalización.",
+        "El modelo bloqueado incluye pipeline, umbral y artefactos versionados."
+      ],
+      "equations": [
+        {
+          "latex": "Best configuration = argmin_h ValidationLoss(h | training only)",
+          "meaning": "Los hiperparámetros h se seleccionan usando solo información interna del conjunto de desarrollo.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Baseline", "definition": "Modelo o práctica de referencia para estimar valor incremental."},
+    {"term": "Pipeline", "definition": "Secuencia completa de transformaciones y modelo aplicada a nuevos datos."},
+    {"term": "Función de pérdida", "definition": "Criterio optimizado durante el entrenamiento."},
+    {"term": "Regularización", "definition": "Penalización o restricción destinada a controlar complejidad."},
+    {"term": "L1", "definition": "Penalización por suma de valores absolutos de coeficientes."},
+    {"term": "L2", "definition": "Penalización por suma de cuadrados de coeficientes."},
+    {"term": "Boosting", "definition": "Ensamble secuencial que corrige errores de modelos previos."},
+    {"term": "Random forest", "definition": "Ensamble de árboles construidos con remuestreo y subconjuntos de variables."},
+    {"term": "Hiperparámetro", "definition": "Configuración elegida fuera del ajuste directo de parámetros del modelo."},
+    {"term": "Desbalance", "definition": "Distribución desigual de clases o eventos."},
+    {"term": "Modelo bloqueado", "definition": "Versión fija de pipeline, parámetros, umbral y reglas preparada para evaluación."},
+    {"term": "Ficha del modelo", "definition": "Documento de uso, datos, desempeño, límites y condiciones del sistema."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Modelo complejo sin ganancia sobre baseline",
+      "scenario": "Un boosting obtiene AUC 0,812 y una regresión penalizada 0,808, con calibración similar.",
+      "reasoning_steps": ["Estimar incertidumbre de la diferencia.", "Comparar latencia y mantenimiento.", "Evaluar utilidad en umbrales clínicos.", "Preferir complejidad solo si aporta beneficio relevante."],
+      "interpretation": "La diferencia puntual no justifica automáticamente el modelo más complejo.",
+      "limitations": ["Podrían existir subgrupos con diferencias.", "La evaluación externa puede cambiar la comparación."]
+    },
+    {
+      "title": "Sobremuestreo antes de dividir",
+      "scenario": "Se generan ejemplos sintéticos con toda la cohorte antes de crear entrenamiento y prueba.",
+      "reasoning_steps": ["Identificar dependencia entre ejemplos sintéticos y originales.", "Dividir primero por paciente.", "Aplicar sobremuestreo solo en entrenamiento.", "Evaluar en prevalencia natural."],
+      "interpretation": "La prueba dejó de ser independiente y la calibración no representa la población objetivo.",
+      "limitations": ["El sobremuestreo puede seguir creando casos poco plausibles.", "La utilidad debe evaluarse con costes clínicos."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Comparación reproducible de modelos",
+      "instructions": ["Definir baseline y modelo candidato.", "Construir pipeline sin fuga.", "Seleccionar hiperparámetros internamente.", "Bloquear y documentar el modelo."],
+      "problems": [
+        "Elegir un baseline para una predicción de readmisión.",
+        "Identificar transformaciones que deben vivir dentro del pipeline.",
+        "Comparar L1, L2 y elastic net conceptualmente.",
+        "Explicar cuándo un árbol individual sería insuficiente.",
+        "Diseñar un espacio de tuning limitado y justificable.",
+        "Corregir un sobremuestreo aplicado antes de dividir.",
+        "Redactar una regla para elegir el modelo más simple.",
+        "Crear una ficha mínima del modelo bloqueado."
+      ],
+      "checking_criteria": ["Existe baseline explícito.", "No hay transformaciones ajustadas con prueba.", "El tuning está separado de evaluación.", "El modelo final es reproducible y versionado."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Comparar el modelo solo contra azar.", "correction": "Usar práctica vigente o baseline clínico reproducible."},
+    {"error": "Aplicar selección antes del resampling.", "correction": "Incluir selección y preprocesamiento dentro del pipeline."},
+    {"error": "Elegir deep learning por prestigio.", "correction": "Relacionar complejidad con estructura, tamaño y utilidad."},
+    {"error": "Alterar la prevalencia de la prueba.", "correction": "Evaluar en una distribución compatible con el uso previsto."},
+    {"error": "Guardar solo el archivo del modelo.", "correction": "Versionar datos, entorno, transformaciones, umbral y documentación."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué debe representar un baseline?", "answer": "Una alternativa clínica o estadística creíble bajo las mismas condiciones."},
+    {"question": "¿Por qué el preprocesamiento pertenece al pipeline?", "answer": "Porque aprende parámetros que deben estimarse sin información de evaluación."},
+    {"question": "¿Qué efecto tiene L1?", "answer": "Penaliza valores absolutos y puede llevar coeficientes a cero."},
+    {"question": "¿Cuándo son útiles los árboles?", "answer": "Cuando hay no linealidad e interacciones, con control de complejidad."},
+    {"question": "¿Por qué una red no siempre supera regresión?", "answer": "Puede necesitar más datos y añadir varianza sin señal suficiente."},
+    {"question": "¿Dónde se aplica sobremuestreo?", "answer": "Solo dentro de las particiones de entrenamiento."},
+    {"question": "¿Qué se bloquea antes de evaluar externamente?", "answer": "Pipeline, hiperparámetros, coeficientes, umbral y reglas."},
+    {"question": "¿Qué demuestra una semilla fija?", "answer": "Reproducibilidad de una ejecución, no estabilidad ni generalización."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Predicción clínica tabular", "connection": "Baselines penalizados suelen ser comparadores sólidos y auditables."},
+    {"topic": "Ómicas", "connection": "Alta dimensionalidad exige regularización y selección dentro del resampling."},
+    {"topic": "Señales biomédicas", "connection": "Ventanas, filtrado y extracción de características forman parte del pipeline."},
+    {"topic": "Software médico", "connection": "El modelo bloqueado necesita procedencia, versión y condiciones de uso."}
+  ],
+  "sources": [
+    {"title": "TRIPOD+AI", "organization": "The BMJ", "url": "https://www.bmj.com/content/385/bmj-2023-078378", "type": "guía de reporte", "verification_status": "verified_directly"},
+    {"title": "PROBAST+AI", "organization": "The BMJ", "url": "https://www.bmj.com/content/388/bmj-2024-082505", "type": "herramienta metodológica", "verification_status": "verified_directly"},
+    {"title": "Good Machine Learning Practice", "organization": "IMDRF / FDA", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles", "type": "principios regulatorios", "verification_status": "verified_directly"},
+    {"title": "scikit-learn User Guide", "organization": "scikit-learn", "url": "https://scikit-learn.org/stable/user_guide.html", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "Transparency for Machine Learning-Enabled Medical Devices", "organization": "FDA, Health Canada y MHRA", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd/transparency-machine-learning-enabled-medical-devices-guiding-principles", "type": "principios de transparencia", "verification_status": "verified_directly"}
+  ],
+  "editorial_notice": "Material educativo en estado review. Entrenar un modelo reproducible no demuestra generalización, beneficio clínico ni autorización para desplegarlo."
+}
