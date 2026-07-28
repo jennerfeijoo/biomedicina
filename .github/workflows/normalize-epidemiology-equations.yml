@@ -46,6 +46,13 @@ jobs:
               print(f'Validando {path}')
               try:
                   text = path.read_text(encoding='utf-8')
+                  if path.name == 'unit-06.json':
+                      text = text.replace(
+                          '"correction": "Exigir reglas prospectivas, simulación, control de error y gobernanza."\n  ],',
+                          '"correction": "Exigir reglas prospectivas, simulación, control de error y gobernanza."}\n  ],',
+                      )
+                  if path.name == 'unit-07.json':
+                      text = text.replace('\n    }\n  ],\n  "sources": [', '\n  ],\n  "sources": [')
                   lines = []
                   for line in text.splitlines(keepends=True):
                       if '"latex"' in line:
@@ -60,7 +67,8 @@ jobs:
                           latex = str(equation.get('latex', ''))
                           if slash in latex:
                               raise ValueError(f'barra invertida restante en ecuación: {latex!r}')
-                  if normalized != text:
+                  original = path.read_text(encoding='utf-8')
+                  if normalized != original:
                       path.write_text(normalized, encoding='utf-8')
                       changed.append(str(path))
               except Exception:
@@ -87,8 +95,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/course_redevelopment/epidemiologia-metodos-investigacion-clinica/units
           if git diff --cached --quiet; then
-            echo "No hay expresiones que normalizar."
+            echo "No hay expresiones o estructuras que normalizar."
             exit 0
           fi
-          git commit -m "Normalize epidemiology equation notation"
+          git commit -m "Normalize epidemiology source units"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
