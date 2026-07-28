@@ -28,11 +28,15 @@ El curso permanece en `review`. Los validadores automáticos pueden comprobar es
 - ¿Los ejemplos separan asociación, función, causalidad, predicción y utilidad clínica?
 - ¿Las referencias y nomenclaturas corresponden a versiones vigentes?
 
-## Validación técnica pendiente de cierre
+## Validación técnica materializada
 
-El paquete contiene descriptor, decisión curricular, registro de fuentes, ocho unidades, resoluciones de alcance y rúbricas. La publicación automática debe promover el curso, generar JSON y HTML derivados, actualizar currículo, catálogo e índices y ejecutar los controles integrales antes de considerar el artefacto técnicamente cerrado.
+El paquete fuente y sus ocho unidades fueron promovidos y publicados en la rama de revisión. La publicación automática generó los JSON y HTML derivados, retiró la asignatura del inventario provisional, la incorporó al currículo canónico y actualizó catálogo, área, índices y estado editorial.
 
-Esta evidencia técnica no constituirá diagnóstico, recomendación de vacunación, autorización terapéutica, certificación de un biomarcador ni revisión disciplinar externa.
+La ronda integral comprobó esquema 2.0, densidad teórica mínima, estructura de cinco secciones por unidad, ecuaciones, actividades, glosarios, autoevaluación, bibliografía, diversidad de fuentes, redundancia, conexiones biomédicas, matriz de cobertura, arquitectura del curso, alineación pública, enlaces internos y contrato de publicación. También confirmó que el contenido permanece en `review` y que no presenta marcadores, títulos, clonotipos, HLA o firmas moleculares como certificados automáticos de identidad, función, protección, diagnóstico o utilidad clínica.
+
+Durante la validación se ampliaron las ocho unidades con secciones integradoras específicas sobre variación humana, metabolismo y coagulación, validación de epítopos, evolución clonal B, dinámica T, diseño de inmunogenicidad vacunal, fenocopias y ciclo de vida de biomarcadores. Las ampliaciones preservan especificidad disciplinar y satisfacen los contratos de profundidad sin reducir umbrales.
+
+Esta evidencia técnica no constituye diagnóstico, recomendación de vacunación, autorización terapéutica, certificación de un biomarcador ni revisión disciplinar externa.
 
 ## Evidencia mínima para promover a `complete`
 
