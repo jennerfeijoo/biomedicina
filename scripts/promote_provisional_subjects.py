@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Promueve asignaturas provisionales cuando su paquete reconstruido se publica.
 
-La operación mantiene sincronizados el currículo canónico y el inventario
-provisional. Solo actúa sobre asignaturas incluidas en el manifiesto de
-publicación y conserva el estado editorial declarado por el paquete fuente.
+La operación mantiene sincronizados el currículo canónico, el temario requerido
+por el generador y el inventario provisional. Solo actúa sobre asignaturas
+incluidas en el manifiesto de publicación y conserva el estado editorial
+establecido por el paquete fuente.
 """
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CURRICULUM_PATH = ROOT / "data" / "citonauta_curriculum.json"
+OUTLINES_PATH = ROOT / "data" / "course_outlines.json"
 PROVISIONAL_PATH = ROOT / "data" / "provisional_subjects.json"
 REDEVELOPMENT_ROOT = ROOT / "data" / "course_redevelopment"
 DEFAULT_MANIFEST = ROOT / "publication-manifest.json"
@@ -31,7 +33,9 @@ def serialize(data: dict[str, Any]) -> str:
     return json.dumps(data, ensure_ascii=False, indent=2) + "\n"
 
 
-def curriculum_subjects(curriculum: dict[str, Any]) -> dict[str, tuple[dict[str, Any], dict[str, Any]]]:
+def curriculum_subjects(
+    curriculum: dict[str, Any],
+) -> dict[str, tuple[dict[str, Any], dict[str, Any]]]:
     subjects: dict[str, tuple[dict[str, Any], dict[str, Any]]] = {}
     for area in curriculum.get("areas", []):
         if not isinstance(area, dict):
@@ -74,12 +78,44 @@ def build_subject_entry(
     }
 
 
+def build_outline(course: dict[str, Any]) -> list[list[str]]:
+    outline: list[list[str]] = []
+    for index, unit in enumerate(course.get("detailed_units", []), start=1):
+        if not isinstance(unit, dict):
+            raise ValueError(f"{course.get('id')}: unidad detallada {index} inválida")
+        title = str(unit.get("title", "")).strip()
+        topics = unit.get("topics") or []
+        applications = unit.get("biomedical_applications") or []
+        if not title:
+            raise ValueError(f"{course.get('id')}: unidad detallada {index} sin título")
+        if not isinstance(topics, list) or not topics:
+            raise ValueError(f"{course.get('id')}: unidad detallada {index} sin temas")
+        if not isinstance(applications, list) or not applications:
+            raise ValueError(
+                f"{course.get('id')}: unidad detallada {index} sin aplicaciones biomédicas"
+            )
+        outline.append(
+            [
+                title,
+                "; ".join(str(value).strip() for value in topics if str(value).strip()),
+                "; ".join(
+                    str(value).strip() for value in applications if str(value).strip()
+                ),
+            ]
+        )
+    if not outline:
+        raise ValueError(f"{course.get('id')}: detailed_units no define temario")
+    return outline
+
+
 def promote(
     curriculum: dict[str, Any],
+    outlines: dict[str, Any],
     provisional_data: dict[str, Any],
     manifest: dict[str, Any],
-) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], list[str]]:
     curriculum = copy.deepcopy(curriculum)
+    outlines = copy.deepcopy(outlines)
     provisional_data = copy.deepcopy(provisional_data)
     existing = curriculum_subjects(curriculum)
     provisional_rows = [
@@ -101,10 +137,12 @@ def promote(
         if not isinstance(manifest_course, dict):
             continue
         subject_id = str(manifest_course.get("subject_id", "")).strip()
-        if not subject_id or subject_id not in provisional_by_id:
+        if not subject_id:
             continue
 
         source = REDEVELOPMENT_ROOT / subject_id / "course.json"
+        if not source.exists():
+            continue
         course = load_json(source)
         if str(course.get("id", "")).strip() != subject_id:
             raise ValueError(f"{source.relative_to(ROOT)}: id no coincide con {subject_id}")
@@ -113,18 +151,26 @@ def promote(
         if area is None:
             raise ValueError(f"{subject_id}: área curricular desconocida {area_id}")
 
-        entry = build_subject_entry(provisional_by_id[subject_id], course, manifest_course)
-        if subject_id in existing:
-            existing_area, existing_entry = existing[subject_id]
-            if str(existing_area.get("id")) != area_id:
-                raise ValueError(f"{subject_id}: ya existe en otra área curricular")
-            existing_entry.clear()
-            existing_entry.update(entry)
-        else:
-            area.setdefault("subjects", []).append(entry)
-            existing[subject_id] = (area, entry)
+        provisional = provisional_by_id.get(subject_id)
+        if provisional is not None:
+            entry = build_subject_entry(provisional, course, manifest_course)
+            if subject_id in existing:
+                existing_area, existing_entry = existing[subject_id]
+                if str(existing_area.get("id")) != area_id:
+                    raise ValueError(f"{subject_id}: ya existe en otra área curricular")
+                existing_entry.clear()
+                existing_entry.update(entry)
+            else:
+                area.setdefault("subjects", []).append(entry)
+                existing[subject_id] = (area, entry)
+            promoted.append(subject_id)
 
-        promoted.append(subject_id)
+        if subject_id in existing:
+            area_outlines = outlines.setdefault(area_id, {})
+            if not isinstance(area_outlines, dict):
+                raise ValueError(f"{area_id}: el temario del área debe ser un objeto")
+            if subject_id not in area_outlines or provisional is not None:
+                area_outlines[subject_id] = build_outline(course)
 
     if promoted:
         promoted_set = set(promoted)
@@ -141,8 +187,43 @@ def promote(
                         str(row.get("id", "")),
                     )
                 )
+        for area_id, area_outlines in outlines.items():
+            if isinstance(area_outlines, dict):
+                outlines[area_id] = dict(sorted(area_outlines.items()))
 
-    return curriculum, provisional_data, sorted(set(promoted))
+    return curriculum, outlines, provisional_data, sorted(set(promoted))
+
+
+def manifest_contract_errors(
+    curriculum: dict[str, Any],
+    outlines: dict[str, Any],
+    provisional: dict[str, Any],
+    manifest: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    existing = curriculum_subjects(curriculum)
+    provisional_ids = {
+        str(row.get("id", "")).strip()
+        for row in provisional.get("subjects", [])
+        if isinstance(row, dict) and str(row.get("id", "")).strip()
+    }
+    for manifest_course in manifest.get("courses", []):
+        if not isinstance(manifest_course, dict):
+            continue
+        subject_id = str(manifest_course.get("subject_id", "")).strip()
+        source = REDEVELOPMENT_ROOT / subject_id / "course.json"
+        if not subject_id or not source.exists():
+            continue
+        course = load_json(source)
+        area_id = str(course.get("area_id", "")).strip()
+        if subject_id not in existing:
+            errors.append(f"{subject_id}: falta en el currículo canónico")
+        if subject_id in provisional_ids:
+            errors.append(f"{subject_id}: permanece en el inventario provisional")
+        area_outlines = outlines.get(area_id)
+        if not isinstance(area_outlines, dict) or subject_id not in area_outlines:
+            errors.append(f"{subject_id}: falta en data/course_outlines.json")
+    return errors
 
 
 def main() -> int:
@@ -159,23 +240,30 @@ def main() -> int:
 
     manifest_path = args.manifest if args.manifest.is_absolute() else ROOT / args.manifest
     curriculum = load_json(CURRICULUM_PATH)
+    outlines = load_json(OUTLINES_PATH)
     provisional = load_json(PROVISIONAL_PATH)
     manifest = load_json(manifest_path)
-    expected_curriculum, expected_provisional, promoted = promote(
-        curriculum, provisional, manifest
+    expected_curriculum, expected_outlines, expected_provisional, promoted = promote(
+        curriculum, outlines, provisional, manifest
     )
 
     if args.check:
+        errors = manifest_contract_errors(curriculum, outlines, provisional, manifest)
         if serialize(curriculum) != serialize(expected_curriculum):
-            print("ERROR: el currículo no contiene todas las promociones esperadas")
-            return 1
+            errors.append("el currículo no contiene todas las promociones esperadas")
+        if serialize(outlines) != serialize(expected_outlines):
+            errors.append("el temario canónico no contiene todas las promociones esperadas")
         if serialize(provisional) != serialize(expected_provisional):
-            print("ERROR: el inventario provisional conserva asignaturas ya promovibles")
+            errors.append("el inventario provisional conserva asignaturas ya promovibles")
+        for error in sorted(set(errors)):
+            print(f"ERROR: {error}")
+        if errors:
             return 1
         print("Promoción provisional sincronizada.")
         return 0
 
     CURRICULUM_PATH.write_text(serialize(expected_curriculum), encoding="utf-8")
+    OUTLINES_PATH.write_text(serialize(expected_outlines), encoding="utf-8")
     PROVISIONAL_PATH.write_text(serialize(expected_provisional), encoding="utf-8")
     if promoted:
         print("Asignaturas promovidas: " + ", ".join(promoted))
