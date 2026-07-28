@@ -1,0 +1,183 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "omicas-celula-unica-biologia-espacial",
+  "area_id": "biologicas-medicas",
+  "unit": 2,
+  "slug": "procesamiento-inicial-control-calidad",
+  "title": "Procesamiento inicial y control de calidad",
+  "status": "review",
+  "purpose": "Convertir datos iniciales en una matriz auditable y seleccionar observaciones de calidad mediante decisiones por muestra, controlando empty droplets, RNA ambiente, doublets y artefactos de tejido sin aplicar filtros universales.",
+  "learning_objectives": [
+    "Auditar procesamiento desde FASTQ o archivos cuantificados hasta matrices de barcodes y genes.",
+    "Distinguir empty droplets, células de baja calidad y poblaciones biológicas con poco RNA.",
+    "Evaluar RNA ambiente y contaminación cruzada antes de interpretar marcadores.",
+    "Detectar doublets mediante diseño, carga, expresión y métodos computacionales.",
+    "Seleccionar umbrales por muestra usando distribuciones, contexto y controles.",
+    "Realizar análisis de sensibilidad para medir cómo el filtrado altera composición y conclusiones."
+  ],
+  "theory_sections": [
+    {
+      "heading": "De lecturas y barcodes a una matriz auditable",
+      "paragraphs": [
+        "El control de calidad comienza antes de filtrar células. Se revisan calidad de lecturas, contenido de adaptadores, asignación de índices, saturación, fracción mapeada, distribución de UMI y compatibilidad con la referencia. Un pipeline puede producir una matriz sin fallar y aun contener una referencia incorrecta, muestras intercambiadas o una fracción inesperada de lecturas no asignadas. Los informes iniciales se conservan por biblioteca y se relacionan con lote, tecnología y fecha.",
+        "En plataformas droplet, el resultado incluye barcodes con diferentes cantidades de RNA. Algunos corresponden a células o núcleos, otros a gotas vacías que capturaron RNA libre. El algoritmo de llamada celular usa la distribución de conteos y, a veces, perfiles de expresión para distinguirlos. Una lista filtrada del proveedor no debe aceptarse sin inspección; poblaciones pequeñas o de bajo contenido pueden quedar fuera, mientras gotas contaminadas pueden entrar.",
+        "La matriz cruda de todos los barcodes permite evaluar el fondo y aplicar métodos alternativos. Deben conservarse identificadores, conteos y decisión de inclusión. En muestras multiplexadas se añade demultiplexado de etiquetas genéticas o de anticuerpos y clasificación de singlets, doublets y negativos. Las tasas de asignación y conflictos son métricas del experimento. El objeto final debe indicar qué barcodes fueron descartados y por qué, no solo contener el subconjunto restante."
+      ],
+      "key_points": [
+        "Una matriz generada no garantiza que referencia, índices y muestras sean correctos.",
+        "La llamada celular es una inferencia sobre barcodes y fondo.",
+        "La matriz sin filtrar conserva información necesaria para auditar empty droplets.",
+        "Cada exclusión debe quedar registrada y reproducible."
+      ],
+      "equations": [
+        {
+          "latex": "TotalCounts_c = sum_g Counts_g,c",
+          "meaning": "El total de UMI por barcode es una métrica útil, pero no separa por sí solo células reales y gotas vacías.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Métricas celulares, genes y umbrales dependientes del contexto",
+      "paragraphs": [
+        "Las métricas habituales incluyen total de UMI, número de genes detectados y proporción mitocondrial, ribosomal o de genes específicos. Una célula dañada puede perder RNA citoplasmático y mostrar una proporción mitocondrial elevada, pero ciertos tipos celulares tienen fisiológicamente más transcritos mitocondriales o menos RNA total. Un umbral fijo aplicado a todos los tejidos puede eliminar poblaciones reales y alterar la composición. Las distribuciones se examinan por muestra y, cuando es posible, por lote o región.",
+        "Los valores atípicos pueden detectarse mediante mediana y desviación absoluta mediana, modelos de mezcla o reglas informadas por controles. La decisión debe combinar varias métricas: un barcode con pocos genes y bajo total puede ser vacío o un tipo pequeño; uno con conteos extremadamente altos puede ser doublet. Los genes detectados en muy pocas células pueden retirarse para reducir memoria, pero se debe comprobar que no se eliminen marcadores raros relevantes para la pregunta.",
+        "El filtrado no es una etapa irreversible y ciega. Se evalúa qué tipos, muestras y condiciones se pierden. Si una condición presenta más daño real, filtrar hasta igualar distribuciones puede borrar un efecto biológico o crear selección. Conviene conservar banderas de calidad y comparar análisis con criterios razonables alternativos. Después de una anotación preliminar puede revisarse si una población completa fue penalizada por métricas intrínsecas."
+      ],
+      "key_points": [
+        "Las métricas de calidad mezclan técnica y biología.",
+        "Los umbrales deben adaptarse por muestra, tecnología y tejido.",
+        "Varias métricas juntas son más informativas que una regla aislada.",
+        "El análisis de sensibilidad revela si el filtrado cambia la historia biológica."
+      ],
+      "equations": [
+        {
+          "latex": "MitoFraction_c = MitoCounts_c / TotalCounts_c",
+          "meaning": "La fracción mitocondrial es un indicador contextual de calidad, no un criterio universal de exclusión.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "RNA ambiente, estrés de disociación y contaminación",
+      "paragraphs": [
+        "La lisis durante disociación libera RNA al medio y las gotas vacías capturan un perfil ambiente. Las células también reciben una fracción de ese fondo. Genes muy abundantes de células frágiles pueden aparecer en poblaciones donde no se expresan realmente. En tejido pancreático, tumoral o rico en eritrocitos, esta contaminación puede dominar marcadores. La matriz de gotas vacías ayuda a estimar el perfil ambiente; los métodos de corrección requieren supuestos y no deben aplicarse sin inspección.",
+        "La corrección estima una fracción contaminante y ajusta conteos, pero puede eliminar expresión verdadera compartida. Deben compararse perfiles antes y después, marcadores negativos y controles conocidos. Las etiquetas celulares no deben asignarse usando genes susceptibles de contaminación sin evidencia adicional. La presencia simultánea de marcadores incompatibles puede indicar RNA ambiente, doublet o transición real; estas hipótesis se distinguen con patrón global, intensidad, replicación y validación.",
+        "La disociación también induce programas de estrés, respuesta inmediata, hipoxia o inflamación. Estos programas pueden correlacionarse con tiempo de procesamiento, tejido o condición. Si todos los casos tardaron más en procesarse, el estrés queda confundido con enfermedad. Se registran tiempo, temperatura, enzima y viabilidad. Los scores de estrés pueden ayudar a diagnosticar, pero regresarlos automáticamente puede borrar una respuesta biológica. La mejor prevención es el diseño y el procesamiento consistente."
+      ],
+      "key_points": [
+        "El RNA ambiente puede crear marcadores falsos en múltiples poblaciones.",
+        "La corrección de contaminación necesita controles y comparación antes-después.",
+        "Expresión incompatible puede reflejar ambiente, doublet o biología real.",
+        "Los programas de disociación deben relacionarse con metadatos de procesamiento."
+      ],
+      "equations": [
+        {
+          "latex": "ObservedProfile_c = (1-rho_c)*CellProfile_c + rho_c*AmbientProfile",
+          "meaning": "Modelo conceptual de mezcla entre expresión celular y RNA ambiente con fracción rho.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Doublets, muestras atípicas y control de calidad multiescala",
+      "paragraphs": [
+        "Un doublet aparece cuando dos células comparten barcode o gota. Puede mostrar conteos altos y una combinación de marcadores de tipos distintos, aunque doublets homotípicos son difíciles de detectar porque mezclan células similares. La tasa esperada depende de carga y plataforma. Los métodos computacionales generan vecinos sintéticos, clasifican puntuaciones o buscan perfiles incompatibles, pero ningún método identifica todos los casos. En multiplexado, barcodes con dos etiquetas de muestra ayudan a detectar doublets heterotípicos entre donantes.",
+        "La eliminación debe ser prudente. Estados transicionales, células activadas o tipos raros pueden parecer mezclas. Se comparan puntuaciones, conteos, clusters, marcadores y reproducibilidad entre muestras. Un cluster presente solo en la muestra con mayor carga y enriquecido en genes de dos linajes es sospechoso. Sin embargo, eliminar toda coexpresión impide descubrir biología legítima. La clasificación puede conservar una categoría ambigua para revisión y evitar forzar etiquetas.",
+        "El control de calidad también ocurre a nivel de muestra. Una biblioteca con pocas células, baja complejidad, composición extrema o alta contaminación puede no ser comparable. Eliminarla reduce réplicas y puede introducir selección, por lo que se predefinen criterios y se informa el impacto. Se revisan correlaciones agregadas, distribución de tipos y metadatos. El resultado final es un informe multiescala: lecturas, bibliotecas, barcodes, células, genes, muestras y composición, con todas las decisiones versionadas."
+      ],
+      "key_points": [
+        "Los doublets heterotípicos y homotípicos tienen detectabilidad distinta.",
+        "Los métodos computacionales de doublets son probabilísticos.",
+        "Estados transicionales no deben eliminarse solo por coexpresión.",
+        "La calidad se evalúa también por muestra, no únicamente por célula."
+      ],
+      "equations": [
+        {
+          "latex": "ExpectedDoublets increases with NumberLoadedCells and platform-specific loading rate",
+          "meaning": "La tasa esperada de doublets crece con la carga y debe interpretarse con información del experimento.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Empty droplet", "definition": "Gota sin célula que puede contener RNA ambiental."},
+    {"term": "Cell calling", "definition": "Proceso de decidir qué barcodes representan células o núcleos."},
+    {"term": "RNA ambiente", "definition": "RNA libre capturado junto con una célula o en una gota vacía."},
+    {"term": "Doublet", "definition": "Barcode que contiene señal de dos o más células."},
+    {"term": "Doublet homotípico", "definition": "Mezcla de células del mismo tipo, difícil de distinguir."},
+    {"term": "Doublet heterotípico", "definition": "Mezcla de tipos distintos con marcadores combinados."},
+    {"term": "Complejidad", "definition": "Diversidad de moléculas o genes detectados en una biblioteca o célula."},
+    {"term": "Fracción mitocondrial", "definition": "Proporción de conteos asignados a genes mitocondriales."},
+    {"term": "MAD", "definition": "Desviación absoluta mediana, medida robusta para detectar valores atípicos."},
+    {"term": "Demultiplexado", "definition": "Asignación de lecturas o células a muestras mediante índices o etiquetas."},
+    {"term": "Estrés de disociación", "definition": "Programa transcripcional inducido por extracción y procesamiento del tejido."},
+    {"term": "Análisis de sensibilidad", "definition": "Comparación de resultados bajo decisiones de filtrado alternativas."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Umbral mitocondrial que elimina una población",
+      "scenario": "Un filtro global de 10% elimina la mayoría de cardiomiocitos pero conserva otros tipos.",
+      "reasoning_steps": ["Comparar distribuciones por muestra y tipo preliminar.", "Evaluar otras métricas de daño.", "Probar umbrales adaptativos.", "Revisar composición y marcadores después del filtrado."],
+      "interpretation": "La métrica reflejaba parte de la biología del tipo celular y no solo mala calidad.",
+      "limitations": ["Algunos cardiomiocitos pueden estar dañados.", "La anotación preliminar también puede ser incierta."]
+    },
+    {
+      "title": "Marcador de acinar en células inmunes",
+      "scenario": "Genes acinares abundantes aparecen débilmente en casi todos los clusters inmunes de páncreas.",
+      "reasoning_steps": ["Examinar gotas vacías.", "Estimar perfil ambiente.", "Comparar marcadores negativos y positivos.", "Aplicar corrección y comprobar sensibilidad."],
+      "interpretation": "La expresión difusa era compatible con contaminación ambiental, no transdiferenciación generalizada.",
+      "limitations": ["La corrección puede retirar expresión verdadera.", "Se necesita validación ortogonal para casos ambiguos."]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría multiescala de calidad",
+      "instructions": ["Revisar métricas de biblioteca.", "Llamar células y evaluar fondo.", "Diagnosticar contaminación y doublets.", "Comparar filtros mediante sensibilidad."],
+      "problems": [
+        "Interpretar una curva de barcodes y proponer cell calling.",
+        "Comparar umbrales globales y adaptativos por muestra.",
+        "Distinguir célula pequeña y empty droplet usando varias métricas.",
+        "Diseñar un control para RNA ambiente.",
+        "Interpretar coexpresión compatible con doublet heterotípico.",
+        "Explicar por qué un doublet homotípico es difícil de detectar.",
+        "Definir criterios de exclusión de una muestra completa.",
+        "Crear un informe de sensibilidad de composición y marcadores."
+      ],
+      "checking_criteria": ["Las decisiones se realizan por muestra.", "Se conserva la matriz cruda.", "Contaminación y doublets se evalúan separadamente.", "El impacto del filtrado se cuantifica."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Aceptar sin revisión la matriz filtrada del proveedor.", "correction": "Conservar barcodes crudos y auditar cell calling y fondo."},
+    {"error": "Aplicar el mismo umbral a todos los tejidos.", "correction": "Usar distribuciones, contexto y sensibilidad por muestra."},
+    {"error": "Regresar automáticamente genes de estrés.", "correction": "Relacionarlos con diseño y decidir según la pregunta biológica."},
+    {"error": "Eliminar toda coexpresión como doublet.", "correction": "Comparar puntuaciones, carga, replicación y plausibilidad biológica."},
+    {"error": "Evaluar calidad solo por célula.", "correction": "Auditar también lecturas, bibliotecas, genes, muestras y composición."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué es cell calling?", "answer": "La inferencia de qué barcodes representan células o núcleos reales."},
+    {"question": "¿Por qué conservar gotas vacías?", "answer": "Permiten estimar fondo y RNA ambiente."},
+    {"question": "¿La fracción mitocondrial tiene un corte universal?", "answer": "No; depende de tejido, tipo, tecnología y distribución por muestra."},
+    {"question": "¿Qué riesgo tiene un filtro muy estricto?", "answer": "Eliminar tipos reales, sesgar composición y reducir muestras o condiciones."},
+    {"question": "¿Qué es RNA ambiente?", "answer": "RNA libre que contamina gotas y perfiles celulares."},
+    {"question": "¿Qué diferencia hay entre doublet homo y heterotípico?", "answer": "El primero mezcla tipos similares; el segundo tipos distintos y suele ser más detectable."},
+    {"question": "¿Por qué revisar calidad por muestra?", "answer": "Una biblioteca completa puede tener problemas que no se resuelven filtrando células."},
+    {"question": "¿Qué demuestra un análisis de sensibilidad?", "answer": "Si composición, clusters o conclusiones dependen excesivamente del filtrado elegido."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Muestras clínicas", "connection": "Viabilidad, retraso y tejido limitado requieren decisiones de calidad transparentes."},
+    {"topic": "Tumores", "connection": "Necrosis, RNA ambiente y doublets pueden crear poblaciones o marcadores falsos."},
+    {"topic": "Tejido congelado", "connection": "snRNA-seq requiere métricas y expectativas distintas de células completas."},
+    {"topic": "Inmunología", "connection": "Poblaciones pequeñas o activadas pueden perderse bajo filtros universales."
+    }
+  ],
+  "sources": [
+    {"title": "Single-cell best practices: Quality Control", "organization": "Single-cell Best Practices Consortium", "url": "https://www.sc-best-practices.org/preprocessing_visualization/quality_control.html", "type": "recurso metodológico", "verification_status": "verified_directly"},
+    {"title": "Orchestrating Single-Cell Analysis with Bioconductor", "organization": "Bioconductor", "url": "https://bioconductor.org/books/devel/OSCA/", "type": "libro ejecutable", "verification_status": "verified_directly"},
+    {"title": "Single-cell best practices: Raw data processing", "organization": "Single-cell Best Practices Consortium", "url": "https://www.sc-best-practices.org/introduction/raw_data_processing.html", "type": "recurso metodológico", "verification_status": "verified_directly"},
+    {"title": "Best practices for single-cell analysis across modalities", "organization": "Nature Reviews Genetics", "url": "https://www.nature.com/articles/s41576-023-00586-w", "type": "revisión metodológica", "verification_status": "metadata_verified"},
+    {"title": "Human Cell Atlas Metadata", "organization": "Human Cell Atlas", "url": "https://data.humancellatlas.org/metadata", "type": "estándar de metadatos", "verification_status": "verified_directly"}
+  ],
+  "editorial_notice": "Material educativo en estado review. El filtrado debe conservar trazabilidad y no presentar la eliminación de datos como una decisión neutral o universal."
+}

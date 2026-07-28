@@ -1,0 +1,189 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "omicas-celula-unica-biologia-espacial",
+  "area_id": "biologicas-medicas",
+  "unit": 6,
+  "slug": "integracion-multimodalidad-dinamica",
+  "title": "Integración, multimodalidad y dinámica celular",
+  "status": "review",
+  "purpose": "Integrar muestras, referencias y modalidades preservando señal biológica, y evaluar trayectorias, velocidad y programas reguladores como inferencias dependientes de supuestos y tiempo de muestreo.",
+  "learning_objectives": [
+    "Distinguir concatenación, corrección de batch, integración y mapeo de referencia.",
+    "Evaluar mezcla técnica y conservación biológica sin elegir por apariencia de UMAP.",
+    "Detectar sobrecorrección cuando condición, tejido o estado se confunden con batch.",
+    "Relacionar scATAC-seq, CITE-seq y multiome con sus distribuciones y controles específicos.",
+    "Construir representaciones conjuntas y transferencia de etiquetas con incertidumbre.",
+    "Interpretar trayectorias, pseudotiempo, RNA velocity y redes reguladoras sin atribuir causalidad automática."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Batch effects, integración y objetivos explícitos",
+      "paragraphs": [
+        "Un batch effect es variación asociada con procesamiento, plataforma, fecha, operador o centro que no representa el fenómeno biológico objetivo. Sin embargo, la asociación estadística con batch no demuestra que una señal sea técnica. Si todos los casos pertenecen a un lote, condición y batch son no identificables. La integración computacional no puede recuperar la separación que el diseño no proporcionó. Por ello, el objetivo de integración debe especificar qué variación técnica se desea reducir y qué diferencias biológicas deben conservarse.",
+        "Concatenar objetos solo combina matrices y metadatos. Corregir batch modifica una representación o valores para mejorar comparabilidad. Integrar puede construir un espacio común, correspondencias, factores compartidos o grafo conjunto. Mapear a una referencia proyecta nuevos datos sin redefinir completamente el atlas. Estas operaciones no son equivalentes y pueden producir objetos distintos para visualización, transferencia de etiquetas o análisis downstream. Los conteos originales y el identificador de dataset se conservan.",
+        "La decisión de integrar depende de la tarea. Para visualizar tipos compartidos puede ser útil alinear estados similares; para estudiar diferencias de enfermedad, una corrección agresiva puede eliminar precisamente la señal de interés. Algunas comparaciones pueden realizarse sin integración, usando anotación por muestra y pseudobulk. La integración no es una etapa obligatoria ni una prueba de calidad. Debe demostrar que mejora una tarea definida sin crear mezcla artificial."
+      ],
+      "key_points": [
+        "La integración no corrige confusión perfecta entre condición y batch.",
+        "Concatenación, corrección, integración y mapeo son operaciones distintas.",
+        "Los conteos originales y la identidad de dataset se conservan.",
+        "La necesidad de integrar depende de la tarea analítica."
+      ],
+      "equations": [
+        {
+          "latex": "ObservedVariation = BiologicalVariation + TechnicalVariation + Confounding",
+          "meaning": "La integración intenta reducir componentes técnicos identificables, pero no separa confusión perfecta sin información adicional.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Evaluación de integración y riesgo de sobrecorrección",
+      "paragraphs": [
+        "Una integración se evalúa en dos dimensiones: mezcla de lotes y conservación de estructura biológica. Una representación puede mezclar perfectamente muestras porque borró tipos, estados o gradientes. Otra puede conservar tipos pero dejar diferencias técnicas. Las métricas incluyen mezcla local, conservación de vecinos, separabilidad de etiquetas, estabilidad de marcadores y desempeño de transferencia. Ninguna métrica única define el mejor método; el conjunto debe relacionarse con el objetivo.",
+        "Los controles negativos ayudan a detectar sobrecorrección. Si existe una población específica de tejido, etapa o perturbación, no debería forzarse a coincidir con otra. Simulaciones, holdouts y marcadores conocidos permiten comprobar si la integración inventa correspondencias. También se revisa si la condición sigue siendo detectable dentro de tipos cuando biológicamente se espera. Una UMAP visualmente uniforme puede ocultar pérdida de señal y no debe ser criterio principal.",
+        "La evaluación se realiza por muestra y no solo por célula. Una integración puede alinear miles de células de dos donantes y fallar en otros. La referencia de tipos puede ser imperfecta, de modo que métricas basadas en etiquetas heredan sus errores. Conviene comparar varios métodos y parámetros en un subconjunto de desarrollo, bloquear la elección y verificarla en muestras reservadas. Las representaciones integradas se versionan y no se utilizan indiscriminadamente para pruebas de expresión."
+      ],
+      "key_points": [
+        "Mezcla técnica y conservación biológica deben evaluarse juntas.",
+        "Una UMAP uniforme puede ser evidencia de sobrecorrección.",
+        "Controles negativos y poblaciones específicas prueban conservación.",
+        "La evaluación debe incluir generalización a muestras reservadas."
+      ],
+      "equations": [
+        {
+          "latex": "IntegrationScore = TechnicalMixingScore + BiologicalConservationScore",
+          "meaning": "Representación conceptual de dos objetivos que pueden entrar en tensión y deben reportarse por separado.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Modalidades: scATAC-seq, CITE-seq y multiome",
+      "paragraphs": [
+        "scATAC-seq mide fragmentos en regiones accesibles y produce una matriz extremadamente dispersa de picos o bins por célula. Sus métricas incluyen fragmentos únicos, enriquecimiento en sitios de inicio, fracción en picos, nucleosomas y doublets. La representación suele usar TF-IDF, LSI o modelos probabilísticos. La accesibilidad no equivale a unión de un factor ni a expresión de un gen; la vinculación pico-gen es una hipótesis basada en proximidad, coaccesibilidad o datos conjuntos.",
+        "CITE-seq añade conteos de anticuerpos derivados de etiquetas. El fondo, anticuerpos no específicos y diferencias de eficiencia requieren normalización propia. La proteína de superficie puede ayudar a separar tipos con transcriptomas similares, pero la selección de panel limita lo observable. Los controles isotipo y gotas vacías informan ruido. Una discordancia RNA-proteína puede ser biología, cinética, anticuerpo deficiente o error de anotación y debe investigarse.",
+        "Multiome mide RNA y accesibilidad en la misma célula, reduciendo ambigüedad de correspondencia pero manteniendo diferencias de sensibilidad y sparsity. Otros diseños miden modalidades en células separadas y requieren alineamiento no emparejado. Los modelos conjuntos pueden aprender factores compartidos y específicos. La calidad se evalúa por modalidad y en conjunto; una modalidad fuerte puede dominar. La integración multimodal debe conservar señales específicas y no convertir concordancia computacional en mecanismo regulador demostrado."
+      ],
+      "key_points": [
+        "Cada modalidad tiene distribución, fondo y métricas propias.",
+        "Accesibilidad no demuestra regulación funcional ni expresión.",
+        "CITE-seq depende del panel y del control de fondo de anticuerpos.",
+        "Multiome reduce pero no elimina incertidumbre de integración."
+      ],
+      "equations": [
+        {
+          "latex": "JointLatent = SharedFactors + ModalitySpecificFactors",
+          "meaning": "Una representación multimodal debe distinguir señal compartida y variación específica de cada assay.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Trayectorias, RNA velocity y programas reguladores",
+      "paragraphs": [
+        "El pseudotiempo ordena células a lo largo de una estructura inferida, pero no mide tiempo real salvo que se calibre con muestreo longitudinal. La topología depende de representación, vecinos, punto inicial y método. Una bifurcación puede reflejar linajes, estados activados, batch o falta de estados intermedios. La dirección debe apoyarse en conocimiento, tiempos experimentales, marcadores y perturbaciones. El algoritmo no convierte una colección transversal en una película observada.",
+        "RNA velocity utiliza relaciones entre transcritos no empalmados y empalmados bajo modelos de cinética. Supone procesos de transcripción, empalme y degradación que pueden variar entre genes y estados. La calidad de anotación intrónica, profundidad y muestreo afectan vectores. Los campos proyectados sobre UMAP pueden parecer direccionales aun cuando la dinámica es inestable. Se evalúa coherencia, sensibilidad, genes impulsores y concordancia con tiempos o linajes conocidos.",
+        "La inferencia reguladora combina accesibilidad, motivos, expresión y co-variación para proponer factores y programas. Una asociación motivo-pico-gen no demuestra unión ni efecto. Las redes pueden estar impulsadas por composición, ciclo o batch. La validación requiere perturbación, ChIP, reporter, CRISPR, tiempo o evidencia externa. Trayectorias y redes son herramientas para priorizar hipótesis, no sustitutos de experimentos causales. Las conclusiones deben declarar supuestos, alternativas y qué evidencia resolvería la dirección o mecanismo."
+      ],
+      "key_points": [
+        "Pseudotiempo es un orden inferido, no tiempo observado.",
+        "La dirección depende de raíz, topología y evidencia externa.",
+        "RNA velocity requiere supuestos cinéticos y calidad suficiente.",
+        "Redes reguladoras generan hipótesis que necesitan perturbación."
+      ],
+      "equations": [
+        {
+          "latex": "Pseudotime_c = PositionOnInferredManifold(c | root, graph, method)",
+          "meaning": "La posición depende del grafo, raíz y método y no equivale automáticamente a tiempo cronológico.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Batch effect", "definition": "Variación técnica asociada con procesamiento, plataforma, fecha o centro."},
+    {"term": "Integración", "definition": "Construcción de correspondencias o representaciones comunes entre datasets o modalidades."},
+    {"term": "Sobrecorrección", "definition": "Eliminación de señal biológica real durante la integración."},
+    {"term": "Mapeo de referencia", "definition": "Proyección de nuevos datos sobre una referencia previamente construida."},
+    {"term": "scATAC-seq", "definition": "Medición de accesibilidad cromatínica en células individuales."},
+    {"term": "CITE-seq", "definition": "Medición conjunta de RNA y proteínas de superficie etiquetadas."},
+    {"term": "Multiome", "definition": "Medición de múltiples modalidades en la misma célula."},
+    {"term": "LSI", "definition": "Representación latente usada frecuentemente para matrices de accesibilidad."},
+    {"term": "Pseudotiempo", "definition": "Orden relativo de células sobre una trayectoria inferida."},
+    {"term": "RNA velocity", "definition": "Inferencia dinámica basada en relaciones de RNA empalmado y no empalmado."},
+    {"term": "Coaccesibilidad", "definition": "Covariación de accesibilidad entre regiones cromatínicas."},
+    {"term": "Programa regulador", "definition": "Conjunto inferido de factores, regiones y genes con actividad coordinada."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Integración borra una respuesta al tratamiento",
+      "scenario": "Después de integrar, células tratadas y controles se mezclan perfectamente y desaparecen genes de interferón conocidos.",
+      "reasoning_steps": ["Revisar confusión de batch y condición.", "Comparar conteos y representación no integrada.", "Evaluar conservación de programas esperados.", "Reducir corrección o analizar por muestra."],
+      "interpretation": "La integración pudo tratar la respuesta biológica como batch y eliminarla del espacio común.",
+      "limitations": ["El programa también podría ser técnico.", "Se necesita diseño balanceado y validación externa."
+      ]
+    },
+    {
+      "title": "Velocity sugiere dirección contraria al tiempo experimental",
+      "scenario": "Vectores proyectados apuntan de células tardías hacia tempranas en una serie temporal.",
+      "reasoning_steps": ["Revisar raíz y genes cinéticos.", "Comparar modelos y parámetros.", "Evaluar calidad de spliced/unspliced.", "Priorizar el tiempo observado y limitar la conclusión."],
+      "interpretation": "La inferencia dinámica no era coherente con el diseño y no debía usarse como evidencia de dirección.",
+      "limitations": ["La biología puede incluir reversión.", "El muestreo puede omitir estados intermedios."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría de integración y dinámica",
+      "instructions": ["Definir objetivo de integración.", "Comparar mezcla y conservación.", "Integrar una modalidad adicional.", "Evaluar trayectoria con evidencia externa."],
+      "problems": [
+        "Distinguir concatenación, integración y mapeo.",
+        "Detectar confusión perfecta de batch y condición.",
+        "Diseñar métricas de mezcla técnica y conservación biológica.",
+        "Proponer un control negativo de sobrecorrección.",
+        "Comparar QC de RNA y ATAC.",
+        "Interpretar discordancia RNA-proteína.",
+        "Auditar raíz y topología de pseudotiempo.",
+        "Diseñar validación causal de un programa regulador."
+      ],
+      "checking_criteria": ["El objetivo de integración es explícito.", "Se reportan métricas en tensión.", "Cada modalidad tiene QC propio.", "Trayectorias y redes se presentan como hipótesis."
+      ]
+    }
+  ],
+  "common_errors": [
+    {"error": "Integrar automáticamente todos los datasets.", "correction": "Definir tarea y demostrar beneficio sin sobrecorrección."},
+    {"error": "Elegir método por el UMAP más mezclado.", "correction": "Evaluar conservación biológica y controles negativos."},
+    {"error": "Usar representación integrada para DE sin revisión.", "correction": "Mantener conteos originales e inferencia multimuesta."},
+    {"error": "Interpretar accesibilidad como regulación causal.", "correction": "Tratar enlaces pico-gen como hipótesis."},
+    {"error": "Presentar pseudotiempo como historia temporal observada.", "correction": "Declarar raíz, supuestos y evidencia longitudinal."
+    }
+  ],
+  "self_assessment": [
+    {"question": "¿Qué no puede resolver integración?", "answer": "Confusión perfecta entre condición y batch."},
+    {"question": "¿Qué dos dimensiones evalúan integración?", "answer": "Mezcla técnica y conservación biológica."},
+    {"question": "¿Qué es sobrecorrección?", "answer": "Borrar señal biológica al alinear datasets."},
+    {"question": "¿scATAC mide unión de factores?", "answer": "No; mide accesibilidad y genera hipótesis reguladoras."},
+    {"question": "¿Qué limita CITE-seq?", "answer": "Panel de anticuerpos, fondo, especificidad y eficiencia."},
+    {"question": "¿Qué diferencia multiome de integración no emparejada?", "answer": "Mide modalidades en la misma célula y reduce ambigüedad de correspondencia."},
+    {"question": "¿Pseudotiempo es tiempo real?", "answer": "No; es un orden inferido dependiente del método."},
+    {"question": "¿Qué valida una red reguladora?", "answer": "Perturbación, unión, tiempo u otra evidencia experimental independiente."
+    }
+  ],
+  "biomedical_connections": [
+    {"topic": "Atlas integrados", "connection": "El mapeo de referencia requiere conservar tipos y variación de donantes."},
+    {"topic": "Epigenómica", "connection": "scATAC y multiome relacionan accesibilidad y expresión sin probar causalidad."},
+    {"topic": "Inmunofenotipado", "connection": "CITE-seq añade proteínas para separar poblaciones transcriptómicamente similares."},
+    {"topic": "Desarrollo y regeneración", "connection": "Trayectorias priorizan hipótesis de transición que necesitan tiempos o linajes."
+    }
+  ],
+  "sources": [
+    {"title": "Single-cell best practices: Data integration", "organization": "Single-cell Best Practices Consortium", "url": "https://www.sc-best-practices.org/cellular_structure/integration.html", "type": "recurso metodológico", "verification_status": "verified_directly"},
+    {"title": "Single-cell best practices", "organization": "Single-cell Best Practices Consortium", "url": "https://www.sc-best-practices.org/", "type": "recurso metodológico", "verification_status": "verified_directly"},
+    {"title": "Orchestrating Single-Cell Analysis with Bioconductor", "organization": "Bioconductor", "url": "https://bioconductor.org/books/devel/OSCA/", "type": "libro ejecutable", "verification_status": "verified_directly"},
+    {"title": "Multi-Sample Single-Cell Analyses with Bioconductor", "organization": "Bioconductor", "url": "https://bioconductor.org/books/devel/OSCA.multisample/", "type": "libro ejecutable", "verification_status": "verified_directly"},
+    {"title": "Best practices for single-cell analysis across modalities", "organization": "Nature Reviews Genetics", "url": "https://www.nature.com/articles/s41576-023-00586-w", "type": "revisión metodológica", "verification_status": "metadata_verified"}
+  ],
+  "editorial_notice": "Material educativo en estado review. Integración, pseudotiempo, velocity y redes reguladoras son inferencias dependientes de supuestos y no demuestran por sí solas mecanismo, dirección ni causalidad."
+}
