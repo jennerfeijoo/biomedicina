@@ -1,0 +1,183 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "machine-learning-biomedico-validacion-clinica",
+  "area_id": "ingenieria-biomedica",
+  "unit": 2,
+  "slug": "datos-clinicos-cohortes-etiquetas-leakage",
+  "title": "Datos clínicos, cohortes, etiquetas y fuga de información",
+  "status": "review",
+  "purpose": "Auditar cómo el proceso asistencial genera datos, ausencias y etiquetas, y diseñar una cohorte y particiones que permitan evaluar un modelo sin sesgo evitable ni fuga de información.",
+  "learning_objectives": [
+    "Representar el proceso de generación de datos clínicos antes de modelar.",
+    "Distinguir población fuente, cohorte analítica y población objetivo.",
+    "Evaluar etiquetas, sesgo de verificación y errores de medición.",
+    "Analizar mecanismos de datos faltantes y decisiones de imputación.",
+    "Detectar leakage por paciente, tiempo, centro, preprocesamiento y selección.",
+    "Construir particiones reproducibles compatibles con el uso previsto."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Proceso asistencial y generación de datos",
+      "paragraphs": [
+        "Los datos clínicos no son una muestra neutra de la biología. Son el resultado de quién accede al sistema, qué profesionales solicitan pruebas, qué dispositivos se utilizan, qué variables se registran y cómo se codifican decisiones. Una medición puede faltar porque no era necesaria, porque el paciente estaba demasiado grave, porque un centro no dispone de la prueba o porque ocurrió un fallo técnico. Estas causas contienen información y pueden cambiar entre desarrollo y despliegue.",
+        "Antes de construir una tabla conviene dibujar el flujo desde la población fuente hasta la cohorte analítica. Deben identificarse criterios de elegibilidad, puntos de entrada, exclusiones, duplicados, ventanas temporales y fuentes enlazadas. La fecha de extracción y la versión de cada sistema importan: los códigos, equipos y prácticas pueden cambiar. El diccionario de datos debe documentar significado, unidad, frecuencia, límites plausibles y relación temporal con el tiempo cero.",
+        "La observación también depende de la intervención clínica. Los pacientes con mayor sospecha reciben más pruebas, y quienes sobreviven más tiempo generan más registros. Por ello, la densidad de datos puede funcionar como proxy de gravedad o atención. Un modelo puede aprender intensidad de vigilancia en lugar de fisiología. El análisis debe distinguir variables clínicas intencionadas de rastros operativos y evaluar si esas señales existirán de forma estable en el entorno previsto."
+      ],
+      "key_points": [
+        "Los datos reflejan biología, acceso, práctica y tecnología.",
+        "La cohorte analítica surge de múltiples filtros y decisiones.",
+        "La ausencia de una medición puede ser informativa.",
+        "Los rastros operativos pueden convertirse en atajos inestables."
+      ],
+      "equations": [
+        {
+          "latex": "Observed data = Biology + Care process + Measurement + Recording",
+          "meaning": "Representación conceptual de las fuentes que determinan una variable clínica observada.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Selección, representatividad y diseño de cohorte",
+      "paragraphs": [
+        "La población fuente incluye a quienes podrían haber sido elegibles en el entorno definido. La cohorte analítica contiene a quienes finalmente aparecen después de aplicar disponibilidad de datos, exclusiones y enlazado. Si estas etapas dependen del desenlace, los predictores o la capacidad de acceso, la muestra puede no representar la población objetivo. La representatividad no exige copiar cada proporción poblacional, pero sí comprender qué relaciones y rangos deben transportarse.",
+        "Las cohortes retrospectivas son útiles, aunque su tiempo cero y elegibilidad deben reconstruirse con reglas reproducibles. Los diseños caso-control o las muestras enriquecidas pueden servir para desarrollo, pero alteran prevalencia y requieren cuidado al estimar probabilidades y valores predictivos. El muestreo por conveniencia puede excluir centros pequeños, pacientes con datos incompletos o grupos que reciben atención diferente. Cada exclusión necesita cantidad, motivo y comparación básica con los incluidos.",
+        "La separación por centro o tiempo puede ser parte del diseño, no solo una técnica de validación. Reservar un periodo posterior permite evaluar cambios temporales; reservar centros completos prueba transportabilidad geográfica. Sin embargo, si un centro aporta casi todos los eventos o utiliza una práctica exclusiva, centro y desenlace quedan confundidos. El protocolo debe describir solapamiento de poblaciones, distribución de predictores y si la evaluación responde al uso previsto o a una pregunta distinta."
+      ],
+      "key_points": [
+        "Población fuente, cohorte analítica y población objetivo no son equivalentes.",
+        "Las exclusiones deben cuantificarse y justificarse.",
+        "Muestras enriquecidas alteran prevalencia y calibración.",
+        "Centro, tiempo y desenlace pueden quedar confundidos."
+      ],
+      "equations": [
+        {
+          "latex": "Selection probability = P(Included = 1 | X, Y, Care process)",
+          "meaning": "La inclusión puede depender de predictores, desenlace y proceso asistencial, generando diferencias entre cohorte y población objetivo.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Etiquetas, referencia estándar y datos faltantes",
+      "paragraphs": [
+        "Una etiqueta puede provenir de adjudicación clínica, prueba de laboratorio, informe, código administrativo o regla computacional. Cada fuente tiene sensibilidad, especificidad y variación temporal. Los códigos de facturación pueden ser reproducibles pero no representar exactamente la condición clínica. Una prueba confirmatoria puede ser más específica, aunque solo se aplica a pacientes con alta sospecha. Cuando la probabilidad de verificar depende del modelo de atención, la evaluación puede sobrestimar o subestimar desempeño.",
+        "Las etiquetas derivadas de decisiones humanas pueden incorporar sesgos previos. Predecir ingreso, derivación o tratamiento puede reproducir disponibilidad de recursos y práctica local. El desenlace debe alinearse con el objetivo: predecir una decisión existente no es igual que predecir necesidad clínica. La revisión debe documentar cegamiento de evaluadores, concordancia, resolución de discrepancias y relación entre predictores y proceso de etiquetado.",
+        "Los datos faltantes se describen por mecanismo y contexto, no solo por porcentaje. Bajo ausencia completamente aleatoria, los faltantes no dependen de variables observadas ni no observadas; bajo ausencia al azar, pueden explicarse por información observada; bajo ausencia no al azar, dependen de valores no observados o del propio proceso. La imputación debe ajustarse dentro del entrenamiento y respetar tiempo, unidades y plausibilidad. Añadir indicadores de ausencia puede mejorar predicción, pero también aprender una práctica local que no se transporta."
+      ],
+      "key_points": [
+        "La etiqueta es una medición con error, no una verdad automática.",
+        "El sesgo de verificación aparece cuando no todos reciben la referencia.",
+        "Decisiones clínicas históricas pueden codificar desigualdad o capacidad.",
+        "La imputación debe formar parte del pipeline de entrenamiento."
+      ],
+      "equations": [
+        {
+          "latex": "Observed label = True state + Measurement error + Verification process",
+          "meaning": "Representación conceptual de cómo referencia y verificación condicionan la etiqueta utilizada.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Leakage, particiones y procedencia",
+      "paragraphs": [
+        "Existe fuga cuando el desarrollo utiliza información que no estaría disponible al aplicar el modelo o que pertenece a la evaluación reservada. La fuga directa incluye variables posteriores al desenlace. La fuga indirecta aparece cuando se normaliza, imputa, selecciona variables o armoniza usando toda la base antes de dividir. También ocurre cuando el mismo paciente, familia, dispositivo, hospital o episodio relacionado aparece en entrenamiento y prueba. El resultado suele ser una estimación optimista difícil de reproducir.",
+        "La partición debe corresponder al nivel de independencia y al objetivo de generalización. Para imágenes o registros repetidos, todas las observaciones de un paciente permanecen juntas. Para evaluar un nuevo hospital, se reservan centros completos. Para pronóstico temporal, el entrenamiento precede a la prueba y las variables se construyen sin mirar al futuro. La estratificación puede preservar eventos, pero no debe romper agrupaciones. Las decisiones de partición se registran antes de ajustar modelos.",
+        "La procedencia permite reconstruir qué datos, reglas y versiones produjeron cada conjunto. Deben conservarse identificadores pseudonimizados, fechas de extracción, hashes, consultas, criterios, transformaciones y exclusiones. Un conjunto de prueba pierde valor si se consulta repetidamente para elegir modelos; con el tiempo se convierte en parte del entrenamiento intelectual. Por ello, los resultados externos se inspeccionan después de bloquear pipeline, umbrales y plan de análisis, y cualquier ajuste posterior se evalúa en una cohorte nueva."
+      ],
+      "key_points": [
+        "Leakage incluye variables, transformaciones y relaciones entre observaciones.",
+        "La unidad de partición depende del objetivo de generalización.",
+        "El conjunto de prueba debe permanecer bloqueado.",
+        "La procedencia conecta la cohorte publicada con las fuentes originales."
+      ],
+      "equations": [
+        {
+          "latex": "Train entities intersect Test entities = empty set",
+          "meaning": "Las entidades dependientes definidas por paciente, centro, familia u otro nivel relevante no deben cruzar particiones.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Población fuente", "definition": "Conjunto del cual pueden surgir las personas elegibles."},
+    {"term": "Cohorte analítica", "definition": "Muestra final utilizada después de criterios, enlazado y disponibilidad."},
+    {"term": "Población objetivo", "definition": "Población en la que se pretende usar o evaluar el modelo."},
+    {"term": "Referencia estándar", "definition": "Procedimiento usado para establecer el desenlace o condición evaluada."},
+    {"term": "Sesgo de verificación", "definition": "Distorsión causada porque la referencia no se aplica de igual forma a todos."},
+    {"term": "Error de etiquetado", "definition": "Diferencia entre la etiqueta registrada y el estado definido de interés."},
+    {"term": "MCAR", "definition": "Ausencia independiente de variables observadas y no observadas."},
+    {"term": "MAR", "definition": "Ausencia explicable condicionalmente por variables observadas."},
+    {"term": "MNAR", "definition": "Ausencia dependiente de información no observada o del valor faltante."},
+    {"term": "Leakage", "definition": "Uso indebido de información futura o reservada para evaluación."},
+    {"term": "Procedencia", "definition": "Registro del origen, selección y transformación de los datos."},
+    {"term": "Atajo", "definition": "Señal fácil y potencialmente espuria que el modelo utiliza en lugar del fenómeno deseado."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Imputación antes de dividir",
+      "scenario": "Se calcula la mediana de cada variable con toda la cohorte y después se separan entrenamiento y prueba.",
+      "reasoning_steps": ["Identificar qué parámetros aprendió la imputación.", "Reconocer que la prueba influyó en esos parámetros.", "Dividir primero por paciente.", "Ajustar la imputación solo en entrenamiento."],
+      "interpretation": "La transformación produjo fuga indirecta y una evaluación optimista, aunque nunca se usó explícitamente la etiqueta de prueba.",
+      "limitations": ["El efecto puede ser pequeño en algunos datos.", "Todas las transformaciones aprendidas deben revisarse, no solo la imputación."]
+    },
+    {
+      "title": "Etiqueta administrativa de complicación",
+      "scenario": "El desenlace se define mediante un código de facturación que varía entre hospitales.",
+      "reasoning_steps": ["Comparar reglas de codificación por centro.", "Validar una muestra contra revisión clínica.", "Estimar error de clasificación.", "Analizar desempeño por centro y fuente de etiqueta."],
+      "interpretation": "El modelo puede aprender diferencias administrativas y no únicamente riesgo clínico.",
+      "limitations": ["La revisión clínica también puede discrepar.", "La validación parcial debe considerar selección."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría de cohorte y leakage",
+      "instructions": ["Dibujar el proceso de generación de datos.", "Definir población fuente, objetivo y analítica.", "Auditar etiqueta y faltantes.", "Diseñar particiones y procedencia."],
+      "problems": [
+        "Identificar tres rastros operativos que podrían actuar como atajos.",
+        "Construir un diagrama de selección desde población fuente hasta cohorte.",
+        "Evaluar sesgo de verificación en una prueba confirmatoria.",
+        "Clasificar ejemplos de faltantes como MCAR, MAR o MNAR con cautela.",
+        "Corregir un pipeline que escala variables antes de dividir.",
+        "Diseñar una partición por paciente y centro.",
+        "Proponer una validación temporal con tiempo cero coherente.",
+        "Crear un registro mínimo de procedencia y exclusiones."
+      ],
+      "checking_criteria": ["La selección está cuantificada.", "La etiqueta tiene fuente y limitaciones.", "Las transformaciones se ajustan en entrenamiento.", "Las entidades dependientes no cruzan particiones."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Asumir que la base representa la población objetivo.", "correction": "Mapear selección, acceso, exclusiones y cambios de práctica."},
+    {"error": "Tratar la etiqueta como verdad perfecta.", "correction": "Documentar referencia, verificación, error y concordancia."},
+    {"error": "Imputar o escalar antes de dividir.", "correction": "Ajustar cada transformación dentro del entrenamiento."},
+    {"error": "Dividir registros y no pacientes.", "correction": "Mantener entidades dependientes en una sola partición."},
+    {"error": "Consultar repetidamente el conjunto de prueba.", "correction": "Bloquear plan y reservar una nueva cohorte para ajustes posteriores."}
+  ],
+  "self_assessment": [
+    {"question": "¿Por qué los datos clínicos no son neutrales?", "answer": "Porque reflejan acceso, decisiones, medición, registro y tecnología además de biología."},
+    {"question": "¿Qué diferencia hay entre población fuente y analítica?", "answer": "La analítica resulta de filtros, disponibilidad y enlazado aplicados a la fuente."},
+    {"question": "¿Qué es sesgo de verificación?", "answer": "Distorsión cuando la referencia depende de sospecha, predictores o desenlace."},
+    {"question": "¿Un código administrativo es una etiqueta perfecta?", "answer": "No; puede variar por práctica, facturación y centro."},
+    {"question": "¿Por qué la ausencia puede ser predictiva?", "answer": "Porque la decisión de medir depende del estado y del proceso asistencial."},
+    {"question": "¿Qué transformación puede producir leakage?", "answer": "Cualquier imputación, escalado, selección o armonización ajustada con la prueba."},
+    {"question": "¿Cuál es la unidad mínima de partición con visitas repetidas?", "answer": "El paciente, salvo que exista una agrupación aún más amplia relevante."},
+    {"question": "¿Qué ocurre si se ajusta tras ver la prueba externa?", "answer": "Esa cohorte deja de ser una evaluación independiente del modelo final."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Historia clínica electrónica", "connection": "Registro y solicitud de pruebas generan faltantes y proxies operativos."},
+    {"topic": "Diagnóstico", "connection": "La verificación selectiva condiciona las etiquetas y métricas."},
+    {"topic": "Ómicas", "connection": "Batch, centro y preprocesamiento pueden confundirse con el desenlace."},
+    {"topic": "Salud digital", "connection": "Wearables y aplicaciones presentan pérdidas, adherencia y selección dependientes del usuario."}
+  ],
+  "sources": [
+    {"title": "TRIPOD+AI", "organization": "The BMJ", "url": "https://www.bmj.com/content/385/bmj-2023-078378", "type": "guía de reporte", "verification_status": "verified_directly"},
+    {"title": "PROBAST+AI", "organization": "The BMJ", "url": "https://www.bmj.com/content/388/bmj-2024-082505", "type": "herramienta metodológica", "verification_status": "verified_directly"},
+    {"title": "DECIDE-AI", "organization": "Nature Medicine", "url": "https://www.nature.com/articles/s41591-022-01772-9", "type": "guía de evaluación clínica", "verification_status": "verified_directly"},
+    {"title": "Good Machine Learning Practice", "organization": "IMDRF / FDA", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles", "type": "principios regulatorios", "verification_status": "verified_directly"},
+    {"title": "Transparency for Machine Learning-Enabled Medical Devices", "organization": "FDA, Health Canada y MHRA", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd/transparency-machine-learning-enabled-medical-devices-guiding-principles", "type": "principios de transparencia", "verification_status": "verified_directly"}
+  ],
+  "editorial_notice": "Material educativo en estado review. Una cohorte retrospectiva técnicamente limpia no demuestra por sí sola aplicabilidad, seguridad o utilidad clínica."
+}

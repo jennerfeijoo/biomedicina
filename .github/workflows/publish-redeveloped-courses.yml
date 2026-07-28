@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - 'data/course_redevelopment/**'
+      - 'data/course_outlines.json'
       - 'scripts/publish_courses.py'
+      - 'scripts/promote_provisional_subjects.py'
       - 'scripts/audit_developed_courses.py'
       - 'scripts/sync_catalog_statuses.py'
       - 'scripts/generate_public_indexes.py'
@@ -18,7 +20,9 @@ on:
       - main
     paths:
       - 'data/course_redevelopment/**'
+      - 'data/course_outlines.json'
       - 'scripts/publish_courses.py'
+      - 'scripts/promote_provisional_subjects.py'
       - 'scripts/audit_developed_courses.py'
       - 'scripts/sync_catalog_statuses.py'
       - 'scripts/generate_public_indexes.py'
@@ -95,22 +99,65 @@ jobs:
           cat publication-diagnostic.txt
           exit 1
 
-      - name: Validate advanced units
-        run: python scripts/validate_generated_units.py
+      - name: Promote provisional subjects into curriculum
+        run: python scripts/promote_provisional_subjects.py --manifest publication-manifest.json
 
-      - name: Generate selected public courses
+      - name: Validate advanced units
+        id: advanced_units
+        continue-on-error: true
         shell: bash
         run: |
-          mapfile -t args < publication-args.txt
-          python scripts/publish_courses.py "${args[@]}" --list-subjects > publication-subjects.txt
-          while IFS= read -r subject; do
-            [[ -z "$subject" ]] && continue
-            python scripts/generate_site.py \
-              --force \
-              --subject "$subject" \
-              --with-units \
-              --force-authored-units
-          done < publication-subjects.txt
+          set -o pipefail
+          python scripts/validate_generated_units.py 2>&1 | tee advanced-unit-validation.txt
+
+      - name: Upload advanced-unit validation diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: advanced-unit-validation-diagnostic
+          path: advanced-unit-validation.txt
+          if-no-files-found: error
+
+      - name: Enforce advanced-unit validation
+        if: steps.advanced_units.outcome != 'success'
+        run: |
+          cat advanced-unit-validation.txt
+          exit 1
+
+      - name: Generate selected public courses
+        id: generate_public
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            mapfile -t args < publication-args.txt
+            python scripts/publish_courses.py "${args[@]}" --list-subjects > publication-subjects.txt
+            while IFS= read -r subject; do
+              [[ -z "$subject" ]] && continue
+              python scripts/generate_site.py \
+                --force \
+                --subject "$subject" \
+                --with-units \
+                --force-authored-units
+            done < publication-subjects.txt
+          } 2>&1 | tee public-generation-diagnostic.txt
+
+      - name: Upload public-generation diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-generation-diagnostic
+          path: |
+            publication-subjects.txt
+            public-generation-diagnostic.txt
+          if-no-files-found: warn
+
+      - name: Enforce public generation
+        if: steps.generate_public.outcome != 'success'
+        run: |
+          cat public-generation-diagnostic.txt
+          exit 1
 
       - name: Regenerate affected area and catalog indexes
         run: python scripts/generate_public_indexes.py --manifest publication-manifest.json
@@ -129,6 +176,7 @@ jobs:
         run: |
           mapfile -t args < publication-args.txt
           python scripts/publish_courses.py "${args[@]}" --check-public
+          python scripts/promote_provisional_subjects.py --manifest publication-manifest.json --check
           python scripts/generate_public_indexes.py --manifest publication-manifest.json --check
           python scripts/sync_catalog_statuses.py --check
 
@@ -190,7 +238,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data/subjects data/generated_courses data/generated_units data/catalog_statuses.json catalogo/index.html
+          git add -A data/subjects data/generated_courses data/generated_units data/catalog_statuses.json data/citonauta_curriculum.json data/course_outlines.json data/provisional_subjects.json catalogo/index.html
           python - <<'PY'
           import json
           import subprocess
