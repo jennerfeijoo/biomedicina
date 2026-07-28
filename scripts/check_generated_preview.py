@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Genera una vista previa temporal de páginas y verifica que no queden placeholders.
+"""Genera vistas previas temporales y verifica que no queden placeholders.
 
-No escribe dentro del árbol público del sitio. Usa un directorio temporal para renderizar
-una muestra de páginas con el generador y revisar variables sin reemplazar.
+No escribe dentro del árbol público del sitio. Usa un directorio temporal para
+renderizar una muestra configurable o todo el currículo y revisar variables sin
+reemplazar.
 """
 
 from __future__ import annotations
@@ -17,17 +18,18 @@ ROOT = Path(__file__).resolve().parents[1]
 UNRESOLVED_MARKERS = ("{{ ", " }}")
 
 
-def check_preview(limit: int) -> list[str]:
+def check_preview(limit: int | None) -> tuple[list[str], int, int]:
     errors: list[str] = []
     data = generate_site.load_json(generate_site.DATA_PATH)
     template = generate_site.load_template(generate_site.TEMPLATE_PATH)
     generate_site.validate_template(template)
 
+    expected_count = sum(len(area.get("subjects", [])) for area in data.get("areas", []))
     rendered_count = 0
     with tempfile.TemporaryDirectory(prefix="citonauta-preview-") as tmpdir:
         preview_root = Path(tmpdir)
         for area, subjects, index, subject in generate_site.iter_subjects(data):
-            if rendered_count >= limit:
+            if limit is not None and rendered_count >= limit:
                 break
             rendered = generate_site.render_subject(template, area, subject, subjects, index)
             preview_path = preview_root / subject["path"]
@@ -44,15 +46,33 @@ def check_preview(limit: int) -> list[str]:
 
     if rendered_count == 0:
         errors.append("No se generó ninguna página de vista previa")
-    return errors
+    if limit is None and rendered_count != expected_count:
+        errors.append(
+            f"La vista previa completa generó {rendered_count} de {expected_count} asignaturas"
+        )
+    return errors, rendered_count, expected_count
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Verifica una muestra de páginas generadas en un directorio temporal.")
-    parser.add_argument("--limit", type=int, default=8, help="Número máximo de asignaturas a renderizar temporalmente.")
+    parser = argparse.ArgumentParser(
+        description="Verifica páginas generadas en un directorio temporal."
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--limit",
+        type=int,
+        default=8,
+        help="Número máximo de asignaturas a renderizar temporalmente.",
+    )
+    group.add_argument(
+        "--all",
+        action="store_true",
+        help="Renderiza y comprueba todas las asignaturas del currículo canónico.",
+    )
     args = parser.parse_args()
 
-    errors = check_preview(args.limit)
+    limit = None if args.all else args.limit
+    errors, rendered_count, expected_count = check_preview(limit)
     if errors:
         print("Errores en vista previa generada:\n")
         for error in errors:
@@ -60,7 +80,9 @@ def main() -> int:
         return 1
 
     print("Vista previa generada correctamente.")
-    print(f"- páginas temporales revisadas: {args.limit}")
+    print(f"- páginas temporales revisadas: {rendered_count}")
+    if args.all:
+        print(f"- asignaturas del currículo: {expected_count}")
     print("- resultado: OK")
     return 0
 
