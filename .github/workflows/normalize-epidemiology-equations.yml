@@ -1,0 +1,65 @@
+name: Normalize epidemiology equations
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/normalize-epidemiology-equations.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Normalize and validate source units
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('data/course_redevelopment/epidemiologia-metodos-investigacion-clinica/units')
+          replacements = {
+              r'\leftarrow': '←',
+              r'\rightarrow': '→',
+              r'\perp': '⊥',
+              r'\neq': '≠',
+              r'\in': '∈',
+              r'\;': ' ',
+          }
+          changed = []
+          for path in sorted(root.glob('unit-*.json')):
+              text = path.read_text(encoding='utf-8')
+              normalized = text
+              for old, new in replacements.items():
+                  normalized = normalized.replace(old, new)
+              data = json.loads(normalized)
+              for section in data.get('theory_sections', []):
+                  for equation in section.get('equations', []):
+                      latex = str(equation.get('latex', ''))
+                      if '\\' in latex:
+                          raise ValueError(f'{path}: barra invertida restante en ecuación: {latex!r}')
+              if normalized != text:
+                  path.write_text(normalized, encoding='utf-8')
+                  changed.append(str(path))
+          print('Archivos normalizados:', changed)
+          PY
+      - name: Commit normalization
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/course_redevelopment/epidemiologia-metodos-investigacion-clinica/units
+          if git diff --cached --quiet; then
+            echo "No hay expresiones que normalizar."
+            exit 0
+          fi
+          git commit -m "Normalize epidemiology equation notation"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
