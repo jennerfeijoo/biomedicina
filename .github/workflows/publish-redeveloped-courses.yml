@@ -123,18 +123,39 @@ jobs:
           exit 1
 
       - name: Generate selected public courses
+        id: generate_public
+        continue-on-error: true
         shell: bash
         run: |
-          mapfile -t args < publication-args.txt
-          python scripts/publish_courses.py "${args[@]}" --list-subjects > publication-subjects.txt
-          while IFS= read -r subject; do
-            [[ -z "$subject" ]] && continue
-            python scripts/generate_site.py \
-              --force \
-              --subject "$subject" \
-              --with-units \
-              --force-authored-units
-          done < publication-subjects.txt
+          set -o pipefail
+          {
+            mapfile -t args < publication-args.txt
+            python scripts/publish_courses.py "${args[@]}" --list-subjects > publication-subjects.txt
+            while IFS= read -r subject; do
+              [[ -z "$subject" ]] && continue
+              python scripts/generate_site.py \
+                --force \
+                --subject "$subject" \
+                --with-units \
+                --force-authored-units
+            done < publication-subjects.txt
+          } 2>&1 | tee public-generation-diagnostic.txt
+
+      - name: Upload public-generation diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-generation-diagnostic
+          path: |
+            publication-subjects.txt
+            public-generation-diagnostic.txt
+          if-no-files-found: warn
+
+      - name: Enforce public generation
+        if: steps.generate_public.outcome != 'success'
+        run: |
+          cat public-generation-diagnostic.txt
+          exit 1
 
       - name: Regenerate affected area and catalog indexes
         run: python scripts/generate_public_indexes.py --manifest publication-manifest.json
