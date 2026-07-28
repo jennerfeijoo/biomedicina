@@ -1,0 +1,58 @@
+name: Patch pharmacology source diversity
+
+on:
+  push:
+    branches:
+      - agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
+    paths:
+      - '.github/workflows/patch-pharmacology-source-diversity.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Add independent pharmacovigilance source
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          resource = {
+              'title': 'WHO Pharmacovigilance',
+              'organization': 'World Health Organization',
+              'url': 'https://www.who.int/teams/regulation-prequalification/regulation-and-safety/pharmacovigilance',
+              'role': 'Aporta el marco internacional para detectar, evaluar, comprender y prevenir efectos adversos y otros problemas relacionados con medicamentos y vacunas durante su uso real.'
+          }
+
+          course_path = Path('data/course_redevelopment/farmacologia-farmacocinetica-farmacodinamica/course.json')
+          course = json.loads(course_path.read_text(encoding='utf-8'))
+          resources = course.setdefault('core_resources', [])
+          if not any(item.get('url') == resource['url'] for item in resources if isinstance(item, dict)):
+              resources.append(resource)
+          course_path.write_text(json.dumps(course, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          registry_path = Path('data/source_registry/farmacologia-farmacocinetica-farmacodinamica.json')
+          registry = json.loads(registry_path.read_text(encoding='utf-8'))
+          sources = registry.setdefault('sources', [])
+          if not any(item.get('url') == resource['url'] for item in sources if isinstance(item, dict)):
+              sources.append(resource)
+          registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          rm -f .github/workflows/patch-pharmacology-source-diversity.yml
+      - name: Commit source-diversity correction
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add WHO pharmacovigilance source'
+          git push origin HEAD:agent/rebuild-farmacologia-farmacocinetica-farmacodinamica
