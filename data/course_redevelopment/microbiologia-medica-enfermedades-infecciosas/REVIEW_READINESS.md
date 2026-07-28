@@ -31,9 +31,13 @@ El curso permanece en `review`. Los validadores automáticos pueden comprobar es
 - ¿One Health integra sectores sin atribuciones causales simplistas?
 - ¿El contenido evita diagnóstico o tratamiento individual?
 
-## Validación técnica pendiente
+## Materialización técnica verificada
 
-El paquete contiene descriptor, decisión curricular, registro de fuentes, ocho unidades, resoluciones de alcance, rúbricas y matriz de cobertura. La publicación automática debe promover el curso, generar JSON y HTML derivados, actualizar currículo, catálogo e índices y ejecutar los controles integrales antes de considerarlo técnicamente cerrado.
+El paquete fuente fue reconstruido desde fragmentos sometidos a verificación SHA-256 individual y global. El archivo comprimido resultante también coincidió con su hash de referencia, se extrajo correctamente y permitió cargar como objetos JSON el descriptor, la decisión curricular, la matriz de cobertura, el registro de fuentes y las ocho unidades. El proceso retiró en el mismo commit todos los archivos y workflows temporales de transporte.
+
+La rama contiene ahora únicamente los artefactos académicos que deben ser revisados y publicados: descriptor, ocho unidades, resoluciones de alcance, rúbricas, preparación disciplinar, decisión curricular, matriz de cobertura y registro de fuentes. Los workflows ordinarios del repositorio deben promoverlos, generar las capas derivadas y validar currículo, catálogo, páginas públicas, enlaces y contratos editoriales.
+
+La validación técnica no constituye diagnóstico, interpretación clínica individual, selección de antimicrobianos ni aprobación de bioseguridad para una instalación concreta.
 
 ## Evidencia mínima para promover a `complete`
 
