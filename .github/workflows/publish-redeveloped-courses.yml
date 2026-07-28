@@ -96,7 +96,26 @@ jobs:
           exit 1
 
       - name: Validate advanced units
-        run: python scripts/validate_generated_units.py
+        id: advanced_units
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/validate_generated_units.py 2>&1 | tee advanced-unit-validation.txt
+
+      - name: Upload advanced-unit validation diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: advanced-unit-validation-diagnostic
+          path: advanced-unit-validation.txt
+          if-no-files-found: error
+
+      - name: Enforce advanced-unit validation
+        if: steps.advanced_units.outcome != 'success'
+        run: |
+          cat advanced-unit-validation.txt
+          exit 1
 
       - name: Generate selected public courses
         shell: bash
