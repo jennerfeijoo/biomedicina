@@ -5,6 +5,7 @@ on:
     paths:
       - 'data/course_redevelopment/**'
       - 'scripts/publish_courses.py'
+      - 'scripts/promote_provisional_subjects.py'
       - 'scripts/audit_developed_courses.py'
       - 'scripts/sync_catalog_statuses.py'
       - 'scripts/generate_public_indexes.py'
@@ -19,6 +20,7 @@ on:
     paths:
       - 'data/course_redevelopment/**'
       - 'scripts/publish_courses.py'
+      - 'scripts/promote_provisional_subjects.py'
       - 'scripts/audit_developed_courses.py'
       - 'scripts/sync_catalog_statuses.py'
       - 'scripts/generate_public_indexes.py'
@@ -95,6 +97,9 @@ jobs:
           cat publication-diagnostic.txt
           exit 1
 
+      - name: Promote provisional subjects into curriculum
+        run: python scripts/promote_provisional_subjects.py --manifest publication-manifest.json
+
       - name: Validate advanced units
         id: advanced_units
         continue-on-error: true
@@ -148,6 +153,7 @@ jobs:
         run: |
           mapfile -t args < publication-args.txt
           python scripts/publish_courses.py "${args[@]}" --check-public
+          python scripts/promote_provisional_subjects.py --manifest publication-manifest.json --check
           python scripts/generate_public_indexes.py --manifest publication-manifest.json --check
           python scripts/sync_catalog_statuses.py --check
 
@@ -209,7 +215,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data/subjects data/generated_courses data/generated_units data/catalog_statuses.json catalogo/index.html
+          git add -A data/subjects data/generated_courses data/generated_units data/catalog_statuses.json data/citonauta_curriculum.json data/provisional_subjects.json catalogo/index.html
           python - <<'PY'
           import json
           import subprocess
