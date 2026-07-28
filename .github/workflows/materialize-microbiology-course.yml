@@ -29,15 +29,82 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Verify and extract validated course package
-        shell: bash
+      - name: Assemble package from verified segments
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          root = Path('.github/materialize-microbiology')
+          output = bytearray()
+
+          def verified_file(name: str, expected: str) -> bytes:
+              data = (root / name).read_bytes()
+              actual = hashlib.sha256(data).hexdigest()
+              if actual != expected:
+                  raise ValueError(f'{name}: {actual} != {expected}')
+              print('verified', name, len(data))
+              return data
+
+          def verified_segment(group: str, suffix: str, start: int, end: int, expected: str) -> bytes:
+              candidates = []
+              split_path = root / f'{group}{suffix}.b64'
+              if split_path.exists():
+                  candidates.append((split_path.name, split_path.read_bytes()))
+              original = (root / f'{group}.b64').read_bytes()
+              candidates.append((f'{group}.b64[{start}:{end}]', original[start:end]))
+              for name, data in candidates:
+                  if hashlib.sha256(data).hexdigest() == expected:
+                      print('selected', name, len(data))
+                      return data
+              details = ', '.join(f'{name}={hashlib.sha256(data).hexdigest()}' for name, data in candidates)
+              raise ValueError(f'no valid candidate for {group}{suffix}: {details}')
+
+          output += verified_file('part00.b64', 'a36da4f265624232b04114c8373227eff3da18f3401e039ea56d334fc23b88b7')
+          output += verified_file('part01.b64', 'abf946537fdc55eed224c761ed52cdae145bc6e2f7a06782e3940d5587d5e5f5')
+          output += verified_file('part02.b64', 'cbfd2dc55e13d4cfc4a0db272851e78a9f53b41c6fb2097a0eeb66d7085e4c3c')
+          output += verified_file('part03.b64', '7e9fbcbd0d487acb322418eb822be8dd1a0be403d00a2d0c623038c5b2c29a4e')
+
+          for suffix, start, end, digest in [
+              ('a', 0, 3000, '410d91771c4004c95c1bc1992218539a8b46c6a7d8b026990d92e87aeb6baba7'),
+              ('b', 3000, 6000, '72e74f37700fbfc08c300884644435f39d69a6e468fa3cecd8537358a01ad50c'),
+              ('c', 6000, 9000, 'd4e8653fa5e8451f5f51d3d5df5399d980f08b77dbb416d9a5b02eda342a7cd8'),
+          ]:
+              output += verified_segment('part04', suffix, start, end, digest)
+
+          for suffix, start, end, digest in [
+              ('a', 0, 3000, '1332f9720114783bf93b9741045934917af4dd3a2527b2fa84459867ca0b318b'),
+              ('b', 3000, 6000, '26d951a0f90758709d6e852b0d3f1a2047d5c57bbdd80616c106bb12cc07724e'),
+              ('c', 6000, 9000, '41b8d312950182f1dedeaf587794ee3284b554c7f49ad170e200e8435b241477'),
+          ]:
+              output += verified_segment('part05', suffix, start, end, digest)
+
+          output += verified_file('part06.b64', 'fa93e3a7469165b8f984835584fd1114fd83daca9555cfdb857f9c4bbec05be6')
+
+          for suffix, start, end, digest in [
+              ('a', 0, 3000, 'c635d7218c0387e1aa04a0844f34fe2bd7ce89cc9d630818cc47dcb623fde6db'),
+              ('b', 3000, 6000, '0debd29e8624e11a237c63c3399c3f684ac92d3d3c5213cd0b508c7cb9af8659'),
+              ('c', 6000, 7164, '484750b7b7f19bb77d521cdb04d9e13b090639f0058b06c10d4b4a7862682aed'),
+          ]:
+              output += verified_segment('part07', suffix, start, end, digest)
+
+          actual = hashlib.sha256(output).hexdigest()
+          expected = 'e03f4b1b61338fa92db4b2706ddd99197c6691769b07d6367900d78767f4808d'
+          if actual != expected:
+              raise ValueError(f'complete base64: {actual} != {expected}')
+          Path('/tmp/microbiology.b64').write_bytes(output)
+          print('complete package verified', len(output))
+          PY
+
+      - name: Decode and verify archive
         run: |
           set -euo pipefail
-          cat .github/materialize-microbiology/part*.b64 > /tmp/microbiology.b64
-          echo 'e03f4b1b61338fa92db4b2706ddd99197c6691769b07d6367900d78767f4808d  /tmp/microbiology.b64' | sha256sum -c -
           base64 --decode /tmp/microbiology.b64 > /tmp/microbiology.tar.gz
           echo 'a1f5b6a5a9d7f6535d5db547b583a97fcfd50f82704194b640bf2322886ec2e6  /tmp/microbiology.tar.gz' | sha256sum -c -
           tar -xzf /tmp/microbiology.tar.gz -C .
+
+      - name: Validate materialized source package
+        run: |
           python - <<'PY'
           import json
           from pathlib import Path
@@ -56,7 +123,6 @@ jobs:
               package / 'ASSESSMENT_RUBRICS.md',
               package / 'REVIEW_READINESS.md',
           ])
-
           for path in expected:
               if not path.exists():
                   raise FileNotFoundError(path)
@@ -65,18 +131,16 @@ jobs:
                   if not isinstance(data, dict):
                       raise ValueError(f'{path}: la raíz no es un objeto JSON')
                   print('OK', path)
-
           units = sorted((package / 'units').glob('unit-*.json'))
           if len(units) != 8:
               raise ValueError(f'se esperaban 8 unidades y se encontraron {len(units)}')
           PY
-          rm -rf .github/materialize-microbiology
-          rm -f .github/workflows/materialize-microbiology-course.yml
 
-      - name: Commit course package
-        shell: bash
+      - name: Remove transport files and commit package
         run: |
           set -euo pipefail
+          rm -rf .github/materialize-microbiology
+          rm -f .github/workflows/materialize-microbiology-course.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
