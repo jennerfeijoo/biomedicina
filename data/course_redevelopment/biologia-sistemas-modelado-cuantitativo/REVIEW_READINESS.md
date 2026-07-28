@@ -25,6 +25,12 @@ El curso permanece en `review`. Los validadores automáticos comprueban estructu
 - ¿El ajuste separa identificabilidad estructural, práctica y predictibilidad?
 - ¿Los estándares exportados reproducen las simulaciones y unidades documentadas?
 
+## Validación técnica materializada
+
+El paquete fuente y sus ocho unidades fueron promovidos y publicados en la rama de revisión. La ronda automatizada comprobó esquema 2.0, densidad teórica, bibliografía, redundancia, conexiones biomédicas, currículo, temario canónico, JSON y HTML derivados, enlaces internos y contrato de publicación.
+
+Esta evidencia acredita coherencia técnica y sincronización del artefacto. No constituye revisión disciplinar de ecuaciones y supuestos, validación experimental, certificación de interoperabilidad en herramientas independientes ni autorización para utilizar el modelo en decisiones clínicas o regulatorias.
+
 ## Evidencia mínima para promover a `complete`
 
 - revisión documentada por al menos un perfil matemático y uno biológico;
