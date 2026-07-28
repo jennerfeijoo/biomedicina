@@ -31,7 +31,33 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/materialize-pharmacology/part*.b64 > /tmp/pharm.b64
+          cat \
+            .github/materialize-pharmacology/part00.b64 \
+            .github/materialize-pharmacology/part01.b64 \
+            .github/materialize-pharmacology/part02.b64 \
+            .github/materialize-pharmacology/part03.b64 \
+            .github/materialize-pharmacology/part04.b64 \
+            .github/materialize-pharmacology/part05.b64 \
+            .github/materialize-pharmacology/part05b0.b64 \
+            .github/materialize-pharmacology/part05b1.b64 \
+            .github/materialize-pharmacology/part05b2.b64 \
+            .github/materialize-pharmacology/part05c.b64 \
+            .github/materialize-pharmacology/part05d.b64 \
+            .github/materialize-pharmacology/part06.b64 \
+            > /tmp/pharm.b64
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/materialize-pharmacology/part07.b64')
+          value = path.read_text(encoding='utf-8')
+          if len(value) != 244:
+              raise ValueError(f'part07 debe contener 244 caracteres antes de reparación; contiene {len(value)}')
+          corrected = value[:220] + value[228:]
+          if len(corrected) != 236:
+              raise ValueError('la reparación determinista de part07 no produjo 236 caracteres')
+          with Path('/tmp/pharm.b64').open('a', encoding='utf-8') as handle:
+              handle.write(corrected)
+          PY
           echo 'd2349fedddaf81aac9d7d7a26203b268a632b9c877d2865f59f020c83a506a1c  /tmp/pharm.b64' | sha256sum -c -
           base64 --decode /tmp/pharm.b64 > /tmp/pharm.tgz
           echo '64b69f297daaf5e861554b66bcd2b22a06d540e9f3f77ba57c6465514de22b0b  /tmp/pharm.tgz' | sha256sum -c -
