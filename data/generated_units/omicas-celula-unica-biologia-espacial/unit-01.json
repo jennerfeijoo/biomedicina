@@ -1,0 +1,182 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "omicas-celula-unica-biologia-espacial",
+  "area_id": "biologicas-medicas",
+  "unit": 1,
+  "slug": "diseno-tecnologias-objetos-datos",
+  "title": "Diseño experimental, tecnologías y objetos de datos",
+  "status": "review",
+  "purpose": "Diseñar estudios de célula única y espaciales identificando unidades experimentales, tecnologías, fuentes de variación, matrices, metadatos y objetos computacionales antes del análisis downstream.",
+  "learning_objectives": [
+    "Distinguir célula, muestra, donante, lote y sección tisular como niveles diferentes.",
+    "Comparar scRNA-seq, snRNA-seq y plataformas droplet o plate-based según la pregunta.",
+    "Relacionar captura, UMI, biblioteca y secuenciación con la matriz de conteos.",
+    "Diseñar balance, aleatorización, multiplexado y réplicas para evitar confusión.",
+    "Construir metadatos compatibles con integración y anotación de atlas.",
+    "Elegir y versionar objetos AnnData, SingleCellExperiment o SpatialData con procedencia."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Unidad experimental, réplicas y pregunta biológica",
+      "paragraphs": [
+        "Un experimento de célula única mide muchas células, pero la unidad experimental suele ser el donante, animal, cultivo independiente o muestra que recibió una condición. Las células de una misma muestra comparten historia biológica, procesamiento y lote; por ello no aportan miles de réplicas independientes para comparar tratamientos. El diseño debe declarar qué unidad se asigna a la condición, cuántas unidades existen por grupo y qué niveles adicionales, como secciones, capturas o bibliotecas, son técnicos o jerárquicos.",
+        "La pregunta determina el diseño. Construir un atlas descriptivo de un tejido sano requiere cobertura de individuos, regiones y diversidad; comparar enfermedad y control requiere réplicas independientes, balance de covariables y una definición clara de población. Estudiar una respuesta aguda puede necesitar varios tiempos por donante, mientras una trayectoria de desarrollo puede requerir etapas independientes. El número de células mejora la caracterización dentro de una muestra, pero no compensa la ausencia de donantes para inferencia poblacional.",
+        "La asignación de muestras a lotes debe evitar que condición y lote coincidan. Si todos los controles se procesan un día y todos los casos otro, cualquier diferencia técnica puede parecer biológica. El multiplexado con etiquetas de muestra puede distribuir condiciones dentro de una captura, aunque introduce sus propios errores de demultiplexado. La aleatorización, el balance y la documentación de operador, fecha, reactivo y equipo son controles de diseño, no correcciones opcionales que puedan añadirse al final mediante integración."
+      ],
+      "key_points": [
+        "La célula es unidad de observación, no necesariamente unidad experimental.",
+        "Más células no reemplazan más muestras o donantes.",
+        "Condición y lote deben separarse mediante balance y aleatorización.",
+        "El diseño del contraste precede a la selección de herramientas."
+      ],
+      "equations": [
+        {
+          "latex": "N_effective approximately N_independent_samples, not N_cells",
+          "meaning": "La información para comparar condiciones está limitada principalmente por las unidades biológicas independientes.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Tecnologías, captura y significado de los conteos",
+      "paragraphs": [
+        "Las tecnologías droplet encapsulan células o núcleos con barcodes y UMI a gran escala, mientras los métodos plate-based suelen capturar menos células con mayor profundidad o cobertura de transcritos. scRNA-seq requiere disociación celular y puede perder tipos frágiles o inducir respuestas de estrés. snRNA-seq permite trabajar con tejido congelado o difícil de disociar, pero enriquece transcritos nucleares e intrónicos y modifica la composición aparente. La elección debe alinearse con tejido, disponibilidad, resolución y pregunta.",
+        "Una UMI identifica moléculas capturadas antes de la amplificación y ayuda a reducir duplicados de PCR, pero no cuenta todas las moléculas presentes en la célula. La matriz observada refleja expresión, eficiencia de captura, profundidad, composición y procesamiento. Los ceros pueden representar ausencia biológica, expresión baja o falta de muestreo. Por ello, el conteo es una medición discreta y ruidosa, no una lectura exhaustiva del transcriptoma individual.",
+        "El proceso desde lectura hasta matriz incluye demultiplexado, asignación de barcode, alineamiento o pseudoalineamiento, selección de genes y colapso de UMI. Versiones de referencia, anotación génica y parámetros cambian los resultados. En muestras con núcleos, incluir lecturas intrónicas puede ser apropiado. En CITE-seq o multiome aparecen matrices adicionales de proteínas o accesibilidad. El objeto computacional debe conservar qué assay, feature y capa representa cada matriz para evitar aplicar métodos incompatibles."
+      ],
+      "key_points": [
+        "scRNA-seq y snRNA-seq observan composiciones y fracciones moleculares distintas.",
+        "Una UMI aproxima moléculas capturadas, no moléculas totales.",
+        "La referencia y el pipeline influyen en la matriz final.",
+        "Cada modalidad necesita una representación y control de calidad propios."
+      ],
+      "equations": [
+        {
+          "latex": "ObservedCounts_g,c depends on Expression_g,c * CaptureEfficiency_c * SequencingDepth",
+          "meaning": "Los conteos observados dependen de expresión y factores técnicos de captura y secuenciación.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Metadatos, ontologías y construcción de atlas",
+      "paragraphs": [
+        "Los metadatos conectan cada célula con muestra, donante, tejido, región, condición, protocolo y lote. Sin esa tabla, un gran objeto de expresión pierde capacidad inferencial. Deben usarse identificadores estables y separar campos originales de variables derivadas. Edad, sexo, diagnóstico, tratamiento, tiempo, preservación, disociación y plataforma pueden ser esenciales para interpretar heterogeneidad y batch effects. Los valores ausentes se registran explícitamente y no se reemplazan por categorías ambiguas.",
+        "El Human Cell Atlas organiza metadatos técnicos y biológicos para permitir integración y evaluación de batch. Los campos de anotación celular incluyen nombres, sinónimos y términos ontológicos. Una ontología ayuda a usar identificadores consistentes y relaciones jerárquicas, pero no resuelve automáticamente fronteras biológicas. La etiqueta debe distinguir tipo, subtipo, estado, ciclo, activación y calidad, y conservar quién la asignó, mediante qué evidencia y con qué confianza.",
+        "En un atlas, la diversidad de donantes, tejidos y tecnologías requiere gobernanza de versiones. Una actualización de anotaciones o referencias puede cambiar etiquetas sin alterar los conteos. El objeto debe conservar versiones del esquema, ontología, genoma y procesamiento. También debe registrar exclusiones y transformaciones. Esta procedencia permite comparar releases, reproducir figuras y determinar si una diferencia entre atlas refleja biología, definición o actualización computacional."
+      ],
+      "key_points": [
+        "Los metadatos definen qué comparaciones son posibles.",
+        "Identificadores, vocabularios y ontologías reducen ambigüedad.",
+        "Tipo y estado celular deben mantenerse diferenciados.",
+        "Los atlas necesitan versionado de datos, esquemas y anotaciones."
+      ],
+      "equations": [
+        {
+          "latex": "CellRecord = MolecularData + SampleMetadata + ProcessingProvenance + AnnotationVersion",
+          "meaning": "Una célula interpretable requiere datos moleculares, metadatos, procedencia y versión de anotación.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Objetos computacionales, capas y reproducibilidad",
+      "paragraphs": [
+        "SingleCellExperiment y AnnData organizan matrices, metadatos de células y genes, reducciones y resultados derivados. La matriz de conteos original debe conservarse en una capa claramente identificada; los valores normalizados, escalados o corregidos ocupan capas distintas. Sobrescribir el conteo crudo impide repetir análisis y puede llevar a usar datos integrados en pruebas de expresión diferencial. Los nombres de campos deben ser estables y documentados.",
+        "SpatialData amplía el problema para incluir imágenes multiescala, puntos, formas, tablas y sistemas de coordenadas. Una tabla de expresión puede asociarse con segmentos celulares o spots, mientras una imagen histológica reside en otra resolución. Las transformaciones conectan estos elementos. Guardar solo coordenadas finales sin transformación, escala u orientación destruye trazabilidad. El formato y el objeto no son detalles de software: forman parte del contrato de datos.",
+        "La reproducibilidad incluye entorno, versiones, semillas, parámetros y recursos externos. Los notebooks deben separar exploración de pipelines ejecutables y producir artefactos intermedios identificables. Los conjuntos grandes pueden requerir almacenamiento en disco, formatos comprimidos y procesamiento por bloques. La optimización no debe eliminar verificaciones. Antes del análisis downstream se valida que dimensiones, identificadores, unidades, capas y metadatos sean coherentes y que cada célula tenga una única procedencia."
+      ],
+      "key_points": [
+        "Los conteos originales se conservan separados de transformaciones.",
+        "Resultados derivados deben indicar capa, parámetros y versión.",
+        "Los objetos espaciales necesitan transformaciones entre coordenadas.",
+        "El contrato de datos se valida antes del análisis biológico."
+      ],
+      "equations": [
+        {
+          "latex": "DerivedLayer = f(RawLayer, Parameters, SoftwareVersion)",
+          "meaning": "Cada representación derivada debe poder reconstruirse desde una capa original y parámetros versionados.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Unidad experimental", "definition": "Unidad independiente asignada o expuesta a una condición."},
+    {"term": "Réplica biológica", "definition": "Muestra independiente que representa variación de la población."},
+    {"term": "Réplica técnica", "definition": "Repetición de medición o procesamiento de la misma unidad biológica."},
+    {"term": "Barcode celular", "definition": "Secuencia que identifica la gota, célula o núcleo de origen."},
+    {"term": "UMI", "definition": "Identificador molecular usado para colapsar duplicados de amplificación."},
+    {"term": "scRNA-seq", "definition": "Secuenciación de transcriptomas de células individuales."},
+    {"term": "snRNA-seq", "definition": "Secuenciación de RNA de núcleos individuales."},
+    {"term": "AnnData", "definition": "Objeto para matrices anotadas usado ampliamente en el ecosistema Python."},
+    {"term": "SingleCellExperiment", "definition": "Contenedor de Bioconductor para datos de célula única y metadatos."},
+    {"term": "SpatialData", "definition": "Marco para datos espaciales multimodales, geometrías, tablas e imágenes."},
+    {"term": "Ontología celular", "definition": "Vocabulario estructurado de tipos celulares y relaciones."},
+    {"term": "Procedencia", "definition": "Registro del origen, versiones y transformaciones de un dato."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Miles de células y dos pacientes",
+      "scenario": "Un estudio compara 8.000 células de un paciente tratado con 7.000 de un control.",
+      "reasoning_steps": ["Identificar la unidad experimental.", "Reconocer confusión entre paciente y condición.", "Separar descripción celular de inferencia poblacional.", "Proponer más donantes balanceados."],
+      "interpretation": "El número de células permite describir ambas muestras, pero no estimar un efecto general del tratamiento.",
+      "limitations": ["Puede generar hipótesis.", "La variación entre donantes no puede estimarse con un donante por grupo."]
+    },
+    {
+      "title": "scRNA-seq frente a snRNA-seq en tejido congelado",
+      "scenario": "Se desea estudiar cerebro archivado, pero la disociación de células completas no es viable.",
+      "reasoning_steps": ["Evaluar integridad y preservación.", "Elegir núcleos como unidad capturada.", "Incluir lecturas intrónicas apropiadamente.", "Interpretar diferencias de composición y localización molecular."],
+      "interpretation": "snRNA-seq permite utilizar tejido congelado, pero no es directamente equivalente a scRNA-seq.",
+      "limitations": ["Puede perder transcritos citoplasmáticos.", "La comparación entre tecnologías necesita controles y metadatos."]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Diseño y contrato de datos",
+      "instructions": ["Definir pregunta y unidad experimental.", "Elegir tecnología y balance de lotes.", "Construir metadatos mínimos.", "Diseñar capas y procedencia del objeto."],
+      "problems": [
+        "Distinguir células, muestras y donantes en tres diseños.",
+        "Detectar confusión entre condición y lote.",
+        "Comparar droplet y plate-based para una pregunta concreta.",
+        "Justificar scRNA-seq o snRNA-seq para tejido archivado.",
+        "Explicar qué cuenta una UMI y qué no cuenta.",
+        "Crear un diccionario de metadatos compatible con un atlas.",
+        "Diseñar capas raw, normalized e integrated sin sobrescritura.",
+        "Definir procedencia y versiones para un objeto espacial."
+      ],
+      "checking_criteria": ["La unidad experimental es explícita.", "Los lotes están balanceados.", "La tecnología responde a la muestra y pregunta.", "El objeto conserva conteos, metadatos y procedencia."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Contar células como réplicas biológicas.", "correction": "Usar donantes o muestras independientes para comparar condiciones."},
+    {"error": "Confundir condición y lote.", "correction": "Balancear y aleatorizar muestras antes del procesamiento."},
+    {"error": "Interpretar UMI como moléculas totales.", "correction": "Reconocer captura parcial y dependencia de profundidad."},
+    {"error": "Mezclar scRNA-seq y snRNA-seq sin modelar tecnología.", "correction": "Documentar diferencias y validar compatibilidad."},
+    {"error": "Sobrescribir conteos originales.", "correction": "Mantener capas separadas y transformaciones reproducibles."}
+  ],
+  "self_assessment": [
+    {"question": "¿Cuál es la unidad experimental en un estudio con diez donantes?", "answer": "El donante o muestra independiente, no cada célula capturada."},
+    {"question": "¿Qué problema genera condición igual a lote?", "answer": "No pueden separarse diferencias biológicas y técnicas."},
+    {"question": "¿Qué aporta una UMI?", "answer": "Ayuda a colapsar duplicados y aproximar moléculas capturadas."},
+    {"question": "¿Por qué snRNA-seq no es idéntico a scRNA-seq?", "answer": "Mide fracciones nucleares, incluye más intrones y cambia composición y sensibilidad."},
+    {"question": "¿Qué metadato permite modelar batch?", "answer": "Identificador de captura, fecha, operador, reactivo, equipo u otra fuente técnica documentada."},
+    {"question": "¿Qué diferencia hay entre tipo y estado celular?", "answer": "El tipo es una identidad relativamente estable; el estado puede variar con contexto o tiempo."},
+    {"question": "¿Dónde deben guardarse conteos originales?", "answer": "En una capa inmutable y claramente identificada del objeto."},
+    {"question": "¿Qué necesita un objeto espacial además de coordenadas?", "answer": "Escala, orientación, sistema de referencia, transformaciones, geometrías e imagen asociada."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Atlas celulares", "connection": "Diseño, diversidad y metadatos determinan comparabilidad entre tejidos y donantes."},
+    {"topic": "Oncología", "connection": "Biopsias y regiones tumorales requieren réplicas, balance y procedencia espacial."},
+    {"topic": "Neurobiología", "connection": "snRNA-seq facilita tejido congelado, con diferencias moleculares que deben modelarse."},
+    {"topic": "Inmunología", "connection": "Multiplexado y grandes números de células caracterizan poblaciones raras sin aumentar donantes."}
+  ],
+  "sources": [
+    {"title": "Single-cell best practices", "organization": "Single-cell Best Practices Consortium", "url": "https://www.sc-best-practices.org/", "type": "recurso metodológico", "verification_status": "verified_directly"},
+    {"title": "Orchestrating Single-Cell Analysis with Bioconductor", "organization": "Bioconductor", "url": "https://bioconductor.org/books/devel/OSCA/", "type": "libro ejecutable", "verification_status": "verified_directly"},
+    {"title": "Human Cell Atlas Metadata", "organization": "Human Cell Atlas", "url": "https://data.humancellatlas.org/metadata", "type": "estándar de metadatos", "verification_status": "verified_directly"},
+    {"title": "SpatialData", "organization": "scverse", "url": "https://spatialdata.scverse.org/en/stable/", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "Best practices for single-cell analysis across modalities", "organization": "Nature Reviews Genetics", "url": "https://www.nature.com/articles/s41576-023-00586-w", "type": "revisión metodológica", "verification_status": "metadata_verified"}
+  ],
+  "editorial_notice": "Material educativo en estado review. Un diseño con muchas células pero pocas muestras no sustenta inferencia poblacional ni conclusión clínica."
+}

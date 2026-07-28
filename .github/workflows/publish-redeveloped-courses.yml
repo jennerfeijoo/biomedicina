@@ -7,6 +7,7 @@ on:
       - 'data/course_outlines.json'
       - 'scripts/publish_courses.py'
       - 'scripts/promote_provisional_subjects.py'
+      - 'scripts/package_publication_preview.py'
       - 'scripts/audit_developed_courses.py'
       - 'scripts/sync_catalog_statuses.py'
       - 'scripts/generate_public_indexes.py'
@@ -23,6 +24,7 @@ on:
       - 'data/course_outlines.json'
       - 'scripts/publish_courses.py'
       - 'scripts/promote_provisional_subjects.py'
+      - 'scripts/package_publication_preview.py'
       - 'scripts/audit_developed_courses.py'
       - 'scripts/sync_catalog_statuses.py'
       - 'scripts/generate_public_indexes.py'
@@ -172,13 +174,36 @@ jobs:
         run: python scripts/validate_links.py
 
       - name: Verify publication contract
+        id: verify_publication
+        continue-on-error: true
         shell: bash
         run: |
-          mapfile -t args < publication-args.txt
-          python scripts/publish_courses.py "${args[@]}" --check-public
-          python scripts/promote_provisional_subjects.py --manifest publication-manifest.json --check
-          python scripts/generate_public_indexes.py --manifest publication-manifest.json --check
-          python scripts/sync_catalog_statuses.py --check
+          set -o pipefail
+          {
+            mapfile -t args < publication-args.txt
+            echo '== Public course contract =='
+            python scripts/publish_courses.py "${args[@]}" --check-public
+            echo '== Provisional promotion contract =='
+            python scripts/promote_provisional_subjects.py --manifest publication-manifest.json --check
+            echo '== Public indexes contract =='
+            python scripts/generate_public_indexes.py --manifest publication-manifest.json --check
+            echo '== Catalog statuses contract =='
+            python scripts/sync_catalog_statuses.py --check
+          } 2>&1 | tee publication-contract-diagnostic.txt
+
+      - name: Upload publication-contract diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publication-contract-diagnostic
+          path: publication-contract-diagnostic.txt
+          if-no-files-found: error
+
+      - name: Enforce publication contract
+        if: steps.verify_publication.outcome != 'success'
+        run: |
+          cat publication-contract-diagnostic.txt
+          exit 1
 
       - name: Audit developed courses
         id: developed_audit
@@ -204,6 +229,16 @@ jobs:
         run: |
           cat audit-artifacts/developed-courses-summary.txt
           exit 1
+
+      - name: Package publication preview
+        run: python scripts/package_publication_preview.py --manifest publication-manifest.json
+
+      - name: Upload publication preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: redeveloped-course-publication-preview
+          path: publication-preview/
+          if-no-files-found: error
 
       - name: Package generated indexes
         run: |
@@ -233,7 +268,9 @@ jobs:
           if-no-files-found: error
 
       - name: Commit public publication
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        if: >-
+          (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+          (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -255,4 +292,5 @@ jobs:
           fi
           subjects=$(paste -sd, publication-subjects.txt)
           git commit -m "Publish redeveloped courses: ${subjects}"
-          git push origin HEAD:main
+          target_branch="${GITHUB_HEAD_REF:-main}"
+          git push origin "HEAD:${target_branch}"

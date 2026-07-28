@@ -1,0 +1,189 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "biologia-sistemas-modelado-cuantitativo",
+  "area_id": "biologicas-medicas",
+  "unit": 2,
+  "slug": "cinetica-modelos-deterministas",
+  "title": "Cinética bioquímica y modelos deterministas",
+  "status": "review",
+  "purpose": "Derivar, implementar y verificar modelos deterministas de reacciones y compartimentos mediante cinética, ODE, integración numérica, eventos, tolerancias y comprobaciones físicas.",
+  "learning_objectives": [
+    "Derivar ODE desde reacciones y balances estequiométricos.",
+    "Aplicar ley de acción de masas con unidades y molecularidad coherentes.",
+    "Distinguir aproximaciones Michaelis-Menten, Hill y saturación fenomenológica.",
+    "Seleccionar métodos numéricos explícitos o implícitos según rigidez y escalas.",
+    "Implementar eventos, discontinuidades, condiciones iniciales y compartimentos.",
+    "Verificar soluciones mediante conservación, convergencia y casos límite."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Ley de acción de masas y derivación estequiométrica",
+      "paragraphs": [
+        "La ley de acción de masas relaciona la velocidad de una reacción elemental con el producto de las actividades o concentraciones de los reactivos elevado a sus coeficientes moleculares. Para A + B -> C, una tasa simple es k*A*B. Las unidades de k dependen del orden de la reacción para que la tasa tenga unidades de concentración por tiempo. No debe aplicarse automáticamente a una flecha que resume varios pasos; en ese caso la cinética efectiva necesita derivación o justificación fenomenológica.",
+        "La matriz estequiométrica organiza los cambios de especies por reacción. Cada columna representa una reacción y cada fila una especie; valores negativos indican consumo y positivos producción. Si v(x,p) es el vector de tasas, la dinámica se escribe dx/dt = S*v. Esta forma separa estructura y cinética, facilita verificar signos y permite detectar conservaciones mediante el espacio nulo izquierdo. También escala a redes grandes y estándares como SBML.",
+        "Las reacciones reversibles pueden modelarse como dos tasas opuestas o una expresión neta. El equilibrio termodinámico impone relaciones entre constantes, aunque muchos modelos de señalización usan cinéticas efectivas lejos del equilibrio. Compartimentos y membranas exigen distinguir concentración y cantidad. Una tasa de transporte expresada en cantidad por tiempo debe dividirse por volumen al modificar concentración; si los volúmenes cambian, aparecen términos adicionales de dilución."
+      ],
+      "key_points": [
+        "La acción de masas es apropiada para pasos elementales bajo supuestos definidos.",
+        "Las unidades de las constantes dependen del orden de reacción.",
+        "La forma dx/dt = S*v separa estequiometría y cinética.",
+        "Compartimentos requieren convertir correctamente cantidad, concentración y volumen."
+      ],
+      "equations": [
+        {
+          "latex": "dx/dt = S * v(x,p)",
+          "meaning": "Ecuación compacta de una red de reacciones con matriz estequiométrica S y tasas v.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Cinéticas reducidas, saturación y cooperatividad",
+      "paragraphs": [
+        "Michaelis-Menten describe una tasa enzimática saturable bajo supuestos como estado cuasi-estacionario del complejo y sustrato en exceso respecto a enzima. La expresión Vmax*S/(Km+S) no debe usarse solo porque produce una curva saturante. Km no es siempre una constante de disociación y Vmax puede depender de la cantidad de enzima, que podría cambiar durante el experimento. Si las condiciones violan la aproximación, conviene modelar pasos de unión y catálisis explícitamente.",
+        "La ecuación de Hill representa cooperatividad o una transición sigmoidal efectiva. El exponente n controla pendiente, pero no equivale automáticamente al número de sitios. Una función de Hill puede resumir múltiples pasos, retroalimentación o heterogeneidad. Su utilidad es fenomenológica cuando el mecanismo detallado no está identificado. El parámetro de semisaturación y el exponente deben estimarse con datos que cubran el rango de transición; fuera de ese rango pueden ser poco identificables.",
+        "La inhibición, activación y competencia pueden incorporarse mediante modelos mecanísticos o factores reguladores. Diferentes expresiones pueden producir respuestas similares en un rango limitado. Antes de elegir, se comparan predicciones ante concentraciones extremas, mutaciones o perturbaciones. Las condiciones límite deben tener sentido: una tasa de producción no debe volverse negativa salvo que represente un flujo neto; una activación debería desaparecer sin activador si el modelo lo supone; la saturación debe respetar capacidad finita."
+      ],
+      "key_points": [
+        "Michaelis-Menten depende de supuestos de escala y cuasi-estacionariedad.",
+        "Km y Vmax no tienen una interpretación universal fuera del mecanismo.",
+        "Hill es una descripción efectiva y n no cuenta necesariamente sitios.",
+        "Los límites y perturbaciones ayudan a distinguir cinéticas rivales."
+      ],
+      "equations": [
+        {
+          "latex": "v = Vmax*S/(Km + S)",
+          "meaning": "Cinética Michaelis-Menten para una tasa saturable bajo supuestos específicos.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Integración numérica, rigidez y tolerancias",
+      "paragraphs": [
+        "Un problema de valor inicial especifica derivadas, estado inicial y intervalo temporal. Los solvers no producen una solución exacta; controlan error local mediante pasos adaptativos. Métodos explícitos como Runge-Kutta son eficientes para sistemas no rígidos. Cuando coexisten escalas muy rápidas y lentas, un método explícito puede necesitar pasos diminutos para permanecer estable. Métodos implícitos como BDF o Radau suelen ser más adecuados para sistemas rígidos, aunque requieren resolver sistemas internos.",
+        "La elección se guía por comportamiento y diagnóstico, no por preferencia personal. Un solver que termina sin error puede producir concentraciones negativas, perder eventos o acumular error si las tolerancias son inadecuadas. La tolerancia absoluta controla error en variables cercanas a cero y puede requerir valores por estado; la relativa escala con magnitud. Comparar soluciones al reducir tolerancias y usar otro método ayuda a evaluar convergencia numérica. El Jacobiano analítico o disperso puede mejorar sistemas rígidos.",
+        "Las escalas de variables también influyen. Una especie de 10^-12 y otra de 10^3 no deberían compartir ciegamente la misma tolerancia absoluta. Reescalar estados o usar cantidades adimensionales puede mejorar condicionamiento. Los intervalos de salida no deben confundirse con pasos internos; solicitar muchos puntos aumenta almacenamiento, no necesariamente precisión. Las interpolaciones densas y los eventos permiten obtener tiempos específicos sin forzar una malla fija extremadamente fina."
+      ],
+      "key_points": [
+        "La integración numérica aproxima la solución con control de error.",
+        "La rigidez surge de escalas dinámicas muy diferentes.",
+        "Tolerancias absolutas y relativas deben corresponder a cada variable.",
+        "Convergencia y comparación de solvers forman parte de la verificación."
+      ],
+      "equations": [
+        {
+          "latex": "AcceptedError_i <= atol_i + rtol*abs(x_i)",
+          "meaning": "Criterio conceptual de control de error que combina tolerancia absoluta y relativa por estado.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Eventos, discontinuidades y verificación del modelo",
+      "paragraphs": [
+        "Los sistemas biomédicos reciben dosis, pulsos, cambios de medio, divisiones o intervenciones. Un evento ocurre cuando una condición se cumple y puede detener la integración, cambiar un parámetro o modificar un estado. Implementar una dosis como un cambio instantáneo de cantidad es distinto de una infusión continua. Las discontinuidades se manejan reiniciando el solver o mediante funciones de entrada definidas por tramos, evitando que la interpolación atraviese un salto como si fuera suave.",
+        "Las condiciones iniciales representan el estado al inicio y pueden derivarse de equilibrio previo, mediciones o parámetros. Ajustar condiciones iniciales junto con tasas puede crear no identificabilidad. Si se asume estado estacionario antes del estímulo, debe comprobarse que las derivadas sean cercanas a cero. Los compartimentos deben usar volúmenes y cantidades consistentes durante eventos. Un cambio de volumen puede alterar concentración sin cambiar cantidad.",
+        "La verificación incluye pruebas de conservación, no negatividad cuando corresponda, soluciones analíticas simples, casos límite y comparación con cálculo manual. Un modelo de degradación de primer orden debe reproducir una exponencial; una reacción cerrada debe conservar masa. Se prueban parámetros cero, entradas extremas y estados iniciales nulos. La validación numérica también inspecciona mensajes del solver, número de pasos y sensibilidad a tolerancias. Solo después de estas pruebas se compara con datos biológicos."
+      ],
+      "key_points": [
+        "Dosis instantánea, infusión y cambio de parámetro son eventos distintos.",
+        "Las discontinuidades deben comunicarse explícitamente al integrador.",
+        "Las condiciones iniciales pueden ser parámetros no identificables.",
+        "Pruebas analíticas y de conservación verifican la implementación."
+      ],
+      "equations": [
+        {
+          "latex": "x(t_event_plus) = x(t_event_minus) + Dose",
+          "meaning": "Ejemplo de evento instantáneo que modifica una cantidad de estado en el tiempo de dosis.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "Acción de masas", "definition": "Ley cinética para reacciones elementales basada en concentraciones de reactivos."},
+    {"term": "Matriz estequiométrica", "definition": "Matriz de cambios de especies por reacción."},
+    {"term": "Molecularidad", "definition": "Número de moléculas que participan en un paso elemental."},
+    {"term": "Michaelis-Menten", "definition": "Aproximación saturable para ciertas reacciones enzimáticas."},
+    {"term": "Km", "definition": "Parámetro de semisaturación cuya interpretación depende del mecanismo."},
+    {"term": "Hill", "definition": "Función sigmoidal efectiva usada para cooperatividad o regulación."},
+    {"term": "ODE", "definition": "Ecuación diferencial ordinaria que describe cambio temporal de estados."},
+    {"term": "Problema de valor inicial", "definition": "Sistema dinámico con estado especificado en el tiempo inicial."},
+    {"term": "Rigidez", "definition": "Coexistencia de escalas que restringe fuertemente métodos explícitos."},
+    {"term": "Tolerancia", "definition": "Criterio numérico usado para controlar error local."},
+    {"term": "Evento", "definition": "Condición que detiene o modifica la dinámica durante la simulación."},
+    {"term": "Verificación", "definition": "Comprobación de que código y solver implementan correctamente el modelo."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Tasa bimolecular con unidades incorrectas",
+      "scenario": "Se usa k=0,5 por minuto en A+B->C con concentraciones micromolares.",
+      "reasoning_steps": ["Determinar orden de reacción.", "Derivar unidades necesarias de k.", "Corregir a por micromolar por minuto.", "Verificar unidades de la derivada."],
+      "interpretation": "El valor numérico sin unidades coherentes producía una tasa físicamente mal definida.",
+      "limitations": ["La acción de masas puede no describir un mecanismo efectivo.", "Las actividades pueden diferir de concentraciones."
+      ]
+    },
+    {
+      "title": "Solver explícito falla en una red rígida",
+      "scenario": "Una unión ocurre en milisegundos y una síntesis en horas; RK45 toma millones de pasos.",
+      "reasoning_steps": ["Reconocer separación de escalas.", "Probar BDF o Radau.", "Aportar Jacobiano o sparsity.", "Comparar convergencia y conservación."],
+      "interpretation": "El problema era rígido y requería un método numérico diferente, no una simplificación arbitraria del resultado.",
+      "limitations": ["La rigidez puede indicar una reducción cuasi-estacionaria posible.", "Un método implícito también requiere tolerancias apropiadas."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Construcción y verificación de un modelo ODE",
+      "instructions": ["Derivar reacciones y S.", "Elegir cinéticas y unidades.", "Simular con dos solvers.", "Añadir eventos y pruebas de conservación."],
+      "problems": [
+        "Derivar ODE para A reversible a B.",
+        "Construir S para tres reacciones.",
+        "Determinar unidades de cuatro constantes.",
+        "Comparar acción de masas y Michaelis-Menten.",
+        "Evaluar un exponente de Hill fenomenológico.",
+        "Diagnosticar rigidez con dos escalas.",
+        "Implementar una dosis instantánea y una infusión.",
+        "Diseñar pruebas de convergencia y conservación."
+      ],
+      "checking_criteria": ["La derivación coincide con S.", "Las unidades son correctas.", "El solver es adecuado.", "La implementación supera pruebas físicas y numéricas."
+      ]
+    }
+  ],
+  "common_errors": [
+    {"error": "Aplicar acción de masas a cualquier flecha.", "correction": "Distinguir pasos elementales y cinéticas efectivas."},
+    {"error": "Interpretar Km como afinidad universal.", "correction": "Derivar su significado según el mecanismo."},
+    {"error": "Usar RK45 para todo sistema.", "correction": "Diagnosticar rigidez y comparar métodos."},
+    {"error": "Ignorar unidades de volumen entre compartimentos.", "correction": "Distinguir cantidad, concentración y flujo."},
+    {"error": "Validar solo porque el solver termina.", "correction": "Comprobar convergencia, conservación, límites y soluciones simples."
+    }
+  ],
+  "self_assessment": [
+    {"question": "¿Cuándo aplica acción de masas?", "answer": "A pasos elementales o aproximaciones justificadas con unidades coherentes."},
+    {"question": "¿Qué representa S?", "answer": "Consumo y producción de especies por reacción."},
+    {"question": "¿Km es siempre una constante de disociación?", "answer": "No; depende de tasas y supuestos del mecanismo."},
+    {"question": "¿Qué significa n de Hill?", "answer": "Controla pendiente efectiva y no cuenta necesariamente sitios."},
+    {"question": "¿Qué indica rigidez?", "answer": "Escalas dinámicas que obligan a pasos pequeños en métodos explícitos."},
+    {"question": "¿Qué diferencia atol y rtol?", "answer": "Atol domina cerca de cero; rtol escala con la magnitud del estado."},
+    {"question": "¿Cómo modelar una dosis instantánea?", "answer": "Como un evento que modifica una cantidad o estado en un tiempo definido."},
+    {"question": "¿Qué verifica una conservación?", "answer": "Que la implementación respeta una propiedad derivada de la estructura."
+    }
+  ],
+  "biomedical_connections": [
+    {"topic": "Enzimología", "connection": "Cinéticas saturables y mecanismos explícitos permiten comparar inhibición y catálisis."},
+    {"topic": "Farmacodinámica", "connection": "Dosis, infusión y eventos conectan exposición con respuesta temporal."},
+    {"topic": "Señalización", "connection": "Redes rápidas y síntesis lenta producen rigidez y separación de escalas."},
+    {"topic": "Metabolismo", "connection": "Estequiometría y conservación estructuran modelos dinámicos de reacciones."
+    }
+  ],
+  "sources": [
+    {"title": "SciPy solve_ivp", "organization": "SciPy", "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "COPASI", "organization": "COPASI Project", "url": "https://copasi.org/", "type": "documentación oficial", "verification_status": "verified_directly"},
+    {"title": "SBML", "organization": "SBML.org", "url": "https://sbml.org/", "type": "estándar oficial", "verification_status": "verified_directly"},
+    {"title": "BioModels", "organization": "EMBL-EBI", "url": "https://www.ebi.ac.uk/biomodels/", "type": "repositorio oficial", "verification_status": "verified_directly"},
+    {"title": "CellML", "organization": "CellML Project", "url": "https://www.cellml.org/", "type": "estándar oficial", "verification_status": "verified_directly"}
+  ],
+  "editorial_notice": "Material educativo en estado review. Una simulación numéricamente estable no demuestra que la cinética, los parámetros o el mecanismo representen correctamente el sistema biológico."
+}

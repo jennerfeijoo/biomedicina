@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 3. Normalización, selección de características y representación | Ómicas de Célula Única y Biología Espacial | CitoNauta</title>
+  <meta name="description" content="Construir representaciones celulares reproducibles a partir de conteos, justificando normalización, selección de características, reducción de dimensionalidad y grafos sin convertir visualizaciones en evidencia inferencial." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Biológicas y Médicas</a></li>
+            <li><a href="../index.html">Ómicas de Célula Única y Biología Espacial</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="omicas-celula-unica-biologia-espacial">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Biológicas y Médicas</a><span>/</span>
+        <a href="../index.html">Ómicas de Célula Única y Biología Espacial</a><span>/</span>
+        <span>Unidad 3</span>
+      </div>
+      <p class="eyebrow">Unidad 3 de 8</p>
+      <h1>Normalización, selección de características y representación</h1>
+      <p>Construir representaciones celulares reproducibles a partir de conteos, justificando normalización, selección de características, reducción de dimensionalidad y grafos sin convertir visualizaciones en evidencia inferencial.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Ómicas de Célula Única y Biología Espacial</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-02.html">← Unidad 2: Procesamiento inicial y control de calidad</a>
+        <a class="btn-link" href="unidad-04.html">Unidad 4: Clustering, marcadores, anotación y atlas de referencia →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="3">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Distinguir conteos crudos, normalizados, transformados, escalados e integrados.</li>
+        <li>Relacionar factores de tamaño, composición y modelos de conteo con la normalización.</li>
+        <li>Seleccionar genes variables sin introducir información de la comparación final.</li>
+        <li>Interpretar PCA como una representación lineal dependiente de features y escalado.</li>
+        <li>Construir grafos de vecinos y evaluar sensibilidad a dimensión, distancia y k.</li>
+        <li>Interpretar UMAP y t-SNE como visualizaciones locales, no como mapas cuantitativos globales.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Conteos, profundidad y objetivo de normalización</li>
+        <li>Transformación, varianza y selección de genes informativos</li>
+        <li>PCA, distancias y grafos de vecinos</li>
+        <li>UMAP, t-SNE y límites de la visualización</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Conteos, profundidad y objetivo de normalización</h3>
+        <p>La matriz de UMI combina expresión biológica con diferencias de captura y profundidad. Dos células del mismo tipo pueden tener totales distintos porque una fue capturada con mayor eficiencia o porque realmente contiene más RNA. La normalización busca hacer comparables perfiles bajo un objetivo definido, pero no puede identificar automáticamente qué parte del total es técnica y cuál biológica. El método debe conservar los conteos originales y producir una capa derivada que pueda reconstruirse.</p>
+        <p>La normalización por tamaño de biblioteca divide por un factor celular y suele aplicar una transformación logarítmica. Es simple y útil para visualización, aunque asume que la mayoría de genes no cambia de manera coordinada y que el total es principalmente técnico. En poblaciones con grandes diferencias de contenido de RNA, ciclo, tamaño o activación, esta suposición puede fallar. Métodos de deconvolución estiman factores de tamaño agrupando células para estabilizar la señal, mientras residuos de modelos de conteo buscan estabilizar varianza.</p>
+        <p>No existe una única matriz correcta para todas las tareas. Los conteos crudos o agregados son apropiados para modelos que representan la distribución discreta; valores normalizados sirven para exploración, distancias o marcadores descriptivos; datos integrados pueden ayudar a alinear representaciones, pero no deberían sustituir conteos originales en inferencia de expresión. El objeto debe indicar qué capa usa cada análisis para evitar aplicar una prueba estadística sobre datos cuya escala o dependencia no corresponde.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[NormalizedCount_g,c = Count_g,c / SizeFactor_c\]</div>
+            <figcaption>Normalización básica por un factor de tamaño celular; su interpretación depende de cómo se estimó el factor.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Normalizar no equivale a eliminar toda variación técnica.</li>
+        <li>El total de UMI puede contener señal técnica y biológica.</li>
+        <li>Distintas tareas pueden requerir distintas capas de datos.</li>
+        <li>Los conteos originales deben permanecer inmutables y accesibles.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Transformación, varianza y selección de genes informativos</h3>
+        <p>Los conteos muestran una relación entre media y varianza: genes más expresados tienden a variar más. Una transformación logarítmica comprime valores altos, pero no elimina por completo la heterocedasticidad. Los residuos de Pearson aproximados modelan conteos esperados y expresan desviaciones estandarizadas, ofreciendo una alternativa para selección y representación. La elección debe evaluarse con datos y versión del método, porque parámetros como clipping o regularización cambian el resultado.</p>
+        <p>Los genes altamente variables se seleccionan porque muestran más variación que la esperada para su nivel medio. Esta selección reduce ruido y coste, y concentra PCA en ejes que distinguen células. Sin embargo, puede priorizar ciclo celular, estrés, genes mitocondriales o batch. La lista se inspecciona y, si se excluyen familias, la decisión se documenta. Seleccionar genes usando etiquetas de condición o resultados de prueba puede introducir circularidad en análisis posteriores.</p>
+        <p>Cuando existen varias muestras, los genes variables se estiman por lote o con reglas que eviten que una muestra dominante determine la selección. Un gen variable solo en un donante puede representar biología rara, artefacto o diferencia técnica. Conviene registrar frecuencia por muestra y repetir análisis con listas alternativas. La selección no debe usarse para inferencia de expresión diferencial, porque los genes no seleccionados siguen formando parte de la pregunta y la selección altera el universo analizado.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[PearsonResidual_g,c = (Observed_g,c - Expected_g,c) / sqrt(Variance_g,c)\]</div>
+            <figcaption>Residuo estandarizado respecto a un modelo de conteos esperado, usado para estabilizar varianza y representación.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Media y varianza están acopladas en datos de conteo.</li>
+        <li>Genes variables sirven para representación, no definen el universo inferencial.</li>
+        <li>Ciclo, estrés y batch pueden dominar la variabilidad.</li>
+        <li>La selección debe auditarse por muestra y mediante sensibilidad.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>PCA, distancias y grafos de vecinos</h3>
+        <p>PCA busca combinaciones lineales ortogonales que capturen varianza de la matriz seleccionada. El resultado depende de normalización, genes, escalado y número de componentes. Escalar cada gen a varianza uno evita que genes muy variables dominen, pero también da peso a genes de baja señal. En datos UMI, algunas transformaciones ya estabilizan varianza y pueden no requerir el mismo escalado. Los loadings ayudan a interpretar qué programas impulsan cada componente.</p>
+        <p>El número de componentes no debe elegirse solo por costumbre. Se inspecciona varianza explicada, estructura técnica, estabilidad y desempeño downstream. Componentes tardíos pueden contener tipos raros o ruido. Excluir componentes asociados con batch puede borrar biología si batch y tejido están relacionados. Es preferible balancear el diseño y evaluar integración explícita que eliminar componentes a ciegas. PCA sigue siendo una representación, no una prueba de que existan poblaciones discretas.</p>
+        <p>El grafo k-nearest neighbors conecta células según distancia en el espacio reducido. La métrica, k y número de componentes determinan vecindades. Un k pequeño conserva estructura local y puede fragmentar; uno grande suaviza y conecta estados distintos. La densidad desigual afecta conectividad. Los grafos se evalúan mediante estabilidad, composición por muestra y sensibilidad de clusters, no solo por una visualización atractiva. El mismo grafo puede alimentar clustering, difusión, trayectorias o UMAP, acumulando sus supuestos.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[PC_j = X * Loading_j\]</div>
+            <figcaption>Cada componente principal es una combinación lineal de los genes según sus cargas.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>PCA depende de la matriz, genes y escalado utilizados.</li>
+        <li>Componentes asociados con batch no deben eliminarse automáticamente.</li>
+        <li>El grafo de vecinos es una construcción paramétrica.</li>
+        <li>Sensibilidad a k y dimensiones forma parte de la validación.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>UMAP, t-SNE y límites de la visualización</h3>
+        <p>UMAP y t-SNE proyectan una estructura de alta dimensión en dos o tres dimensiones para visualización. Ambas priorizan relaciones locales y pueden distorsionar distancias, densidades y posiciones globales. La separación entre grupos no cuantifica diferencia biológica, y la cercanía visual no demuestra transición. El resultado depende del grafo o distancias de entrada, semillas, número de vecinos, min_dist, perplexity y otros parámetros.</p>
+        <p>Las visualizaciones pueden crear islas incluso en datos continuos o unir estados separados. Comparar UMAP generados con parámetros diferentes no es equivalente a comparar coordenadas en un espacio físico. Los ejes no tienen significado biológico directo y pueden rotar o invertirse. Las conclusiones se sostienen con análisis en el espacio original o reducido, marcadores, réplicas y modelos estadísticos. UMAP comunica estructura exploratoria, no reemplaza cuantificación.</p>
+        <p>Una práctica reproducible conserva parámetros, semilla y versión, y muestra color por muestra, lote, métricas de calidad, tipos preliminares y condición. Esto revela si la estructura está dominada por técnica. También se comparan representaciones alternativas y se evitan paletas o escalas que exageren diferencias. La visualización debe incluir densidad y número de células por muestra cuando la composición es desigual. Su función es generar y comunicar hipótesis, no certificar clusters o trayectorias.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[Embedding_2D = NonlinearProjection(NeighborGraph, Parameters, Seed)\]</div>
+            <figcaption>La visualización depende del grafo, parámetros y aleatoriedad; no es una medición directa de distancia biológica.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>UMAP y t-SNE no preservan distancias globales exactas.</li>
+        <li>Islas visuales no demuestran poblaciones discretas.</li>
+        <li>Los ejes y orientación no tienen interpretación biológica propia.</li>
+        <li>Las conclusiones requieren cuantificación y replicación fuera del embedding.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>UMAP separado por muestra</h3>
+        <p><strong>Situación.</strong> Cada isla del UMAP corresponde casi exactamente a un donante.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Colorear por métricas y lote.</li>
+        <li>Revisar balance y genes variables.</li>
+        <li>Comparar PCA y correlaciones agregadas.</li>
+        <li>Evaluar integración sin asumir que toda diferencia es técnica.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La estructura puede reflejar batch, biología individual o ambos; el UMAP por sí solo no los separa.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La condición puede estar confundida con donante.</li>
+        <li>La integración puede borrar señal real si se aplica sin controles.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Dos normalizaciones producen clusters distintos</h3>
+        <p><strong>Situación.</strong> Log-normalización y residuos generan particiones diferentes en células activadas.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Comparar genes variables y componentes.</li>
+        <li>Revisar estabilidad por muestra.</li>
+        <li>Evaluar marcadores y calidad.</li>
+        <li>Reportar sensibilidad en lugar de elegir por apariencia.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Los clusters dependen de la representación y deben validarse con evidencia biológica y replicación.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>Ninguna representación es una verdad absoluta.</li>
+        <li>La activación puede ser continua y no discreta.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Comparación de representaciones</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Conservar conteos originales.</li>
+        <li>Construir dos normalizaciones.</li>
+        <li>Comparar genes variables, PCA y vecinos.</li>
+        <li>Evaluar estabilidad y límites de UMAP.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Distinguir capas raw, normalized, scaled e integrated.</li>
+        <li>Explicar cuándo el total de UMI puede ser biológico.</li>
+        <li>Comparar log-normalización y residuos conceptualmente.</li>
+        <li>Auditar genes variables dominados por ciclo o estrés.</li>
+        <li>Elegir un número de componentes con evidencia.</li>
+        <li>Analizar sensibilidad al número de vecinos.</li>
+        <li>Explicar por qué dos islas no prueban dos tipos.</li>
+        <li>Diseñar una figura reproducible con muestra, lote y calidad.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>Los conteos se conservan.</li>
+        <li>La selección no usa resultados de prueba.</li>
+        <li>Los parámetros están versionados.</li>
+        <li>La visualización no se presenta como inferencia.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Usar una sola matriz para todas las tareas.</strong><p>Elegir capa según visualización, modelado o inferencia.</p></li>
+        <li><strong>Seleccionar genes usando la condición final.</strong><p>Separar representación exploratoria de contraste inferencial.</p></li>
+        <li><strong>Eliminar componentes asociados con batch sin revisar biología.</strong><p>Evaluar confusión, balance y conservación de señal.</p></li>
+        <li><strong>Interpretar distancia UMAP como distancia biológica exacta.</strong><p>Cuantificar en el espacio y modelo apropiados.</p></li>
+        <li><strong>Elegir parámetros por la figura más limpia.</strong><p>Comparar estabilidad, replicación y sensibilidad.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué busca corregir un factor de tamaño?</summary>
+        <p><strong>Respuesta:</strong> Diferencias de escala relacionadas con captura o profundidad bajo ciertos supuestos.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Por qué conservar conteos crudos?</summary>
+        <p><strong>Respuesta:</strong> Permiten repetir transformaciones y usar modelos de conteo apropiados.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Para qué se eligen genes variables?</summary>
+        <p><strong>Respuesta:</strong> Para concentrar representación en variación informativa, no para limitar toda inferencia.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué determina PCA?</summary>
+        <p><strong>Respuesta:</strong> La matriz de entrada, selección de genes, escalado y covarianza.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué cambia al aumentar k?</summary>
+        <p><strong>Respuesta:</strong> Se suaviza la estructura local y pueden conectarse estados más distantes.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿UMAP preserva distancias globales?</summary>
+        <p><strong>Respuesta:</strong> No; prioriza vecindades locales y depende de parámetros.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Una isla equivale a un tipo celular?</summary>
+        <p><strong>Respuesta:</strong> No; requiere marcadores, estabilidad, replicación y contexto.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Qué debe acompañar una figura UMAP?</summary>
+        <p><strong>Respuesta:</strong> Parámetros, semilla, muestra, lote, calidad y cuantificación complementaria.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Factor de tamaño</strong><p>Escala estimada para ajustar diferencias de captura o profundidad entre células.</p></li>
+        <li><strong>Normalización</strong><p>Transformación destinada a mejorar comparabilidad bajo supuestos explícitos.</p></li>
+        <li><strong>Log-normalización</strong><p>Escalado por tamaño seguido de transformación logarítmica.</p></li>
+        <li><strong>Residuo de Pearson</strong><p>Desviación estandarizada entre conteo observado y esperado.</p></li>
+        <li><strong>Gen altamente variable</strong><p>Gen con variación superior a la esperada para su expresión media.</p></li>
+        <li><strong>Heterocedasticidad</strong><p>Cambio de varianza según el nivel medio u otra covariable.</p></li>
+        <li><strong>PCA</strong><p>Reducción lineal que ordena componentes por varianza capturada.</p></li>
+        <li><strong>Loading</strong><p>Peso de cada gen en un componente principal.</p></li>
+        <li><strong>Grafo de vecinos</strong><p>Red que conecta observaciones cercanas en una representación.</p></li>
+        <li><strong>k</strong><p>Número de vecinos usado para construir conectividad local.</p></li>
+        <li><strong>UMAP</strong><p>Proyección no lineal orientada a preservar estructura local.</p></li>
+        <li><strong>t-SNE</strong><p>Método de visualización que preserva similitudes locales probabilísticas.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://www.sc-best-practices.org/preprocessing_visualization/normalization.html" rel="noopener noreferrer">Single-cell best practices: Normalization</a></strong><span class="course-tag">Single-cell Best Practices Consortium · recurso metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://bioconductor.org/books/devel/OSCA/" rel="noopener noreferrer">Orchestrating Single-Cell Analysis with Bioconductor</a></strong><span class="course-tag">Bioconductor · libro ejecutable</span></li>
+        <li><strong><a class="resource-link" href="https://www.sc-best-practices.org/" rel="noopener noreferrer">Single-cell best practices</a></strong><span class="course-tag">Single-cell Best Practices Consortium · recurso metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://www.nature.com/articles/s41576-023-00586-w" rel="noopener noreferrer">Best practices for single-cell analysis across modalities</a></strong><span class="course-tag">Nature Reviews Genetics · revisión metodológica</span></li>
+        <li><strong><a class="resource-link" href="https://data.humancellatlas.org/metadata" rel="noopener noreferrer">Human Cell Atlas Metadata</a></strong><span class="course-tag">Human Cell Atlas · estándar de metadatos</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Construir representaciones celulares reproducibles a partir de conteos, justificando normalización, selección de características, reducción de dimensionalidad y grafos sin convertir visualizaciones en evidencia inferencial. Conecta especialmente con Heterogeneidad tumoral: Representación y genes variables condicionan subpoblaciones aparentes, Activación inmune: Programas continuos pueden dominar PCA y no formar tipos discretos, Desarrollo: Embeddings sugieren continuidad, pero no demuestran dirección temporal, Atlas multicéntricos: La representación debe separar técnica sin borrar diversidad real. Material educativo en estado review. Normalización, PCA y UMAP generan representaciones dependientes de supuestos y no demuestran por sí solos tipos, trayectorias ni mecanismos.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-02.html">← Unidad 2: Procesamiento inicial y control de calidad</a><a class="btn-link" href="unidad-04.html">Unidad 4: Clustering, marcadores, anotación y atlas de referencia →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Ómicas de Célula Única y Biología Espacial · unidad 3 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>
