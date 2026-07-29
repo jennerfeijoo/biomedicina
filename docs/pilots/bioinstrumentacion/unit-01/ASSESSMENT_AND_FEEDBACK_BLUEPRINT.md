@@ -251,6 +251,8 @@ Para cada una, el estudiante debe:
 
 **Continuar cuando:** solicita evidencia de procedencia y cadena, no solo morfología.
 
+Las cinco misconceptions adicionales detectadas por el gate se documentan en `MISCONCEPTION_COMPLETION.md` con el mismo contrato diagnóstico.
+
 ## Contrato de feedback en la futura implementación
 
 Cada respuesta evaluada debe producir un objeto con:
@@ -264,6 +266,8 @@ source_or_section_to_review
 different_recovery_problem
 objective_continue_criterion
 ```
+
+El campo `different_recovery_problem` exige un **problema de recuperación diferente** del original: debe cambiar el contexto o la estructura inferencial, no solo los números.
 
 No se aceptará como feedback:
 
