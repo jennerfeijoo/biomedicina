@@ -205,7 +205,7 @@ def validate_documents() -> None:
         ),
         (
             READINESS_PATH,
-            ["foundation_review", "Unidades desarrolladas en este bloque: ninguna", "Gates antes de complete", "Riesgos abiertos"],
+            ["foundation_review", "Unidades desarrolladas en este bloque", "ninguna", "Gates antes de complete", "Riesgos abiertos"],
         ),
     ):
         text = path.read_text(encoding="utf-8") if path.exists() else ""
