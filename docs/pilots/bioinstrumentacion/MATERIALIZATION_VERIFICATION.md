@@ -24,9 +24,15 @@
 
 La materialización corrige la verdad editorial global, pero no mejora ni sustituye el contenido fallback. Las unidades históricas de Bioinstrumentación continúan disponibles únicamente como respaldo y deben reconstruirse después de aprobar la base piloto, resolver las brechas bibliográficas y organizar revisión especializada.
 
+## Consistencia del validador curricular
+
+El validador histórico exigía que todas las asignaturas quedaran en `generated` o `complete`. Ese supuesto contradice el manifiesto actual, que distingue 43 cursos desarrollados y 51 pendientes. La corrección permanente debe conservar todos los mínimos estructurales y, además, exigir que cada curso público coincida exactamente con su pertenencia a `pending`, `developed` o `complete` en `data/catalog_statuses.json`.
+
+Esta modificación no reduce el control: reemplaza una condición global incorrecta por una comprobación de consistencia individual y auditable para las 94 asignaturas.
+
 ## Ciclo estable requerido
 
-El commit de este documento inicia un ciclo de CI no creado por `github-actions[bot]`. El PR solo podrá salir de borrador cuando:
+El commit final de verificación debe iniciar un ciclo de CI no creado por `github-actions[bot]`. El PR solo podrá salir de borrador cuando:
 
 1. los workflows aplicables terminen en verde sobre un único SHA;
 2. el generador resulte idempotente;
