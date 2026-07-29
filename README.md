@@ -8,13 +8,14 @@ las ciencias básicas hasta las aplicaciones tecnológicas y éticas más actual
 
 ## Estado actual
 
-- 84 asignaturas distribuidas en cuatro áreas académicas.
-- 508 unidades navegables: 497 generadas con el estándar lectivo común y 11 unidades editoriales extensas conservadas.
-- Cada unidad estándar incluye resultados, desarrollo conceptual, caso de integración, práctica segura, autoevaluación con respuestas, glosario y recursos abiertos.
-- Todas las asignaturas incluyen prerrequisitos, competencias, objetivos, evaluación, conceptos clave y conexiones curriculares.
-- Las páginas se generan de forma reproducible desde `data/citonauta_curriculum.json`, `data/course_outlines.json` y los contenidos especializados de `data/subjects/`.
+- 94 asignaturas distribuidas en cuatro áreas académicas.
+- 43 desarrolladas con contenido lectivo sustantivo y 51 pendientes que todavía conservan contenido de respaldo.
+- 0 con revisión disciplinar completa; ninguna asignatura tiene todavía estado editorial `complete`.
+- Las asignaturas desarrolladas permanecen en `review` hasta que exista revisión experta documentada.
+- Una página navegable o un workflow verde no demuestra que una asignatura esté desarrollada o revisada.
+- Las páginas se generan de forma reproducible desde `data/citonauta_curriculum.json`, `data/course_outlines.json`, `data/catalog_statuses.json` y los contenidos especializados de `data/subjects/` y `data/course_redevelopment/`.
 - Los cursos académicos avanzados y sus unidades estructuradas se almacenan en `data/generated_courses/` y `data/generated_units/`.
-- Estado editorial: contenido lectivo disponible y pendiente de revisión experta; no equivale a acreditación, validación clínica ni consejo profesional.
+- El catálogo es completo como inventario curricular, no como promesa de que las 94 asignaturas estén terminadas.
 
 ## Estado de publicación
 
@@ -37,18 +38,20 @@ python scripts/audit_public_unit_alignment.py --strict
 
 GitHub Actions ejecuta la auditoría informativa y conserva el informe como artefacto. Mientras existan discrepancias, el estado académico debe permanecer en `review` o `generated`, nunca en `complete`.
 
-
-
 ## Modelo de aprendizaje autogestionado
 
 CitoNauta organiza contenidos, prerrequisitos, actividades y criterios de dominio, pero no asigna duraciones, cargas horarias ni calendarios estándar. Cada persona avanza según sus conocimientos previos, profundidad requerida, práctica y necesidad de revisión. Completar una asignatura significa demostrar los resultados de aprendizaje y no cumplir una cantidad predeterminada de tiempo.
+
+La existencia de autoevaluaciones con respuestas no equivale todavía a tutoría autónoma. La ruta piloto de excelencia incorporará feedback diagnóstico, recuperación de prerrequisitos y criterios verificables para continuar antes de presentar una ruta como autosuficiente.
 
 ## Generación y validación
 
 ```bash
 python scripts/validate_curriculum.py
+python scripts/validate_course_plan_packages.py
+python scripts/validate_pilot_foundations.py
 python scripts/generate_site.py --force --with-units
-python scripts/check_generated_preview.py --limit 84
+python scripts/check_generated_preview.py --limit 94
 python scripts/validate_units.py
 python scripts/audit_public_unit_alignment.py
 python scripts/validate_links.py --quiet
@@ -95,10 +98,12 @@ git checkout -b nombre-de-tu-rama
 Toda contribución debe:
 
 - citar fuentes confiables, preferentemente primarias u oficiales;
+- registrar si la fuente fue consultada directamente o solo verificada por metadata;
 - mantener un lenguaje claro, técnico y respetuoso;
 - favorecer la comprensión interdisciplinaria;
 - diferenciar observación, asociación, predicción, causalidad y utilidad;
-- conservar el estado `review` hasta que exista revisión experta documentada.
+- conservar el estado `review` hasta que exista revisión experta documentada;
+- evitar texto genérico, referencias decorativas y promoción automática por métricas técnicas.
 
 ---
 

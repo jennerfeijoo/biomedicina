@@ -29,6 +29,7 @@ from advanced_unit_renderer import (
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "citonauta_curriculum.json"
 OUTLINES_PATH = ROOT / "data" / "course_outlines.json"
+CATALOG_STATUSES_PATH = ROOT / "data" / "catalog_statuses.json"
 TEMPLATE_PATH = ROOT / "templates" / "asignatura.html"
 AREA_TEMPLATE_PATH = ROOT / "templates" / "area.html"
 CATALOG_TEMPLATE_PATH = ROOT / "templates" / "catalogo.html"
@@ -64,7 +65,7 @@ REQUIRED_TEMPLATE_KEYS = {
 }
 
 STATUS_LABELS = {
-    "placeholder": "Contenido pendiente",
+    "placeholder": "Contenido de respaldo · desarrollo académico pendiente",
     "draft": "Borrador inicial",
     "review": "Programa curricular estructurado · revisión pendiente",
     "generated": "Unidades desarrolladas · revisión experta pendiente",
@@ -73,6 +74,7 @@ STATUS_LABELS = {
 
 REQUIRED_UNIT_TEMPLATE_KEYS = {
     "unit_number", "unit_count", "unit_title", "unit_description",
+    "unit_status", "unit_status_label",
     "subject_title", "subject_id", "area_title", "css_path", "editorial_css_path",
     "home_path", "area_path", "subject_path", "units_index_path",
     "previous_unit_link", "next_unit_link", "learning_outcomes", "topics",
@@ -845,7 +847,7 @@ def synthesize_course(area: dict[str, Any], subject: dict[str, Any]) -> dict[str
     ]
     return {
         **subject,
-        "status": "generated",
+        "status": "placeholder",
         "level": (
             "Pregrado universitario inicial e intermedio"
             if area["id"] == "ciencias-basicas"
@@ -1162,6 +1164,8 @@ def render_unit_page(template: str, area: dict[str, Any], course: dict[str, Any]
         "unit_description": escape(unit["description"]),
         "subject_title": escape(course["title"]),
         "subject_id": escape(course["id"]),
+        "unit_status": escape(course.get("status", "placeholder")),
+        "unit_status_label": escape(unit_status_label(course.get("status", "placeholder"))),
         "area_title": escape(area["title"]),
         "css_path": rel_path(output_path, ROOT / "assets" / "css" / "style.css"),
         "editorial_css_path": rel_path(output_path, ROOT / "assets" / "css" / "editorial.css"),
@@ -1282,6 +1286,38 @@ def validate_unit_templates(unit_template: str, units_template: str) -> None:
         raise ValueError("La plantilla de índice de unidades no contiene: " + ", ".join(sorted(missing_index)))
 
 
+@cache
+def load_catalog_statuses() -> dict[str, Any]:
+    """Load the authoritative editorial manifest."""
+    return load_json(CATALOG_STATUSES_PATH)
+
+
+def catalog_editorial_status(subject_id: str) -> str:
+    """Map catalog maturity to the public page status used by the generator."""
+    statuses = load_catalog_statuses()
+    memberships = {
+        "complete": subject_id in set(statuses.get("complete", [])),
+        "generated": subject_id in set(statuses.get("developed", [])),
+        "placeholder": subject_id in set(statuses.get("pending", [])),
+    }
+    selected = [status for status, present in memberships.items() if present]
+    if len(selected) != 1:
+        raise ValueError(
+            f"{subject_id}: expected exactly one editorial state in {CATALOG_STATUSES_PATH.relative_to(ROOT)}; "
+            f"found {selected}"
+        )
+    return selected[0]
+
+
+def unit_status_label(status: str) -> str:
+    """Return an honest unit-level label derived from course maturity."""
+    if status == "complete":
+        return "Lección revisada por especialista"
+    if status in {"generated", "review"}:
+        return "Lección desarrollada · revisión experta pendiente"
+    return "Contenido de respaldo · desarrollo académico pendiente"
+
+
 def subject_overlay_path(area_id: str, subject_id: str) -> Path:
     return SUBJECT_DATA_DIR / area_id / f"{subject_id}.json"
 
@@ -1292,6 +1328,7 @@ def merge_subject_overlay(area: dict[str, Any], subject: dict[str, Any]) -> dict
     overlay_path = subject_overlay_path(area["id"], subject["id"])
     if not overlay_path.exists():
         merged = merge_advanced_unit_summaries(ROOT, merged)
+        merged["status"] = catalog_editorial_status(subject["id"])
         merged["status_label"] = STATUS_LABELS.get(merged["status"], merged["status"])
         return merged
 
@@ -1332,8 +1369,7 @@ def merge_subject_overlay(area: dict[str, Any], subject: dict[str, Any]) -> dict
         else:
             merged[key] = value
     merged = merge_advanced_unit_summaries(ROOT, merged)
-    if merged.get("status") != "complete":
-        merged["status"] = "generated"
+    merged["status"] = catalog_editorial_status(subject["id"])
     merged["status_label"] = STATUS_LABELS.get(merged["status"], merged["status"])
     return merged
 
