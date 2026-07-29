@@ -18,6 +18,8 @@ La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuent
 
 Como estado histórico del handoff externo, la teoría completa todavía **no está autorizada** por una revisión disciplinar profesional. Posteriormente, el propietario del proyecto aceptó provisionalmente las revisiones internas de la IA y autorizó la redacción controlada. Esta autorización permite producir el borrador autoral, mientras la revisión profesional externa sigue pendiente y el curso permanece `pending`.
 
+La evidencia humana continúa pendiente: no se han ejecutado la revisión profesional externa, la prueba cognitiva ni la ronda real de acuerdo entre revisores.
+
 La autorización no equivale a evidencia humana, aprobación profesional o validación institucional. Tampoco permite publicar, marcar la unidad como desarrollada ni promover el curso.
 
 ## Artefactos de preparación
