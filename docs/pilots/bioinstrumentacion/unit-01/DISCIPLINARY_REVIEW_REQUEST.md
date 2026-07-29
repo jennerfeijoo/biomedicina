@@ -10,6 +10,14 @@ Determinar si la base científica y pedagógica permite iniciar una redacción c
 
 La revisión debe evaluar el paquete completo, no solo la corrección gramatical.
 
+## Handoff auditable
+
+El contrato de entrega está en `data/review_handoffs/bioinstrumentacion-unit-01.json`.
+
+La persona revisora debe recibir un manifiesto generado sobre un commit concreto y completar una copia de `disciplinary-review-decision-template.json`. El procedimiento completo está documentado en `REVIEW_HANDOFF_AND_AUTHORIZATION.md`.
+
+Una decisión solo puede aplicarse al commit y al digest SHA-256 registrados. Si cambia cualquier artefacto obligatorio, debe generarse un nuevo manifiesto y revisarse el paquete actualizado.
+
 ## Competencia esperada del revisor
 
 La persona revisora debería demostrar al menos dos de las siguientes capacidades:
@@ -24,14 +32,26 @@ La persona revisora debería demostrar al menos dos de las siguientes capacidade
 
 1. `data/unit_preparation/bioinstrumentacion-unit-01.json`
 2. `data/unit_preparation/bioinstrumentacion-unit-01-blocker-resolution.json`
-3. `data/source_registry/bioinstrumentacion-unit-01-blockers.json`
-4. `PRESSURE_CASE_RESOLUTION.md`
-5. `THERMAL_MODEL_RESOLUTION.md`
-6. `PHYSIONET_RECORD_100_SPEC.md`
-7. `CONCEPT_AND_VISUAL_MODEL.md`
-8. `ASSESSMENT_AND_FEEDBACK_BLUEPRINT.md`
-9. `PRACTICE_AND_DATA_PLAN.md`
-10. `AUTHORING_READINESS.md`
+3. `data/practice_implementations/bioinstrumentacion-unit-01.json`
+4. `data/assessment_implementations/bioinstrumentacion-unit-01.json`
+5. `data/assessment_implementations/bioinstrumentacion-unit-01-feedback.json`
+6. `data/review_protocols/bioinstrumentacion-unit-01-human-review.json`
+7. `data/source_registry/bioinstrumentacion-unit-01-blockers.json`
+8. `data/source_registry/bioinstrumentacion-unit-01-review-methods.json`
+9. `SOURCE_DOSSIER.md`
+10. `PRESSURE_CASE_RESOLUTION.md`
+11. `THERMAL_MODEL_RESOLUTION.md`
+12. `PHYSIONET_RECORD_100_SPEC.md`
+13. `CONCEPT_AND_VISUAL_MODEL.md`
+14. `ASSESSMENT_AND_FEEDBACK_BLUEPRINT.md`
+15. `MISCONCEPTION_COMPLETION.md`
+16. `PRACTICE_AND_DATA_PLAN.md`
+17. `PRACTICE_IMPLEMENTATION.md`
+18. `ASSESSMENT_IMPLEMENTATION.md`
+19. `COGNITIVE_TEST_PROTOCOL.md`
+20. `INTER_RATER_AGREEMENT_PROTOCOL.md`
+21. `AUTHORING_READINESS.md`
+22. `REVIEW_HANDOFF_AND_AUTHORIZATION.md`
 
 ## Preguntas de revisión
 
@@ -103,22 +123,34 @@ El revisor debe seleccionar una sola opción:
 - `approve_with_changes`
 - `do_not_approve`
 
-Y registrar:
+Y registrar mediante la plantilla estructurada:
 
 ```text
-reviewer_name:
-reviewer_affiliation_or_context:
-relevant_competence:
-review_date:
-reviewed_commit:
-decision:
-critical_findings:
-required_changes:
-non_blocking_suggestions:
-scores:
-signature_or_verifiable_confirmation:
+reviewer.name
+reviewer.affiliation_or_context
+reviewer.competence_categories
+reviewer.competence_note
+review.review_date
+review.reviewed_commit
+review.packet_digest_sha256
+review.decision
+review.scores
+review.critical_findings
+review.required_changes
+review.non_blocking_suggestions
+confirmation.actor_type
+confirmation.method
+confirmation.reference
+confirmation.statement
+authorization_requested
 ```
+
+`approve_with_changes` no autoriza la redacción. Las modificaciones deben resolverse y someterse a una nueva decisión sobre un paquete regenerado.
 
 ## Regla editorial
 
-Este documento **no es una revisión**. Su existencia, un workflow verde o una revisión interna del repositorio no autorizan la teoría completa. La autorización solo existe cuando una persona competente completa el registro anterior y las observaciones críticas quedan resueltas.
+Este documento **no es una revisión**. Su existencia, un workflow verde, una revisión interna del repositorio o un fixture con puntuaciones máximas no autorizan la teoría completa.
+
+La autorización solo existe cuando una persona competente completa un registro real, el commit y el manifiesto coinciden, todas las dimensiones alcanzan el umbral, no existen errores críticos ni cambios obligatorios pendientes y la confirmación es verificable.
+
+Incluso una autorización válida se limita a `controlled_full_theory_drafting_only`: no desarrolla la unidad, no publica contenido y no cambia el estado del curso.
