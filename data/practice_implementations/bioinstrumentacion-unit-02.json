@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "implementation_id": "bioinstrumentacion-unit-02-practices",
+  "subject_id": "bioinstrumentacion",
+  "unit_number": 2,
+  "status": "implemented_internal_review",
+  "course_editorial_state": "pending",
+  "provisional_internal_authorization": "data/authoring_authorizations/bioinstrumentacion-unit-02-practices-provisional.json",
+  "external_professional_review_status": "pending_human_review",
+  "full_theory_drafting_authorized": false,
+  "authoral_unit_present": false,
+  "public_release_authorized": false,
+  "purpose": "Implementar y validar tres prácticas reproducibles de caracterización estática, respuesta dinámica y auditoría documental, usando únicamente datos sintéticos o metadatos compactos y sin alterar el estado editorial del curso.",
+  "practices": [
+    {
+      "id": "U2-P1",
+      "slug": "static-synthetic-characterization",
+      "title": "Banco sintético de características estáticas",
+      "entrypoint": "scripts/generate_bioinstrumentation_u2_static_dataset.py",
+      "default_command": "python scripts/generate_bioinstrumentation_u2_static_dataset.py --output-dir build/bioinstrumentacion-u2/static",
+      "runtime": "Python 3.11, biblioteca estándar",
+      "network_required": false,
+      "data_class": "deterministic_synthetic_only",
+      "models": ["linear-local", "saturation", "dead-zone", "hysteresis"],
+      "outputs": ["static_characteristics.csv", "static_characteristics_manifest.json"],
+      "acceptance_tests": [
+        "misma semilla y parámetros producen bytes idénticos",
+        "semilla distinta modifica únicamente el ruido sintético",
+        "el control lineal recupera K y b dentro de las tolerancias fijadas",
+        "la sensibilidad local de saturación disminuye en los extremos",
+        "la zona muerta conserva salida ideal constante dentro de |x| <= d",
+        "la separación media de ramas de histéresis recupera 2*h",
+        "un ajuste agrupado deja residuos sistemáticos opuestos por rama"
+      ],
+      "limitations": [
+        "curvas didácticas sin correspondencia automática con un mecanismo físico",
+        "no representan personas, tejidos, sensores o dispositivos reales",
+        "un ajuste alto no constituye validación completa",
+        "prohibidas inferencias clínicas, regulatorias, de seguridad o desempeño de dispositivos"
+      ]
+    },
+    {
+      "id": "U2-P2",
+      "slug": "first-order-dynamic-response",
+      "title": "Respuesta dinámica de primer orden y controles negativos",
+      "entrypoint": "scripts/generate_bioinstrumentation_u2_dynamic_dataset.py",
+      "default_command": "python scripts/generate_bioinstrumentation_u2_dynamic_dataset.py --output-dir build/bioinstrumentacion-u2/dynamic",
+      "runtime": "Python 3.11, biblioteca estándar",
+      "network_required": false,
+      "data_class": "deterministic_synthetic_only",
+      "continuous_model": "tau*dy/dt + y = K*x(t) + b",
+      "negative_controls": ["pure-delay", "underdamped-second-order", "static-only"],
+      "outputs": ["first_order_response.csv", "dynamic_negative_controls.csv", "dynamic_response_manifest.json"],
+      "acceptance_tests": [
+        "actualización discreta exacta para entrada constante por intervalo",
+        "fracción de cambio a tau compatible con 1-exp(-1)",
+        "estimación de tau dentro de 1 % sin ruido y 5 % con ruido fijado",
+        "respuesta positiva monótona y sin sobreimpulso",
+        "magnitud normalizada en f_c compatible con 1/sqrt(2)",
+        "retardo puro rechazado cuando el intervalo plano supera 5*dt",
+        "segundo orden rechazado cuando el sobreimpulso supera 1 %",
+        "curva estática rechazada por ausencia de eje temporal"
+      ],
+      "limitations": [
+        "la relación f_c = 1/(2*pi*tau) se limita al primer orden lineal y al criterio de -3 dB",
+        "tiempo de respuesta no es sinónimo universal de tau",
+        "no representa retardos, polos múltiples, ceros, saturación dinámica o sistemas distribuidos",
+        "los parámetros no describen personas, tejidos, sensores o dispositivos"
+      ]
+    },
+    {
+      "id": "U2-P3",
+      "slug": "datasheet-comparison-audit",
+      "title": "Auditoría comparativa offline de hojas de datos",
+      "entrypoint": "scripts/audit_bioinstrumentation_u2_datasheets.py",
+      "fixture": "data/practice_fixtures/bioinstrumentacion/unit-02/component-datasheet-records.json",
+      "default_command": "python scripts/audit_bioinstrumentation_u2_datasheets.py data/practice_fixtures/bioinstrumentacion/unit-02/component-datasheet-records.json --output build/bioinstrumentacion-u2/datasheet-audit.json",
+      "runtime": "Python 3.11, biblioteca estándar",
+      "network_required": false,
+      "data_class": "compact_documentary_metadata_only",
+      "components": ["NTCLG100E2103JB", "CEA-06-125UNA-350", "S5821-03"],
+      "outputs": ["datasheet-audit.json"],
+      "acceptance_tests": [
+        "conserva exactamente tres componentes fijados",
+        "separa valores nominales, típicos, máximos y no resueltos",
+        "cada campo conserva unidad o descriptor y condición de medida",
+        "el factor de galga específico del lote permanece explícitamente no resuelto",
+        "rechaza una condición ausente en una especificación dinámica",
+        "rechaza convertir un valor típico en garantía",
+        "conserva cinco transferencias prohibidas del componente al sistema"
+      ],
+      "limitations": [
+        "el fixture no reproduce hojas de datos completas",
+        "la auditoría valida estructura documental, no autenticidad o desempeño físico",
+        "las especificaciones no se transfieren automáticamente a una cadena completa",
+        "no demuestra seguridad, conformidad normativa o utilidad clínica"
+      ]
+    }
+  ],
+  "golden_hashes": {
+    "static_characteristics_csv_sha256": "b425bcbd836875926584269611c5a31ab31da7a7128f349eaf4c1844f88deb78",
+    "first_order_response_csv_sha256": "056f4c3ecf5d62530bda7f194ab9601c825a4caca5374b62173f538355b8deea",
+    "dynamic_negative_controls_csv_sha256": "9d972c959e382c6c9c337d5a7b64b16c491efad12cb55f00ef4021c9da1ed4ed",
+    "datasheet_audit_report_sha256": "ee01715f6d6b556ce6978d5f48310192d96dd203b213d5c3abd97ee0d9b352f2"
+  },
+  "validation": {
+    "entrypoint": "scripts/validate_bioinstrumentation_u2_practices.py",
+    "ci_step": "Validate Bioinstrumentation U2 practices",
+    "runs_offline": true,
+    "uses_temporary_directories": true,
+    "generated_outputs_tracked": false,
+    "negative_controls_required": true
+  },
+  "review_state": {
+    "internal_technical_validation": "implemented",
+    "disciplinary_review": "pending_human_review",
+    "external_professional_practice_authorization": false,
+    "student_cognitive_test": "pending",
+    "full_theory_drafting_authorized": false,
+    "unit_developed": false,
+    "public_release_authorized": false,
+    "course_state_after_block": "pending"
+  },
+  "editorial_effect": "internal_practice_implementation_only"
+}
