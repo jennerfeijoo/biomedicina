@@ -4,6 +4,7 @@
 **Workstream de prácticas:** `practice_implementation_review`  
 **Workstream de evaluación:** `assessment_implementation_review`  
 **Workstream de revisión humana:** `human_review_protocol_ready`  
+**Workstream de handoff disciplinar:** `disciplinary_review_handoff_ready`  
 **Estado editorial del curso:** `pending`  
 **Unidad desarrollada:** no  
 **Fecha:** 29 de julio de 2026
@@ -12,9 +13,9 @@
 
 **bloqueos técnicos resueltos:** caso de presión, modelo térmico sintético y registro de PhysioNet.
 
-La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos, dos prácticas cuentan con implementación reproducible, el sistema de evaluación cerrada dispone de diagnóstico y recuperación ejecutables y los gates humanos tienen protocolos y plantillas formales.
+La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos, dos prácticas cuentan con implementación reproducible, el sistema de evaluación cerrada dispone de diagnóstico y recuperación ejecutables, los gates humanos tienen protocolos formales y la revisión disciplinar dispone de un handoff auditable.
 
-La teoría completa todavía **no está autorizada**, porque falta revisión disciplinar humana documentada. La evidencia humana continúa pendiente: ni los fixtures sintéticos ni un workflow verde equivalen a una prueba cognitiva, una ronda de acuerdo entre revisores o una aprobación disciplinar.
+La teoría completa todavía **no está autorizada**, porque falta revisión disciplinar humana documentada. La evidencia humana continúa pendiente: ni los fixtures sintéticos, ni un manifiesto, ni un workflow verde equivalen a una prueba cognitiva, una ronda de acuerdo entre revisores o una aprobación disciplinar.
 
 ## Artefactos de preparación
 
@@ -24,10 +25,12 @@ La teoría completa todavía **no está autorizada**, porque falta revisión dis
 - `data/assessment_implementations/bioinstrumentacion-unit-01.json`
 - `data/assessment_implementations/bioinstrumentacion-unit-01-feedback.json`
 - `data/review_protocols/bioinstrumentacion-unit-01-human-review.json`
+- `data/review_handoffs/bioinstrumentacion-unit-01.json`
 - `data/source_registry/bioinstrumentacion-unit-01-blockers.json`
 - `data/source_registry/bioinstrumentacion-unit-01-review-methods.json`
 - `data/review_templates/bioinstrumentacion/unit-01/cognitive-session-template.json`
 - `data/review_templates/bioinstrumentacion/unit-01/inter-rater-round-template.json`
+- `data/review_templates/bioinstrumentacion/unit-01/disciplinary-review-decision-template.json`
 - `docs/pilots/bioinstrumentacion/unit-01/SOURCE_DOSSIER.md`
 - `docs/pilots/bioinstrumentacion/unit-01/CONCEPT_AND_VISUAL_MODEL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/ASSESSMENT_AND_FEEDBACK_BLUEPRINT.md`
@@ -41,6 +44,7 @@ La teoría completa todavía **no está autorizada**, porque falta revisión dis
 - `docs/pilots/bioinstrumentacion/unit-01/COGNITIVE_TEST_PROTOCOL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/INTER_RATER_AGREEMENT_PROTOCOL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/DISCIPLINARY_REVIEW_REQUEST.md`
+- `docs/pilots/bioinstrumentacion/unit-01/REVIEW_HANDOFF_AND_AUTHORIZATION.md`
 
 ## Aspectos resueltos
 
@@ -79,6 +83,21 @@ El acuerdo entre revisores dispone de:
 
 Las plantillas vacías prohíben identificadores directos, datos clínicos y respuestas reales dentro del repositorio. El calculador está implementado, pero las sesiones y rondas reales no se han ejecutado.
 
+### Handoff disciplinar
+
+La revisión inicial dispone ahora de:
+
+- contrato de artefactos obligatorios;
+- generador determinista de manifiesto SHA-256;
+- plantilla estructurada de decisión;
+- evaluador de autorización;
+- rechazo explícito de aprobaciones sintéticas, plantillas y actores de CI;
+- separación entre autorización de redacción, unidad desarrollada y promoción del curso.
+
+Solo `approve_for_controlled_drafting`, sobre un commit y un digest coincidentes, con puntuaciones mínimas, ausencia de hallazgos críticos y confirmación humana verificable, puede autorizar redacción controlada. `approve_with_changes` y `do_not_approve` mantienen la redacción bloqueada.
+
+Actualmente no existen registros en `data/review_evidence/`; por tanto, el estado sigue `pending_human_review`.
+
 ### Caso de presión
 
 **Resuelto internamente para autoría.** El caso diferencia:
@@ -106,7 +125,7 @@ El modelo de primer orden dispone de pruebas automáticas de determinismo, conve
 
 ### Reproducibilidad
 
-Las prácticas, el sistema de evaluación y el calculador de acuerdo utilizan únicamente la biblioteca estándar de Python. CI trabaja sin red, genera resultados en directorios temporales y rechaza fixtures, submissions o matrices inconsistentes. Los resultados de estudiantes, participantes y revisores no se versionan.
+Las prácticas, el sistema de evaluación, el calculador de acuerdo, el generador de manifiestos y el evaluador de autorización utilizan únicamente la biblioteca estándar de Python. CI trabaja sin red, genera resultados en directorios temporales y rechaza fixtures, submissions, matrices o decisiones inconsistentes. Los resultados de estudiantes, participantes y revisores no se versionan.
 
 ### Fuentes
 
@@ -136,11 +155,12 @@ La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST T
 - [x] Evaluación cerrada y feedback recuperativo implementados y probados en CI.
 - [x] Protocolo de prueba cognitiva formalizado.
 - [x] Protocolo de acuerdo entre revisores formalizado.
+- [x] Handoff disciplinar y gate de autorización formalizados.
 - [ ] Ejecución de prueba cognitiva con participante humano.
 - [ ] Ejecución de ronda independiente con dos revisores.
 - [ ] Revisión disciplinar humana inicial.
 
-La redacción completa solo puede comenzar cuando la revisión disciplinar humana inicial esté documentada mediante el paquete de revisión. La prueba cognitiva y el acuerdo entre revisores forman parte del gate pedagógico posterior y no pueden marcarse como realizados mediante datos sintéticos.
+La redacción completa solo puede comenzar cuando la revisión disciplinar humana inicial esté documentada mediante un paquete congelado y el evaluador produzca `authorized_for_controlled_drafting`. La prueba cognitiva y el acuerdo entre revisores forman parte del gate pedagógico posterior y no pueden marcarse como realizados mediante datos sintéticos.
 
 ## Gate antes de considerar la unidad desarrollada
 
@@ -168,6 +188,6 @@ Después de fusionar este bloque:
 - dos prácticas serán ejecutables y auditables offline;
 - la evaluación cerrada y el feedback serán ejecutables;
 - las respuestas abiertas seguirán bajo rúbrica humana;
-- los protocolos humanos estarán listos, pero sin evidencia ejecutada;
+- los protocolos humanos y el handoff disciplinar estarán listos, pero sin evidencia ejecutada;
 - la revisión disciplinar, la prueba cognitiva y el acuerdo real seguirán abiertos;
 - la teoría completa continuará bloqueada.
