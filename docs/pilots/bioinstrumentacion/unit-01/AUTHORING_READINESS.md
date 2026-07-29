@@ -3,6 +3,7 @@
 **Estado de preparación base:** `authoring_preparation_review`  
 **Workstream de prácticas:** `practice_implementation_review`  
 **Workstream de evaluación:** `assessment_implementation_review`  
+**Workstream de revisión humana:** `human_review_protocol_ready`  
 **Estado editorial del curso:** `pending`  
 **Unidad desarrollada:** no  
 **Fecha:** 29 de julio de 2026
@@ -11,9 +12,9 @@
 
 **bloqueos técnicos resueltos:** caso de presión, modelo térmico sintético y registro de PhysioNet.
 
-La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos, dos prácticas cuentan con implementación reproducible y el sistema de evaluación cerrada dispone de diagnóstico y recuperación ejecutables.
+La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos, dos prácticas cuentan con implementación reproducible, el sistema de evaluación cerrada dispone de diagnóstico y recuperación ejecutables y los gates humanos tienen protocolos y plantillas formales.
 
-La teoría completa todavía **no está autorizada**, porque falta revisión disciplinar humana documentada.
+La teoría completa todavía **no está autorizada**, porque falta revisión disciplinar humana documentada. La evidencia humana continúa pendiente: ni los fixtures sintéticos ni un workflow verde equivalen a una prueba cognitiva, una ronda de acuerdo entre revisores o una aprobación disciplinar.
 
 ## Artefactos de preparación
 
@@ -22,7 +23,11 @@ La teoría completa todavía **no está autorizada**, porque falta revisión dis
 - `data/practice_implementations/bioinstrumentacion-unit-01.json`
 - `data/assessment_implementations/bioinstrumentacion-unit-01.json`
 - `data/assessment_implementations/bioinstrumentacion-unit-01-feedback.json`
+- `data/review_protocols/bioinstrumentacion-unit-01-human-review.json`
 - `data/source_registry/bioinstrumentacion-unit-01-blockers.json`
+- `data/source_registry/bioinstrumentacion-unit-01-review-methods.json`
+- `data/review_templates/bioinstrumentacion/unit-01/cognitive-session-template.json`
+- `data/review_templates/bioinstrumentacion/unit-01/inter-rater-round-template.json`
 - `docs/pilots/bioinstrumentacion/unit-01/SOURCE_DOSSIER.md`
 - `docs/pilots/bioinstrumentacion/unit-01/CONCEPT_AND_VISUAL_MODEL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/ASSESSMENT_AND_FEEDBACK_BLUEPRINT.md`
@@ -33,6 +38,8 @@ La teoría completa todavía **no está autorizada**, porque falta revisión dis
 - `docs/pilots/bioinstrumentacion/unit-01/PHYSIONET_RECORD_100_SPEC.md`
 - `docs/pilots/bioinstrumentacion/unit-01/PRACTICE_IMPLEMENTATION.md`
 - `docs/pilots/bioinstrumentacion/unit-01/ASSESSMENT_IMPLEMENTATION.md`
+- `docs/pilots/bioinstrumentacion/unit-01/COGNITIVE_TEST_PROTOCOL.md`
+- `docs/pilots/bioinstrumentacion/unit-01/INTER_RATER_AGREEMENT_PROTOCOL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/DISCIPLINARY_REVIEW_REQUEST.md`
 
 ## Aspectos resueltos
@@ -55,6 +62,22 @@ La implementación ejecutable incorpora:
 - rúbricas humanas con criterios críticos para `U1-A2`, `U1-A3` y `U1-A5`.
 
 CI comprueba que el feedback no revela `correct_category`, `expected_decision`, una clave de respuesta ni una solución completa. Esta validación resuelve el riesgo técnico de feedback limitado a mostrar respuestas, pero no sustituye una prueba de usabilidad con estudiantes.
+
+### Protocolos humanos
+
+La prueba cognitiva está formalizada para estudiar comprensión de instrucciones, selección de respuesta, utilidad de pistas y transferencia a un problema de recuperación diferente. La selección es intencional para detectar problemas y no pretende estimar rendimiento poblacional.
+
+El acuerdo entre revisores dispone de:
+
+- puntuación ordinal 0–2;
+- acuerdo exacto y diferencia absoluta media;
+- kappa ponderado lineal;
+- análisis separado de flags críticos;
+- matriz de confusión y listado de desacuerdos;
+- umbrales internos declarados, no presentados como estándares universales;
+- control sintético positivo y negativo.
+
+Las plantillas vacías prohíben identificadores directos, datos clínicos y respuestas reales dentro del repositorio. El calculador está implementado, pero las sesiones y rondas reales no se han ejecutado.
 
 ### Caso de presión
 
@@ -83,18 +106,18 @@ El modelo de primer orden dispone de pruebas automáticas de determinismo, conve
 
 ### Reproducibilidad
 
-Las prácticas y el sistema de evaluación utilizan únicamente la biblioteca estándar de Python. CI trabaja sin red, genera resultados en directorios temporales y rechaza fixtures o submissions inconsistentes. Los resultados de estudiantes y datasets generados no se versionan.
+Las prácticas, el sistema de evaluación y el calculador de acuerdo utilizan únicamente la biblioteca estándar de Python. CI trabaja sin red, genera resultados en directorios temporales y rechaza fixtures, submissions o matrices inconsistentes. Los resultados de estudiantes, participantes y revisores no se versionan.
 
 ### Fuentes
 
-La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST TN 2156. La resolución de bloqueos incorpora statements AHA, literatura sobre termometría de contacto y documentación oficial de PhysioNet. El fixture conserva DOI, versión y licencia.
+La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST TN 2156. La resolución de bloqueos incorpora statements AHA, literatura sobre termometría de contacto y documentación oficial de PhysioNet. El protocolo humano añade documentación oficial de CDC/CCQDER y Census sobre evaluación cognitiva, además de las publicaciones originales de Cohen sobre kappa nominal y ponderado.
 
 ## Riesgos abiertos
 
 1. Falta revisión disciplinar humana por una persona competente en metrología e instrumentación biomédica.
-2. Falta una prueba cognitiva con una persona del perfil objetivo.
-3. Falta revisar la usabilidad y dificultad de las pistas y problemas de recuperación.
-4. Falta comprobar acuerdo entre revisores al aplicar las rúbricas humanas.
+2. Falta ejecutar la prueba cognitiva con una persona del perfil objetivo.
+3. Falta revisar empíricamente la usabilidad y dificultad de las pistas y problemas de recuperación.
+4. Falta ejecutar una ronda independiente con dos revisores y resolver sus desacuerdos.
 5. Las prácticas están validadas técnicamente, pero aún no han sido probadas por estudiantes ni revisadas externamente.
 6. La teoría completa todavía no ha sido redactada ni auditada.
 
@@ -111,9 +134,13 @@ La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST T
 - [x] Registro de PhysioNet fijado y comprobado documentalmente.
 - [x] Dos prácticas implementadas y ejecutadas en un entorno limpio de CI.
 - [x] Evaluación cerrada y feedback recuperativo implementados y probados en CI.
+- [x] Protocolo de prueba cognitiva formalizado.
+- [x] Protocolo de acuerdo entre revisores formalizado.
+- [ ] Ejecución de prueba cognitiva con participante humano.
+- [ ] Ejecución de ronda independiente con dos revisores.
 - [ ] Revisión disciplinar humana inicial.
 
-La redacción completa solo puede comenzar cuando el último punto esté documentado mediante el paquete de revisión. Un workflow verde no sustituye esa revisión.
+La redacción completa solo puede comenzar cuando la revisión disciplinar humana inicial esté documentada mediante el paquete de revisión. La prueba cognitiva y el acuerdo entre revisores forman parte del gate pedagógico posterior y no pueden marcarse como realizados mediante datos sintéticos.
 
 ## Gate antes de considerar la unidad desarrollada
 
@@ -141,5 +168,6 @@ Después de fusionar este bloque:
 - dos prácticas serán ejecutables y auditables offline;
 - la evaluación cerrada y el feedback serán ejecutables;
 - las respuestas abiertas seguirán bajo rúbrica humana;
-- la revisión disciplinar y la prueba cognitiva seguirán abiertas;
+- los protocolos humanos estarán listos, pero sin evidencia ejecutada;
+- la revisión disciplinar, la prueba cognitiva y el acuerdo real seguirán abiertos;
 - la teoría completa continuará bloqueada.
