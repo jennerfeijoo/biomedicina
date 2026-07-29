@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 AUTH_PATH = ROOT / "data" / "authoring_authorizations" / "bioinstrumentacion-unit-02-practices-provisional.json"
 INHERITED_AUTH_PATH = ROOT / "data" / "authoring_authorizations" / "bioinstrumentacion-unit-01-provisional.json"
 HANDOFF_PATH = ROOT / "data" / "review_handoffs" / "bioinstrumentacion-unit-02.json"
+PACKAGE_PATH = ROOT / "data" / "course_plan_packages" / "package-04-bioinstrumentation-excellence-pilot.json"
 STATUS_PATH = ROOT / "data" / "catalog_statuses.json"
 DOC_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "unit-02" / "PROVISIONAL_PRACTICE_IMPLEMENTATION_AUTHORIZATION.md"
 READINESS_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "unit-02" / "AUTHORING_READINESS.md"
@@ -197,6 +198,75 @@ def validate_external_gate(auth: dict[str, Any]) -> None:
         raise ValueError("revocation contract is incorrect")
 
 
+def validate_package_state(auth: dict[str, Any]) -> None:
+    package = load_json(PACKAGE_PATH)
+    if package.get("schema_version") != "1.9":
+        raise ValueError("central package schema version is not synchronized")
+    expected_workstreams = {
+        "unit_02_preparation_workstream": "unit_02_authoring_preparation_review",
+        "unit_02_blocker_workstream": "unit_02_technical_blockers_resolved_review_pending",
+        "unit_02_review_handoff_workstream": "unit_02_disciplinary_review_handoff_ready",
+        "unit_02_provisional_practice_workstream": "unit_02_practice_implementation_authorized_provisionally",
+    }
+    for field, wanted in expected_workstreams.items():
+        if package.get(field) != wanted:
+            raise ValueError(f"central package {field} is not synchronized")
+
+    preparation = package.get("unit_02_preparation")
+    if not isinstance(preparation, dict):
+        raise ValueError("central package lacks Unit 2 preparation")
+    if preparation.get("status") != "authoring_preparation_review":
+        raise ValueError("central package changed Unit 2 preparation status")
+    if preparation.get("practice_implementation_present") is not False:
+        raise ValueError("authorization block claims Unit 2 practices are already implemented")
+    if preparation.get("authoral_unit_present") is not False:
+        raise ValueError("central package claims a Unit 2 authoral file")
+
+    blockers = package.get("unit_02_blocker_resolution")
+    if not isinstance(blockers, dict) or blockers.get("technical_blockers_resolved") is not True:
+        raise ValueError("central package does not preserve resolved Unit 2 blockers")
+    if blockers.get("practice_implementation_authorized_professionally") is not False:
+        raise ValueError("central package fabricates professional practice authorization")
+
+    handoff = package.get("unit_02_disciplinary_review_handoff")
+    if not isinstance(handoff, dict):
+        raise ValueError("central package lacks Unit 2 handoff")
+    if handoff.get("status") != "ready_pending_external_review":
+        raise ValueError("central package changed external review status")
+    if handoff.get("operational_issue") != EXPECTED_ISSUE:
+        raise ValueError("central package external issue is incorrect")
+    if handoff.get("human_evidence_present") is not False:
+        raise ValueError("central package fabricates human evidence")
+    if handoff.get("practice_implementation_authorized_professionally") is not False:
+        raise ValueError("central package fabricates professional approval")
+
+    section = package.get("unit_02_provisional_practice_authorization")
+    expected_section = {
+        "status": "authorized_for_controlled_practice_implementation_provisionally",
+        "record": str(AUTH_PATH.relative_to(ROOT)),
+        "document": str(DOC_PATH.relative_to(ROOT)),
+        "validation": "scripts/validate_bioinstrumentation_u2_provisional_practice_authorization.py",
+        "authority": "project_owner_continuation_override",
+        "technical_basis_commit": EXPECTED_BASE_COMMIT,
+        "operational_issue": EXPECTED_ISSUE,
+        "practice_ids": ["U2-P1", "U2-P2", "U2-P3"],
+        "controlled_internal_practice_implementation_authorized": True,
+        "external_professional_review_status": "pending_human_review",
+        "professional_endorsement_present": False,
+        "full_theory_drafting_authorized": False,
+        "authoral_unit_present": False,
+        "public_release_authorized": False,
+        "unit_developed": False,
+        "course_state": "pending",
+        "editorial_effect": "internal_practice_implementation_only",
+    }
+    if section != expected_section:
+        raise ValueError("central package provisional practice section is incorrect")
+
+    if auth.get("status") != section.get("status"):
+        raise ValueError("authorization record and central package disagree")
+
+
 def validate_repository_state(auth: dict[str, Any]) -> None:
     inherited = load_json(INHERITED_AUTH_PATH)
     if inherited.get("authority", {}).get("project_owner") != "jennerfeijoo":
@@ -269,6 +339,7 @@ def main() -> int:
         validate_authority(auth)
         validate_scope(auth)
         validate_external_gate(auth)
+        validate_package_state(auth)
         validate_repository_state(auth)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
