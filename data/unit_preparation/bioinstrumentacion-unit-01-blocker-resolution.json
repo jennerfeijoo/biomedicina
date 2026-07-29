@@ -1,0 +1,174 @@
+{
+  "schema_version": "1.0",
+  "subject_id": "bioinstrumentacion",
+  "unit_number": 1,
+  "title": "Resolución de bloqueos técnicos para autoría de la Unidad 1",
+  "status": "technical_blockers_resolved_review_pending",
+  "resolved_on": "2026-07-29",
+  "course_editorial_state": "pending",
+  "source_registry": "data/source_registry/bioinstrumentacion-unit-01-blockers.json",
+  "pressure_case": {
+    "status": "resolved_for_authoring",
+    "decision": "El caso no utilizará 'presión arterial' como una única cantidad intercambiable. Presentará mensurandos y resultados distintos según sitio, referencia, intervalo temporal y método.",
+    "measurand_variants": [
+      {
+        "id": "intraarterial-waveform",
+        "measurand": "Presión intravascular en un sitio arterial especificado, referida a un nivel de transductor documentado y expresada como función del tiempo durante un intervalo definido.",
+        "method_relation": "El sistema invasivo transmite presión mediante una interfaz hidráulica y un transductor; el resultado depende de nivelación, referencia, dinámica y cadena de medición.",
+        "reporting_boundary": "No se equipara automáticamente con una lectura de manguito ni con un diagnóstico."
+      },
+      {
+        "id": "brachial-auscultatory-estimate",
+        "measurand": "Estimaciones de presión sistólica y diastólica asociadas a medición auscultatoria sobre la arteria braquial, bajo postura, posición del brazo, manguito y protocolo especificados.",
+        "method_relation": "Los valores se infieren a partir de eventos acústicos durante la deflación del manguito; no constituyen una medición continua de la forma de onda intraarterial.",
+        "reporting_boundary": "El resultado debe declarar método, brazo, postura, momento y condiciones."
+      },
+      {
+        "id": "brachial-oscillometric-estimate",
+        "measurand": "Estimaciones oscilométricas de presión sistólica y diastólica producidas por un dispositivo de manguito en el brazo, bajo condiciones documentadas.",
+        "method_relation": "El dispositivo registra oscilaciones del manguito y aplica un algoritmo para producir estimaciones; la indicación y el algoritmo forman parte del modelo de medición.",
+        "reporting_boundary": "No se presenta la salida como presión arterial directa ni se supone intercambiabilidad entre algoritmos o dispositivos."
+      }
+    ],
+    "required_metadata": [
+      "sitio anatómico o territorio arterial",
+      "método de medición o estimación",
+      "postura y nivel del brazo o del transductor",
+      "tamaño y posición del manguito cuando corresponda",
+      "intervalo temporal y regla de agregación",
+      "unidad, dispositivo, versión o algoritmo cuando sea relevante",
+      "condiciones de reposo, movimiento y entorno",
+      "incertidumbre o limitación disponible"
+    ],
+    "influence_quantities": [
+      "posición del cuerpo",
+      "altura relativa respecto del nivel de referencia",
+      "dimensiones y colocación del manguito",
+      "movimiento",
+      "ritmo y variabilidad temporal",
+      "estado del sistema de medición",
+      "algoritmo y calibración del dispositivo"
+    ],
+    "forbidden_equivalences": [
+      "presión intraarterial = estimación por manguito",
+      "presión del manguito = presión sistólica o diastólica sin modelo",
+      "señal PPG o tiempo de tránsito = presión arterial",
+      "un número etiquetado BP = mensurando completamente especificado",
+      "resultado técnicamente plausible = interpretación clínica"
+    ],
+    "source_ids": [
+      "aha-bp-measurement-2019",
+      "aha-acc-high-bp-guideline-2025",
+      "aha-cuffless-bp-2026"
+    ]
+  },
+  "thermal_model": {
+    "status": "resolved_for_synthetic_dataset_design",
+    "decision": "La práctica utilizará un modelo didáctico de primer orden que separa superficie no perturbada, superficie perturbada por contacto y temperatura del sensor. No se presentará como modelo fisiológico validado.",
+    "states": [
+      {
+        "symbol": "T_u(t)",
+        "name": "temperatura superficial no perturbada",
+        "role": "señal sintética prescrita que representa el estado de la superficie antes de colocar el sistema de medición"
+      },
+      {
+        "symbol": "T_d(t)",
+        "name": "temperatura superficial perturbada",
+        "role": "estado local de la superficie después de incorporar la perturbación sintética causada por contacto, fijación y gradiente con el entorno"
+      },
+      {
+        "symbol": "T_s(t)",
+        "name": "temperatura del sensor",
+        "role": "estado dinámico interno del elemento sensible que responde con retardo a la superficie perturbada y no representa directamente el mensurando"
+      },
+      {
+        "symbol": "y(t)",
+        "name": "indicación simulada",
+        "role": "salida observable de la cadena después de añadir offset de calibración y ruido sintético a la temperatura dinámica del sensor"
+      }
+    ],
+    "model": {
+      "disturbance_relation": "T_d(t) = T_u(t) + b_contact(t)",
+      "dynamic_relation": "dT_s/dt = (T_d(t) - T_s(t)) / tau",
+      "indication_relation": "y(t) = T_s(t) + b_cal + epsilon(t)",
+      "constraints": [
+        "tau > 0",
+        "b_contact, b_cal y epsilon se documentan por separado",
+        "los parámetros son sintéticos y no se atribuyen a una población o dispositivo real",
+        "el modelo no incluye perfusión, evaporación, geometría distribuida ni no linealidades salvo que se declaren como extensiones"
+      ]
+    },
+    "didactic_scenarios": [
+      "escalón térmico sin perturbación ni ruido para verificar la constante de tiempo",
+      "contacto que modifica T_d respecto de T_u",
+      "dos sensores con igual calibración estática y distinta tau",
+      "offset de calibración separado del retardo dinámico",
+      "gradiente ambiente-superficie que cambia el sesgo de contacto"
+    ],
+    "acceptance_tests": [
+      "con entrada constante y sin ruido, T_s converge hacia T_d",
+      "a un tiempo tau después de un escalón, la respuesta alcanza aproximadamente 63.2 % del cambio total",
+      "a cinco constantes de tiempo, la respuesta supera 99 % del cambio total en el caso ideal",
+      "el modelo ideal de primer orden no produce sobreimpulso",
+      "la semilla aleatoria, unidades, parámetros y ecuaciones quedan registradas",
+      "el código conserva T_u, T_d, T_s e y como variables distintas",
+      "ningún parámetro se describe como valor fisiológico universal"
+    ],
+    "source_ids": [
+      "macrae-thermal-skin-model-2021",
+      "rudtsch-contact-thermometer-dynamics-2019"
+    ]
+  },
+  "physionet_record": {
+    "status": "resolved_and_pinned",
+    "database": "MIT-BIH Arrhythmia Database",
+    "version": "1.0.0",
+    "doi": "10.13026/C2F305",
+    "record": "100",
+    "required_files": ["100.hea", "100.dat"],
+    "optional_files": ["100.atr"],
+    "header_snapshot": "100 2 360 650000 100.dat 212 200 11 1024 995 -22131 0 MLII 100.dat 212 200 11 1024 1011 20052 0 V5 # 69 M 1085 1629 x1 # Aldomet, Inderal",
+    "expected_metadata": {
+      "signal_count": 2,
+      "sampling_frequency_hz": 360,
+      "sample_count": 650000,
+      "channel_labels": ["MLII", "V5"],
+      "record_format_token": "212",
+      "license": "Open Data Commons Attribution License v1.0"
+    },
+    "practice_scope": [
+      "leer el encabezado mediante una biblioteca WFDB o parser equivalente",
+      "comparar metadatos declarados y extraídos",
+      "documentar versión, DOI, archivos, frecuencia, canales, unidades reportadas y licencia",
+      "detectar metadatos ausentes o asumidos",
+      "producir un diccionario de datos reproducible"
+    ],
+    "forbidden_uses": [
+      "clasificar arritmias",
+      "interpretar ondas o intervalos clínicamente",
+      "inferir diagnóstico o riesgo",
+      "comparar sujetos",
+      "usar anotaciones como etiquetas para un modelo clínico en esta unidad"
+    ],
+    "source_ids": ["physionet-mitdb-record-100"]
+  },
+  "disciplinary_review": {
+    "status": "pending_human_review",
+    "review_packet": "docs/pilots/bioinstrumentacion/unit-01/DISCIPLINARY_REVIEW_REQUEST.md",
+    "required_competence": [
+      "metrología o ciencia de la medición",
+      "instrumentación biomédica o ingeniería clínica con experiencia de medición",
+      "capacidad para revisar límites entre desempeño técnico e interpretación clínica"
+    ],
+    "decision_options": ["approve_for_controlled_drafting", "approve_with_changes", "do_not_approve"],
+    "prohibition": "La existencia de esta solicitud, de CI verde o de revisión interna no equivale a aprobación disciplinar."
+  },
+  "editorial_decision": {
+    "technical_blockers_resolved": true,
+    "human_review_completed": false,
+    "full_theory_drafting_authorized": false,
+    "unit_developed": false,
+    "course_state_after_block": "pending",
+    "next_gate": "Obtener y documentar revisión disciplinar humana antes de autorizar la redacción completa."
+  }
+}
