@@ -238,7 +238,7 @@ def validate_repository_state() -> None:
     package = load_json(PACKAGE_PATH)
     if package.get("current_phase") != "unit_01_authoring_preparation_review":
         raise ValueError("historical preparation phase changed")
-    if package.get("active_workstream") != "unit_01_assessment_implementation_review":
+    if package.get("assessment_workstream") != "unit_01_assessment_implementation_review":
         raise ValueError("assessment workstream is not synchronized")
     assessment = package.get("assessment_implementation")
     if not isinstance(assessment, dict):
