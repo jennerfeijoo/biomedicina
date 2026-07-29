@@ -42,6 +42,18 @@ La compilación:
 - produce bytes deterministas;
 - permite comprobar sincronización mediante `--check`.
 
+## Artefacto canónico sincronizado
+
+El workflow de sincronización compiló y versionó `data/course_redevelopment/bioinstrumentacion/units/unit-01.json` después de validar el sitio público con el borrador aislado. Por tanto, la generación del artefacto canónico no promovió páginas, descriptores ni unidades públicas.
+
+La comprobación reproducible es:
+
+```bash
+python scripts/build_bioinstrumentation_u1_authoral_unit.py --check
+```
+
+El comando debe confirmar que la representación canónica coincide byte a byte con los fragmentos fuente.
+
 ## Cobertura teórica
 
 El gate exige **2.200 palabras teóricas** como mínimo. La unidad se organiza en seis secciones:
