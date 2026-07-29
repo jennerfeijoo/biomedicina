@@ -81,6 +81,21 @@ jobs:
       - name: Validate Bioinstrumentation U2 assessment
         run: python scripts/validate_bioinstrumentation_u2_assessment.py
 
+      - name: Normalize Bioinstrumentation pilot package
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("data/course_plan_packages/package-04-bioinstrumentation-excellence-pilot.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          path.write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
       - name: Upload synchronization diagnostic
         if: always()
         uses: actions/upload-artifact@v4
@@ -95,6 +110,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A -- \
+            data/course_plan_packages/package-04-bioinstrumentation-excellence-pilot.json \
             data/course_redevelopment/bioinstrumentacion/units/unit-01.json \
             ciencias-basicas \
             biologicas-medicas \
@@ -102,7 +118,7 @@ jobs:
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El sitio generado y la unidad autoral ya están sincronizados."
+            echo "El sitio generado y los artefactos deterministas ya están sincronizados."
             exit 0
           fi
           git commit -m "Synchronize deterministic site generation"
