@@ -1,6 +1,7 @@
 # Readiness de autoría — Bioinstrumentación, Unidad 1
 
-**Estado del bloque:** `practice_implementation_review`  
+**Estado de preparación base:** `authoring_preparation_review`  
+**Workstream activo:** `practice_implementation_review`  
 **Estado editorial del curso:** `pending`  
 **Unidad desarrollada:** no  
 **Fecha:** 29 de julio de 2026
