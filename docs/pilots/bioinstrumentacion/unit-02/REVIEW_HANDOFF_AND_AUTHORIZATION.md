@@ -1,8 +1,8 @@
 # Paquete de entrega y autorización · Bioinstrumentación Unidad 2
 
-**Estado:** `ready_pending_external_review`  
-**Decisión actual:** `pending_human_review`  
-**Implementación de prácticas autorizada:** no  
+**Estado del handoff:** `ready_pending_external_review`  
+**Decisión profesional actual:** `pending_human_review`  
+**Implementación interna de prácticas:** `authorized_provisionally_by_project_owner`  
 **Teoría completa autorizada:** no  
 **Estado editorial del curso:** `pending`
 
@@ -10,7 +10,7 @@
 
 Este bloque convierte la solicitud de revisión disciplinar en un proceso ejecutable y auditable. Una persona revisora competente podrá congelar un conjunto explícito de artefactos, revisar exactamente ese contenido y emitir una decisión limitada sobre la implementación de las prácticas U2-P1, U2-P2 y U2-P3.
 
-El handoff no implementa prácticas, no redacta teoría, no publica contenido y no desarrolla la unidad.
+El handoff no implementa prácticas, no redacta teoría, no publica contenido y no desarrolla la unidad. Una autorización provisional separada del propietario permite entretanto la implementación interna y controlada, sin alterar el estado profesional del handoff.
 
 ## Contrato autoritativo
 
@@ -26,7 +26,7 @@ Define:
 - las categorías de competencia aceptadas;
 - las dimensiones de puntuación;
 - las decisiones posibles;
-- la regla exacta de autorización;
+- la regla exacta de autorización profesional;
 - los límites editoriales que permanecen bloqueados.
 
 ## Congelación del paquete
@@ -89,7 +89,7 @@ No deben almacenarse datos personales innecesarios.
 
 ### `approve_for_practice_implementation`
 
-Autoriza exclusivamente implementar las prácticas:
+Autoriza profesionalmente y exclusivamente implementar las prácticas:
 
 - U2-P1: banco sintético de características estáticas;
 - U2-P2: respuesta dinámica de primer orden;
@@ -99,11 +99,11 @@ Solo autoriza si todas las dimensiones obtienen al menos 4 de 5, no existen hall
 
 ### `approve_with_changes`
 
-Mantiene bloqueada la implementación hasta resolver y volver a revisar los cambios obligatorios.
+Mantiene bloqueada la autorización profesional hasta resolver y volver a revisar los cambios obligatorios.
 
 ### `do_not_approve`
 
-Mantiene bloqueado el bloque de prácticas.
+Mantiene bloqueada la autorización profesional del bloque de prácticas.
 
 ## Evaluador
 
@@ -122,7 +122,7 @@ python scripts/evaluate_bioinstrumentation_u2_practice_authorization.py \
   --require-authorization
 ```
 
-La autorización solo puede resultar verdadera cuando coinciden:
+La autorización profesional solo puede resultar verdadera cuando coinciden:
 
 1. handoff;
 2. commit;
@@ -140,19 +140,49 @@ El repositorio incluye un fixture sintético que reclama aprobación con puntuac
 - `human_evidence` es falso;
 - el actor es `ci_fixture`, no `human_reviewer`.
 
-También verifica que `approve_with_changes` nunca autorice prácticas.
+También verifica que `approve_with_changes` nunca produzca autorización profesional.
 
-## Límite de autorización
+## Autorización provisional del propietario
 
-Una decisión válida de este handoff:
+El registro separado es:
 
-- puede autorizar implementación reproducible de las tres prácticas;
-- no autoriza la teoría completa;
-- no crea `unit-02.json`;
-- no publica páginas;
-- no promueve el curso a `developed` o `complete`;
-- no demuestra exactitud de un dispositivo real;
-- no valida seguridad, conformidad normativa o utilidad clínica;
-- no autoriza adquisición con personas, muestras o equipos clínicos.
+```text
+data/authoring_authorizations/bioinstrumentacion-unit-02-practices-provisional.json
+```
 
-Hasta que existan el manifiesto y la decisión humana válidos, el estado debe seguir siendo `pending_human_review` y `practice_implementation_authorized: false`.
+Su estado es:
+
+```text
+authorized_for_controlled_practice_implementation_provisionally
+```
+
+Este override interno permite implementar y probar U2-P1, U2-P2 y U2-P3 con datos exclusivamente sintéticos o documentales. Se basa en la instrucción contextual del propietario de continuar el siguiente bloque previamente identificado.
+
+No cambia el contenido de `data/review_handoffs/bioinstrumentacion-unit-02.json`, no crea una decisión humana y no debe registrarse como `approve_for_practice_implementation`. La revisión profesional continúa abierta en el issue `#161`.
+
+## Límite de ambas rutas
+
+Una decisión humana válida o la autorización provisional interna:
+
+- pueden habilitar implementación reproducible dentro de su alcance declarado;
+- no autorizan la teoría completa;
+- no crean `unit-02.json`;
+- no publican páginas;
+- no promueven el curso a `developed` o `complete`;
+- no demuestran exactitud de un dispositivo real;
+- no validan seguridad, conformidad normativa o utilidad clínica;
+- no autorizan adquisición con personas, muestras o equipos clínicos.
+
+## Estado vigente
+
+```text
+external_professional_review: pending_human_review
+external_professional_practice_authorization: false
+provisional_internal_practice_authorization: true
+full_theory_drafting_authorized: false
+unit_developed: false
+public_release_authorized: false
+course_state: pending
+```
+
+La implementación interna puede continuar bajo el override provisional. Cualquier afirmación de aprobación profesional permanece bloqueada hasta que existan manifiesto y decisión humana válidos.
