@@ -70,6 +70,8 @@ Su estado continúa `ready_pending_external_review`, y la revisión operativa se
 
 La autorización provisional no modifica el handoff ni simula su decisión. Una revisión humana futura puede confirmar, limitar, exigir cambios o revocar el alcance interno. El manifiesto, CI, fixtures sintéticos y esta autorización no equivalen a evidencia humana.
 
+No debe describirse como revisión humana, aprobación profesional, validación institucional, autorización clínica, conformidad normativa ni evidencia de seguridad.
+
 ## Estado resultante
 
 ```text
