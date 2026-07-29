@@ -1,22 +1,48 @@
 #!/usr/bin/env python3
-"""Deterministic assessment routing for Bioinstrumentation unit 1."""
+"""Run deterministic assessment routing for Bioinstrumentation unit 1."""
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+
+from bioinstrumentation_assessment_core import (
+    AssessmentError,
+    evaluate_submission,
+    load_json,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_IMPLEMENTATION = ROOT / "data" / "assessment_implementations" / "bioinstrumentacion-unit-01.json"
+DEFAULT_IMPLEMENTATION = (
+    ROOT / "data" / "assessment_implementations" / "bioinstrumentacion-unit-01.json"
+)
 
 
-class AssessmentError(ValueError):
-    pass
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("submission", type=Path)
+    parser.add_argument("--implementation", type=Path, default=DEFAULT_IMPLEMENTATION)
+    parser.add_argument("--output", type=Path)
+    return parser
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise AssessmentError(f"{path} must contain an object")
-    return data
+def main() -> int:
+    args = build_parser().parse_args()
+    try:
+        implementation = load_json(args.implementation)
+        submission = load_json(args.submission)
+        result = evaluate_submission(submission, implementation)
+    except (OSError, AssessmentError) as exc:
+        raise SystemExit(f"ERROR: {exc}") from exc
+
+    payload = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(payload, encoding="utf-8")
+    else:
+        print(payload, end="")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
