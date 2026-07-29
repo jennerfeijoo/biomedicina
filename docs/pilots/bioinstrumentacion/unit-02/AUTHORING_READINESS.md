@@ -25,6 +25,10 @@ feedback_usability_review: pending
 scientific_editorial_audit: passed_with_corrections_applied
 unresolved_critical_findings: 0
 unresolved_major_findings: 0
+provisional_authoring_authorized: true
+authoring_authorization_status: controlled_authoring_authorized
+full_theory_drafting_authorized_provisionally: true
+external_professional_review: pending_human_review
 ```
 
 ## Material disponible
@@ -42,7 +46,9 @@ unresolved_major_findings: 0
 - implementación ejecutable de U2-P1, U2-P2 y U2-P3;
 - evaluación estructurada de curvas, dinámica y mecanismos de carga;
 - rúbricas humanas para clasificación funcional y transferencia multicriterio;
-- gates permanentes con fixtures de dominio y diagnóstico.
+- gates permanentes con fixtures de dominio y diagnóstico;
+- auditoría científica-editorial interna con seis hallazgos resueltos;
+- autorización provisional separada para autoría controlada de la Unidad 2.
 
 ## Implementación de prácticas
 
@@ -101,7 +107,6 @@ Las evaluaciones automáticas solo aceptan campos estructurados y deterministas.
 
 La retroalimentación se libera por intentos y no expone patrones, decisiones, rutas causales, valores objetivo, claves completas ni respuestas modelo.
 
-
 ## Auditoría científica y editorial interna
 
 La auditoría conjunta de U2-P1 a U2-P3, U2-A1 a U2-A5 y las doce rutas de feedback fue aprobada con correcciones aplicadas. El registro estructurado es:
@@ -117,6 +122,25 @@ scripts/validate_bioinstrumentation_u2_scientific_editorial_audit.py
 ```
 
 La auditoría resolvió la separación entre carga eléctrica y transferencia mecánica, precisó el alcance del rechazo del modelo simple de primer orden, corrigió una ruta diagnóstica no sustentada, añadió trazabilidad evaluación–evidencia y bloqueó la distribución pública de claves. No aporta evidencia humana ni autorización de teoría o publicación.
+
+## Autorización provisional de autoría controlada
+
+El propietario indicó continuar después de la auditoría interna y autorizó provisionalmente la producción de un borrador autoral controlado. El registro autoritativo es:
+
+```text
+data/authoring_authorizations/bioinstrumentacion-unit-02-provisional.json
+```
+
+La documentación y el gate permanente son:
+
+```text
+docs/pilots/bioinstrumentacion/unit-02/PROVISIONAL_AUTHORING_AUTHORIZATION.md
+scripts/validate_bioinstrumentation_u2_provisional_authorization.py
+```
+
+La autorización permite crear el directorio fuente modular, redactar la teoría completa, integrar prácticas y evaluaciones existentes, construir `unit-02.json` como borrador interno y ejecutar validación determinista. Se limita al commit `a29fcedce078de03976970cdb8ce21a10b300245` y a las seis correcciones de auditoría.
+
+Esta autorización es un `project_owner_continuation_override`: no constituye revisión profesional, evidencia humana, autorización de publicación ni cambio del estado externo `pending_human_review`.
 
 ## Handoff disciplinar
 
@@ -134,33 +158,41 @@ La revisión profesional operativa continúa en el issue `#161`. Las prácticas 
 - ejecutar U2-A2, U2-A3 y U2-A4 sobre respuestas estructuradas;
 - aplicar rúbricas humanas de U2-A1 y U2-A5;
 - regenerar salidas en `build/` o directorios temporales;
-- mejorar reproducibilidad, controles negativos, feedback y documentación;
-- preparar una auditoría científica y editorial conjunta de prácticas y evaluaciones.
+- crear `data/course_redevelopment/bioinstrumentacion/unit-02-source`;
+- crear `data/course_redevelopment/bioinstrumentacion/units/unit-02.json` como borrador interno;
+- redactar la teoría completa con fuentes localizadas, supuestos y límites;
+- integrar prácticas, evaluaciones, feedback y recuperación;
+- crear un constructor determinista y un validador autoral específico;
+- corregir el borrador mediante gates internos sin publicarlo ni promover el curso.
 
 ## Qué no está autorizado
 
-- crear `data/course_redevelopment/bioinstrumentacion/units/unit-02.json`;
-- redactar la teoría completa;
-- publicar una página nueva;
+- publicar una página nueva o exponer el borrador como contenido completado;
 - promover el curso a `developed` o `complete`;
 - usar datos de personas, muestras o conexión de sensores a sujetos;
 - operar equipos clínicos;
 - puntuar automáticamente razonamientos abiertos;
+- distribuir claves de evaluación en recursos públicos;
 - presentar especificaciones de fabricante como validación de una cadena;
-- declarar utilidad clínica, conformidad normativa, seguridad o aprobación profesional.
+- declarar utilidad clínica, conformidad normativa, seguridad o aprobación profesional;
+- fabricar prueba cognitiva, revisión de usabilidad, concordancia o revisión profesional.
 
 ## Gate antes de autoría completa
 
-Aún se requiere:
+El gate histórico exigía: **Preparar una autorización provisional separada** para la redacción controlada. Esa transición ya quedó materializada mediante el registro y el validador indicados arriba. El gate actual habilita únicamente la creación del borrador autoral interno y no satisface los gates de publicación, promoción, prueba cognitiva o revisión profesional.
+
+## Gates posteriores a la autoría controlada
+
+Antes de declarar la unidad desarrollada o publicarla todavía se requiere:
 
 - mantener vigentes las correcciones y el gate de auditoría científica y editorial;
+- auditar científicamente el borrador autoral completo;
 - ejecutar una prueba cognitiva con estudiantes;
 - revisar usabilidad del feedback y concordancia entre revisores;
 - revisar continuidad pedagógica y suficiencia de fuentes;
-- obtener una autorización separada para redacción controlada;
 - mantener bloqueadas publicación y promoción;
 - completar revisión profesional externa mediante evidencia humana válida.
 
 ## Próximo bloque recomendado
 
-Preparar una autorización provisional separada para autoría controlada de la Unidad 2, limitada por el contrato técnico y por las correcciones de auditoría. La teoría completa no queda autorizada por esta auditoría; la publicación, la promoción del curso y la revisión profesional continúan bloqueadas.
+Crear el borrador autoral modular de la Unidad 2, su constructor determinista y su validador permanente. El resultado debe permanecer interno, con el curso en `pending`, sin publicación ni afirmaciones de validación profesional.
