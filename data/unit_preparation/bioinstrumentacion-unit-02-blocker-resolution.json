@@ -1,0 +1,254 @@
+{
+  "schema_version": "1.0",
+  "subject_id": "bioinstrumentacion",
+  "unit_number": 2,
+  "title": "Resolución de bloqueos técnicos para autoría de la Unidad 2",
+  "status": "technical_blockers_resolved_review_pending",
+  "resolved_on": "2026-07-29",
+  "course_editorial_state": "pending",
+  "preparation_contract": "data/unit_preparation/bioinstrumentacion-unit-02.json",
+  "source_registry": "data/source_registry/bioinstrumentacion-unit-02-blockers.json",
+  "static_synthetic_model": {
+    "status": "resolved_for_practice_implementation",
+    "decision": "La práctica estática utilizará generadores sintéticos deterministas y separados para linealidad local, offset, saturación, zona muerta, histéresis y ruido. Cada patrón tendrá ecuación, unidades didácticas, dominio, trayectoria y control negativo; no se atribuirá a un componente real.",
+    "independent_variable": {
+      "symbol": "x",
+      "unit": "unidad_de_entrada",
+      "domain": [-10.0, 10.0],
+      "grid_step": 0.1
+    },
+    "output_variable": {
+      "symbol": "y",
+      "unit": "unidad_de_salida"
+    },
+    "seed": 20260729,
+    "models": [
+      {
+        "id": "linear-local",
+        "equation": "y = b + K*x + epsilon",
+        "parameters": {"K": 1.8, "b": 0.4, "noise_sd": 0.02},
+        "purpose": "control positivo para sensibilidad constante y offset dentro del dominio completo"
+      },
+      {
+        "id": "saturation",
+        "equation": "y = b + A*tanh(K*x/A) + epsilon",
+        "parameters": {"K": 1.8, "b": 0.4, "A": 8.0, "noise_sd": 0.02},
+        "purpose": "mostrar sensibilidad local decreciente y evitar llamar lineal a toda la curva"
+      },
+      {
+        "id": "dead-zone",
+        "equation": "y = b + K*sign(x)*max(abs(x)-d, 0) + epsilon",
+        "parameters": {"K": 1.8, "b": 0.4, "d": 1.2, "noise_sd": 0.02},
+        "purpose": "distinguir una región insensible de una pendiente global baja"
+      },
+      {
+        "id": "hysteresis",
+        "equation": "y = b + K*x + h*direction + epsilon",
+        "parameters": {"K": 1.8, "b": 0.4, "h": 0.25, "noise_sd": 0.02},
+        "trajectory": "x asciende de -10 a 10 y después desciende de 10 a -10; direction=+1 en ascenso y -1 en descenso",
+        "purpose": "separar dependencia de trayectoria de ruido aleatorio"
+      }
+    ],
+    "acceptance_tests": [
+      "el generador produce exactamente las mismas filas y hash con la misma semilla y parámetros",
+      "el control lineal recupera K y b con error relativo máximo de 1 % en ausencia de ruido y 3 % con ruido",
+      "la sensibilidad local de saturación en los extremos es menor que 20 % de la sensibilidad central",
+      "la zona muerta conserva una variación de salida menor que 10 % del cambio lineal esperado dentro de |x| <= d",
+      "la diferencia media entre ramas de histéresis recupera 2*h con error máximo de 5 %",
+      "un ajuste lineal agrupado que ignora la dirección falla el control de residuo por rama en el caso de histéresis",
+      "ningún identificador o parámetro se presenta como especificación de un sensor biomédico real"
+    ],
+    "prohibited_inferences": [
+      "identificar un mecanismo físico único a partir de un patrón sintético",
+      "usar R² alto como validación completa",
+      "comparar sensibilidad sin unidades, intervalo y ruido",
+      "presentar las curvas como datos de una persona, tejido o dispositivo"
+    ]
+  },
+  "first_order_dynamic_model": {
+    "status": "resolved_for_practice_implementation",
+    "decision": "La práctica dinámica utilizará un modelo lineal de primer orden con entrada mantenida por tramos y actualización exacta de orden cero. La constante de tiempo, el tiempo de respuesta y el ancho de banda se relacionarán solo bajo este modelo y con criterios explícitos.",
+    "continuous_model": "tau*dy/dt + y = K*x(t) + b",
+    "exact_discrete_update": "y[n+1] = y_inf[n] + (y[n] - y_inf[n])*exp(-dt/tau), con y_inf[n] = K*x[n] + b y x[n] constante durante cada intervalo [n*dt, (n+1)*dt)",
+    "parameters": {
+      "K": 1.5,
+      "b": 0.2,
+      "tau_s": 2.0,
+      "dt_s": 0.02,
+      "duration_s": 16.0,
+      "step_time_s": 2.0,
+      "step_amplitude": 1.0
+    },
+    "derived_relations": [
+      {"name": "fraction_at_tau", "relation": "1 - exp(-1)", "expected": 0.6321205588},
+      {"name": "settling_time_5_percent", "relation": "-tau*ln(0.05)", "multiple_of_tau": 2.9957322736},
+      {"name": "settling_time_2_percent", "relation": "-tau*ln(0.02)", "multiple_of_tau": 3.9120230054},
+      {"name": "corner_frequency", "relation": "f_c = 1/(2*pi*tau)", "criterion": "magnitud igual a 1/sqrt(2) del valor de baja frecuencia para este modelo"}
+    ],
+    "positive_controls": [
+      "respuesta monótona sin sobreimpulso ante un escalón positivo",
+      "fracción de cambio a tau dentro de 0.5 puntos porcentuales de 63.212 %",
+      "fracción de cambio a cinco tau superior a 99.3 %",
+      "estimación de tau con error máximo de 1 % sin ruido y 5 % con ruido sintético fijado",
+      "magnitud calculada en f_c dentro de 1 % de 1/sqrt(2)"
+    ],
+    "negative_controls": [
+      {
+        "id": "pure-delay",
+        "generator": "y(t)=b antes de un retardo L y después respuesta de primer orden",
+        "rejection_rule": "rechazar el modelo simple si aparece un intervalo inicial plano mayor que 5*dt no explicado por condiciones iniciales"
+      },
+      {
+        "id": "underdamped-second-order",
+        "generator": "respuesta sintética con sobreimpulso y oscilación amortiguada",
+        "rejection_rule": "rechazar el modelo de primer orden si el sobreimpulso excede 1 % del cambio final"
+      },
+      {
+        "id": "static-only",
+        "generator": "curva estacionaria sin marcas temporales",
+        "rejection_rule": "rechazar cualquier estimación de tau por ausencia de información temporal"
+      }
+    ],
+    "limitations": [
+      "el modelo no representa retardos, polos múltiples, ceros, saturación dinámica, histéresis, dependencia térmica ni sistemas distribuidos",
+      "f_c = 1/(2*pi*tau) no se generaliza fuera de un primer orden lineal de baja frecuencia",
+      "tiempo de respuesta depende del escalón y de la banda de asentamiento declarada; no es sinónimo universal de tau",
+      "los parámetros son didácticos y no describen un sensor, tejido o dispositivo"
+    ]
+  },
+  "component_selection": {
+    "status": "resolved_and_pinned",
+    "components": [
+      {
+        "id": "thermistor",
+        "manufacturer": "Vishay BCcomponents",
+        "model": "NTCLG100E2103JB",
+        "document": "NTCLG100E2 datasheet, document 29050, revision 29-Jun-2017",
+        "pinned_fields": [
+          "R25 = 10 kOhm",
+          "tolerancia R25 = ±5 %",
+          "B25/85 = 3977 K",
+          "tolerancia B25/85 = ±1.3 %",
+          "tiempo de respuesta declarado = 0.9 s",
+          "constante de tiempo térmica declarada = 6 s",
+          "factor de disipación = 2.5 mW/K"
+        ],
+        "measurement_conditions_boundary": "Los valores se conservarán con las condiciones y definiciones del datasheet. El tiempo de respuesta de 0.9 s y tau de 6 s no se tratarán como contradictorios ni intercambiables.",
+        "source_id": "vishay-ntclg100e2103jb-datasheet"
+      },
+      {
+        "id": "strain-gage",
+        "manufacturer": "Micro-Measurements",
+        "model": "CEA-06-125UNA-350",
+        "document": "Official product catalog entry 125UNA and item MMF404325",
+        "pinned_fields": [
+          "serie CEA",
+          "patrón lineal de una rejilla",
+          "resistencia nominal 350 ohm",
+          "STC 06",
+          "materiales objetivo declarados: acero, hierro fundido, compuestos y PCB"
+        ],
+        "measurement_conditions_boundary": "No se fijará un factor de galga numérico desde la página genérica. El valor real deberá proceder del paquete o certificado del lote usado; la práctica documental se limitará a resistencia, patrón, STC, montaje y campos faltantes.",
+        "source_id": "micro-measurements-cea-06-125una-350"
+      },
+      {
+        "id": "photodiode",
+        "manufacturer": "Hamamatsu Photonics",
+        "model": "S5821-03",
+        "document": "Official product page and S5821-03 datasheet",
+        "pinned_fields": [
+          "área fotosensible de 1.2 mm de diámetro",
+          "respuesta espectral 320 a 1100 nm",
+          "fotosensibilidad típica 0.52 A/W a 780 nm",
+          "corriente oscura máxima 2000 pA a VR = 10 V",
+          "frecuencia de corte típica 25 MHz a VR = 10 V",
+          "capacitancia terminal típica 3 pF a VR = 10 V y 1 MHz"
+        ],
+        "measurement_conditions_boundary": "Las cifras típicas y máximas se mantendrán separadas. La respuesta espectral, polarización, temperatura, carga y amplificador forman parte de la interpretación.",
+        "source_id": "hamamatsu-s5821-03-product"
+      }
+    ],
+    "comparison_fields": [
+      "cantidad de entrada",
+      "cantidad de salida",
+      "principio de transducción",
+      "unidades",
+      "valor típico, máximo o tolerado",
+      "condiciones de medida",
+      "rango o dominio",
+      "propiedad dinámica",
+      "carga o perturbación",
+      "información ausente",
+      "afirmaciones no transferibles al sistema"
+    ],
+    "forbidden_transfer": [
+      "propiedad de un componente = desempeño del sistema completo",
+      "valor típico = garantía",
+      "condición de laboratorio = condición biomédica",
+      "respuesta rápida del componente = ancho de banda de toda la cadena",
+      "especificación comercial = validación clínica"
+    ]
+  },
+  "loading_cases": {
+    "status": "resolved_for_safe_cases",
+    "cases": [
+      {
+        "id": "thermal-loading",
+        "chain": "corriente de lectura → potencia I^2*R → autocalentamiento → cambio de temperatura del termistor → cambio adicional de resistencia",
+        "observable": "diferencia entre medición de baja potencia y medición con excitación mayor en un modelo sintético",
+        "required_variables": ["corriente o tensión de excitación", "resistencia", "potencia", "factor de disipación", "temperatura ambiente", "tiempo"],
+        "boundary": "No se conecta a personas ni se usa para estimar temperatura corporal."
+      },
+      {
+        "id": "mechanical-loading",
+        "chain": "viga ideal → adhesivo y portador → transferencia espacial de deformación → rejilla → cambio de resistencia",
+        "observable": "diferencia sintética entre deformación puntual y deformación promediada sobre la longitud de rejilla",
+        "required_variables": ["geometría de viga", "campo de deformación", "longitud y orientación de rejilla", "adhesión", "temperatura", "excitación"],
+        "boundary": "No se infiere fuerza o presión sin modelo estructural y no se construye un dispositivo clínico."
+      },
+      {
+        "id": "electrical-loading",
+        "chain": "fotodiodo con capacitancia terminal → impedancia de entrada y realimentación → constante de tiempo eléctrica → frecuencia de corte de la cadena",
+        "observable": "cambio sintético de respuesta temporal al modificar capacitancia o resistencia de carga",
+        "required_variables": ["capacitancia terminal", "resistencia o transimpedancia", "polarización", "ancho de banda del amplificador", "corriente oscura", "temperatura"],
+        "boundary": "La frecuencia de corte del fotodiodo no se usa como frecuencia de corte automática de la cadena."
+      },
+      {
+        "id": "optical-loading",
+        "chain": "fuente y geometría → potencia incidente y distribución espectral → fotocorriente → posible saturación o perturbación del campo óptico",
+        "observable": "cambio sintético de corriente al variar longitud de onda, área iluminada, alineación y potencia",
+        "required_variables": ["potencia radiante", "longitud de onda", "área iluminada", "distancia y alineación", "luz ambiental", "responsividad"],
+        "boundary": "La fotocorriente no se convierte en concentración fisiológica ni oximetría."
+      }
+    ],
+    "acceptance_rule": "Cada caso debe identificar ruta causal, variable perturbada, evidencia observable, mitigación limitada y conclusión prohibida."
+  },
+  "disciplinary_review": {
+    "status": "pending_human_review",
+    "review_packet": "docs/pilots/bioinstrumentacion/unit-02/DISCIPLINARY_REVIEW_REQUEST.md",
+    "required_competence": [
+      "instrumentación biomédica o ciencia de la medición",
+      "sistemas dinámicos, control o procesamiento de señales",
+      "experiencia con sensores resistivos u ópticos y lectura crítica de hojas de datos"
+    ],
+    "review_questions": [
+      "¿Los generadores estáticos discriminan patrón, mecanismo y evidencia sin sobregeneralizar?",
+      "¿La relación entre tau, tiempo de respuesta y ancho de banda está limitada correctamente al modelo de primer orden?",
+      "¿Los componentes y campos fijados conservan condiciones, categorías típico/máximo y límites de transferencia?",
+      "¿Los cuatro casos de carga son causalmente correctos y seguros para enseñanza autónoma?",
+      "¿Los controles negativos son suficientes para impedir aprobación automática de un modelo inadecuado?"
+    ],
+    "decision_options": ["approve_for_practice_implementation", "approve_with_changes", "do_not_approve"],
+    "prohibition": "La solicitud, las fuentes registradas, los controles sintéticos y CI verde no constituyen revisión humana, respaldo profesional ni autorización de teoría completa."
+  },
+  "editorial_decision": {
+    "technical_blockers_resolved": true,
+    "human_review_completed": false,
+    "practice_implementation_authorized": false,
+    "full_theory_drafting_authorized": false,
+    "unit_developed": false,
+    "public_release_authorized": false,
+    "course_state_after_block": "pending",
+    "next_gate": "Obtener revisión disciplinar inicial y después implementar las prácticas U2-P1, U2-P2 y U2-P3 sin crear todavía la unidad autoral."
+  }
+}
