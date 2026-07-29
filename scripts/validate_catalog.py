@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate generated catalog, filters, provisional subjects, and track integrity."""
+"""Validate generated catalog, filters, editorial statuses, and track integrity."""
 from __future__ import annotations
 
 import json
@@ -11,12 +11,96 @@ ROOT = Path(__file__).resolve().parents[1]
 CURRICULUM_PATH = ROOT / "data" / "citonauta_curriculum.json"
 TRACKS_PATH = ROOT / "data" / "tracks.json"
 PROVISIONAL_PATH = ROOT / "data" / "provisional_subjects.json"
+STATUSES_PATH = ROOT / "data" / "catalog_statuses.json"
 MIN_INTERDISCIPLINARY_TRACKS = 6
 MIN_SUBJECTS_PER_TRACK = 6
 
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def status_ids(
+    payload: dict[str, Any],
+    key: str,
+    known_subjects: set[str],
+    errors: list[str],
+) -> set[str]:
+    raw = payload.get(key)
+    if not isinstance(raw, list):
+        errors.append(f"catalog_statuses.json: {key} debe ser una lista")
+        return set()
+    values = [str(item).strip() for item in raw if str(item).strip()]
+    if len(values) != len(set(values)):
+        errors.append(f"catalog_statuses.json: {key} contiene identificadores duplicados")
+    unknown = sorted(set(values) - known_subjects)
+    if unknown:
+        errors.append(
+            f"catalog_statuses.json: {key} contiene asignaturas inexistentes: {', '.join(unknown)}"
+        )
+    return set(values)
+
+
+def validate_status_manifest(
+    core_subjects: dict[str, dict[str, Any]],
+    errors: list[str],
+) -> dict[str, set[str]]:
+    empty = {"developed": set(), "complete": set(), "pending": set()}
+    if not STATUSES_PATH.exists():
+        errors.append("falta data/catalog_statuses.json")
+        return empty
+
+    payload = load_json(STATUSES_PATH)
+    known = set(core_subjects)
+    memberships = {
+        key: status_ids(payload, key, known, errors)
+        for key in ("developed", "complete", "pending")
+    }
+    developed = memberships["developed"]
+    complete = memberships["complete"]
+    pending = memberships["pending"]
+
+    if not complete.issubset(developed):
+        invalid = sorted(complete - developed)
+        errors.append(
+            "catalog_statuses.json: complete debe ser subconjunto de developed: "
+            + ", ".join(invalid)
+        )
+    overlap = sorted(developed.intersection(pending))
+    if overlap:
+        errors.append(
+            "catalog_statuses.json: developed y pending se superponen: " + ", ".join(overlap)
+        )
+    represented = developed.union(pending)
+    missing = sorted(known - represented)
+    if missing:
+        errors.append(
+            "catalog_statuses.json: asignaturas centrales sin estado: " + ", ".join(missing)
+        )
+    extra_partition = sorted(represented - known)
+    if extra_partition:
+        errors.append(
+            "catalog_statuses.json: la partición contiene asignaturas inexistentes: "
+            + ", ".join(extra_partition)
+        )
+
+    counts = payload.get("counts")
+    if not isinstance(counts, dict):
+        errors.append("catalog_statuses.json: falta el objeto counts")
+    else:
+        expected_counts = {
+            "catalog_courses": len(known),
+            "developed": len(developed),
+            "complete": len(complete),
+            "pending": len(pending),
+        }
+        for key, expected in expected_counts.items():
+            if counts.get(key) != expected:
+                errors.append(
+                    f"catalog_statuses.json: counts.{key}={counts.get(key)!r}; se esperaba {expected}"
+                )
+
+    return memberships
 
 
 def main() -> int:
@@ -64,6 +148,8 @@ def main() -> int:
         for field in ("title", "description", "biomedical_connection"):
             if not str(subject.get(field, "")).strip():
                 errors.append(f"{subject_id}: falta {field}")
+
+    statuses = validate_status_manifest(core_subjects, errors)
 
     tracks = tracks_data.get("tracks", [])
     track_ids = [track.get("id") for track in tracks]
@@ -130,9 +216,9 @@ def main() -> int:
         if not required.exists():
             errors.append(f"falta {required.relative_to(ROOT)}")
 
-    if catalog_script.exists() and provisional_subjects:
+    if catalog_script.exists():
         script_text = catalog_script.read_text(encoding="utf-8")
-        for marker in ("provisional_subjects.json", "tracks.json"):
+        for marker in ("provisional_subjects.json", "tracks.json", "catalog_statuses.json"):
             if marker not in script_text:
                 errors.append(f"assets/js/catalog.js no integra {marker}")
 
@@ -146,9 +232,12 @@ def main() -> int:
     print(f"- {len(core_subjects)} asignaturas centrales")
     print(f"- {len(provisional_subjects)} asignaturas provisionales")
     print(f"- {len(subjects)} asignaturas catalogadas")
+    print(f"- {len(statuses['developed'])} con material lectivo desarrollado")
+    print(f"- {len(statuses['pending'])} dependientes de unidades de respaldo")
+    print(f"- {len(statuses['complete'])} con revisión disciplinar documentada")
     print(f"- {len(areas)} áreas")
     print(f"- {len(tracks)} rutas interdisciplinarias")
-    print("- búsqueda, filtros y relaciones sincronizados con sus fuentes curriculares")
+    print("- búsqueda, filtros, estados y relaciones sincronizados con sus fuentes curriculares")
     return 0
 
 
