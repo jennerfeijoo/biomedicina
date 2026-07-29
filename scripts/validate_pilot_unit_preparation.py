@@ -36,6 +36,14 @@ EXPECTED_DOCS = {
         "problema de recuperación diferente",
         "Gate de autoría",
     ],
+    "MISCONCEPTION_COMPLETION.md": [
+        "La señal registrada es el resultado completo",
+        "El nombre habitual especifica el mensurando",
+        "El método es el mensurando",
+        "Los metadatos son accesorios",
+        "Conocer definiciones demuestra transferencia",
+        "trece misconceptions",
+    ],
     "PRACTICE_AND_DATA_PLAN.md": [
         "Cadena térmica sintética",
         "Auditoría de metadatos ECG abiertos",
@@ -50,6 +58,39 @@ EXPECTED_DOCS = {
         "Riesgos abiertos",
         "Gate antes de considerar la unidad desarrollada",
     ],
+}
+
+REQUIRED_CONCEPT_NODES = {
+    "measurand",
+    "measuring_system",
+    "measuring_chain",
+    "indication",
+    "measurement_result",
+    "measurement_model",
+    "influence_quantity",
+    "traceability",
+    "fitness_for_purpose",
+}
+REQUIRED_SOURCE_IDS = {
+    "bipm-vim-measurand",
+    "bipm-vim-indication",
+    "bipm-vim-measurement-result",
+    "bipm-vim-measuring-chain",
+    "bipm-vim-measurement-model",
+    "bipm-vim-traceability",
+    "jcgm-gum-1-2023",
+    "jcgm-gum-6-2020",
+    "nist-tn-2156",
+    "physionet-mit-bih-arrhythmia",
+}
+REQUIRED_FEEDBACK_FIELDS = {
+    "diagnosed_misconception",
+    "why_the_reasoning_fails",
+    "first_hint",
+    "second_hint",
+    "source_or_section_to_review",
+    "different_recovery_problem",
+    "objective_continue_criterion",
 }
 
 
@@ -78,22 +119,20 @@ def require_list(value: Any, label: str, minimum: int) -> list[Any]:
     return value
 
 
-def validate_identity(preparation: dict[str, Any]) -> None:
-    if preparation.get("subject_id") != "bioinstrumentacion":
-        raise ValueError("subject_id incorrecto")
-    if preparation.get("unit_number") != 1:
-        raise ValueError("unit_number debe ser 1")
-    if preparation.get("title") != EXPECTED_TITLE:
-        raise ValueError("título de la Unidad 1 incorrecto")
-    if preparation.get("status") != "authoring_preparation_review":
-        raise ValueError("estado de preparación incorrecto")
-    if preparation.get("course_editorial_state") != "pending":
-        raise ValueError("el paquete debe conservar el curso en pending")
+def validate_identity_and_scope(preparation: dict[str, Any]) -> None:
+    expected = {
+        "subject_id": "bioinstrumentacion",
+        "unit_number": 1,
+        "title": EXPECTED_TITLE,
+        "status": "authoring_preparation_review",
+        "course_editorial_state": "pending",
+    }
+    for key, value in expected.items():
+        if preparation.get(key) != value:
+            raise ValueError(f"{key} incorrecto: {preparation.get(key)!r}")
     require_text(preparation.get("central_question"), "central_question", 80)
     require_text(preparation.get("authoring_purpose"), "authoring_purpose", 120)
 
-
-def validate_scope(preparation: dict[str, Any]) -> None:
     scope = preparation.get("scope")
     if not isinstance(scope, dict):
         raise ValueError("scope debe ser un objeto")
@@ -106,7 +145,7 @@ def validate_scope(preparation: dict[str, Any]) -> None:
 def validate_outcomes(preparation: dict[str, Any]) -> set[str]:
     outcomes = require_list(preparation.get("learning_outcomes"), "learning_outcomes", 5)
     if len(outcomes) != 5:
-        raise ValueError("la Unidad 1 debe conservar exactamente cinco resultados de aprendizaje")
+        raise ValueError("la Unidad 1 debe conservar exactamente cinco resultados")
     ids: set[str] = set()
     for outcome in outcomes:
         if not isinstance(outcome, dict):
@@ -136,20 +175,10 @@ def validate_knowledge_model(preparation: dict[str, Any]) -> None:
         node_ids.add(node_id)
         require_text(node.get("label"), f"{node_id}.label", 3)
         require_text(node.get("role"), f"{node_id}.role", 35)
-    required_nodes = {
-        "measurand",
-        "measuring_system",
-        "measuring_chain",
-        "indication",
-        "measurement_result",
-        "measurement_model",
-        "influence_quantity",
-        "traceability",
-        "fitness_for_purpose",
-    }
-    missing = sorted(required_nodes - node_ids)
+    missing = sorted(REQUIRED_CONCEPT_NODES - node_ids)
     if missing:
         raise ValueError("faltan nodos conceptuales críticos: " + ", ".join(missing))
+
     relations = require_list(model.get("required_relations"), "knowledge_model.required_relations", 10)
     if not any("trazabilidad" in str(item) and "resultado" in str(item) for item in relations):
         raise ValueError("el modelo no atribuye trazabilidad al resultado")
@@ -160,7 +189,7 @@ def validate_knowledge_model(preparation: dict[str, Any]) -> None:
 def validate_cases(preparation: dict[str, Any]) -> None:
     cases = require_list(preparation.get("biomedical_case_models"), "biomedical_case_models", 3)
     if len(cases) != 3:
-        raise ValueError("se requieren exactamente tres casos biomédicos en esta preparación")
+        raise ValueError("se requieren exactamente tres casos biomédicos")
     for case in cases:
         if not isinstance(case, dict):
             raise ValueError("cada caso biomédico debe ser un objeto")
@@ -172,33 +201,10 @@ def validate_cases(preparation: dict[str, Any]) -> None:
         require_text(case.get("forbidden_inference"), f"{case_id}.forbidden_inference", 60)
 
 
-def validate_assessment(preparation: dict[str, Any], outcome_ids: set[str]) -> set[str]:
-    assessments = require_list(preparation.get("assessment_blueprint"), "assessment_blueprint", 5)
-    assessment_ids: set[str] = set()
-    for assessment in assessments:
-        if not isinstance(assessment, dict):
-            raise ValueError("cada evaluación debe ser un objeto")
-        assessment_id = require_text(assessment.get("id"), "assessment.id", 4)
-        if assessment_id in assessment_ids:
-            raise ValueError(f"evaluación duplicada: {assessment_id}")
-        assessment_ids.add(assessment_id)
-        require_text(assessment.get("type"), f"{assessment_id}.type", 5)
-        linked = set(require_list(assessment.get("outcomes"), f"{assessment_id}.outcomes", 1))
-        unknown = sorted(linked - outcome_ids)
-        if unknown:
-            raise ValueError(f"{assessment_id} referencia resultados desconocidos: {unknown}")
-        require_text(assessment.get("evidence"), f"{assessment_id}.evidence", 50)
-        require_list(
-            assessment.get("misconceptions_discriminated"),
-            f"{assessment_id}.misconceptions_discriminated",
-            1,
-        )
-        require_text(assessment.get("mastery_rule"), f"{assessment_id}.mastery_rule", 45)
-    return assessment_ids
-
-
-def validate_feedback(preparation: dict[str, Any]) -> set[str]:
-    misconceptions = require_list(preparation.get("misconception_bank"), "misconception_bank", 8)
+def validate_feedback_and_assessment(preparation: dict[str, Any], outcome_ids: set[str]) -> None:
+    misconceptions = require_list(preparation.get("misconception_bank"), "misconception_bank", 13)
+    if len(misconceptions) != 13:
+        raise ValueError("el banco debe contener exactamente trece misconceptions")
     misconception_ids: set[str] = set()
     for item in misconceptions:
         if not isinstance(item, dict):
@@ -215,32 +221,43 @@ def validate_feedback(preparation: dict[str, Any]) -> set[str]:
     if not isinstance(contract, dict):
         raise ValueError("feedback_contract ausente")
     fields = set(require_list(contract.get("required_fields"), "feedback_contract.required_fields", 7))
-    expected = {
-        "diagnosed_misconception",
-        "why_the_reasoning_fails",
-        "first_hint",
-        "second_hint",
-        "source_or_section_to_review",
-        "different_recovery_problem",
-        "objective_continue_criterion",
-    }
-    missing = sorted(expected - fields)
-    if missing:
-        raise ValueError("faltan campos de feedback: " + ", ".join(missing))
+    missing_fields = sorted(REQUIRED_FEEDBACK_FIELDS - fields)
+    if missing_fields:
+        raise ValueError("faltan campos de feedback: " + ", ".join(missing_fields))
     require_list(contract.get("prohibited_patterns"), "feedback_contract.prohibited_patterns", 5)
-    return misconception_ids
 
-
-def validate_assessment_misconceptions(
-    preparation: dict[str, Any], misconception_ids: set[str]
-) -> None:
-    for assessment in preparation["assessment_blueprint"]:
-        linked = set(assessment["misconceptions_discriminated"])
-        unknown = sorted(linked - misconception_ids)
-        if unknown:
-            raise ValueError(
-                f"{assessment['id']} referencia misconceptions desconocidas: {unknown}"
+    assessments = require_list(preparation.get("assessment_blueprint"), "assessment_blueprint", 5)
+    assessment_ids: set[str] = set()
+    covered_misconceptions: set[str] = set()
+    for assessment in assessments:
+        if not isinstance(assessment, dict):
+            raise ValueError("cada evaluación debe ser un objeto")
+        assessment_id = require_text(assessment.get("id"), "assessment.id", 4)
+        if assessment_id in assessment_ids:
+            raise ValueError(f"evaluación duplicada: {assessment_id}")
+        assessment_ids.add(assessment_id)
+        require_text(assessment.get("type"), f"{assessment_id}.type", 5)
+        linked_outcomes = set(require_list(assessment.get("outcomes"), f"{assessment_id}.outcomes", 1))
+        unknown_outcomes = sorted(linked_outcomes - outcome_ids)
+        if unknown_outcomes:
+            raise ValueError(f"{assessment_id} referencia resultados desconocidos: {unknown_outcomes}")
+        require_text(assessment.get("evidence"), f"{assessment_id}.evidence", 50)
+        linked_misconceptions = set(
+            require_list(
+                assessment.get("misconceptions_discriminated"),
+                f"{assessment_id}.misconceptions_discriminated",
+                1,
             )
+        )
+        unknown_misconceptions = sorted(linked_misconceptions - misconception_ids)
+        if unknown_misconceptions:
+            raise ValueError(
+                f"{assessment_id} referencia misconceptions desconocidas: {unknown_misconceptions}"
+            )
+        covered_misconceptions.update(linked_misconceptions)
+        require_text(assessment.get("mastery_rule"), f"{assessment_id}.mastery_rule", 45)
+    if not covered_misconceptions:
+        raise ValueError("las evaluaciones no discriminan misconceptions")
 
 
 def validate_practice_and_visual(preparation: dict[str, Any]) -> None:
@@ -248,8 +265,7 @@ def validate_practice_and_visual(preparation: dict[str, Any]) -> None:
     if not isinstance(practice, dict):
         raise ValueError("practice_plan ausente")
     require_text(practice.get("primary_mode"), "practice_plan.primary_mode", 30)
-    activities = require_list(practice.get("activities"), "practice_plan.activities", 2)
-    for activity in activities:
+    for activity in require_list(practice.get("activities"), "practice_plan.activities", 2):
         if not isinstance(activity, dict):
             raise ValueError("cada práctica debe ser un objeto")
         activity_id = require_text(activity.get("id"), "practice.id", 4)
@@ -278,24 +294,11 @@ def validate_sources(preparation: dict[str, Any]) -> None:
         for source in sources
         if isinstance(source, dict) and source.get("id")
     }
-    required_registry_sources = {
-        "bipm-vim-measurand",
-        "bipm-vim-indication",
-        "bipm-vim-measurement-result",
-        "bipm-vim-measuring-chain",
-        "bipm-vim-measurement-model",
-        "bipm-vim-traceability",
-        "jcgm-gum-1-2023",
-        "jcgm-gum-6-2020",
-        "nist-tn-2156",
-        "physionet-mit-bih-arrhythmia",
-    }
-    missing_registry = sorted(required_registry_sources - source_ids)
+    missing_registry = sorted(REQUIRED_SOURCE_IDS - source_ids)
     if missing_registry:
         raise ValueError("faltan fuentes unitarias: " + ", ".join(missing_registry))
 
-    assertions = require_list(preparation.get("source_assertions"), "source_assertions", 5)
-    for assertion in assertions:
+    for assertion in require_list(preparation.get("source_assertions"), "source_assertions", 5):
         if not isinstance(assertion, dict):
             raise ValueError("cada source_assertion debe ser un objeto")
         claim_id = require_text(assertion.get("claim_id"), "source_assertion.claim_id", 2)
@@ -310,7 +313,7 @@ def validate_sources(preparation: dict[str, Any]) -> None:
         require_text(assertion.get("authoring_use"), f"{claim_id}.authoring_use", 30)
 
 
-def validate_authoring_gate(preparation: dict[str, Any]) -> None:
+def validate_gates_and_consistency(preparation: dict[str, Any]) -> None:
     gate = preparation.get("authoring_gate")
     if not isinstance(gate, dict):
         raise ValueError("authoring_gate ausente")
@@ -319,14 +322,11 @@ def validate_authoring_gate(preparation: dict[str, Any]) -> None:
     if gate.get("course_state_after_block") != "pending":
         raise ValueError("el gate debe conservar el curso en pending")
 
-
-def validate_cross_artifact_consistency(preparation: dict[str, Any]) -> None:
     planning = load_json(PLANNING_PATH)
     units = planning.get("units")
     if not isinstance(units, list) or not units:
         raise ValueError("la planificación no contiene unidades")
-    unit_one = units[0]
-    if unit_one.get("unit") != 1 or unit_one.get("title") != EXPECTED_TITLE:
+    if units[0].get("unit") != 1 or units[0].get("title") != EXPECTED_TITLE:
         raise ValueError("la preparación no coincide con la Unidad 1 de la planificación")
 
     package = load_json(PACKAGE_PATH)
@@ -337,7 +337,7 @@ def validate_cross_artifact_consistency(preparation: dict[str, Any]) -> None:
         raise ValueError("unit_preparation ausente en el paquete")
     if unit_preparation.get("structured_contract") != str(PREPARATION_PATH.relative_to(ROOT)):
         raise ValueError("structured_contract incorrecto en el paquete")
-    documents = set(require_list(unit_preparation.get("documents"), "package.unit_preparation.documents", 5))
+    documents = set(require_list(unit_preparation.get("documents"), "package.unit_preparation.documents", 6))
     expected_paths = {
         str((DOC_DIR / filename).relative_to(ROOT)) for filename in EXPECTED_DOCS
     }
@@ -351,8 +351,6 @@ def validate_cross_artifact_consistency(preparation: dict[str, Any]) -> None:
         raise ValueError("Bioinstrumentación debe permanecer pending")
     if "bioinstrumentacion" in set(statuses.get("developed", [])):
         raise ValueError("Bioinstrumentación fue promovida prematuramente")
-    if preparation.get("course_editorial_state") != "pending":
-        raise ValueError("course_editorial_state inconsistente")
 
 
 def validate_documents() -> None:
@@ -363,32 +361,26 @@ def validate_documents() -> None:
         text = path.read_text(encoding="utf-8")
         missing = [marker for marker in markers if marker not in text]
         if missing:
-            raise ValueError(
-                f"{path.relative_to(ROOT)} incompleto: {', '.join(missing)}"
-            )
+            raise ValueError(f"{path.relative_to(ROOT)} incompleto: {', '.join(missing)}")
 
 
 def main() -> int:
     try:
         preparation = load_json(PREPARATION_PATH)
-        validate_identity(preparation)
-        validate_scope(preparation)
+        validate_identity_and_scope(preparation)
         outcome_ids = validate_outcomes(preparation)
         validate_knowledge_model(preparation)
         validate_cases(preparation)
-        validate_assessment(preparation, outcome_ids)
-        misconception_ids = validate_feedback(preparation)
-        validate_assessment_misconceptions(preparation, misconception_ids)
+        validate_feedback_and_assessment(preparation, outcome_ids)
         validate_practice_and_visual(preparation)
         validate_sources(preparation)
-        validate_authoring_gate(preparation)
-        validate_cross_artifact_consistency(preparation)
+        validate_gates_and_consistency(preparation)
         validate_documents()
     except (OSError, ValueError, TypeError) as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
 
     print("OK pilot unit preparation: Bioinstrumentación U1")
-    print("5 outcomes · 15 concept nodes · 8 misconceptions · 3 cases · course remains pending")
+    print("5 outcomes · 15 concept nodes · 13 misconceptions · 3 cases · course remains pending")
     return 0
 
 
