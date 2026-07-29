@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'data/**'
+      - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
       - '.github/workflows/synchronize-generated-site.yml'
@@ -78,8 +79,14 @@ jobs:
       - name: Validate Bioinstrumentation U2 practices
         run: python scripts/validate_bioinstrumentation_u2_practices.py
 
+      - name: Build Bioinstrumentation U2 scientific and editorial audit
+        run: python scripts/build_bioinstrumentation_u2_scientific_editorial_audit.py
+
       - name: Validate Bioinstrumentation U2 assessment
         run: python scripts/validate_bioinstrumentation_u2_assessment.py
+
+      - name: Validate Bioinstrumentation U2 scientific and editorial audit
+        run: python scripts/validate_bioinstrumentation_u2_scientific_editorial_audit.py
 
       - name: Upload synchronization diagnostic
         if: always()
@@ -89,12 +96,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic site
+      - name: Commit deterministic site and audit artifacts
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A -- \
+            data/assessment_implementations/bioinstrumentacion-unit-02.json \
+            data/assessment_fixtures/bioinstrumentacion/unit-02/mastery-dynamic.json \
+            data/assessment_fixtures/bioinstrumentacion/unit-02/mastery-loading.json \
+            data/assessment_fixtures/bioinstrumentacion/unit-02/diagnostic-loading.json \
+            data/course_audits/bioinstrumentacion/UNIT_02_PRACTICES_ASSESSMENT_SCIENTIFIC_EDITORIAL_AUDIT_2026-07-29.json \
+            docs/pilots/bioinstrumentacion/unit-02/ASSESSMENT_IMPLEMENTATION.md \
+            docs/pilots/bioinstrumentacion/unit-02/AUTHORING_READINESS.md \
+            docs/pilots/bioinstrumentacion/unit-02/INTERNAL_SCIENTIFIC_EDITORIAL_AUDIT.md \
             data/course_redevelopment/bioinstrumentacion/units/unit-01.json \
             ciencias-basicas \
             biologicas-medicas \
@@ -102,8 +117,8 @@ jobs:
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El sitio generado y la unidad autoral ya están sincronizados."
+            echo "El sitio y la auditoría determinista ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize deterministic site generation"
+          git commit -m "Synchronize deterministic U2 scientific editorial audit"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
