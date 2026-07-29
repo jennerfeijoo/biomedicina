@@ -13,9 +13,9 @@
 5. **Laboratorio biomédico:** matriz, etapa preanalítica, control de calidad, transferencia y aptitud para el uso.
 6. **Reproducibilidad:** datos primarios, software, parámetros, decisiones manuales y auditoría.
 
-## Validación estructural prevista
+## Validación estructural automatizada
 
-Las ocho unidades deben superar el contrato de reconstrucción trazable: cuatro secciones teóricas, densidad mínima, puntos clave, ecuaciones, glosario, ejemplos, actividad, errores frecuentes, autoevaluación, conexiones biomédicas y fuentes.
+Las ocho unidades superan el contrato de reconstrucción trazable: cuatro secciones teóricas, densidad mínima, puntos clave, ecuaciones, glosario, ejemplos, actividad, errores frecuentes, autoevaluación, conexiones biomédicas y fuentes. La generación del curso, las ocho páginas, los índices, los enlaces y el contrato de publicación también fueron validados. Esta comprobación técnica no sustituye la revisión disciplinar.
 
 ## Criterios antes de `complete`
 
