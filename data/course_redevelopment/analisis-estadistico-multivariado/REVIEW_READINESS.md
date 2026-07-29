@@ -16,6 +16,8 @@
 
 Las ocho unidades cumplen el contrato de reconstrucción trazable: secciones, párrafos, puntos clave, densidad teórica mínima, actividades, glosario, autoevaluación y fuentes. Esta validación técnica no sustituye la revisión disciplinar.
 
+La materialización pública fue comprobada en las capas fuente, generada y HTML; el curso conserva estado `review` y se clasifica como `developed`, no como `complete`.
+
 ## Criterios antes de `complete`
 
 - verificar directamente todas las fuentes;
