@@ -1,6 +1,6 @@
 # Verificación de materialización — Bioinstrumentación
 
-**Head materializado:** `9e467bfd53efcc5b9c30a2bcbe8cc3154f39930f`  
+**Head permanente verificado:** `71fe915c16aca7ed6ad2a2e187a6ef20d9b2d0f7`  
 **Fecha:** 29 de julio de 2026
 
 ## Comprobaciones realizadas
@@ -11,8 +11,9 @@
 - Los cursos incluidos en `developed` conservan la etiqueta “Unidades desarrolladas · revisión experta pendiente”.
 - Bioinstrumentación permanece en la lista `pending`; este bloque no la promueve.
 - La plantilla de unidad recibe `unit_status` y `unit_status_label` desde el generador.
-- El workflow canónico `synchronize-generated-site.yml` fue restaurado después de la migración.
-- El script de migración temporal fue eliminado del head materializado.
+- El validador curricular exige que el estado público de cada asignatura coincida con `data/catalog_statuses.json` y conserva los mínimos estructurales existentes.
+- El workflow canónico `synchronize-generated-site.yml` fue restaurado después de las migraciones.
+- Los scripts auxiliares de migración fueron eliminados del head permanente.
 
 ## Evidencia pública comprobada
 
@@ -26,13 +27,13 @@ La materialización corrige la verdad editorial global, pero no mejora ni sustit
 
 ## Consistencia del validador curricular
 
-El validador histórico exigía que todas las asignaturas quedaran en `generated` o `complete`. Ese supuesto contradice el manifiesto actual, que distingue 43 cursos desarrollados y 51 pendientes. La corrección permanente debe conservar todos los mínimos estructurales y, además, exigir que cada curso público coincida exactamente con su pertenencia a `pending`, `developed` o `complete` en `data/catalog_statuses.json`.
+El validador histórico exigía que todas las asignaturas quedaran en `generated` o `complete`. Ese supuesto contradecía el manifiesto actual, que distingue 43 cursos desarrollados y 51 pendientes. La corrección permanente conserva todos los mínimos estructurales y exige que cada curso público coincida exactamente con su pertenencia a `pending`, `developed` o `complete` en `data/catalog_statuses.json`.
 
 Esta modificación no reduce el control: reemplaza una condición global incorrecta por una comprobación de consistencia individual y auditable para las 94 asignaturas.
 
 ## Ciclo estable requerido
 
-El commit final de verificación debe iniciar un ciclo de CI no creado por `github-actions[bot]`. El PR solo podrá salir de borrador cuando:
+Este commit inicia un ciclo de CI no creado por `github-actions[bot]`. El PR solo podrá salir de borrador cuando:
 
 1. los workflows aplicables terminen en verde sobre un único SHA;
 2. el generador resulte idempotente;
