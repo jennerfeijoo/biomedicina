@@ -6,6 +6,8 @@ La asignatura permanece en `review`. Los controles automáticos pueden comprobar
 
 El identificador técnico continúa como `descubrimiento-computacional-farmacos`; el título visible es **Evaluación Computacional de Evidencia Terapéutica**. Esta diferencia debe conservarse de forma consistente en curso, catálogo, páginas y documentación.
 
+La materialización automática fue comprobada el 29 de julio de 2026: el descriptor, las ocho unidades, las páginas públicas, el catálogo y los índices conservan el título visible, el estado `review` y la clasificación `developed`; la lista `complete` permanece vacía y no quedan asignaturas en `provisional_subjects.json`. Esta comprobación técnica no constituye revisión disciplinar.
+
 ## Perfiles de revisión recomendados
 
 1. Especialista en bioinformática y gobernanza de datos biomédicos.
