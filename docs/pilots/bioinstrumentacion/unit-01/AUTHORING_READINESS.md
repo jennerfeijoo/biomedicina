@@ -1,22 +1,30 @@
 # Readiness de autoría — Bioinstrumentación, Unidad 1
 
-**Estado del bloque:** `authoring_preparation_review`  
+**Estado del bloque:** `authoring_preparation_review` con bloqueos técnicos resueltos  
 **Estado editorial del curso:** `pending`  
 **Unidad desarrollada:** no  
 **Fecha:** 29 de julio de 2026
 
 ## Decisión
 
-La Unidad 1 dispone ahora de una base suficiente para revisión interna de autoría, pero no debe publicarse como lección desarrollada. El bloque define qué debe enseñarse, qué evidencia debe producir el estudiante, cómo se diagnostican errores y qué fuentes sostienen las afirmaciones centrales.
+La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y prácticas planificadas. Además, los tres bloqueos técnicos verificables quedaron resueltos: el caso de presión diferencia mensurandos y métodos, el modelo térmico se limita a una simulación didáctica de primer orden y PhysioNet se fija en MIT-BIH v1.0.0, registro 100.
 
-## Artefactos del bloque
+La teoría completa todavía **no está autorizada**, porque falta revisión disciplinar humana documentada.
+
+## Artefactos de preparación
 
 - `data/unit_preparation/bioinstrumentacion-unit-01.json`
+- `data/unit_preparation/bioinstrumentacion-unit-01-blocker-resolution.json`
+- `data/source_registry/bioinstrumentacion-unit-01-blockers.json`
 - `docs/pilots/bioinstrumentacion/unit-01/SOURCE_DOSSIER.md`
 - `docs/pilots/bioinstrumentacion/unit-01/CONCEPT_AND_VISUAL_MODEL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/ASSESSMENT_AND_FEEDBACK_BLUEPRINT.md`
 - `docs/pilots/bioinstrumentacion/unit-01/MISCONCEPTION_COMPLETION.md`
 - `docs/pilots/bioinstrumentacion/unit-01/PRACTICE_AND_DATA_PLAN.md`
+- `docs/pilots/bioinstrumentacion/unit-01/PRESSURE_CASE_RESOLUTION.md`
+- `docs/pilots/bioinstrumentacion/unit-01/THERMAL_MODEL_RESOLUTION.md`
+- `docs/pilots/bioinstrumentacion/unit-01/PHYSIONET_RECORD_100_SPEC.md`
+- `docs/pilots/bioinstrumentacion/unit-01/DISCIPLINARY_REVIEW_REQUEST.md`
 
 ## Aspectos resueltos
 
@@ -26,53 +34,58 @@ La unidad se limita a especificación del mensurando, capas de la medición, sis
 
 ### Modelo conceptual
 
-Se distinguen explícitamente:
+Se distinguen explícitamente fenómeno, cantidad, mensurando, método, ruta de señal, modelo de medición, indicación, valor medido, resultado, influencia, corrección, incertidumbre, trazabilidad y aptitud para el uso.
 
-- fenómeno y cantidad;
-- mensurando y método;
-- ruta de señal y modelo de medición;
-- indicación, valor medido y resultado;
-- influencia, corrección e incertidumbre;
-- trazabilidad y aptitud para el uso.
+### Evaluación y feedback
 
-### Evaluación
+Los cinco resultados tienen evidencia observable, criterio de dominio, errores críticos y recuperación. Trece misconceptions cuentan con diagnóstico, explicación, dos pistas graduadas, actividad de recuperación distinta y criterio objetivo para continuar.
 
-Los cinco resultados tienen evidencia observable, criterio de dominio, errores críticos y recuperación. La evaluación incluye clasificación diagnóstica, especificación, auditoría de cadena, modelo, trazabilidad y transferencia.
+### Bloque técnico 1 — Presión
 
-### Feedback
+**Resuelto internamente para autoría.** El caso diferencia:
 
-Trece misconceptions cuentan con:
+1. presión intravascular en sitio y referencia especificados;
+2. estimación auscultatoria braquial;
+3. estimación oscilométrica dependiente del algoritmo.
 
-- diagnóstico;
-- explicación del fallo;
-- dos pistas graduadas;
-- actividad de recuperación distinta;
-- criterio objetivo para continuar.
+No se permite equiparar presión del manguito, PPG, tiempo de tránsito o una salida numérica con presión arterial directa. El caso no incluye procedimientos ni interpretación clínica.
 
-El primer ciclo de CI detectó cinco errores evaluados que todavía no tenían ficha propia. El banco y la documentación se completaron sin eliminar las pruebas que los discriminaban.
+### Bloque técnico 2 — Modelo térmico
 
-### Práctica
+**Resuelto internamente para diseño del dataset.** La práctica separa:
 
-Se han definido tres prácticas seguras:
+- `T_u`: superficie no perturbada;
+- `T_d`: superficie perturbada por contacto;
+- `T_s`: temperatura del sensor;
+- `y`: indicación simulada.
 
-1. cadena térmica sintética;
-2. auditoría de metadatos ECG abiertos;
-3. auditoría documental de trazabilidad.
+El modelo de primer orden está limitado explícitamente y dispone de pruebas de convergencia, constante de tiempo, ausencia de sobreimpulso ideal y separación entre perturbación, dinámica, offset y ruido.
 
-Ninguna requiere adquisición con personas, conexión a equipos clínicos ni interpretación diagnóstica.
+### Bloque técnico 3 — PhysioNet
+
+**Resuelto y fijado.** Se utilizará:
+
+- MIT-BIH Arrhythmia Database;
+- versión `1.0.0`;
+- registro `100`;
+- archivos `100.hea` y `100.dat`;
+- dos canales `MLII` y `V5`;
+- frecuencia `360 Hz`;
+- `650000` muestras.
+
+La práctica se limita a metadatos. No usa anotaciones para clasificación ni realiza interpretación diagnóstica.
 
 ### Fuentes
 
-Las afirmaciones centrales se apoyan en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST TN 2156. PhysioNet se usa solo como fuente de datos y metadatos para una práctica.
+La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST TN 2156. La resolución de bloqueos incorpora statements AHA de medición de presión, literatura sobre termometría de contacto y la documentación oficial de PhysioNet. Cada fuente tiene afirmaciones autorizadas y limitaciones explícitas.
 
 ## Riesgos abiertos
 
-1. La especificación del caso de presión arterial requiere revisión para evitar simplificar métodos invasivos y no invasivos como equivalentes.
-2. El caso térmico necesita revisión del modelo sintético antes de generar datos.
-3. Debe fijarse el registro exacto de MIT-BIH y comprobarse el diccionario de metadatos utilizado por el código.
-4. Falta una prueba cognitiva con una persona del perfil objetivo.
-5. Falta revisión disciplinar por una persona con competencia en metrología e instrumentación biomédica.
-6. La implementación del feedback debe demostrar que no se limita a revelar respuestas.
+1. Falta revisión disciplinar humana por una persona competente en metrología e instrumentación biomédica.
+2. Falta una prueba cognitiva con una persona del perfil objetivo.
+3. La implementación futura del feedback debe demostrar que no se limita a revelar respuestas.
+4. Las prácticas todavía no se han implementado ni ejecutado desde un entorno limpio.
+5. La teoría completa todavía no ha sido redactada ni auditada.
 
 ## Gate antes de redactar teoría completa
 
@@ -82,12 +95,12 @@ Las afirmaciones centrales se apoyan en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y
 - [x] Trece misconceptions y feedback diseñados.
 - [x] Prácticas seguras y reproducibles planificadas.
 - [x] Afirmaciones centrales vinculadas a fuentes directas.
-- [ ] Revisión interna del caso de presión arterial.
-- [ ] Revisión interna del modelo térmico.
-- [ ] Registro de PhysioNet fijado y comprobado.
-- [ ] Revisión disciplinar inicial.
+- [x] Revisión interna del caso de presión arterial.
+- [x] Revisión interna del modelo térmico.
+- [x] Registro de PhysioNet fijado y comprobado documentalmente.
+- [ ] Revisión disciplinar humana inicial.
 
-La redacción puede comenzar de forma controlada después de resolver los cuatro puntos pendientes. Ningún borrador deberá cambiar el estado del curso.
+La redacción completa solo puede comenzar cuando el último punto esté documentado mediante `DISCIPLINARY_REVIEW_REQUEST.md`. Un workflow verde no sustituye esa revisión.
 
 ## Gate antes de considerar la unidad desarrollada
 
@@ -95,7 +108,7 @@ La redacción puede comenzar de forma controlada después de resolver los cuatro
 - al menos dos ejemplos razonados y un caso de transferencia no resuelto previamente;
 - prácticas implementadas y ejecutadas desde un entorno limpio;
 - rúbricas y feedback probados;
-- revisión de exactitud científica y de terminología;
+- revisión de exactitud científica y terminología;
 - accesibilidad textual y visual;
 - ausencia de saltos hacia interpretación clínica o requisitos normativos no consultados;
 - validación automática del paquete;
@@ -103,13 +116,15 @@ La redacción puede comenzar de forma controlada después de resolver los cuatro
 
 ## Gate antes de `complete`
 
-Este bloque no modifica el criterio general. `complete` exige revisión disciplinar externa documentada del curso, resolución de observaciones, auditoría de continuidad entre unidades y evidencia de que las actividades permiten autonomía real. Un workflow verde no satisface este requisito.
+`complete` exige revisión disciplinar externa documentada del curso, resolución de observaciones, auditoría de continuidad entre unidades y evidencia de autonomía real. No se alcanza mediante conteos, generación automática o CI.
 
 ## Resultado editorial
 
 Después de fusionar este bloque:
 
 - Bioinstrumentación seguirá en `pending`;
-- las seis unidades fallback públicas seguirán identificadas como contenido de respaldo;
-- no se creará todavía `data/course_redevelopment/bioinstrumentacion/units/unit-01.json`;
-- el siguiente bloque será la resolución de brechas y revisión inicial, o la autoría controlada cuando esas condiciones estén documentadas.
+- las unidades fallback públicas seguirán identificadas como contenido de respaldo;
+- no se creará `data/course_redevelopment/bioinstrumentacion/units/unit-01.json`;
+- los tres bloqueos técnicos estarán cerrados;
+- la revisión disciplinar seguirá abierta;
+- el siguiente bloque será obtener y registrar esa revisión antes de la autoría completa.
