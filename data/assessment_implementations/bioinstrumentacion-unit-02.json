@@ -1,0 +1,307 @@
+{
+  "schema_version": "1.0",
+  "implementation_id": "bioinstrumentacion-unit-02-assessment",
+  "subject_id": "bioinstrumentacion",
+  "unit_number": 2,
+  "status": "implemented_internal_review",
+  "course_editorial_state": "pending",
+  "source_blueprint": "data/unit_preparation/bioinstrumentacion-unit-02.json",
+  "practice_implementation": "data/practice_implementations/bioinstrumentacion-unit-02.json",
+  "feedback_bank": "data/assessment_implementations/bioinstrumentacion-unit-02-feedback.json",
+  "external_professional_review_status": "pending_human_review",
+  "full_theory_drafting_authorized": false,
+  "authoral_unit_present": false,
+  "public_release_authorized": false,
+  "purpose": "Implementar evaluación diagnóstica, puntuación estructurada y retroalimentación recuperativa para los resultados de aprendizaje de la Unidad 2, conectando las tareas con U2-P1, U2-P2 y U2-P3 sin revelar respuestas ni sustituir la revisión humana de razonamientos abiertos.",
+  "machine_scored_assessments": [
+    {
+      "id": "U2-A2",
+      "type": "static_curve_audit",
+      "outcomes": ["U2-LO2", "U2-LO3"],
+      "practice_evidence": ["U2-P1"],
+      "allowed_patterns": ["linear_local", "saturation", "dead_zone", "hysteresis"],
+      "allowed_evidence": [
+        "slope_stable_in_declared_interval",
+        "residuals_unstructured_by_direction",
+        "slope_decreases_at_extremes",
+        "output_approaches_plateau",
+        "ideal_output_constant_near_zero",
+        "response_recovers_outside_dead_zone",
+        "branch_separation_at_same_input",
+        "residual_sign_follows_scan_direction"
+      ],
+      "allowed_refutation_tests": [
+        "repeat_with_reversed_scan",
+        "extend_input_beyond_declared_interval",
+        "inspect_local_slope_near_zero",
+        "fit_branches_separately"
+      ],
+      "cases": [
+        {
+          "id": "SC01",
+          "prompt": "Curva de control con pendiente aproximadamente constante dentro del intervalo declarado y residuos sin separación por dirección.",
+          "expected_pattern": "linear_local",
+          "required_evidence": ["slope_stable_in_declared_interval", "residuals_unstructured_by_direction"],
+          "expected_refutation_test": "extend_input_beyond_declared_interval",
+          "misconceptions": ["linearity-is-intrinsic-global", "higher-sensitivity-is-better"]
+        },
+        {
+          "id": "SC02",
+          "prompt": "La pendiente local disminuye al aproximarse a ambos extremos y la salida se acerca a mesetas.",
+          "expected_pattern": "saturation",
+          "required_evidence": ["slope_decreases_at_extremes", "output_approaches_plateau"],
+          "expected_refutation_test": "extend_input_beyond_declared_interval",
+          "misconceptions": ["higher-sensitivity-is-better", "linearity-is-intrinsic-global"]
+        },
+        {
+          "id": "SC03",
+          "prompt": "La salida ideal permanece constante alrededor de cero y recupera respuesta fuera de ese intervalo.",
+          "expected_pattern": "dead_zone",
+          "required_evidence": ["ideal_output_constant_near_zero", "response_recovers_outside_dead_zone"],
+          "expected_refutation_test": "inspect_local_slope_near_zero",
+          "misconceptions": ["sensitivity-equals-resolution"]
+        },
+        {
+          "id": "SC04",
+          "prompt": "Para una misma entrada aparecen dos ramas separadas según el sentido del barrido y los residuos cambian de signo con la dirección.",
+          "expected_pattern": "hysteresis",
+          "required_evidence": ["branch_separation_at_same_input", "residual_sign_follows_scan_direction"],
+          "expected_refutation_test": "fit_branches_separately",
+          "misconceptions": ["hysteresis-is-random-noise"]
+        }
+      ],
+      "mastery_rule": {"minimum_cases_fully_correct": 4},
+      "learner_output_policy": "El resultado informa casos incorrectos y rutas conceptuales; no devuelve patrón, evidencia ni prueba esperados."
+    },
+    {
+      "id": "U2-A3",
+      "type": "first_order_dynamic_model",
+      "outcomes": ["U2-LO4"],
+      "practice_evidence": ["U2-P2"],
+      "allowed_decisions": ["accept_first_order_limited", "reject_first_order"],
+      "allowed_reasons": [
+        "time_axis_present",
+        "monotonic_no_overshoot",
+        "fraction_at_tau_consistent",
+        "unmodelled_delay",
+        "overshoot",
+        "missing_time_axis"
+      ],
+      "allowed_response_time_interpretations": [
+        "criterion_dependent_not_equal_tau",
+        "not_applicable_model_rejected",
+        "universal_equals_tau"
+      ],
+      "allowed_bandwidth_interpretations": [
+        "first_order_minus3db_only",
+        "not_applicable_model_rejected",
+        "component_cutoff_equals_chain_bandwidth"
+      ],
+      "cases": [
+        {
+          "id": "DY01",
+          "prompt": "Respuesta sintética monótona, sin sobreimpulso, con eje temporal y cambio compatible con el modelo declarado.",
+          "expected_decision": "accept_first_order_limited",
+          "required_reasons": ["time_axis_present", "monotonic_no_overshoot", "fraction_at_tau_consistent"],
+          "tau_target_s": 2.0,
+          "tau_tolerance_s": 0.1,
+          "expected_response_time_interpretation": "criterion_dependent_not_equal_tau",
+          "expected_bandwidth_interpretation": "first_order_minus3db_only",
+          "misconceptions": ["static-calibration-covers-dynamics", "response-time-equals-time-constant", "fast-means-accurate"]
+        },
+        {
+          "id": "DY02",
+          "prompt": "La salida permanece plana 0,4 s después del escalón antes de iniciar una transición de primer orden.",
+          "expected_decision": "reject_first_order",
+          "required_reasons": ["unmodelled_delay"],
+          "tau_target_s": null,
+          "expected_response_time_interpretation": "not_applicable_model_rejected",
+          "expected_bandwidth_interpretation": "not_applicable_model_rejected",
+          "misconceptions": ["static-calibration-covers-dynamics", "response-time-equals-time-constant"]
+        },
+        {
+          "id": "DY03",
+          "prompt": "La salida supera el valor final y presenta oscilación amortiguada antes del asentamiento.",
+          "expected_decision": "reject_first_order",
+          "required_reasons": ["overshoot"],
+          "tau_target_s": null,
+          "expected_response_time_interpretation": "not_applicable_model_rejected",
+          "expected_bandwidth_interpretation": "not_applicable_model_rejected",
+          "misconceptions": ["static-calibration-covers-dynamics", "fast-means-accurate"]
+        },
+        {
+          "id": "DY04",
+          "prompt": "Solo se entrega una tabla estacionaria entrada–salida, sin reloj ni eje temporal.",
+          "expected_decision": "reject_first_order",
+          "required_reasons": ["missing_time_axis"],
+          "tau_target_s": null,
+          "expected_response_time_interpretation": "not_applicable_model_rejected",
+          "expected_bandwidth_interpretation": "not_applicable_model_rejected",
+          "misconceptions": ["static-calibration-covers-dynamics", "response-time-equals-time-constant"]
+        }
+      ],
+      "mastery_rule": {"minimum_cases_fully_correct": 4, "positive_tau_must_be_within_tolerance": true},
+      "learner_output_policy": "El resultado no revela la decisión, razón, tau ni interpretación esperadas."
+    },
+    {
+      "id": "U2-A4",
+      "type": "loading_mechanism_review",
+      "outcomes": ["U2-LO3", "U2-LO5"],
+      "practice_evidence": ["U2-P3"],
+      "allowed_decisions": ["interaction_requires_analysis", "reject_claim"],
+      "allowed_routes": [
+        "electrical_source_impedance_divider",
+        "thermal_self_heating_and_heat_transfer",
+        "mechanical_added_mass_stiffness_mounting",
+        "optical_source_detector_geometry_and_ambient"
+      ],
+      "allowed_perturbed_quantities": [
+        "bridge_voltage_and_strain_transfer",
+        "sensor_temperature",
+        "structural_deformation_and_dynamics",
+        "incident_optical_power_and_photocurrent"
+      ],
+      "allowed_missing_evidence": [
+        "source_and_input_impedances",
+        "excitation_power_mounting_and_medium",
+        "mounting_mass_stiffness_and_frequency_response",
+        "wavelength_geometry_ambient_and_amplifier"
+      ],
+      "allowed_mitigation_status": ["proposed_not_guaranteed"],
+      "claims": [
+        {
+          "id": "LG01",
+          "statement": "La entrada del amplificador es ideal, por lo que nunca carga una red resistiva de lectura.",
+          "expected_decision": "interaction_requires_analysis",
+          "expected_route": "electrical_source_impedance_divider",
+          "expected_perturbed_quantity": "bridge_voltage_and_strain_transfer",
+          "expected_missing_evidence": "source_and_input_impedances",
+          "expected_mitigation_status": "proposed_not_guaranteed",
+          "misconceptions": ["loading-is-negligible", "datasheet-is-system-proof"]
+        },
+        {
+          "id": "LG02",
+          "statement": "Aumentar la excitación de un termistor mejora la señal sin modificar su temperatura.",
+          "expected_decision": "interaction_requires_analysis",
+          "expected_route": "thermal_self_heating_and_heat_transfer",
+          "expected_perturbed_quantity": "sensor_temperature",
+          "expected_missing_evidence": "excitation_power_mounting_and_medium",
+          "expected_mitigation_status": "proposed_not_guaranteed",
+          "misconceptions": ["loading-is-negligible", "higher-sensitivity-is-better"]
+        },
+        {
+          "id": "LG03",
+          "statement": "Una galga y su montaje no pueden modificar la respuesta mecánica de una estructura pequeña.",
+          "expected_decision": "interaction_requires_analysis",
+          "expected_route": "mechanical_added_mass_stiffness_mounting",
+          "expected_perturbed_quantity": "structural_deformation_and_dynamics",
+          "expected_missing_evidence": "mounting_mass_stiffness_and_frequency_response",
+          "expected_mitigation_status": "proposed_not_guaranteed",
+          "misconceptions": ["loading-is-negligible", "datasheet-is-system-proof"]
+        },
+        {
+          "id": "LG04",
+          "statement": "La frecuencia de corte típica del fotodiodo demuestra el ancho de banda de toda la cadena óptica.",
+          "expected_decision": "reject_claim",
+          "expected_route": "optical_source_detector_geometry_and_ambient",
+          "expected_perturbed_quantity": "incident_optical_power_and_photocurrent",
+          "expected_missing_evidence": "wavelength_geometry_ambient_and_amplifier",
+          "expected_mitigation_status": "proposed_not_guaranteed",
+          "misconceptions": ["datasheet-is-system-proof", "component-performance-is-clinical-utility"]
+        }
+      ],
+      "mastery_rule": {"minimum_claims_fully_correct": 4},
+      "learner_output_policy": "El feedback no reproduce la ruta causal ni la evidencia faltante esperadas."
+    }
+  ],
+  "human_scored_assessments": [
+    {
+      "id": "U2-A1",
+      "type": "functional_boundary_sort",
+      "outcomes": ["U2-LO1"],
+      "automatic_semantic_grading": false,
+      "allowed_misconceptions": ["sensor-equals-system", "sensor-equals-transducer-always"],
+      "rubric": [
+        {"criterion": "element_directly_affected", "max_points": 2, "critical_if_zero": true},
+        {"criterion": "input_output_quantities", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "boundary_declaration", "max_points": 2, "critical_if_zero": true},
+        {"criterion": "transducer_vs_sensor", "max_points": 2, "critical_if_zero": true},
+        {"criterion": "interface_and_conditioning", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "alternative_boundary_coherence", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "justification_without_commercial_name", "max_points": 2, "critical_if_zero": false}
+      ],
+      "mastery_rule": {"minimum_points": 11, "critical_zeros_forbidden": true},
+      "reviewer_instruction": "Puntuar una clasificación de 16 elementos y dos fronteras alternativas. La identidad comercial no sustituye la función, las cantidades ni la frontera."
+    },
+    {
+      "id": "U2-A5",
+      "type": "multi_criteria_selection_transfer",
+      "outcomes": ["U2-LO1", "U2-LO2", "U2-LO3", "U2-LO4", "U2-LO5"],
+      "automatic_semantic_grading": false,
+      "allowed_misconceptions": ["higher-sensitivity-is-better", "fast-means-accurate", "datasheet-is-system-proof", "component-performance-is-clinical-utility"],
+      "rubric": [
+        {"criterion": "requirements_prioritized", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "comparable_units_and_conditions", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "static_tradeoffs", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "dynamic_tradeoffs", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "loading_and_interface", "max_points": 2, "critical_if_zero": false},
+        {"criterion": "evidence_traceability", "max_points": 2, "critical_if_zero": true},
+        {"criterion": "unsupported_claims_list", "max_points": 2, "critical_if_zero": true},
+        {"criterion": "clinical_regulatory_boundary", "max_points": 2, "critical_if_zero": true}
+      ],
+      "mastery_rule": {"minimum_points": 13, "critical_zeros_forbidden": true},
+      "reviewer_instruction": "Puntuar una decisión defendida entre alternativas con requisitos ponderados, evidencia localizada, compromisos y afirmaciones que todavía no pueden sostenerse."
+    }
+  ],
+  "feedback_contract": {
+    "required_fields": [
+      "diagnosed_misconception",
+      "why_the_reasoning_fails",
+      "first_hint",
+      "second_hint",
+      "source_or_section_to_review",
+      "different_recovery_problem",
+      "objective_continue_criterion"
+    ],
+    "release_by_attempt": {
+      "1": ["diagnosed_misconception", "why_the_reasoning_fails", "first_hint", "source_or_section_to_review"],
+      "2": ["diagnosed_misconception", "why_the_reasoning_fails", "second_hint", "source_or_section_to_review"],
+      "3_plus": ["diagnosed_misconception", "why_the_reasoning_fails", "different_recovery_problem", "objective_continue_criterion", "source_or_section_to_review"]
+    },
+    "prohibited_output_fields": [
+      "expected_pattern",
+      "expected_refutation_test",
+      "expected_decision",
+      "expected_route",
+      "expected_perturbed_quantity",
+      "expected_missing_evidence",
+      "tau_target_s",
+      "answer_key",
+      "complete_correct_response"
+    ]
+  },
+  "submission_contract": {
+    "machine_scored": {
+      "required": ["assessment_id", "attempt", "responses"],
+      "static_curve_response": "objeto case_id -> {pattern, evidence[], refutation_test}",
+      "dynamic_response": "objeto case_id -> {decision, reasons[], tau_estimate_s, response_time_interpretation, bandwidth_interpretation}",
+      "loading_response": "objeto claim_id -> {decision, route, perturbed_quantity, missing_evidence, mitigation_status}"
+    },
+    "human_scored": {
+      "required": ["assessment_id", "attempt", "rubric_scores", "reviewer_notes", "diagnosed_misconceptions", "human_reviewer_confirmed"],
+      "rule": "La persona revisora selecciona puntuaciones y rutas diagnósticas; el motor valida estructura, calcula dominio y libera feedback sin realizar puntuación semántica."
+    }
+  },
+  "safety_boundary": "No se solicita adquisición con personas, muestras o equipos clínicos; no se interpreta diagnóstico, seguridad, conformidad ni utilidad clínica.",
+  "review_state": {
+    "internal_technical_validation": "implemented",
+    "disciplinary_review": "pending_human_review",
+    "student_cognitive_test": "pending",
+    "feedback_usability_review": "pending",
+    "full_theory_drafting_authorized": false,
+    "unit_developed": false,
+    "public_release_authorized": false,
+    "course_state_after_block": "pending"
+  },
+  "editorial_effect": "internal_assessment_implementation_only"
+}
