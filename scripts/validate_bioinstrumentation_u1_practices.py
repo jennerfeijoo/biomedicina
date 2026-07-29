@@ -198,8 +198,10 @@ def validate_contract(thermal_hash: str) -> None:
         raise ValueError("unit must remain undeveloped")
 
     package = load_json(PACKAGE_PATH)
-    if package.get("current_phase") != "unit_01_practice_implementation_review":
-        raise ValueError("pilot package phase is not synchronized")
+    if package.get("current_phase") != "unit_01_authoring_preparation_review":
+        raise ValueError("pilot package historical phase changed unexpectedly")
+    if package.get("active_workstream") != "unit_01_practice_implementation_review":
+        raise ValueError("pilot package active workstream is not synchronized")
     unit_preparation = package.get("unit_preparation")
     if not isinstance(unit_preparation, dict):
         raise ValueError("pilot package lacks unit_preparation")
@@ -209,6 +211,15 @@ def validate_contract(thermal_hash: str) -> None:
         raise ValueError(
             "pilot package does not reference the practice implementation"
         )
+    package_practices = package.get("practice_implementation")
+    if not isinstance(package_practices, dict):
+        raise ValueError("pilot package lacks practice_implementation")
+    if package_practices.get("status") != "implemented_internal_review":
+        raise ValueError("pilot package practice status is incorrect")
+    if package_practices.get("human_review_status") != "pending_human_review":
+        raise ValueError("pilot package must preserve pending human review")
+    if package_practices.get("full_theory_drafting_authorized") is not False:
+        raise ValueError("pilot package must not authorize full theory drafting")
 
     statuses = load_json(STATUS_PATH)
     if "bioinstrumentacion" not in set(statuses.get("pending", [])):
