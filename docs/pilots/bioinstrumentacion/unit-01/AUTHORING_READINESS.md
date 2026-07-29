@@ -15,6 +15,7 @@ La Unidad 1 dispone ahora de una base suficiente para revisión interna de autor
 - `docs/pilots/bioinstrumentacion/unit-01/SOURCE_DOSSIER.md`
 - `docs/pilots/bioinstrumentacion/unit-01/CONCEPT_AND_VISUAL_MODEL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/ASSESSMENT_AND_FEEDBACK_BLUEPRINT.md`
+- `docs/pilots/bioinstrumentacion/unit-01/MISCONCEPTION_COMPLETION.md`
 - `docs/pilots/bioinstrumentacion/unit-01/PRACTICE_AND_DATA_PLAN.md`
 
 ## Aspectos resueltos
@@ -40,13 +41,15 @@ Los cinco resultados tienen evidencia observable, criterio de dominio, errores c
 
 ### Feedback
 
-Ocho misconceptions cuentan con:
+Trece misconceptions cuentan con:
 
 - diagnóstico;
 - explicación del fallo;
 - dos pistas graduadas;
 - actividad de recuperación distinta;
 - criterio objetivo para continuar.
+
+El primer ciclo de CI detectó cinco errores evaluados que todavía no tenían ficha propia. El banco y la documentación se completaron sin eliminar las pruebas que los discriminaban.
 
 ### Práctica
 
@@ -76,7 +79,7 @@ Las afirmaciones centrales se apoyan en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y
 - [x] Alcance y exclusiones definidos.
 - [x] Resultados y evidencias alineados.
 - [x] Modelo conceptual y visual especificado.
-- [x] Misconceptions y feedback diseñados.
+- [x] Trece misconceptions y feedback diseñados.
 - [x] Prácticas seguras y reproducibles planificadas.
 - [x] Afirmaciones centrales vinculadas a fuentes directas.
 - [ ] Revisión interna del caso de presión arterial.
