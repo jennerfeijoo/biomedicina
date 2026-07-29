@@ -179,7 +179,7 @@ La revisión profesional operativa continúa en el issue `#161`. Las prácticas 
 
 ## Gate antes de autoría completa
 
-La autorización provisional separada ya está registrada. Este gate habilita únicamente la creación del borrador autoral interno y no satisface los gates de publicación, promoción, prueba cognitiva o revisión profesional.
+El gate histórico exigía: **Preparar una autorización provisional separada** para la redacción controlada. Esa transición ya quedó materializada mediante el registro y el validador indicados arriba. El gate actual habilita únicamente la creación del borrador autoral interno y no satisface los gates de publicación, promoción, prueba cognitiva o revisión profesional.
 
 ## Gates posteriores a la autoría controlada
 
