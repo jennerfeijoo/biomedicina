@@ -31,6 +31,15 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Apply authoritative curriculum validator
+        run: python scripts/_apply_curriculum_validator_patch.py
+
+      - name: Validate curriculum and pilot foundation
+        run: |
+          python -m py_compile scripts/validate_curriculum.py
+          python scripts/validate_curriculum.py
+          python scripts/validate_pilot_foundations.py
+
       - name: Regenerate site deterministically
         shell: bash
         run: |
@@ -51,15 +60,21 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic site
+      - name: Remove one-time validator scaffolding
+        shell: bash
+        run: |
+          rm scripts/_apply_curriculum_validator_patch.py
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+
+      - name: Commit permanent validator update
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- ciencias-basicas biologicas-medicas ingenieria-biomedica gestion-etica-comunicacion catalogo
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio generado ya está sincronizado."
+            echo "El validador y el sitio ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize deterministic site generation"
+          git commit -m "Validate authoritative editorial states"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
