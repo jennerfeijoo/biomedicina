@@ -10,19 +10,19 @@ from typing import Any
 from bioinstrumentation_u2_assessment_core import AssessmentError, evaluate_submission
 
 ROOT = Path(__file__).resolve().parents[1]
-AUDIT_PATH = ROOT / "data" / "course_audits" / "bioinstrumentacion" / "UNIT_02_PRACTICES_ASSESSMENT_SCIENTIFIC_EDITORIAL_AUDIT_2026-07-29.json"
-REPORT_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "unit-02" / "INTERNAL_SCIENTIFIC_EDITORIAL_AUDIT.md"
-ASSESSMENT_PATH = ROOT / "data" / "assessment_implementations" / "bioinstrumentacion-unit-02.json"
-FEEDBACK_PATH = ROOT / "data" / "assessment_implementations" / "bioinstrumentacion-unit-02-feedback.json"
-PREPARATION_PATH = ROOT / "data" / "unit_preparation" / "bioinstrumentacion-unit-02.json"
-PRACTICE_PATH = ROOT / "data" / "practice_implementations" / "bioinstrumentacion-unit-02.json"
-READINESS_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "unit-02" / "AUTHORING_READINESS.md"
-ASSESSMENT_DOC_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "unit-02" / "ASSESSMENT_IMPLEMENTATION.md"
-STATUS_PATH = ROOT / "data" / "catalog_statuses.json"
-AUTHORAL_UNIT_PATH = ROOT / "data" / "course_redevelopment" / "bioinstrumentacion" / "units" / "unit-02.json"
-DECISION_PATH = ROOT / "data" / "review_evidence" / "bioinstrumentacion-unit-02-disciplinary-review.json"
-MANIFEST_PATH = ROOT / "data" / "review_evidence" / "bioinstrumentacion-unit-02-review-packet.json"
-FIXTURE_DIR = ROOT / "data" / "assessment_fixtures" / "bioinstrumentacion" / "unit-02"
+AUDIT_PATH = ROOT / "data/course_audits/bioinstrumentacion/UNIT_02_PRACTICES_ASSESSMENT_SCIENTIFIC_EDITORIAL_AUDIT_2026-07-29.json"
+REPORT_PATH = ROOT / "docs/pilots/bioinstrumentacion/unit-02/INTERNAL_SCIENTIFIC_EDITORIAL_AUDIT.md"
+ASSESSMENT_PATH = ROOT / "data/assessment_implementations/bioinstrumentacion-unit-02.json"
+FEEDBACK_PATH = ROOT / "data/assessment_implementations/bioinstrumentacion-unit-02-feedback.json"
+PREPARATION_PATH = ROOT / "data/unit_preparation/bioinstrumentacion-unit-02.json"
+PRACTICE_PATH = ROOT / "data/practice_implementations/bioinstrumentacion-unit-02.json"
+READINESS_PATH = ROOT / "docs/pilots/bioinstrumentacion/unit-02/AUTHORING_READINESS.md"
+ASSESSMENT_DOC_PATH = ROOT / "docs/pilots/bioinstrumentacion/unit-02/ASSESSMENT_IMPLEMENTATION.md"
+STATUS_PATH = ROOT / "data/catalog_statuses.json"
+AUTHORAL_UNIT_PATH = ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-02.json"
+DECISION_PATH = ROOT / "data/review_evidence/bioinstrumentacion-unit-02-disciplinary-review.json"
+MANIFEST_PATH = ROOT / "data/review_evidence/bioinstrumentacion-unit-02-review-packet.json"
+FIXTURE_DIR = ROOT / "data/assessment_fixtures/bioinstrumentacion/unit-02"
 
 EXPECTED_FINDINGS = {"U2-SE-01", "U2-SE-02", "U2-SE-03", "U2-SE-04", "U2-SE-05", "U2-SE-06"}
 EXPECTED_ASSESSMENTS = {"U2-A1", "U2-A2", "U2-A3", "U2-A4", "U2-A5"}
@@ -51,19 +51,22 @@ def require(condition: bool, message: str) -> None:
         raise AuditError(message)
 
 
-def machine_index(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    entries = contract.get("machine_scored_assessments")
-    require(isinstance(entries, list), "machine assessments are missing")
-    return {
-        str(entry.get("id")): entry
-        for entry in entries
-        if isinstance(entry, dict) and entry.get("id")
-    }
+def nested_keys(value: Any) -> set[str]:
+    """Return mapping keys recursively without treating harmless text values as leaked fields."""
+    keys: set[str] = set()
+    if isinstance(value, dict):
+        for key, item in value.items():
+            keys.add(str(key))
+            keys.update(nested_keys(item))
+    elif isinstance(value, list):
+        for item in value:
+            keys.update(nested_keys(item))
+    return keys
 
 
-def human_index(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    entries = contract.get("human_scored_assessments")
-    require(isinstance(entries, list), "human assessments are missing")
+def index(contract: dict[str, Any], field: str) -> dict[str, dict[str, Any]]:
+    entries = contract.get(field)
+    require(isinstance(entries, list), f"{field} is missing")
     return {
         str(entry.get("id")): entry
         for entry in entries
@@ -73,7 +76,7 @@ def human_index(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def validate_audit_record() -> None:
     audit = load_object(AUDIT_PATH)
-    expected_identity = {
+    expected = {
         "schema_version": "1.0",
         "audit_id": "bioinstrumentacion-u2-practices-assessment-scientific-editorial-2026-07-29",
         "subject_id": "bioinstrumentacion",
@@ -83,8 +86,8 @@ def validate_audit_record() -> None:
         "date": "2026-07-29",
         "status": "passed_with_corrections_applied",
     }
-    for field, expected in expected_identity.items():
-        require(audit.get(field) == expected, f"unexpected audit field {field}: {audit.get(field)!r}")
+    for field, wanted in expected.items():
+        require(audit.get(field) == wanted, f"unexpected audit field {field}: {audit.get(field)!r}")
 
     reviewed = audit.get("reviewed_artifacts")
     require(isinstance(reviewed, list) and len(reviewed) >= 11, "reviewed artifact inventory is incomplete")
@@ -93,26 +96,30 @@ def validate_audit_record() -> None:
 
     findings = audit.get("findings")
     require(isinstance(findings, list), "audit findings must be a list")
-    ids = {finding.get("id") for finding in findings if isinstance(finding, dict)}
+    ids = {item.get("id") for item in findings if isinstance(item, dict)}
     require(ids == EXPECTED_FINDINGS, f"unexpected audit findings: {sorted(ids)}")
     for finding in findings:
         require(finding.get("severity") in {"major", "minor"}, f"invalid severity: {finding.get('id')}")
         require(finding.get("status") == "resolved", f"unresolved finding: {finding.get('id')}")
-        corrected = finding.get("corrected_paths")
-        require(isinstance(corrected, list) and corrected, f"finding lacks corrected paths: {finding.get('id')}")
-        for path_text in corrected:
+        paths = finding.get("corrected_paths")
+        require(isinstance(paths, list) and paths, f"finding lacks corrected paths: {finding.get('id')}")
+        for path_text in paths:
             require((ROOT / str(path_text)).is_file(), f"corrected path does not exist: {path_text}")
 
-    require(audit.get("unresolved_critical_findings") == 0, "critical findings remain open")
-    require(audit.get("unresolved_major_findings") == 0, "major findings remain open")
-    require(audit.get("external_professional_review") == "pending_human_review", "external review state changed")
-    require(audit.get("student_cognitive_test") == "pending_human_execution", "cognitive test state changed")
-    require(audit.get("feedback_usability_review") == "pending_human_execution", "feedback usability state changed")
-    require(audit.get("inter_rater_round") == "pending_human_execution", "inter-rater state changed")
-    require(audit.get("full_theory_drafting_authorized") is False, "audit authorizes theory")
-    require(audit.get("public_release_authorized") is False, "audit authorizes publication")
-    require(audit.get("unit_developed") is False, "audit promotes the unit")
-    require(audit.get("course_state") == "pending", "audit changes the course state")
+    expected_states = {
+        "unresolved_critical_findings": 0,
+        "unresolved_major_findings": 0,
+        "external_professional_review": "pending_human_review",
+        "student_cognitive_test": "pending_human_execution",
+        "feedback_usability_review": "pending_human_execution",
+        "inter_rater_round": "pending_human_execution",
+        "full_theory_drafting_authorized": False,
+        "public_release_authorized": False,
+        "unit_developed": False,
+        "course_state": "pending",
+    }
+    for field, wanted in expected_states.items():
+        require(audit.get(field) == wanted, f"audit state changed: {field}")
 
     limitations = " ".join(map(str, audit.get("limitations", []))).casefold()
     for marker in (
@@ -125,22 +132,18 @@ def validate_audit_record() -> None:
 
 
 def validate_scientific_corrections(contract: dict[str, Any]) -> None:
-    machines = machine_index(contract)
-    humans = human_index(contract)
+    machines = index(contract, "machine_scored_assessments")
+    humans = index(contract, "human_scored_assessments")
     require(set(machines) == {"U2-A2", "U2-A3", "U2-A4"}, "machine assessment set changed")
     require(set(humans) == {"U2-A1", "U2-A5"}, "human assessment set changed")
     require(all(item.get("automatic_semantic_grading") is False for item in humans.values()), "human responses enable semantic auto-grading")
 
-    static = machines["U2-A2"]
-    static_cases = {str(case.get("id")): case for case in static.get("cases", []) if isinstance(case, dict)}
+    static_cases = {str(case.get("id")): case for case in machines["U2-A2"].get("cases", []) if isinstance(case, dict)}
     require(static_cases.get("SC01", {}).get("misconceptions") == ["linearity-is-intrinsic-global"], "SC01 still routes irrelevant sensitivity feedback")
-    require("higher-sensitivity-is-better" in static_cases.get("SC02", {}).get("misconceptions", []), "sensitivity route disappeared from the saturation case")
+    require("higher-sensitivity-is-better" in static_cases.get("SC02", {}).get("misconceptions", []), "sensitivity route disappeared from SC02")
 
     dynamic = machines["U2-A3"]
-    require(
-        dynamic.get("allowed_decisions") == ["accept_first_order_limited", "reject_declared_simple_first_order"],
-        "dynamic decision scope is not corrected",
-    )
+    require(dynamic.get("allowed_decisions") == ["accept_first_order_limited", "reject_declared_simple_first_order"], "dynamic decision scope is not corrected")
     dynamic_cases = {str(case.get("id")): case for case in dynamic.get("cases", []) if isinstance(case, dict)}
     for case_id in ("DY02", "DY03", "DY04"):
         require(dynamic_cases.get(case_id, {}).get("expected_decision") == "reject_declared_simple_first_order", f"{case_id} retains an overbroad rejection label")
@@ -156,7 +159,7 @@ def validate_scientific_corrections(contract: dict[str, Any]) -> None:
     require("bridge_output_voltage" in quantities, "electrical loading quantity is missing")
     require("bridge_voltage_and_strain_transfer" not in quantities, "electrical and mechanical quantities remain conflated")
     claims = {str(claim.get("id")): claim for claim in loading.get("claims", []) if isinstance(claim, dict)}
-    require(claims.get("LG01", {}).get("expected_perturbed_quantity") == "bridge_output_voltage", "LG01 electrical loading correction is missing")
+    require(claims.get("LG01", {}).get("expected_perturbed_quantity") == "bridge_output_voltage", "LG01 correction is missing")
 
     audit_state = contract.get("internal_scientific_editorial_audit")
     require(isinstance(audit_state, dict), "assessment contract lacks audit state")
@@ -171,23 +174,14 @@ def validate_evidence_crosswalk(contract: dict[str, Any]) -> None:
     crosswalk = contract.get("evidence_crosswalk")
     require(isinstance(crosswalk, dict) and set(crosswalk) == EXPECTED_ASSESSMENTS, "assessment evidence crosswalk is incomplete")
 
-    preparation = load_object(PREPARATION_PATH)
-    assertions = preparation.get("source_assertions")
+    assertions = load_object(PREPARATION_PATH).get("source_assertions")
     require(isinstance(assertions, list), "preparation source assertions are missing")
-    available_claims = {
-        str(item.get("claim_id"))
-        for item in assertions
-        if isinstance(item, dict) and item.get("claim_id")
-    }
+    available_claims = {str(item.get("claim_id")) for item in assertions if isinstance(item, dict) and item.get("claim_id")}
     require(available_claims == EXPECTED_CLAIMS, "preparation claim set changed")
 
     practices = load_object(PRACTICE_PATH).get("practices")
     require(isinstance(practices, list), "practice contract is missing practices")
-    available_practices = {
-        str(item.get("id"))
-        for item in practices
-        if isinstance(item, dict) and item.get("id")
-    }
+    available_practices = {str(item.get("id")) for item in practices if isinstance(item, dict) and item.get("id")}
     require(available_practices == EXPECTED_PRACTICES, "practice set changed")
 
     expected_outcomes = {
@@ -201,12 +195,12 @@ def validate_evidence_crosswalk(contract: dict[str, Any]) -> None:
     practice_union: set[str] = set()
     for assessment_id, row in crosswalk.items():
         require(isinstance(row, dict), f"crosswalk row is invalid: {assessment_id}")
-        require(set(map(str, row.get("outcomes", []))) == expected_outcomes[assessment_id], f"outcome crosswalk mismatch: {assessment_id}")
+        require(set(map(str, row.get("outcomes", []))) == expected_outcomes[assessment_id], f"outcome mismatch: {assessment_id}")
         claims = set(map(str, row.get("source_claims", [])))
-        require(claims and claims.issubset(available_claims), f"source claim crosswalk mismatch: {assessment_id}")
+        require(claims and claims.issubset(available_claims), f"source claim mismatch: {assessment_id}")
         claim_union.update(claims)
         practice_ids = set(map(str, row.get("practice_ids", [])))
-        require(practice_ids.issubset(available_practices), f"practice crosswalk mismatch: {assessment_id}")
+        require(practice_ids.issubset(available_practices), f"practice mismatch: {assessment_id}")
         practice_union.update(practice_ids)
         artifacts = row.get("artifacts")
         require(isinstance(artifacts, list) and artifacts, f"crosswalk artifacts missing: {assessment_id}")
@@ -229,12 +223,10 @@ def validate_answer_key_governance(contract: dict[str, Any]) -> None:
     require(policy.get("public_client_bundle_authorized") is False, "public answer-key bundle was authorized")
     require(policy.get("requires_separate_release_review") is True, "separate release review is not required")
 
-    implementation = contract
     for fixture_name in ("diagnostic-static.json", "diagnostic-dynamic.json", "diagnostic-loading.json"):
-        result = evaluate_submission(load_object(FIXTURE_DIR / fixture_name), implementation)
-        serialized = json.dumps(result, ensure_ascii=False)
-        for field in prohibited:
-            require(field not in serialized, f"runtime output leaks {field} through {fixture_name}")
+        result = evaluate_submission(load_object(FIXTURE_DIR / fixture_name), contract)
+        leaked = prohibited.intersection(nested_keys(result))
+        require(not leaked, f"runtime output leaks fields through {fixture_name}: {sorted(leaked)}")
 
 
 def validate_runtime_regressions(contract: dict[str, Any]) -> None:
@@ -273,14 +265,12 @@ def validate_runtime_regressions(contract: dict[str, Any]) -> None:
         raise AuditError("legacy conflated loading quantity remains accepted")
 
 
-def validate_feedback_and_documents() -> None:
-    feedback = load_object(FEEDBACK_PATH)
-    bank = feedback.get("feedback")
+def validate_documents() -> None:
+    bank = load_object(FEEDBACK_PATH).get("feedback")
     require(isinstance(bank, dict) and len(bank) == 12, "feedback bank must retain twelve routes")
     for misconception_id, item in bank.items():
         require(isinstance(item, dict), f"invalid feedback entry: {misconception_id}")
-        source = str(item.get("source_or_section_to_review", ""))
-        require(len(source) >= 20, f"feedback source locator is insufficient: {misconception_id}")
+        require(len(str(item.get("source_or_section_to_review", ""))) >= 20, f"feedback source is insufficient: {misconception_id}")
 
     assessment_doc = ASSESSMENT_DOC_PATH.read_text(encoding="utf-8")
     for marker in (
@@ -339,7 +329,7 @@ def main() -> int:
         validate_evidence_crosswalk(contract)
         validate_answer_key_governance(contract)
         validate_runtime_regressions(contract)
-        validate_feedback_and_documents()
+        validate_documents()
         validate_repository_state(contract)
     except (OSError, TypeError, json.JSONDecodeError, AssessmentError, AuditError, ValueError) as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
