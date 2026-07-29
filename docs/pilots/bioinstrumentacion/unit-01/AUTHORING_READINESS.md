@@ -8,7 +8,7 @@
 
 ## Decisión
 
-**Bloqueos técnicos resueltos:** caso de presión, modelo térmico sintético y registro de PhysioNet.
+**bloqueos técnicos resueltos:** caso de presión, modelo térmico sintético y registro de PhysioNet.
 
 La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos y dos prácticas ya cuentan con implementación reproducible y validación automática offline.
 
@@ -92,7 +92,7 @@ La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST T
 - [x] Afirmaciones centrales vinculadas a fuentes directas.
 - [x] Revisión interna del caso de presión arterial.
 - [x] Revisión interna del modelo térmico.
-- [x] Registro de PhysioNet fijado y comprobado.
+- [x] Registro de PhysioNet fijado y comprobado documentalmente.
 - [x] Dos prácticas implementadas y ejecutadas en un entorno limpio de CI.
 - [ ] Revisión disciplinar humana inicial.
 
