@@ -1,0 +1,33 @@
+name: Repair final multivariate key point
+
+on:
+  push:
+    branches:
+      - agent/rebuild-analisis-estadistico-multivariado
+    paths:
+      - 'scripts/repair_multivariate_course_final.py'
+      - '.github/workflows/repair-multivariate-course-final.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/repair_multivariate_course_final.py
+      - shell: bash
+        run: |
+          git add data/course_redevelopment/analisis-estadistico-multivariado/units/unit-02.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Complete final multivariate key point'
+          git push origin HEAD:${GITHUB_REF_NAME}
