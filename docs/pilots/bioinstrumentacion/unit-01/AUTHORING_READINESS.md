@@ -8,6 +8,8 @@
 
 ## Decisión
 
+**Bloqueos técnicos resueltos:** caso de presión, modelo térmico sintético y registro de PhysioNet.
+
 La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos y dos prácticas ya cuentan con implementación reproducible y validación automática offline.
 
 La teoría completa todavía **no está autorizada**, porque falta revisión disciplinar humana documentada.
