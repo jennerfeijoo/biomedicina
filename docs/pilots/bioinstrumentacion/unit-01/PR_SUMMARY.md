@@ -10,6 +10,7 @@ Preparar la Unidad 1 sin redactar todavía una lección ni promover el curso.
 - dossier de fuentes primarias y límites de uso;
 - modelo conceptual y visual;
 - blueprint de evaluación y feedback;
+- complemento de misconceptions detectadas por CI;
 - plan de prácticas seguras y reproducibles;
 - readiness de autoría;
 - ampliación del registro de fuentes;
@@ -22,9 +23,13 @@ Preparar la Unidad 1 sin redactar todavía una lección ni promover el curso.
 - 10 relaciones obligatorias;
 - 3 casos biomédicos;
 - 5 evaluaciones principales;
-- 8 misconceptions;
+- 13 misconceptions;
 - 3 prácticas planificadas;
 - 5 afirmaciones centrales trazadas a fuentes.
+
+## Hallazgo del gate
+
+El primer ciclo de CI identificó cinco misconceptions utilizadas por las evaluaciones pero ausentes del banco explícito. Se añadieron sus fichas de diagnóstico, pistas, recuperación y criterio de continuación. El validador exige ahora exactamente trece y verifica todas las referencias cruzadas.
 
 ## Límites
 
