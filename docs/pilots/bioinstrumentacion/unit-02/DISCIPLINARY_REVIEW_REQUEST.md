@@ -1,10 +1,11 @@
 # Solicitud de revisión disciplinar · Bioinstrumentación Unidad 2
 
-Estado: `pending_human_review`
+Estado: `pending_human_review`  
+Issue operativo: `#161`
 
 ## Alcance de la revisión
 
-Se solicita revisar la resolución técnica previa a la implementación de las prácticas de la Unidad 2: **Sensores, transductores y modelos estáticos y dinámicos**.
+Se solicita revisar la resolución técnica previa a la aprobación profesional de las prácticas de la Unidad 2: **Sensores, transductores y modelos estáticos y dinámicos**.
 
 El paquete incluye:
 
@@ -13,7 +14,8 @@ El paquete incluye:
 - relación limitada entre `τ`, tiempo de respuesta y frecuencia de corte;
 - selección fijada de termistor, galga extensométrica y fotodiodo;
 - cuatro casos seguros de carga térmica, mecánica, eléctrica y óptica;
-- registro de fuentes y límites de transferencia.
+- registro de fuentes y límites de transferencia;
+- handoff congelable con manifiesto SHA-256 y plantilla de decisión.
 
 ## Handoff ejecutable
 
@@ -35,7 +37,7 @@ La construcción del manifiesto, la evaluación de la decisión y los límites d
 docs/pilots/bioinstrumentacion/unit-02/REVIEW_HANDOFF_AND_AUTHORIZATION.md
 ```
 
-La revisión debe referirse a un commit y a un digest SHA-256 del paquete congelado. Un manifiesto, una plantilla, un fixture o un workflow verde no constituyen evidencia humana.
+La revisión debe referirse a un commit y a un digest SHA-256 del paquete congelado. Un manifiesto, una plantilla, un fixture, una autorización provisional interna o un workflow verde no constituyen evidencia humana.
 
 ## Competencia requerida
 
@@ -58,6 +60,7 @@ El contrato exige al menos dos categorías de competencia permitidas y una nota 
 5. ¿Los casos de carga describen una ruta causal correcta y segura?
 6. ¿Las tolerancias y controles permiten implementar prácticas reproducibles sin convertir una simulación en validación física?
 7. ¿Alguna afirmación invade las unidades 4, 6 u 8 o sugiere validación clínica?
+8. ¿Las prácticas previstas pueden ejecutarse sin red, sin datos humanos y con resultados deterministas?
 
 ## Errores críticos
 
@@ -72,13 +75,14 @@ La revisión debe marcar como crítico cualquiera de los siguientes:
 - inferir temperatura corporal, fuerza, presión, concentración u oximetría;
 - declarar seguridad, conformidad normativa o utilidad clínica;
 - aceptar datos sin unidades, trayectoria, tiempo, semilla o procedencia;
-- permitir que CI o un fixture sintético actúen como persona revisora.
+- permitir que CI o un fixture sintético actúen como persona revisora;
+- usar datos de personas o conectar sensores a sujetos.
 
 ## Decisiones permitidas
 
-- `approve_for_practice_implementation`: permite implementar U2-P1, U2-P2 y U2-P3 bajo los límites documentados.
-- `approve_with_changes`: exige resolver cambios antes de implementar.
-- `do_not_approve`: mantiene bloqueada la implementación.
+- `approve_for_practice_implementation`: constituye aprobación profesional limitada para implementar U2-P1, U2-P2 y U2-P3 bajo los límites documentados.
+- `approve_with_changes`: exige resolver cambios antes de obtener aprobación profesional.
+- `do_not_approve`: mantiene bloqueada la aprobación profesional.
 
 Ninguna decisión de este bloque autoriza la teoría completa, publicación, promoción a `developed` o afirmaciones clínicas.
 
@@ -86,7 +90,7 @@ Ninguna decisión de este bloque autoriza la teoría completa, publicación, pro
 
 La decisión futura debe identificar a la persona revisora, competencia, versión o commit revisado, digest del paquete, hallazgos, cambios obligatorios, puntuaciones, decisión y confirmación verificable. Los datos personales no necesarios no deben almacenarse en el repositorio.
 
-Para autorizar prácticas se exige:
+Para autorizar profesionalmente las prácticas se exige:
 
 - decisión `approve_for_practice_implementation`;
 - puntuación mínima de 4/5 en cada dimensión;
@@ -96,6 +100,16 @@ Para autorizar prácticas se exige:
 - coincidencia exacta entre digest y manifiesto;
 - confirmación de actor `human_reviewer`.
 
+## Autorización provisional interna
+
+Existe una autorización separada del propietario para implementar internamente las prácticas mientras la revisión externa continúa pendiente:
+
+```text
+data/authoring_authorizations/bioinstrumentacion-unit-02-practices-provisional.json
+```
+
+Este override no es una decisión de este handoff, no debe registrarse como `approve_for_practice_implementation` y no constituye aprobación humana o profesional. La revisión externa se coordina mediante el issue `#161`.
+
 ## Declaración de límite
 
-Este documento **no es una revisión**. Su existencia, la selección de fuentes, un manifiesto y un CI verde no equivalen a aprobación humana, respaldo profesional, validación institucional o conformidad regulatoria.
+Este documento **no es una revisión**. Su existencia, la selección de fuentes, el issue operativo, un manifiesto, un CI verde o una autorización provisional interna no equivalen a aprobación humana, respaldo profesional, validación institucional o conformidad regulatoria.
