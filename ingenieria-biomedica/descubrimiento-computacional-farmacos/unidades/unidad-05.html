@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 5. Validación de modelos predictivos y aplicabilidad | Evaluación Computacional de Evidencia Terapéutica | CitoNauta</title>
+  <meta name="description" content="Auditar modelos predictivos mediante endpoints explícitos, baselines, particiones realistas, calibración, incertidumbre y límites de generalización." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Ingeniería Biomédica Aplicada</a></li>
+            <li><a href="../index.html">Evaluación Computacional de Evidencia Terapéutica</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="descubrimiento-computacional-farmacos">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Ingeniería Biomédica Aplicada</a><span>/</span>
+        <a href="../index.html">Evaluación Computacional de Evidencia Terapéutica</a><span>/</span>
+        <span>Unidad 5</span>
+      </div>
+      <p class="eyebrow">Unidad 5 de 8</p>
+      <h1>Validación de modelos predictivos y aplicabilidad</h1>
+      <p>Auditar modelos predictivos mediante endpoints explícitos, baselines, particiones realistas, calibración, incertidumbre y límites de generalización.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Evaluación Computacional de Evidencia Terapéutica</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-04.html">← Unidad 4: Evaluación crítica de evidencia estructural</a>
+        <a class="btn-link" href="unidad-06.html">Unidad 6: Incertidumbre, riesgo y decisión multiobjetivo →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="5">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Definir endpoint, unidad independiente y estimando predictivo.</li>
+        <li>Seleccionar baselines coherentes con la decisión.</li>
+        <li>Diseñar particiones que representen el uso previsto.</li>
+        <li>Separar entrenamiento, selección y evaluación final.</li>
+        <li>Interpretar calibración, estabilidad e incertidumbre.</li>
+        <li>Delimitar dominio de aplicabilidad y validación externa.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Endpoint, estimando y baseline</li>
+        <li>Particiones realistas y prevención de leakage</li>
+        <li>Calibración, incertidumbre y estabilidad</li>
+        <li>Dominio de aplicabilidad y validación externa</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Endpoint, estimando y baseline</h3>
+        <p>Un modelo predictivo solo puede evaluarse después de definir con precisión qué intenta estimar. El endpoint debe indicar fenómeno medido, unidad, ventana temporal, contexto experimental y tratamiento de resultados censurados o inválidos. Etiquetas aparentemente simples pueden mezclar ensayos, umbrales y condiciones. Antes de elegir algoritmo se redacta un estimando predictivo: población o dominio, unidad independiente, información disponible, salida, horizonte y regla de evaluación.</p>
+        <p>La distinción entre clasificación y regresión no resuelve la pregunta científica. Una etiqueta binaria puede derivarse de un valor continuo mediante un umbral arbitrario y perder información. Un modelo de regresión puede producir errores pequeños en promedio pero fallar cerca de la región decisional. La auditoría relaciona la métrica con las consecuencias de error y conserva el vínculo con la medición original.</p>
+        <p>El baseline representa la dificultad mínima y la práctica comparativa. Puede ser una media, una regla simple, una relación lineal o un predictor basado en información limitada. Si un método complejo no supera de forma estable un baseline apropiado, la complejidad no está justificada. El baseline también detecta errores de pipeline: un desempeño inesperadamente alto con información trivial puede indicar leakage, duplicados o una etiqueta codificada indirectamente.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[PredictionTarget = f(Domain, Unit, Inputs, Outcome, Time)\]</div>
+            <figcaption>El objetivo depende del dominio, la unidad, las entradas, el resultado y el tiempo.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El endpoint se define antes del modelo.</li>
+        <li>Una etiqueta binaria puede ocultar información.</li>
+        <li>La métrica debe reflejar consecuencias de error.</li>
+        <li>El baseline prueba dificultad y coherencia del pipeline.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Particiones realistas y prevención de leakage</h3>
+        <p>La partición aleatoria supone que las observaciones son independientes e idénticamente distribuidas. En datos biomédicos o químicos esta condición suele fallar por series relacionadas, fuentes compartidas, réplicas, tiempo o instituciones. Entidades muy similares en entrenamiento y prueba pueden producir una métrica optimista sin demostrar extrapolación. La partición debe reflejar el uso previsto: separación temporal, por familia, por fuente, por centro o por lote, según la pregunta.</p>
+        <p>Todas las transformaciones aprendidas deben estimarse dentro del entrenamiento. Esto incluye imputación, normalización, selección de variables, reducción de dimensiones, balanceo y ajuste de hiperparámetros. Aplicarlas antes de la partición transmite información de evaluación. La validación anidada separa selección y estimación interna cuando existe tuning, mientras un conjunto externo permanece bloqueado hasta fijar el procedimiento completo.</p>
+        <p>El leakage también puede ser semántico. Un predictor puede contener una medición posterior al endpoint, una variable derivada de la misma etiqueta o un identificador de fuente correlacionado con el resultado. Detectarlo requiere comprender cómo se generaron los datos, no solo inspeccionar código. La auditoría construye un mapa temporal e informacional que muestra qué variables existirían realmente en el momento previsto de predicción.</p>
+        <p>La repetición de experimentos con distintas semillas no corrige una partición conceptualmente incorrecta. Puede cuantificar variación algorítmica, pero no transportabilidad. Cuando el objetivo es usar el modelo en datos futuros o diferentes, la evaluación debe simular esa separación. Una caída de desempeño bajo un split más exigente no es un fallo del análisis; es evidencia sobre el límite real del modelo.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[ObservedPerformance = TrueGeneralization + Leakage + SamplingVariation\]</div>
+            <figcaption>El desempeño observado puede contener generalización, fuga y variación muestral.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La partición debe representar el uso previsto.</li>
+        <li>Transformaciones se aprenden dentro del entrenamiento.</li>
+        <li>Leakage puede ser temporal o semántico.</li>
+        <li>Más semillas no corrigen un diseño de evaluación incorrecto.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Calibración, incertidumbre y estabilidad</h3>
+        <p>La discriminación indica capacidad de ordenar o separar casos, pero no si las predicciones corresponden a probabilidades o magnitudes observadas. La calibración compara predicción y resultado dentro de una población y periodo. Puede evaluarse mediante gráficos, intercepto, pendiente, errores y análisis por regiones. Un modelo bien ordenado puede estar sistemáticamente sobreconfiado y producir decisiones inadecuadas.</p>
+        <p>La incertidumbre tiene componentes aleatorios, de medición, de parámetros, de modelo y de distribución. Un intervalo estrecho calculado bajo supuestos incompletos puede transmitir falsa seguridad. El informe debe indicar qué fuente representa cada estimación y cuáles quedan fuera. Métodos de ensamble o remuestreo pueden cuantificar parte de la variabilidad, pero no sustituyen una evaluación en dominios nuevos.</p>
+        <p>La estabilidad examina si las conclusiones cambian ante variaciones razonables de muestra, preprocesamiento, representación o hiperparámetros. Se evalúan selección de características, ranking, errores y desempeño por regiones. Una media favorable con alta dispersión puede no sostener decisiones. Las curvas de aprendizaje ayudan a distinguir limitación por datos de limitación por señal, aunque no garantizan que más observaciones resuelvan sesgos o cambio de dominio.</p>
+        <p>La abstención es una opción cuando el modelo reconoce falta de soporte o incertidumbre elevada. Sin embargo, rechazar casos puede concentrar fallos en grupos específicos. La evaluación debe reportar cobertura y desempeño entre casos aceptados y rechazados. Un sistema que obtiene buena precisión al abstenerse en gran parte del dominio puede tener utilidad limitada y consecuencias distributivas importantes.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[TotalUncertainty = DataUncertainty + ParameterUncertainty + ModelUncertainty + ShiftUncertainty\]</div>
+            <figcaption>La incertidumbre total combina varias fuentes.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Discriminación y calibración responden preguntas distintas.</li>
+        <li>La incertidumbre debe clasificarse por fuente.</li>
+        <li>La estabilidad importa además del promedio.</li>
+        <li>La abstención requiere evaluar cobertura y distribución.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Dominio de aplicabilidad y validación externa</h3>
+        <p>El dominio de aplicabilidad describe dónde un modelo tiene soporte suficiente. Puede considerar distancia, densidad, familias, rangos multivariados, fuente experimental y calidad de datos. No es un sello binario permanente. Una entidad puede estar cerca por una representación y lejos por otra. Los criterios deben definirse con el modelo y evaluarse frente a errores reales, no elegirse después para excluir predicciones desfavorables.</p>
+        <p>La validación externa aplica un procedimiento bloqueado a datos independientes por tiempo, fuente o dominio. No consiste en volver a ajustar hasta recuperar la métrica original. Primero se diagnostican diferencias de población, medición, endpoint, representación y prevalencia. La degradación puede afectar nivel, pendiente, ranking o regiones específicas. La recalibración se estudia después de la evaluación inicial y produce una versión nueva que necesita documentación separada.</p>
+        <p>La aplicabilidad también depende de la decisión. Un modelo puede ser adecuado para generar hipótesis agregadas y no para interpretar una entidad individual. El informe debe declarar usuarios, propósito, entradas requeridas, cobertura, fallos conocidos y acciones ante datos fuera de dominio. Esta declaración limita el uso y facilita revisión independiente.</p>
+        <p>La conclusión final no se reduce a una métrica. Integra baseline, diseño de partición, incertidumbre, estabilidad, aplicabilidad, resultados externos y consecuencias. Las opciones incluyen aceptar para un propósito limitado, recolectar evidencia, recalibrar, reformular el endpoint o detener. La validación es un argumento acumulativo y trazable, no una ceremonia posterior al modelado.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[ValidatedUse = Performance × Calibration × Applicability × Stability\]</div>
+            <figcaption>El uso validado requiere desempeño, calibración, aplicabilidad y estabilidad.</figcaption>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La aplicabilidad depende de representación y decisión.</li>
+        <li>Los criterios se definen antes de excluir casos.</li>
+        <li>La validación externa evalúa un procedimiento bloqueado.</li>
+        <li>Recalibrar crea una versión nueva.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Partición aleatoria optimista</h3>
+        <p><strong>Situación.</strong> Un modelo rinde muy bien al azar y cae al separar familias relacionadas.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Mapear dependencia.</li>
+        <li>Comparar particiones.</li>
+        <li>Revisar cobertura.</li>
+        <li>Limitar la recomendación.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La métrica aleatoria medía interpolación entre entidades relacionadas.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La separación por familia también puede ser exigente.</li>
+        <li>La definición de familia necesita justificación.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Buena discriminación y mala calibración</h3>
+        <p><strong>Situación.</strong> El ranking es estable, pero las probabilidades son sobreconfiadas.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Examinar gráfico de calibración.</li>
+        <li>Comparar periodos.</li>
+        <li>Medir consecuencias.</li>
+        <li>Evaluar recalibración por separado.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> El orden puede conservarse mientras el nivel de riesgo estimado es incorrecto.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La calibración depende de población y tiempo.</li>
+        <li>Una muestra pequeña aumenta incertidumbre.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Auditoría de validación predictiva</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Definir endpoint y estimando.</li>
+        <li>Seleccionar baseline y partición.</li>
+        <li>Evaluar incertidumbre y calibración.</li>
+        <li>Redactar dominio de aplicabilidad.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Corregir un endpoint ambiguo.</li>
+        <li>Detectar leakage temporal.</li>
+        <li>Comparar split aleatorio y temporal.</li>
+        <li>Diseñar validación anidada.</li>
+        <li>Interpretar una curva de calibración.</li>
+        <li>Evaluar estabilidad de ranking.</li>
+        <li>Analizar abstención y cobertura.</li>
+        <li>Preparar una model card.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>El endpoint es reproducible.</li>
+        <li>La partición representa uso previsto.</li>
+        <li>La evaluación permanece bloqueada.</li>
+        <li>Los límites están documentados.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Elegir la métrica antes del endpoint.</strong><p>Definir pregunta y consecuencias primero.</p></li>
+        <li><strong>Preprocesar antes de partir.</strong><p>Aprender transformaciones dentro del entrenamiento.</p></li>
+        <li><strong>Usar solo split aleatorio.</strong><p>Simular tiempo, fuente o familias del uso previsto.</p></li>
+        <li><strong>Confundir discriminación con calibración.</strong><p>Evaluar ambas y sus consecuencias.</p></li>
+        <li><strong>Excluir casos difíciles después del resultado.</strong><p>Predefinir aplicabilidad y abstención.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué define un estimando predictivo?</summary>
+        <p><strong>Respuesta:</strong> Dominio, unidad, entradas, salida y tiempo.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Para qué sirve un baseline?</summary>
+        <p><strong>Respuesta:</strong> Mide dificultad y coherencia del pipeline.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Por qué puede fallar el split aleatorio?</summary>
+        <p><strong>Respuesta:</strong> Por dependencia y similitud entre particiones.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué es validación anidada?</summary>
+        <p><strong>Respuesta:</strong> Separación entre tuning y estimación interna.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué mide calibración?</summary>
+        <p><strong>Respuesta:</strong> Concordancia entre predicción y resultado.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué evalúa estabilidad?</summary>
+        <p><strong>Respuesta:</strong> Consistencia ante variaciones razonables.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Qué es dominio de aplicabilidad?</summary>
+        <p><strong>Respuesta:</strong> Región con soporte suficiente para inferencia.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Recalibrar conserva la misma versión?</summary>
+        <p><strong>Respuesta:</strong> No, produce una versión nueva documentada.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Endpoint</strong><p>Resultado definido que el modelo intenta estimar.</p></li>
+        <li><strong>Estimando predictivo</strong><p>Pregunta cuantitativa que especifica dominio, entradas y salida.</p></li>
+        <li><strong>Baseline</strong><p>Referencia simple para comparar desempeño.</p></li>
+        <li><strong>Partición aleatoria</strong><p>Separación de observaciones por azar bajo supuestos de independencia.</p></li>
+        <li><strong>Partición temporal</strong><p>Separación según fecha para simular datos futuros.</p></li>
+        <li><strong>Partición por familia</strong><p>Separación de grupos relacionados entre entrenamiento y prueba.</p></li>
+        <li><strong>Validación anidada</strong><p>Diseño que separa selección de hiperparámetros y estimación interna.</p></li>
+        <li><strong>Calibración</strong><p>Concordancia entre predicciones y resultados observados.</p></li>
+        <li><strong>Incertidumbre</strong><p>Variabilidad o falta de conocimiento asociada a una predicción.</p></li>
+        <li><strong>Estabilidad</strong><p>Consistencia de resultados ante variaciones razonables.</p></li>
+        <li><strong>Abstención</strong><p>Decisión de no emitir una predicción en casos definidos.</p></li>
+        <li><strong>Cobertura</strong><p>Proporción del dominio para la que se emite una salida.</p></li>
+        <li><strong>Dominio de aplicabilidad</strong><p>Región con soporte empírico suficiente para el modelo.</p></li>
+        <li><strong>Validación externa</strong><p>Evaluación bloqueada en datos independientes.</p></li>
+        <li><strong>Recalibración</strong><p>Ajuste del nivel o escala de predicciones en una versión nueva.</p></li>
+        <li><strong>Model card</strong><p>Documento de propósito, desempeño, límites y uso previsto.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://www.oecd.org/chemicalsafety/risk-assessment/validationofqsarmodels.htm" rel="noopener noreferrer">Principios de validación de modelos cuantitativos</a></strong><span class="course-tag">Fuente metodológica internacional · guía metodológica</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1145/3287560.3287596" rel="noopener noreferrer">Model Cards for Model Reporting</a></strong><span class="course-tag">Comunidad de aprendizaje automático · artículo metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1145/3458723" rel="noopener noreferrer">Datasheets for Datasets</a></strong><span class="course-tag">Comunidad de aprendizaje automático · artículo metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1145/2382577.2382579" rel="noopener noreferrer">Data leakage in machine learning</a></strong><span class="course-tag">Fuente académica metodológica · artículo metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1021/ci400084k" rel="noopener noreferrer">Time-Split Cross-Validation as a Method for Estimating Prospective Prediction</a></strong><span class="course-tag">Fuente académica metodológica · artículo metodológico</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Auditar modelos predictivos mediante endpoints explícitos, baselines, particiones realistas, calibración, incertidumbre y límites de generalización. Conecta especialmente con Bioestadística: Estimandos y particiones determinan inferencia, Machine learning biomédico: Calibración y validación externa limitan uso, Ingeniería de datos: Linaje y transformaciones previenen leakage, Gobernanza: Model cards comunican propósito y límites. Material educativo en estado review. Presenta métodos computacionales y criterios de validación; no incluye síntesis, fabricación, adquisición, dosificación ni uso de sustancias, y no sustituye revisión química, biológica, toxicológica, clínica o regulatoria.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-04.html">← Unidad 4: Evaluación crítica de evidencia estructural</a><a class="btn-link" href="unidad-06.html">Unidad 6: Incertidumbre, riesgo y decisión multiobjetivo →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Evaluación Computacional de Evidencia Terapéutica · unidad 5 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>
