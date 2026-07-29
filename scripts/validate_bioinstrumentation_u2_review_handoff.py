@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HANDOFF_PATH = ROOT / "data" / "review_handoffs" / "bioinstrumentacion-unit-02.json"
 TEMPLATE_PATH = ROOT / "data" / "review_templates" / "bioinstrumentacion" / "unit-02" / "disciplinary-review-decision-template.json"
 FIXTURE_PATH = ROOT / "data" / "review_fixtures" / "bioinstrumentacion" / "unit-02" / "synthetic-approval-claim.json"
+PROVISIONAL_AUTH_PATH = ROOT / "data" / "authoring_authorizations" / "bioinstrumentacion-unit-02-practices-provisional.json"
 STATUS_PATH = ROOT / "data" / "catalog_statuses.json"
 DOC_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "unit-02" / "REVIEW_HANDOFF_AND_AUTHORIZATION.md"
 REQUEST_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "unit-02" / "DISCIPLINARY_REVIEW_REQUEST.md"
@@ -130,7 +131,7 @@ def validate_contract(handoff: dict[str, Any]) -> None:
         "course_state_after_block": "pending",
     }
     if state != expected_state:
-        raise ValueError("current decision state changed unexpectedly")
+        raise ValueError("current external decision state changed unexpectedly")
 
 
 def validate_manifest(handoff: dict[str, Any]) -> dict[str, Any]:
@@ -196,6 +197,22 @@ def validate_synthetic_rejection(handoff: dict[str, Any], manifest: dict[str, An
         raise ValueError("approve_with_changes authorized practices")
 
 
+def validate_provisional_separation() -> dict[str, Any]:
+    authorization = load_json(PROVISIONAL_AUTH_PATH)
+    if authorization.get("status") != "authorized_for_controlled_practice_implementation_provisionally":
+        raise ValueError("provisional internal authorization is missing or invalid")
+    characterization = authorization.get("review_characterization", {})
+    if characterization.get("human_disciplinary_review_completed") is not False:
+        raise ValueError("provisional authorization fabricates human review")
+    if characterization.get("professional_endorsement_present") is not False:
+        raise ValueError("provisional authorization fabricates professional endorsement")
+    if authorization.get("external_verification_gate", {}).get("status") != "pending_external_professional_review":
+        raise ValueError("provisional authorization erased the external gate")
+    if authorization.get("not_authorized", {}).get("draft_full_theory") is not True:
+        raise ValueError("provisional authorization expanded into theory drafting")
+    return authorization
+
+
 def validate_repository_state(handoff: dict[str, Any]) -> None:
     future_decision = ROOT / str(handoff.get("future_decision_record"))
     future_manifest = ROOT / str(handoff.get("future_packet_manifest"))
@@ -206,9 +223,21 @@ def validate_repository_state(handoff: dict[str, Any]) -> None:
     if pending.get("status") != "pending_human_review":
         raise ValueError("missing evidence did not produce pending status")
     if pending.get("practice_implementation_authorized") is not False:
-        raise ValueError("missing evidence authorized practices")
+        raise ValueError("missing professional evidence authorized practices")
     if pending.get("controlled_full_theory_drafting_authorized") is not False:
         raise ValueError("missing evidence authorized full theory")
+
+    provisional = validate_provisional_separation()
+    scope = provisional.get("authorized_scope", {})
+    if not all(
+        scope.get(key) is True
+        for key in (
+            "implement_u2_p1_static_synthetic_characterization",
+            "implement_u2_p2_first_order_dynamic_response",
+            "implement_u2_p3_datasheet_audit",
+        )
+    ):
+        raise ValueError("provisional practice scope is incomplete")
 
     statuses = load_json(STATUS_PATH)
     if "bioinstrumentacion" not in set(statuses.get("pending", [])):
@@ -216,9 +245,9 @@ def validate_repository_state(handoff: dict[str, Any]) -> None:
     if "bioinstrumentacion" in set(statuses.get("developed", [])):
         raise ValueError("Bioinstrumentation was promoted prematurely")
     if AUTHORAL_UNIT_PATH.exists():
-        raise ValueError("U2 authoral unit exists before authorization")
-    if PRACTICE_PATH.exists():
-        raise ValueError("U2 practices exist before authorization")
+        raise ValueError("U2 authoral unit exists before theory authorization")
+    if PRACTICE_PATH.exists() and provisional.get("status") != "authorized_for_controlled_practice_implementation_provisionally":
+        raise ValueError("U2 practices exist without provisional or professional authorization")
 
     for path, markers in (
         (
@@ -227,8 +256,8 @@ def validate_repository_state(handoff: dict[str, Any]) -> None:
                 "Paquete de entrega y autorización",
                 "approve_for_practice_implementation",
                 "manifiesto SHA-256",
-                "no autoriza la teoría completa",
-                "pending_human_review",
+                "Autorización provisional del propietario",
+                "external_professional_review: pending_human_review",
             ),
         ),
         (
@@ -237,6 +266,8 @@ def validate_repository_state(handoff: dict[str, Any]) -> None:
                 "review_handoffs/bioinstrumentacion-unit-02.json",
                 "disciplinary-review-decision-template.json",
                 "REVIEW_HANDOFF_AND_AUTHORIZATION.md",
+                "issue `#161`",
+                "authoring_authorizations/bioinstrumentacion-unit-02-practices-provisional.json",
             ),
         ),
         (
@@ -244,7 +275,8 @@ def validate_repository_state(handoff: dict[str, Any]) -> None:
             (
                 "technical_blockers_resolved: true",
                 "review_handoff: ready_pending_external_review",
-                "practice_implementation_authorized: false",
+                "practice_implementation_authorized_provisionally: true",
+                "external_professional_practice_authorization: false",
                 "full_theory_drafting_authorized: false",
             ),
         ),
@@ -266,7 +298,7 @@ def main() -> int:
     except (OSError, ValueError, TypeError, json.JSONDecodeError, PacketError, AuthorizationError) as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
     print("OK Bioinstrumentation U2 disciplinary review handoff")
-    print("deterministic packet · synthetic approval rejected · human review pending · practices blocked · course pending")
+    print("deterministic packet · synthetic approval rejected · professional review pending · provisional internal practice scope separated · course pending")
     return 0
 
 
