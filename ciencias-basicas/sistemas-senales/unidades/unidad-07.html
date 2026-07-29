@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unidad 7. Filtrado digital y respuesta en frecuencia | Sistemas y Señales | CitoNauta</title>
+  <meta name="description" content="Definir especificaciones y comparar filtros FIR e IIR mediante magnitud, fase, retardo, estabilidad, implementación y distorsión." />
+  <link rel="stylesheet" href="../../../assets/css/style.css" />
+  <link rel="stylesheet" href="../../../assets/css/editorial.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: "global"
+      },
+      options: {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="nav-bar">
+      <div class="nav-inner">
+        <a class="brand" href="../../../index.html" aria-label="Inicio CitoNauta Biomedicina"><span>CN</span>CitoNauta</a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-menu">
+            <li><a href="../../../index.html">Inicio</a></li>
+            <li><a href="../../index.html">Ciencias Básicas</a></li>
+            <li><a href="../index.html">Sistemas y Señales</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="page-shell" data-generated="citonauta-unit" data-subject-id="sistemas-senales">
+    <article class="page-intro">
+      <div class="breadcrumbs">
+        <a href="../../../index.html">Inicio</a><span>/</span>
+        <a href="../../index.html">Ciencias Básicas</a><span>/</span>
+        <a href="../index.html">Sistemas y Señales</a><span>/</span>
+        <span>Unidad 7</span>
+      </div>
+      <p class="eyebrow">Unidad 7 de 8</p>
+      <h1>Filtrado digital y respuesta en frecuencia</h1>
+      <p>Definir especificaciones y comparar filtros FIR e IIR mediante magnitud, fase, retardo, estabilidad, implementación y distorsión.</p>
+      <dl class="course-meta">
+        <div><dt>Asignatura</dt><dd>Sistemas y Señales</dd></div>
+        <div><dt>Estado</dt><dd>Lección desarrollada · revisión experta pendiente</dd></div>
+      </dl>
+      <p class="course-notice">Material educativo, no consejo clínico. Las actividades usan simulación, casos o datos abiertos; cualquier práctica con personas, muestras, equipos o sustancias requiere supervisión institucional y protocolos de seguridad.</p>
+      <div class="page-actions">
+        <a class="btn-link secondary" href="../index.html">← Volver al curso</a>
+        <a class="btn-link secondary" href="index.html">Índice de unidades</a>
+        <a class="btn-link secondary" href="unidad-06.html">← Unidad 6: Sistemas discretos, DTFT y transformada Z</a>
+        <a class="btn-link" href="unidad-08.html">Unidad 8: Validación reproducible en señales biomédicas →</a>
+      </div>
+    </article>
+
+    <nav class="course-toc" aria-label="Contenido de la unidad">
+      <strong>En esta unidad</strong>
+      <a href="#resultados">Resultados</a>
+      <a href="#teoria">Teoría</a>
+      <a href="#caso">Ejemplos</a>
+      <a href="#practica">Práctica</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
+      <a href="#fuentes">Fuentes</a>
+    </nav>
+
+    <article class="unit-lesson" data-unit-number="7">
+    <section id="resultados" class="section">
+      <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
+            <ul>
+        <li>Traducir una necesidad en especificaciones de filtro.</li>
+        <li>Diseñar y evaluar filtros FIR.</li>
+        <li>Analizar filtros IIR y estabilidad.</li>
+        <li>Comparar fase y retardo de grupo.</li>
+        <li>Evaluar bordes y sensibilidad.</li>
+        <li>Comunicar beneficios y pérdidas del filtrado.</li>
+      </ul>
+      <h3>Mapa de contenidos</h3>
+            <ul>
+        <li>Especificaciones de filtrado y criterios de comparación</li>
+        <li>Filtros FIR, convolución y fase</li>
+        <li>Filtros IIR, polos, estabilidad y sensibilidad</li>
+        <li>Distorsión, validación y decisiones biomédicas limitadas</li>
+      </ul>
+    </section>
+
+    <section id="teoria" class="section">
+      <div class="section-header">
+        <h2>Desarrollo teórico</h2>
+        <p>Los conceptos se estudian mediante mecanismos, modelos, evidencia, supuestos y límites de interpretación.</p>
+      </div>
+            <!-- advanced-unit-renderer:v1 -->
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 1</p>
+        <h3>Especificaciones de filtrado y criterios de comparación</h3>
+        <p>Diseñar un filtro comienza con una especificación, no con elegir una función de biblioteca. La especificación define banda de paso, banda de rechazo, transición, rizado permitido, atenuación, fase, retardo, estabilidad y restricciones de implementación. En señales biomédicas también debe declarar qué características temporales deben preservarse. Un filtro que reduce ruido puede deformar amplitud, pendiente o temporización. La calidad no se evalúa solo por una curva suave ni por la reducción de varianza.</p>
+        <p>La frecuencia debe expresarse con unidades y relacionarse con fs. Muchas APIs aceptan frecuencia normalizada, frecuencia física o una opción explícita de fs. Confundir estas convenciones produce filtros con cortes incorrectos. La especificación también debe considerar bordes de registro, segmentos faltantes y transitorios de inicialización. Aplicar un filtro a un fragmento corto puede dejar una fracción importante dominada por condiciones iniciales o padding.</p>
+        <p>Los criterios se prueban con señales sintéticas que contienen componentes conocidas, impulsos, escalones y transitorios. Esto permite medir ganancia, retardo y distorsión. Después se aplica el filtro a datos abiertos. La evaluación compara al menos un baseline simple y una alternativa. La selección debe justificarse por la pregunta y no por complejidad. Un método sofisticado sin especificación verificable no ofrece una mejora demostrada.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[A_p, A_s, \omega_p, \omega_s\]</div>
+            <figcaption>Parámetros típicos de rizado, atenuación y bordes de bandas.</figcaption>
+            <ul class="equation-variables">
+              <li><code>A_p</code>: rizado de paso</li>
+              <li><code>A_s</code>: atenuación de rechazo</li>
+              <li><code>\omega_p</code>: borde de paso</li>
+              <li><code>\omega_s</code>: borde de rechazo</li>
+            </ul>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El filtro se deriva de una especificación.</li>
+        <li>Suavidad visual no demuestra calidad.</li>
+        <li>Las APIs usan convenciones de frecuencia distintas.</li>
+        <li>Las pruebas sintéticas preceden a datos reales.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Filtros FIR, convolución y fase</h3>
+        <p>Un filtro FIR tiene una respuesta al impulso de duración finita y se implementa como una suma ponderada de muestras. Sin realimentación, es BIBO estable si sus coeficientes son finitos. Puede diseñarse con fase lineal exacta cuando los coeficientes tienen simetría apropiada, lo que produce retardo constante por frecuencia dentro del modelo. La fase lineal preserva relaciones temporales relativas, pero añade latencia proporcional al orden.</p>
+        <p>El diseño por ventanas trunca una respuesta ideal e intercambia ancho de transición y lóbulos laterales. El diseño por optimización puede distribuir el error de otra manera. Aumentar orden permite transiciones más estrechas, pero incrementa coste y retardo. El zero padding no cambia el filtro; solo modifica cómo se visualiza su respuesta discreta. La verificación debe calcular respuesta en frecuencia con resolución suficiente y comprobar la implementación sobre señales controladas.</p>
+        <p>La convolución en bloques permite procesar señales largas mediante FFT, pero exige padding y manejo de solapamiento. Los métodos overlap-add y overlap-save son equivalentes bajo condiciones correctas. Errores de borde pueden crear discontinuidades. En procesamiento offline, un filtro FIR simétrico también puede aplicarse de manera centrada, lo cual es no causal. El informe debe distinguir el filtro matemático, la realización causal y cualquier compensación de retardo.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[y[n]=\sum_{k=0}^{M}b_k x[n-k]\]</div>
+            <figcaption>Ecuación de un filtro FIR causal.</figcaption>
+            <ul class="equation-variables">
+              <li><code>b_k</code>: coeficientes FIR</li>
+            </ul>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>FIR usa una respuesta al impulso finita.</li>
+        <li>Fase lineal introduce retardo constante.</li>
+        <li>Mayor orden aumenta coste y latencia.</li>
+        <li>Procesamiento por bloques exige manejar bordes.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Filtros IIR, polos, estabilidad y sensibilidad</h3>
+        <p>Un filtro IIR usa realimentación y posee una respuesta al impulso teóricamente infinita. Puede alcanzar transiciones exigentes con menor orden que un FIR, pero su fase suele ser no lineal y su estabilidad depende de polos. Diseños Butterworth, Chebyshev y elípticos distribuyen rizado y transición de formas distintas. El nombre de la familia no determina por sí solo adecuación; debe compararse con la especificación.</p>
+        <p>Los filtros de orden alto deben implementarse preferentemente como secciones de segundo orden para reducir sensibilidad numérica. Coeficientes polinómicos directos pueden perder precisión y mover polos. La inicialización de estados afecta transitorios. En filtrado hacia adelante y atrás se obtiene magnitud al cuadrado y fase neta cero en procesamiento offline, pero el procedimiento es no causal, modifica el orden efectivo y puede fallar cerca de bordes. No debe describirse como si fuera un filtro realizable en tiempo real.</p>
+        <p>La estabilidad se verifica con polos y pruebas numéricas, pero también se evalúa la respuesta ante entradas extremas y datos faltantes. Saturación y desbordamiento pueden generar comportamientos que el modelo lineal ideal no predice. En un dispositivo, la cuantización de coeficientes y estados importa. En este curso se simula sensibilidad; no se certifica una implementación de hardware ni un uso clínico.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[y[n]=\sum_{m=0}^{M}b_mx[n-m]-\sum_{k=1}^{N}a_ky[n-k]\]</div>
+            <figcaption>Ecuación general de un filtro IIR.</figcaption>
+            <ul class="equation-variables">
+              <li><code>a_k</code>: coeficientes recursivos</li>
+            </ul>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>IIR usa realimentación y memoria infinita ideal.</li>
+        <li>La familia de diseño expresa un compromiso.</li>
+        <li>Secciones de segundo orden mejoran robustez numérica.</li>
+        <li>Filtrado bidireccional es offline y no causal.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>Distorsión, validación y decisiones biomédicas limitadas</h3>
+        <p>La distorsión se evalúa respecto de características que importan para la tarea. Un filtro puede conservar energía global y alterar picos; puede mantener amplitud en banda y cambiar fase; puede reducir interferencia y eliminar un componente fisiológico solapado. No existe separación perfecta cuando señal y ruido ocupan la misma región espectral. La validación debe mostrar qué se gana y qué se pierde, usando una referencia sintética o anotaciones independientes cuando existan.</p>
+        <p>Los artefactos de borde se examinan comparando padding, longitud y exclusión de transitorios. El retardo se mide con impulsos o características temporales. La respuesta a escalón revela sobreimpulso y ringing. Un análisis de sensibilidad varía frecuencia de corte y orden. Reportar un único parámetro elegido después de ver el resultado favorece ajuste subjetivo. Los criterios deben preespecificarse o, al menos, separar exploración y evaluación.</p>
+        <p>El caso final compara un baseline sin filtrado, un FIR y un IIR sobre una señal sintética con evento conocido y un registro abierto. Se miden error temporal, amplitud, relación señal-ruido bajo una definición explícita y estabilidad. La conclusión distingue mejora de una métrica, preservación morfológica e interpretación fisiológica. Un filtro no convierte una medición en diagnóstico, ni una señal visualmente limpia en evidencia clínica.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[H(e^{j\omega})=|H(e^{j\omega})|e^{j\phi(\omega)}\]</div>
+            <figcaption>La respuesta incluye magnitud y fase.</figcaption>
+            <ul class="equation-variables">
+              <li><code>\phi</code>: fase</li>
+            </ul>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La distorsión depende de la tarea.</li>
+        <li>Señal y ruido pueden solaparse espectralmente.</li>
+        <li>Bordes y retardo forman parte de la validación.</li>
+        <li>Filtrar no produce interpretación clínica.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="caso" class="section">
+      <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
+            <article class="worked-example advanced-worked-example">
+        <h3>Eliminación de deriva de línea base</h3>
+        <p><strong>Situación.</strong> Una señal contiene una tendencia lenta y eventos transitorios.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Definir banda del evento.</li>
+        <li>Comparar detrending y pasa-altos.</li>
+        <li>Medir amplitud y tiempo.</li>
+        <li>Evaluar bordes.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Reducir deriva puede alterar componentes lentos verdaderos.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No existe referencia perfecta.</li>
+        <li>La banda fisiológica puede solaparse.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Notch para interferencia de red</h3>
+        <p><strong>Situación.</strong> Se observa una componente estrecha persistente.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Verificar origen.</li>
+        <li>Definir ancho de rechazo.</li>
+        <li>Comparar IIR y FIR.</li>
+        <li>Medir ringing y fase.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La atenuación debe equilibrarse con distorsión vecina.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La frecuencia puede variar.</li>
+        <li>El notch puede eliminar señal coincidente.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="practica" class="section">
+      <div class="section-header"><h2>Actividad aplicada</h2></div>
+            <article class="guided-activity advanced-guided-activity">
+        <h3>Comparación reproducible de filtros</h3>
+        <h4>Procedimiento</h4>
+      <ol class="activity-steps">
+        <li>Definir especificaciones antes de diseñar.</li>
+        <li>Construir FIR e IIR.</li>
+        <li>Probar señales sintéticas y registro abierto.</li>
+        <li>Medir magnitud, fase, retardo y distorsión.</li>
+      </ol>
+        <h4>Problemas y tareas</h4>
+      <ul>
+        <li>Definir bandas y tolerancias.</li>
+        <li>Diseñar un FIR.</li>
+        <li>Diseñar un IIR.</li>
+        <li>Graficar polos.</li>
+        <li>Comparar retardo.</li>
+        <li>Evaluar bordes.</li>
+        <li>Variar orden.</li>
+        <li>Redactar una decisión limitada.</li>
+      </ul>
+        <h4>Criterios de comprobación</h4>
+      <ul>
+        <li>Las especificaciones son previas.</li>
+        <li>La frecuencia usa unidades correctas.</li>
+        <li>Se reportan magnitud y fase.</li>
+        <li>La comparación incluye baseline y sensibilidad.</li>
+      </ul>
+      </article>
+    </section>
+
+    <section id="autoevaluacion" class="section">
+      <div class="section-header"><h2>Errores frecuentes y autoevaluación</h2></div>
+            <section class="common-errors">
+        <h3>Errores frecuentes y corrección</h3>
+        <ul class="rich-list">
+        <li><strong>Elegir filtro por apariencia.</strong><p>Definir métricas y características a preservar.</p></li>
+        <li><strong>Usar frecuencia normalizada como hertz.</strong><p>Revisar la API y declarar fs.</p></li>
+        <li><strong>Aplicar filtfilt como tiempo real.</strong><p>Declarar su naturaleza offline y no causal.</p></li>
+        <li><strong>Implementar IIR alto en forma directa.</strong><p>Usar secciones de segundo orden y verificar polos.</p></li>
+        <li><strong>Ignorar artefactos de borde.</strong><p>Probar padding, estados y exclusión de transitorios.</p></li>
+        </ul>
+      </section>
+<div class="assessment-panels">
+      <details class="answer-panel">
+        <summary>1. ¿Qué precede al diseño?</summary>
+        <p><strong>Respuesta:</strong> Una especificación verificable.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>2. ¿Qué ventaja típica tiene FIR?</summary>
+        <p><strong>Respuesta:</strong> Estabilidad simple y posibilidad de fase lineal.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>3. ¿Qué ventaja típica tiene IIR?</summary>
+        <p><strong>Respuesta:</strong> Transiciones exigentes con menor orden.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué determina estabilidad IIR?</summary>
+        <p><strong>Respuesta:</strong> La ubicación de polos y la realización.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Fase cero bidireccional es causal?</summary>
+        <p><strong>Respuesta:</strong> No, requiere datos futuros.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Mayor orden siempre es mejor?</summary>
+        <p><strong>Respuesta:</strong> No, aumenta coste, retardo y sensibilidad.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Qué prueba un impulso?</summary>
+        <p><strong>Respuesta:</strong> Respuesta, alineación y posible ringing.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Filtrar prueba significado fisiológico?</summary>
+        <p><strong>Respuesta:</strong> No, solo transforma la medición.</p>
+      </details>
+      </div>
+    </section>
+
+    <section id="glosario" class="section">
+      <div class="section-header"><h2>Glosario disciplinar</h2></div>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Banda de paso</strong><p>Región que debe conservarse dentro de tolerancia.</p></li>
+        <li><strong>Banda de rechazo</strong><p>Región que debe atenuarse.</p></li>
+        <li><strong>Banda de transición</strong><p>Intervalo entre paso y rechazo.</p></li>
+        <li><strong>Rizado</strong><p>Variación permitida de ganancia dentro de una banda.</p></li>
+        <li><strong>FIR</strong><p>Filtro con respuesta al impulso finita.</p></li>
+        <li><strong>IIR</strong><p>Filtro recursivo con respuesta ideal infinita.</p></li>
+        <li><strong>Fase lineal</strong><p>Fase proporcional a frecuencia.</p></li>
+        <li><strong>Retardo de grupo</strong><p>Derivada negativa de fase respecto de frecuencia.</p></li>
+        <li><strong>Orden</strong><p>Complejidad dinámica o número de retardos relevante.</p></li>
+        <li><strong>Ringing</strong><p>Oscilación inducida cerca de transiciones.</p></li>
+        <li><strong>Sección de segundo orden</strong><p>Bloque biquadrático para implementar IIR.</p></li>
+        <li><strong>Filtrado bidireccional</strong><p>Aplicación hacia adelante y atrás offline.</p></li>
+        <li><strong>Distorsión</strong><p>Cambio no deseado de características de señal.</p></li>
+        <li><strong>Baseline</strong><p>Método simple usado como referencia.</p></li>
+      </ul>
+    </section>
+
+    <section id="fuentes" class="section">
+      <div class="section-header">
+        <h2>Fuentes específicas de la unidad</h2>
+        <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
+      </div>
+      <ol class="rich-list advanced-sources">
+        <li><strong><a class="resource-link" href="https://ocw.mit.edu/courses/6-003-signals-and-systems-fall-2011/" rel="noopener noreferrer">Signals and Systems 6.003</a></strong><span class="course-tag">MIT OpenCourseWare · curso abierto</span></li>
+        <li><strong><a class="resource-link" href="https://docs.scipy.org/doc/scipy/reference/signal.html" rel="noopener noreferrer">Signal processing reference</a></strong><span class="course-tag">SciPy · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://numpy.org/doc/stable/reference/routines.fft" rel="noopener noreferrer">Discrete Fourier Transform</a></strong><span class="course-tag">NumPy · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://python-control.readthedocs.io/en/latest/linear.html" rel="noopener noreferrer">Linear System Modeling, Analysis, and Design</a></strong><span class="course-tag">Python Control Systems Library · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://matplotlib.org/stable/gallery/index.html" rel="noopener noreferrer">Matplotlib examples</a></strong><span class="course-tag">Matplotlib · documentación oficial</span></li>
+      </ol>
+    </section>
+
+    <section class="section unit-close">
+      <div class="section-header"><h2>Cierre de la unidad</h2></div>
+      <p>Definir especificaciones y comparar filtros FIR e IIR mediante magnitud, fase, retardo, estabilidad, implementación y distorsión. Conecta especialmente con ECG: Filtros pueden desplazar picos o alterar segmentos, EEG: Bandas y fase dependen del diseño y ventana, Wearables: Coste, latencia y precisión condicionan filtros, Bioinstrumentación: Anti-alias analógico y filtrado digital forman una cadena. Material educativo en estado review. Proporciona fundamentos matemáticos y computacionales; no sustituye interpretación clínica, especificaciones de un dispositivo ni validación regulatoria.</p>
+      <div class="page-actions"><a class="btn-link secondary" href="unidad-06.html">← Unidad 6: Sistemas discretos, DTFT y transformada Z</a><a class="btn-link" href="unidad-08.html">Unidad 8: Validación reproducible en señales biomédicas →</a></div>
+    </section>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><strong>CitoNauta Biomedicina</strong><small>Sistemas y Señales · unidad 7 de 8.</small></div>
+  </footer>
+  <script src="../../../assets/js/generated-units.js" defer></script>
+</body>
+</html>
