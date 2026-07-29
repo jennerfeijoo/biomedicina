@@ -224,9 +224,15 @@ def validate_package() -> None:
 def validate_repository_state() -> None:
     handoff = load_json(HANDOFF_PATH)
     require(handoff.get("status") == "ready_pending_external_review", "external handoff no longer remains pending")
-    require(handoff.get("review_decision") == "pending_human_review", "external review decision changed")
     require(handoff.get("practice_implementation_authorized") is False, "external handoff fabricates professional authorization")
     require(handoff.get("full_theory_drafting_authorized") is False, "historical external handoff was rewritten")
+    decision_state = handoff.get("decision_state_now")
+    require(isinstance(decision_state, dict), "external handoff decision state is missing")
+    require(decision_state.get("decision_record_present") is False, "external decision record is unexpectedly present")
+    require(decision_state.get("packet_manifest_present") is False, "external packet manifest is unexpectedly present")
+    require(decision_state.get("disciplinary_review_completed") is False, "external disciplinary review was marked complete")
+    require(decision_state.get("practice_implementation_authorized") is False, "external decision state fabricates professional authorization")
+    require(decision_state.get("full_theory_drafting_authorized") is False, "external decision state authorizes full theory")
 
     statuses = load_json(STATUS_PATH)
     require("bioinstrumentacion" in set(statuses.get("pending", [])), "Bioinstrumentation must remain pending")
