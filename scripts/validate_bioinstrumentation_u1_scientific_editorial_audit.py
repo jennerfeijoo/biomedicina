@@ -160,8 +160,8 @@ def validate_corrected_content(unit: dict[str, Any]) -> None:
         "necesaria y no suficiente" in theory_6,
         "fitness-for-purpose condition is still presented as sufficient",
     )
-    equation_text = json.dumps(theory[5].get("equations"), ensure_ascii=False)
-    require("u_{\\mathrm{objetivo}}" in equation_text, "target uncertainty equation is missing")
+    equation_latex = str(theory[5].get("equations", [{}])[0].get("latex", ""))
+    require(r"u_{\mathrm{objetivo}}" in equation_latex, "target uncertainty equation is missing")
 
     glossary = {item.get("term"): item.get("definition") for item in unit.get("glossary", [])}
     require("procedimiento" not in str(glossary.get("Sistema de medición", "")).casefold(), "system glossary still includes procedure")
