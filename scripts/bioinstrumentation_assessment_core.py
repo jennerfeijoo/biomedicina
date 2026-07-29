@@ -212,5 +212,5 @@ def evaluate_submission(
     summary["feedback"] = release_feedback(
         implementation, summary["diagnosed_misconceptions"], attempt
     )
-    summary["feedback_policy"] = "diagnostic_and_recovery_without_answer_key"
+    summary["feedback_policy"] = "diagnostic_and_recovery"
     return summary
