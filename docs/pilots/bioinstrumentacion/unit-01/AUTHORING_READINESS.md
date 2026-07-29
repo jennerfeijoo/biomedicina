@@ -1,7 +1,8 @@
 # Readiness de autoría — Bioinstrumentación, Unidad 1
 
 **Estado de preparación base:** `authoring_preparation_review`  
-**Workstream activo:** `practice_implementation_review`  
+**Workstream de prácticas:** `practice_implementation_review`  
+**Workstream de evaluación:** `assessment_implementation_review`  
 **Estado editorial del curso:** `pending`  
 **Unidad desarrollada:** no  
 **Fecha:** 29 de julio de 2026
@@ -10,7 +11,7 @@
 
 **bloqueos técnicos resueltos:** caso de presión, modelo térmico sintético y registro de PhysioNet.
 
-La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos y dos prácticas ya cuentan con implementación reproducible y validación automática offline.
+La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos, dos prácticas cuentan con implementación reproducible y el sistema de evaluación cerrada dispone de diagnóstico y recuperación ejecutables.
 
 La teoría completa todavía **no está autorizada**, porque falta revisión disciplinar humana documentada.
 
@@ -19,6 +20,8 @@ La teoría completa todavía **no está autorizada**, porque falta revisión dis
 - `data/unit_preparation/bioinstrumentacion-unit-01.json`
 - `data/unit_preparation/bioinstrumentacion-unit-01-blocker-resolution.json`
 - `data/practice_implementations/bioinstrumentacion-unit-01.json`
+- `data/assessment_implementations/bioinstrumentacion-unit-01.json`
+- `data/assessment_implementations/bioinstrumentacion-unit-01-feedback.json`
 - `data/source_registry/bioinstrumentacion-unit-01-blockers.json`
 - `docs/pilots/bioinstrumentacion/unit-01/SOURCE_DOSSIER.md`
 - `docs/pilots/bioinstrumentacion/unit-01/CONCEPT_AND_VISUAL_MODEL.md`
@@ -29,6 +32,7 @@ La teoría completa todavía **no está autorizada**, porque falta revisión dis
 - `docs/pilots/bioinstrumentacion/unit-01/THERMAL_MODEL_RESOLUTION.md`
 - `docs/pilots/bioinstrumentacion/unit-01/PHYSIONET_RECORD_100_SPEC.md`
 - `docs/pilots/bioinstrumentacion/unit-01/PRACTICE_IMPLEMENTATION.md`
+- `docs/pilots/bioinstrumentacion/unit-01/ASSESSMENT_IMPLEMENTATION.md`
 - `docs/pilots/bioinstrumentacion/unit-01/DISCIPLINARY_REVIEW_REQUEST.md`
 
 ## Aspectos resueltos
@@ -40,6 +44,17 @@ La unidad distingue fenómeno, cantidad, mensurando, método, ruta de señal, mo
 ### Evaluación y feedback
 
 Los cinco resultados tienen evidencia observable, criterio de dominio, errores críticos y recuperación. Trece misconceptions cuentan con diagnóstico, explicación, dos pistas graduadas, actividad de recuperación distinta y criterio objetivo para continuar.
+
+La implementación ejecutable incorpora:
+
+- 18 ítems de clasificación con diez categorías;
+- cuatro afirmaciones de trazabilidad;
+- 13 rutas de feedback estructuradas;
+- liberación progresiva por intento;
+- rechazo explícito de calificación semántica automática para respuestas abiertas;
+- rúbricas humanas con criterios críticos para `U1-A2`, `U1-A3` y `U1-A5`.
+
+CI comprueba que el feedback no revela `correct_category`, `expected_decision`, una clave de respuesta ni una solución completa. Esta validación resuelve el riesgo técnico de feedback limitado a mostrar respuestas, pero no sustituye una prueba de usabilidad con estudiantes.
 
 ### Caso de presión
 
@@ -68,7 +83,7 @@ El modelo de primer orden dispone de pruebas automáticas de determinismo, conve
 
 ### Reproducibilidad
 
-Las dos prácticas ejecutables utilizan únicamente la biblioteca estándar de Python. CI trabaja sin red, genera datos térmicos en directorios temporales y rechaza encabezados WFDB inconsistentes. Los artefactos generados no se versionan.
+Las prácticas y el sistema de evaluación utilizan únicamente la biblioteca estándar de Python. CI trabaja sin red, genera resultados en directorios temporales y rechaza fixtures o submissions inconsistentes. Los resultados de estudiantes y datasets generados no se versionan.
 
 ### Fuentes
 
@@ -78,9 +93,10 @@ La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST T
 
 1. Falta revisión disciplinar humana por una persona competente en metrología e instrumentación biomédica.
 2. Falta una prueba cognitiva con una persona del perfil objetivo.
-3. La implementación futura del feedback debe demostrar que no se limita a revelar respuestas.
-4. Las prácticas están validadas técnicamente, pero aún no han sido probadas por estudiantes ni revisadas externamente.
-5. La teoría completa todavía no ha sido redactada ni auditada.
+3. Falta revisar la usabilidad y dificultad de las pistas y problemas de recuperación.
+4. Falta comprobar acuerdo entre revisores al aplicar las rúbricas humanas.
+5. Las prácticas están validadas técnicamente, pero aún no han sido probadas por estudiantes ni revisadas externamente.
+6. La teoría completa todavía no ha sido redactada ni auditada.
 
 ## Gate antes de redactar teoría completa
 
@@ -94,6 +110,7 @@ La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST T
 - [x] Revisión interna del modelo térmico.
 - [x] Registro de PhysioNet fijado y comprobado documentalmente.
 - [x] Dos prácticas implementadas y ejecutadas en un entorno limpio de CI.
+- [x] Evaluación cerrada y feedback recuperativo implementados y probados en CI.
 - [ ] Revisión disciplinar humana inicial.
 
 La redacción completa solo puede comenzar cuando el último punto esté documentado mediante el paquete de revisión. Un workflow verde no sustituye esa revisión.
@@ -103,7 +120,7 @@ La redacción completa solo puede comenzar cuando el último punto esté documen
 - teoría completa con fuentes y localizadores;
 - al menos dos ejemplos razonados y un caso de transferencia no resuelto previamente;
 - prácticas implementadas, ejecutadas y revisadas pedagógicamente;
-- rúbricas y feedback probados;
+- rúbricas y feedback probados con usuarios y revisores;
 - revisión de exactitud científica y terminología;
 - accesibilidad textual y visual;
 - ausencia de saltos hacia interpretación clínica o requisitos normativos no consultados;
@@ -122,5 +139,7 @@ Después de fusionar este bloque:
 - las unidades fallback públicas seguirán identificadas como contenido de respaldo;
 - no existirá `data/course_redevelopment/bioinstrumentacion/units/unit-01.json`;
 - dos prácticas serán ejecutables y auditables offline;
-- la revisión disciplinar seguirá abierta;
+- la evaluación cerrada y el feedback serán ejecutables;
+- las respuestas abiertas seguirán bajo rúbrica humana;
+- la revisión disciplinar y la prueba cognitiva seguirán abiertas;
 - la teoría completa continuará bloqueada.
