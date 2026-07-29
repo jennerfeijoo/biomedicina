@@ -46,7 +46,9 @@ external_professional_review: pending_human_review
 - implementación ejecutable de U2-P1, U2-P2 y U2-P3;
 - evaluación estructurada de curvas, dinámica y mecanismos de carga;
 - rúbricas humanas para clasificación funcional y transferencia multicriterio;
-- gates permanentes con fixtures de dominio y diagnóstico.
+- gates permanentes con fixtures de dominio y diagnóstico;
+- auditoría científica-editorial interna con seis hallazgos resueltos;
+- autorización provisional separada para autoría controlada de la Unidad 2.
 
 ## Implementación de prácticas
 
@@ -104,7 +106,6 @@ scripts/validate_bioinstrumentation_u2_assessment.py
 Las evaluaciones automáticas solo aceptan campos estructurados y deterministas. `U2-A1` y `U2-A5` requieren puntuación por rúbrica humana; el motor suma puntos y libera feedback, pero no realiza puntuación semántica automática.
 
 La retroalimentación se libera por intentos y no expone patrones, decisiones, rutas causales, valores objetivo, claves completas ni respuestas modelo.
-
 
 ## Auditoría científica y editorial interna
 
@@ -175,6 +176,10 @@ La revisión profesional operativa continúa en el issue `#161`. Las prácticas 
 - presentar especificaciones de fabricante como validación de una cadena;
 - declarar utilidad clínica, conformidad normativa, seguridad o aprobación profesional;
 - fabricar prueba cognitiva, revisión de usabilidad, concordancia o revisión profesional.
+
+## Gate antes de autoría completa
+
+La autorización provisional separada ya está registrada. Este gate habilita únicamente la creación del borrador autoral interno y no satisface los gates de publicación, promoción, prueba cognitiva o revisión profesional.
 
 ## Gates posteriores a la autoría controlada
 
