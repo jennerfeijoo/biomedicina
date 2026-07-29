@@ -36,6 +36,8 @@ Se sustituyeron anglicismos innecesarios en instrucciones y explicaciones dirigi
 
 Se añadió un gate que comprueba que cada `source_link` de las seis secciones teóricas se resuelva contra una fuente localizada o contra las afirmaciones C1–C5 del contrato de preparación.
 
+La unidad canónica fue regenerada desde los fragmentos autorales y quedó sincronizada mediante el constructor determinista del repositorio.
+
 ## Resultado
 
 - Hallazgos críticos sin resolver: **0**
