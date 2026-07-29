@@ -10,7 +10,7 @@
 
 Se implementó el borrador autoral completo de la Unidad 1 como una fuente modular y un artefacto canónico generado de forma determinista.
 
-La implementación permite revisión interna, ejecución de prácticas y evaluación. No publica la unidad, no cambia Bioinstrumentación a `developed` y no sustituye `pending_human_review`.
+La implementación permite revisión interna, ejecución de prácticas y evaluación. Esta implementación no publica la unidad, no cambia Bioinstrumentación a `developed` y no sustituye `pending_human_review`.
 
 ## Arquitectura de autoría
 
