@@ -6,6 +6,7 @@
 **Workstream de revisión humana:** `human_review_protocol_ready`  
 **Workstream de handoff disciplinar:** `disciplinary_review_handoff_ready`  
 **Autorización provisional de autoría:** `controlled_authoring_authorized`  
+**Borrador autoral completo:** `implemented_internal_review`  
 **Estado editorial del curso:** `pending`  
 **Unidad desarrollada:** no  
 **Fecha:** 29 de julio de 2026
@@ -14,15 +15,15 @@
 
 **bloqueos técnicos resueltos:** caso de presión, modelo térmico sintético y registro de PhysioNet.
 
-La Unidad 1 dispone de alcance, modelo conceptual, evaluación, feedback y fuentes localizadas. Los tres bloqueos técnicos verificables están resueltos, dos prácticas cuentan con implementación reproducible, el sistema de evaluación cerrada dispone de diagnóstico y recuperación ejecutables, los gates humanos tienen protocolos formales y la revisión disciplinar dispone de un handoff auditable.
+La Unidad 1 dispone ahora de alcance, modelo conceptual, teoría completa, ejemplos, prácticas, evaluación, feedback, recuperación y fuentes localizadas. El contenido se mantiene en fragmentos auditables y se compila de forma determinista a `data/course_redevelopment/bioinstrumentacion/units/unit-01.json`.
 
-Como estado histórico del handoff externo, la teoría completa todavía **no está autorizada** por una revisión disciplinar profesional. Posteriormente, el propietario del proyecto aceptó provisionalmente las revisiones internas de la IA y autorizó la redacción controlada. Esta autorización permite producir el borrador autoral, mientras la revisión profesional externa sigue pendiente y el curso permanece `pending`.
+Como estado histórico del handoff externo, la teoría completa todavía **no está autorizada** por una revisión disciplinar profesional. Posteriormente, el propietario del proyecto aceptó provisionalmente las revisiones internas de la IA y autorizó la redacción controlada. Esta autorización permitió producir el borrador autoral, mientras la revisión profesional externa sigue pendiente y el curso permanece `pending`.
 
 La evidencia humana continúa pendiente: no se han ejecutado la revisión profesional externa, la prueba cognitiva ni la ronda real de acuerdo entre revisores.
 
-La autorización no equivale a evidencia humana, aprobación profesional o validación institucional. Tampoco permite publicar, marcar la unidad como desarrollada ni promover el curso.
+La autorización y la existencia del borrador no equivalen a evidencia humana, aprobación profesional o validación institucional. La publicación continúa bloqueada. Tampoco se permite marcar la unidad como desarrollada, promover el curso o afirmar validación clínica o regulatoria.
 
-## Artefactos de preparación
+## Artefactos principales
 
 - `data/unit_preparation/bioinstrumentacion-unit-01.json`
 - `data/unit_preparation/bioinstrumentacion-unit-01-blocker-resolution.json`
@@ -32,11 +33,11 @@ La autorización no equivale a evidencia humana, aprobación profesional o valid
 - `data/review_protocols/bioinstrumentacion-unit-01-human-review.json`
 - `data/review_handoffs/bioinstrumentacion-unit-01.json`
 - `data/authoring_authorizations/bioinstrumentacion-unit-01-provisional.json`
-- `data/source_registry/bioinstrumentacion-unit-01-blockers.json`
-- `data/source_registry/bioinstrumentacion-unit-01-review-methods.json`
-- `data/review_templates/bioinstrumentacion/unit-01/cognitive-session-template.json`
-- `data/review_templates/bioinstrumentacion/unit-01/inter-rater-round-template.json`
-- `data/review_templates/bioinstrumentacion/unit-01/disciplinary-review-decision-template.json`
+- `data/course_redevelopment/bioinstrumentacion/unit-01-source/`
+- `data/course_redevelopment/bioinstrumentacion/units/unit-01.json`
+- `scripts/build_bioinstrumentation_u1_authoral_unit.py`
+- `scripts/validate_bioinstrumentation_u1_authoral_unit.py`
+- `docs/pilots/bioinstrumentacion/unit-01/AUTHORAL_UNIT_IMPLEMENTATION.md`
 - `docs/pilots/bioinstrumentacion/unit-01/SOURCE_DOSSIER.md`
 - `docs/pilots/bioinstrumentacion/unit-01/CONCEPT_AND_VISUAL_MODEL.md`
 - `docs/pilots/bioinstrumentacion/unit-01/ASSESSMENT_AND_FEEDBACK_BLUEPRINT.md`
@@ -52,6 +53,21 @@ La autorización no equivale a evidencia humana, aprobación profesional o valid
 - `docs/pilots/bioinstrumentacion/unit-01/DISCIPLINARY_REVIEW_REQUEST.md`
 - `docs/pilots/bioinstrumentacion/unit-01/REVIEW_HANDOFF_AND_AUTHORIZATION.md`
 - `docs/pilots/bioinstrumentacion/unit-01/PROVISIONAL_AUTHORING_AUTHORIZATION.md`
+
+## Borrador autoral completo
+
+El borrador contiene seis secciones teóricas sustantivas, cada una con formalización, supuestos, límites y localizadores. Cubre:
+
+1. especificación del mensurando;
+2. separación entre fenómeno, señal, indicación, valor medido y resultado;
+3. sistema, cadena, fronteras y metadatos;
+4. modelo, entradas, influencias y correcciones;
+5. calibración y trazabilidad de resultados específicos;
+6. aptitud para el uso y límites de inferencia.
+
+La implementación incluye veinte términos de glosario, tres ejemplos razonados, cinco actividades alineadas con `U1-A1` a `U1-A5`, trece errores correspondientes exactamente al banco de misconceptions, doce preguntas de autoevaluación, cinco conexiones biomédicas limitadas y ocho fuentes directamente verificadas.
+
+El compilador exige el inventario exacto de fragmentos, rechaza campos duplicados y produce bytes deterministas. El validador impone un mínimo de 2.200 palabras teóricas, densidad por párrafo, unicidad, correspondencia con prácticas y evaluación, y bloqueo de efectos editoriales no autorizados.
 
 ## Aspectos resueltos
 
@@ -72,91 +88,43 @@ La implementación ejecutable incorpora:
 - rechazo explícito de calificación semántica automática para respuestas abiertas;
 - rúbricas humanas con criterios críticos para `U1-A2`, `U1-A3` y `U1-A5`.
 
-CI comprueba que el feedback no revela `correct_category`, `expected_decision`, una clave de respuesta ni una solución completa. Esta validación resuelve el riesgo técnico de feedback limitado a mostrar respuestas, pero no sustituye una prueba de usabilidad con estudiantes.
+CI comprueba que el feedback no revela `correct_category`, `expected_decision`, una clave de respuesta ni una solución completa. Esta validación no sustituye una prueba de usabilidad con estudiantes.
 
 ### Protocolos humanos
 
-La prueba cognitiva está formalizada para estudiar comprensión de instrucciones, selección de respuesta, utilidad de pistas y transferencia a un problema de recuperación diferente. La selección es intencional para detectar problemas y no pretende estimar rendimiento poblacional.
+La prueba cognitiva está formalizada para estudiar comprensión de instrucciones, selección de respuesta, utilidad de pistas y transferencia. El acuerdo entre revisores incluye puntuación ordinal 0–2, acuerdo exacto, diferencia absoluta media, kappa ponderado lineal, análisis separado de flags críticos, matriz de confusión y controles sintéticos positivo y negativo.
 
-El acuerdo entre revisores dispone de:
-
-- puntuación ordinal 0–2;
-- acuerdo exacto y diferencia absoluta media;
-- kappa ponderado lineal;
-- análisis separado de flags críticos;
-- matriz de confusión y listado de desacuerdos;
-- umbrales internos declarados, no presentados como estándares universales;
-- control sintético positivo y negativo.
-
-Las plantillas vacías prohíben identificadores directos, datos clínicos y respuestas reales dentro del repositorio. El calculador está implementado, pero las sesiones y rondas reales no se han ejecutado.
+Las plantillas vacías prohíben identificadores directos, datos clínicos y respuestas reales dentro del repositorio. Las sesiones y rondas reales no se han ejecutado.
 
 ### Handoff disciplinar
 
-La revisión inicial dispone de:
-
-- contrato de artefactos obligatorios;
-- generador determinista de manifiesto SHA-256;
-- plantilla estructurada de decisión;
-- evaluador de autorización;
-- rechazo explícito de aprobaciones sintéticas, plantillas y actores de CI;
-- separación entre autorización de redacción, unidad desarrollada y promoción del curso.
-
-El handoff externo mantiene `pending_human_review`. `approve_for_controlled_drafting`, `approve_with_changes` y `do_not_approve` conservan su función para la verificación profesional posterior.
-
-Actualmente no existen registros profesionales en `data/review_evidence/`; por tanto, no existe respaldo disciplinar externo.
+El handoff dispone de contrato de artefactos, manifiesto SHA-256, plantilla de decisión, evaluador de autorización y rechazo de aprobaciones sintéticas. Mantiene `pending_human_review`; no existe respaldo disciplinar externo en `data/review_evidence/`.
 
 ### Autorización provisional de autoría
 
-El registro `data/authoring_authorizations/bioinstrumentacion-unit-01-provisional.json` documenta un `project_owner_override`.
+El registro `data/authoring_authorizations/bioinstrumentacion-unit-01-provisional.json` documenta un `project_owner_override` que autoriza crear el borrador, revisar sus componentes y ejecutar gates internos.
 
-Autoriza:
-
-- crear el borrador autoral `unit-01.json`;
-- redactar la teoría completa;
-- revisar ejemplos, prácticas, evaluación, feedback y recuperación;
-- ejecutar gates internos y PRs de autoría.
-
-No autoriza:
-
-- publicación;
-- estado `developed`;
-- promoción del curso;
-- estado `complete`;
-- afirmaciones de revisión humana o respaldo profesional;
-- validación clínica o regulatoria.
+No autoriza publicación, estado `developed`, promoción del curso, estado `complete`, afirmaciones de respaldo profesional o validación clínica o regulatoria.
 
 ### Caso de presión
 
-**Resuelto internamente para autoría.** El caso diferencia:
-
-1. presión intravascular en sitio y referencia especificados;
-2. estimación auscultatoria braquial;
-3. estimación oscilométrica dependiente del algoritmo.
-
-No se permite equiparar presión del manguito, PPG, tiempo de tránsito o una salida numérica con presión arterial directa.
+**Resuelto internamente para autoría.** Diferencia presión intravascular en sitio y referencia especificados, estimación auscultatoria braquial y estimación oscilométrica dependiente del algoritmo. No equipara presión del manguito, PPG, tiempo de tránsito o una salida numérica con presión arterial directa.
 
 ### Modelo térmico
 
-**Implementado y validado técnicamente.** El generador distingue:
-
-- `T_u`: superficie no perturbada prescrita;
-- `T_d`: superficie perturbada por contacto;
-- `T_s`: estado dinámico del sensor;
-- `y`: indicación con offset y ruido sintético.
-
-El modelo de primer orden dispone de pruebas automáticas de determinismo, convergencia, respuesta a una y cinco constantes de tiempo, monotonía, ausencia de sobreimpulso ideal, hash de salida y límites de uso. No se presenta como modelo fisiológico validado.
+**Implementado y validado técnicamente.** Distingue `T_u`, `T_d`, `T_s` e indicación con offset y ruido. La aproximación de primer orden tiene pruebas de determinismo, convergencia, constante de tiempo, monotonía y ausencia de sobreimpulso ideal. No se presenta como modelo fisiológico validado.
 
 ### PhysioNet
 
-**Implementado y fijado offline.** La práctica utiliza un fixture atribuido del encabezado `100.hea` de MIT-BIH v1.0.0, registro `100`. El parser valida dos canales, `360 Hz`, `650000` muestras, formato `212`, etiquetas `MLII` y `V5`, sin descargar `100.dat` ni interpretar señales.
+**Implementado y fijado offline.** La práctica usa un fixture atribuido de `100.hea`, MIT-BIH v1.0.0, registro 100. Valida dos canales, `360 Hz`, `650000` muestras, formato `212`, etiquetas `MLII` y `V5`, sin descargar `100.dat` ni interpretar señales.
 
 ### Reproducibilidad
 
-Las prácticas, el sistema de evaluación, el calculador de acuerdo, el generador de manifiestos y los evaluadores utilizan únicamente la biblioteca estándar de Python. CI trabaja sin red, genera resultados en directorios temporales y rechaza fixtures, submissions, matrices, decisiones o autorizaciones inconsistentes.
+Las prácticas, evaluadores, calculador de acuerdo, generadores de manifiestos y compilador autoral usan la biblioteca estándar de Python. CI trabaja sin red, genera resultados temporales y rechaza contratos inconsistentes.
 
 ### Fuentes
 
-La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST TN 2156. La resolución de bloqueos incorpora statements AHA, literatura sobre termometría de contacto y documentación oficial de PhysioNet. El protocolo humano añade documentación oficial de CDC/CCQDER y Census sobre evaluación cognitiva, además de las publicaciones originales de Cohen sobre kappa nominal y ponderado.
+La base se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020, NIST TN 2156, AHA para delimitar métodos de presión, literatura sobre termometría de contacto y documentación oficial de PhysioNet. Cada fuente del borrador tiene localizadores y una función declarada.
 
 ## Riesgos abiertos
 
@@ -165,7 +133,7 @@ La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST T
 3. Falta revisar empíricamente la usabilidad y dificultad de las pistas y problemas de recuperación.
 4. Falta ejecutar una ronda independiente con dos revisores y resolver sus desacuerdos.
 5. Las prácticas están validadas técnicamente, pero aún no han sido probadas por estudiantes ni revisadas externamente.
-6. El borrador autoral todavía debe redactarse, integrarse y auditarse.
+6. El borrador autoral debe someterse a verificación profesional antes de publicación o promoción editorial.
 
 ## Gate antes de redactar teoría completa
 
@@ -184,23 +152,24 @@ La base metrológica se apoya en VIM3, JCGM GUM-1:2023, JCGM GUM-6:2020 y NIST T
 - [x] Protocolo de acuerdo entre revisores formalizado.
 - [x] Handoff disciplinar y gate de autorización formalizados.
 - [x] Override provisional del propietario registrado para autoría controlada.
+- [x] Borrador autoral completo generado y auditado internamente.
 - [ ] Ejecución de prueba cognitiva con participante humano.
 - [ ] Ejecución de ronda independiente con dos revisores.
 - [ ] Revisión disciplinar humana inicial.
 
-La redacción completa puede comenzar bajo `controlled_authoring_authorized`. La prueba cognitiva, el acuerdo entre revisores y la revisión profesional externa siguen pendientes y serán obligatorios antes de considerar la unidad desarrollada o publicable.
-
 ## Gate antes de considerar la unidad desarrollada
 
-- teoría completa con fuentes y localizadores;
-- al menos dos ejemplos razonados y un caso de transferencia no resuelto previamente;
-- prácticas implementadas, ejecutadas y revisadas pedagógicamente;
-- rúbricas y feedback probados con usuarios y revisores;
-- revisión de exactitud científica y terminología;
-- accesibilidad textual y visual;
-- ausencia de saltos hacia interpretación clínica o requisitos normativos no consultados;
-- validación automática del paquete;
-- revisión humana documentada del bloque.
+- [x] teoría completa con fuentes y localizadores;
+- [x] al menos dos ejemplos razonados y un caso de transferencia no resuelto previamente;
+- [x] prácticas implementadas y ejecutadas técnicamente;
+- [x] validación automática del paquete autoral;
+- [ ] prácticas revisadas pedagógicamente con usuarios;
+- [ ] rúbricas y feedback probados con usuarios y revisores;
+- [ ] revisión profesional de exactitud científica y terminología;
+- [ ] verificación de accesibilidad con perfil objetivo;
+- [ ] revisión humana documentada del bloque.
+
+La ausencia de los cinco últimos elementos impide declarar la unidad `developed` o publicarla.
 
 ## Gate antes de `complete`
 
@@ -211,8 +180,9 @@ La redacción completa puede comenzar bajo `controlled_authoring_authorized`. La
 Después de fusionar este bloque:
 
 - Bioinstrumentación seguirá en `pending`;
-- las unidades fallback públicas seguirán identificadas como contenido de respaldo;
-- podrá crearse `data/course_redevelopment/bioinstrumentacion/units/unit-01.json` como borrador controlado;
+- existirá un borrador autoral canónico en estado `review`;
+- la publicación continuará bloqueada;
+- las unidades fallback públicas no serán sustituidas automáticamente;
 - dos prácticas seguirán ejecutables y auditables offline;
 - la evaluación cerrada y el feedback seguirán ejecutables;
 - las respuestas abiertas seguirán bajo rúbrica humana;
