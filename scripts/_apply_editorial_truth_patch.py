@@ -120,7 +120,15 @@ replace_once(
 )
 
 if text == original:
-    raise SystemExit("no changes applied")
-
+    raise SystemExit("no generator changes applied")
 PATH.write_text(text, encoding="utf-8")
+
+validator_path = ROOT / "scripts" / "validate_pilot_foundations.py"
+validator = validator_path.read_text(encoding="utf-8")
+old = '["foundation_review", "Unidades desarrolladas en este bloque: ninguna", "Gates antes de complete", "Riesgos abiertos"]'
+new = '["foundation_review", "Unidades desarrolladas en este bloque", "ninguna", "Gates antes de complete", "Riesgos abiertos"]'
+if validator.count(old) != 1:
+    raise SystemExit(f"readiness validation marker: expected one occurrence, found {validator.count(old)}")
+validator_path.write_text(validator.replace(old, new, 1), encoding="utf-8")
+
 print("Applied authoritative editorial state migration")
