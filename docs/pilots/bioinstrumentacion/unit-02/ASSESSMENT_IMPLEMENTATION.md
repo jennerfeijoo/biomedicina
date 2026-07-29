@@ -203,3 +203,15 @@ course_state: pending
 ## Próximo gate
 
 Antes de autorizar la teoría completa deben revisarse la usabilidad del feedback, la claridad de las rúbricas, el comportamiento de estudiantes reales y la concordancia entre revisores. Este bloque no aporta todavía esa evidencia humana.
+
+## Correcciones de auditoría científica y editorial interna
+
+La auditoría interna conjunta de prácticas, evaluaciones y feedback quedó en `passed_with_corrections_applied`.
+
+1. **Carga eléctrica:** `LG01` ahora identifica como cantidad perturbada la **tensión de salida del puente**. La transferencia de deformación pertenece al caso mecánico y no se combina con la carga por impedancia de entrada.
+2. **Alcance del rechazo dinámico:** `reject_declared_simple_first_order` significa que el modelo simple declarado no explica la evidencia. No afirma que ningún modelo compuesto pueda contener un subsistema de primer orden.
+3. **Alineación diagnóstica:** `SC01` remedia linealidad global indebida; la ruta «mayor sensibilidad es mejor» permanece en los casos donde existe una decisión de sensibilidad o selección.
+4. **Trazabilidad:** cada evaluación `U2-A1` a `U2-A5` posee un `evidence_crosswalk` con resultados, prácticas, afirmaciones fuente y artefactos localizados.
+5. **Protección de claves:** los campos esperados se conservan solo para evaluación interna. El payload del estudiante y cualquier futuro cliente público deben excluirlos.
+
+Los identificadores de máquina permanecen en inglés para mantener compatibilidad y reproducibilidad; las instrucciones y explicaciones dirigidas al estudiante usan terminología española. Esta auditoría no sustituye revisión profesional externa, prueba cognitiva ni revisión de usabilidad del feedback.
