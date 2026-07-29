@@ -9,6 +9,8 @@ review_handoff: ready_pending_external_review
 course_editorial_state: pending
 unit_authoral_file: absent
 practice_implementation_authorized_provisionally: true
+u2_practices_implemented: true
+practice_implementation_status: implemented_internal_review
 external_professional_practice_authorization: false
 full_theory_drafting_authorized: false
 unit_developed: false
@@ -22,76 +24,63 @@ disciplinary_review: pending_human_review
 - cinco resultados de aprendizaje observables;
 - modelo conceptual de 17 nodos y 12 relaciones;
 - tres casos limitados: termistor, galga extensométrica y fotodiodo;
-- doce errores conceptuales;
-- cinco evaluaciones alineadas;
-- tres prácticas planificadas sin datos humanos;
-- registro de once fuentes directamente consultadas;
-- especificación visual con errores prohibidos;
-- cuatro generadores estáticos deterministas;
-- modelo dinámico de primer orden con controles positivos y negativos;
-- tres componentes exactos fijados para auditoría documental;
-- cuatro casos de carga seguros;
+- doce errores conceptuales y cinco evaluaciones planificadas;
+- registros de fuentes y especificación visual;
+- bloqueos técnicos estáticos, dinámicos, documentales y de carga resueltos;
 - handoff disciplinar con manifiesto determinista y plantilla de decisión;
-- autorización provisional del propietario para la implementación interna de U2-P1, U2-P2 y U2-P3.
+- autorización provisional del propietario para prácticas internas;
+- implementación ejecutable de U2-P1, U2-P2 y U2-P3;
+- gate permanente con hashes dorados y controles negativos.
 
-## Bloqueos técnicos resueltos
+## Implementación de prácticas
 
-1. **Caracterización estática:** se fijaron generadores para control lineal, saturación, zona muerta e histéresis, con semilla, ecuaciones, parámetros y pruebas de aceptación.
-2. **Dinámica:** se fijó el primer orden lineal, la actualización discreta exacta, las tolerancias y los controles de rechazo para retardo puro, segundo orden subamortiguado y ausencia de tiempo.
-3. **Relación tiempo–frecuencia:** `f_c = 1/(2πτ)` quedó limitada al primer orden lineal y al criterio de −3 dB.
-4. **Carga:** se formalizaron rutas térmica, mecánica, eléctrica y óptica sin adquisición humana.
-5. **Componentes:** se fijaron `NTCLG100E2103JB`, `CEA-06-125UNA-350` y `S5821-03`, conservando condición y categoría de cada especificación.
+El contrato autoritativo es:
 
-La resolución técnica permite implementar internamente las prácticas bajo la autorización provisional; no constituye aprobación humana ni autoriza teoría, publicación o promoción.
+```text
+data/practice_implementations/bioinstrumentacion-unit-02.json
+```
+
+La documentación ejecutable se encuentra en:
+
+```text
+docs/pilots/bioinstrumentacion/unit-02/PRACTICE_IMPLEMENTATION.md
+```
+
+La validación permanente se ejecuta mediante:
+
+```text
+scripts/validate_bioinstrumentation_u2_practices.py
+```
+
+### U2-P1
+
+Implementa cuatro familias sintéticas: control lineal, saturación, zona muerta e histéresis. El gate recupera `K`, `b` y `2*h`, verifica sensibilidad local decreciente y demuestra que un ajuste agrupado no elimina los residuos sistemáticos por rama.
+
+### U2-P2
+
+Implementa un primer orden lineal con actualización discreta exacta, estimación de `tau` y relación limitada con `f_c`. Rechaza retardo puro, segundo orden subamortiguado y curvas sin eje temporal.
+
+### U2-P3
+
+Audita metadatos compactos de `NTCLG100E2103JB`, `CEA-06-125UNA-350` y `S5821-03`. Conserva condiciones y categorías, mantiene no resuelto el factor de galga específico del lote y rechaza valores típicos convertidos en garantías.
 
 ## Handoff disciplinar
 
-El contrato de entrega es:
+El contrato externo permanece en:
 
 ```text
 data/review_handoffs/bioinstrumentacion-unit-02.json
 ```
 
-El paquete puede congelarse mediante:
-
-```text
-scripts/build_bioinstrumentation_u2_review_packet.py
-```
-
-La decisión futura debe usar:
-
-```text
-data/review_templates/bioinstrumentacion/unit-02/disciplinary-review-decision-template.json
-```
-
-La autorización profesional será evaluada por:
-
-```text
-scripts/evaluate_bioinstrumentation_u2_practice_authorization.py
-```
-
-La revisión humana operativa permanece abierta en el issue `#161`. Hasta que existan un manifiesto y una decisión humana válidos, el estado profesional continúa `pending_human_review`.
-
-## Autorización provisional de prácticas
-
-El registro interno es:
-
-```text
-data/authoring_authorizations/bioinstrumentacion-unit-02-practices-provisional.json
-```
-
-Este registro interpreta la instrucción contextual del propietario de continuar como autorización limitada al siguiente bloque ya identificado: implementar y auditar internamente U2-P1, U2-P2 y U2-P3. No reemplaza el handoff profesional ni altera su estado.
+La revisión profesional operativa continúa en el issue `#161`. La implementación interna no crea un manifiesto ni una decisión humana, no cambia `pending_human_review` y no debe presentarse como `approve_for_practice_implementation`.
 
 ## Qué está autorizado
 
-- crear `data/practice_implementations/bioinstrumentacion-unit-02.json`;
-- implementar U2-P1: banco sintético de características estáticas;
-- implementar U2-P2: respuesta dinámica de primer orden;
-- implementar U2-P3: auditoría comparativa de hojas de datos;
-- crear generadores sintéticos y fixtures documentales;
-- añadir controles positivos, negativos y pruebas de reproducibilidad;
-- revisar documentación y gates internos;
-- usar exclusivamente datos sintéticos o documentación de componentes.
+- ejecutar y revisar U2-P1, U2-P2 y U2-P3;
+- regenerar salidas en `build/` o directorios temporales;
+- modificar generadores, fixture y gate dentro del alcance provisional;
+- mejorar reproducibilidad, controles negativos y documentación;
+- preparar el siguiente bloque de evaluación y retroalimentación.
 
 ## Qué no está autorizado
 
@@ -99,36 +88,22 @@ Este registro interpreta la instrucción contextual del propietario de continuar
 - redactar la teoría completa;
 - publicar una página nueva;
 - promover el curso a `developed` o `complete`;
-- usar datos de personas o conectar sensores a sujetos;
+- usar datos de personas, muestras o conexión de sensores a sujetos;
 - operar equipos clínicos;
-- presentar especificaciones de fabricante como validación del sistema;
+- presentar especificaciones de fabricante como validación de una cadena;
 - declarar utilidad clínica, conformidad normativa, seguridad o aprobación profesional.
-
-## Gate antes de fusionar prácticas
-
-La implementación deberá demostrar simultáneamente:
-
-- datos exclusivamente sintéticos o documentales;
-- semilla, parámetros, unidades y tolerancias versionados;
-- ejecución sin red en CI;
-- resultados deterministas;
-- controles de aceptación y rechazo;
-- separación entre patrón sintético y mecanismo físico;
-- conservación de condiciones y categorías de especificación;
-- salidas generadas no versionadas;
-- ausencia de inferencias clínicas, regulatorias o de seguridad.
 
 ## Gate antes de autoría completa
 
-Incluso después de implementar prácticas, seguirá siendo necesario:
+Aún se requiere:
 
-- validar las prácticas implementadas y sus salidas deterministas;
 - implementar evaluación y retroalimentación ejecutables;
-- revisar continuidad pedagógica y fuentes de la teoría;
-- obtener una autorización separada y explícita para redacción controlada;
-- mantener bloqueadas publicación y promoción del curso;
-- conservar pendiente la revisión profesional externa hasta que exista evidencia humana válida.
+- realizar auditoría científica y editorial de las prácticas y evaluaciones;
+- revisar continuidad pedagógica y suficiencia de fuentes;
+- obtener una autorización separada para redacción controlada;
+- mantener bloqueadas publicación y promoción;
+- completar revisión profesional externa mediante evidencia humana válida.
 
 ## Próximo bloque recomendado
 
-Implementar U2-P1, U2-P2 y U2-P3 bajo la autorización provisional, con un contrato estructurado, scripts reproducibles y un gate permanente. La teoría completa y la publicación continúan bloqueadas.
+Implementar el sistema de evaluación y retroalimentación de la Unidad 2, alineado con U2-P1, U2-P2 y U2-P3, sin crear todavía la unidad autoral. La teoría completa y la publicación continúan bloqueadas.
