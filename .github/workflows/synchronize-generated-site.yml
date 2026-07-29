@@ -31,6 +31,15 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Apply one-time editorial truth migration
+        run: python scripts/_apply_editorial_truth_patch.py
+
+      - name: Validate pilot foundation
+        run: |
+          python -m py_compile scripts/generate_site.py scripts/validate_pilot_foundations.py
+          python scripts/validate_course_plan_packages.py
+          python scripts/validate_pilot_foundations.py
+
       - name: Regenerate site deterministically
         shell: bash
         run: |
@@ -51,15 +60,21 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic site
+      - name: Remove one-time migration scaffolding
+        shell: bash
+        run: |
+          rm scripts/_apply_editorial_truth_patch.py
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+
+      - name: Commit deterministic site and permanent migration
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- ciencias-basicas biologicas-medicas ingenieria-biomedica gestion-etica-comunicacion catalogo
+          git add -A
           if git diff --cached --quiet; then
             echo "El sitio generado ya está sincronizado."
             exit 0
           fi
-          git commit -m "Synchronize deterministic site generation"
+          git commit -m "Enforce authoritative editorial states"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
