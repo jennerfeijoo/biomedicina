@@ -13,6 +13,8 @@ Este bloque implementa evaluación diagnóstica y retroalimentación recuperativ
 
 La implementación calcula dominio sobre respuestas estructuradas, valida rúbricas humanas y libera pistas graduadas **sin revelar la respuesta**. No redacta la teoría completa, no crea `unit-02.json`, no publica contenido y no convierte CI en revisión profesional.
 
+La prueba cognitiva con estudiantes permanece pendiente; los fixtures verifican comportamiento técnico del motor, pero no aportan evidencia sobre comprensión, carga cognitiva o usabilidad real.
+
 ## Artefactos autoritativos
 
 ```text
