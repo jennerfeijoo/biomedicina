@@ -145,7 +145,11 @@ def validate_scientific_corrections(contract: dict[str, Any]) -> None:
     for case_id in ("DY02", "DY03", "DY04"):
         require(dynamic_cases.get(case_id, {}).get("expected_decision") == "reject_declared_simple_first_order", f"{case_id} retains an overbroad rejection label")
     scope_note = str(dynamic.get("decision_scope_note", "")).casefold()
-    require("modelo simple declarado" in scope_note and "modelo compuesto" in scope_note, "dynamic decision scope note is incomplete")
+    require(
+        "modelo simple declarado" in scope_note
+        and ("modelo compuesto" in scope_note or "modelos compuestos" in scope_note),
+        "dynamic decision scope note is incomplete",
+    )
 
     loading = machines["U2-A4"]
     quantities = set(map(str, loading.get("allowed_perturbed_quantities", [])))
