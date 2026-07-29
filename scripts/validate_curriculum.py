@@ -151,8 +151,17 @@ def validate_complete_course(area: dict[str, Any], subject: dict[str, Any], erro
         add_error(errors, f"No se pudo construir el curso {key}: {exc}")
         return
 
-    if course.get("status") not in {"generated", "complete"}:
-        add_error(errors, f"{key} debe quedar en estado generated o complete")
+    try:
+        expected_status = generate_site.catalog_editorial_status(subject["id"])
+    except (KeyError, TypeError, ValueError) as exc:
+        add_error(errors, f"No se pudo resolver el estado editorial de {key}: {exc}")
+        return
+    if course.get("status") != expected_status:
+        add_error(
+            errors,
+            f"{key} tiene estado público {course.get('status')!r}; "
+            f"se esperaba {expected_status!r} según data/catalog_statuses.json",
+        )
 
     minimums = {
         "prerequisites": 3,
