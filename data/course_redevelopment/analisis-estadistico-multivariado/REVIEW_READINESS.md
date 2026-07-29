@@ -12,6 +12,10 @@
 4. **Biomedicina computacional:** batch effects, composicionalidad e integración de modalidades.
 5. **Reproducibilidad:** código, versiones, semillas, particiones y documentación.
 
+## Validación estructural automatizada
+
+Las ocho unidades cumplen el contrato de reconstrucción trazable: secciones, párrafos, puntos clave, densidad teórica mínima, actividades, glosario, autoevaluación y fuentes. Esta validación técnica no sustituye la revisión disciplinar.
+
 ## Criterios antes de `complete`
 
 - verificar directamente todas las fuentes;
