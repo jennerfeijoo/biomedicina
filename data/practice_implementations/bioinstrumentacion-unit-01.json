@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "implementation_id": "bioinstrumentacion-unit-01-practices",
+  "subject_id": "bioinstrumentacion",
+  "unit_number": 1,
+  "status": "implemented_internal_review",
+  "course_editorial_state": "pending",
+  "full_theory_drafting_authorized": false,
+  "purpose": "Implementar y probar dos actividades reproducibles de la Unidad 1 sin publicar teoría, adquirir datos humanos ni modificar el estado editorial del curso.",
+  "practices": [
+    {
+      "id": "thermal-synthetic",
+      "title": "Cadena térmica sintética de primer orden",
+      "entrypoint": "scripts/generate_bioinstrumentation_thermal_dataset.py",
+      "default_command": "python scripts/generate_bioinstrumentation_thermal_dataset.py --output-dir build/bioinstrumentacion-u1/thermal",
+      "runtime": "Python 3.11, biblioteca estándar",
+      "network_required": false,
+      "inputs": [
+        "duración y paso temporal",
+        "tiempo de escalón",
+        "temperaturas inicial y objetivo",
+        "sesgo de contacto",
+        "constante de tiempo",
+        "offset de calibración",
+        "desviación del ruido y semilla"
+      ],
+      "outputs": [
+        "thermal_chain.csv",
+        "thermal_chain_manifest.json"
+      ],
+      "variables": [
+        "T_u_C: superficie no perturbada prescrita",
+        "T_d_C: superficie perturbada por el sesgo de contacto declarado",
+        "T_s_C: estado interno de primer orden del sensor",
+        "indication_C: T_s más offset y ruido sintético"
+      ],
+      "acceptance_tests": [
+        "misma semilla produce bytes idénticos",
+        "semilla distinta modifica la indicación ruidosa",
+        "respuesta ideal alcanza 1-exp(-1) del cambio después de una constante de tiempo",
+        "respuesta ideal supera 99 % después de cinco constantes de tiempo",
+        "respuesta ideal es monótona y sin sobreimpulso",
+        "T_u, T_d, T_s e indicación permanecen como variables distintas",
+        "el manifiesto contiene hash, parámetros y límites de uso"
+      ],
+      "limitations": [
+        "modelo sintético didáctico",
+        "no validado para piel, temperatura central, población o dispositivo",
+        "sin perfusión, evaporación, geometría distribuida ni no linealidades",
+        "prohibido para diagnóstico, tratamiento o validación de dispositivos"
+      ]
+    },
+    {
+      "id": "physionet-header-audit",
+      "title": "Auditoría offline del encabezado WFDB del registro 100",
+      "entrypoint": "scripts/audit_wfdb_header.py",
+      "fixture": "data/practice_fixtures/bioinstrumentacion/mitdb-100/100.hea",
+      "attribution": "data/practice_fixtures/bioinstrumentacion/mitdb-100/ATTRIBUTION.md",
+      "default_command": "python scripts/audit_wfdb_header.py data/practice_fixtures/bioinstrumentacion/mitdb-100/100.hea --expect-record-100",
+      "runtime": "Python 3.11, biblioteca estándar",
+      "network_required": false,
+      "expected_metadata": {
+        "database": "MIT-BIH Arrhythmia Database",
+        "version": "1.0.0",
+        "doi": "10.13026/C2F305",
+        "record": "100",
+        "signal_count": 2,
+        "sampling_frequency_hz": 360,
+        "sample_count": 650000,
+        "format_tokens": ["212", "212"],
+        "channel_labels": ["MLII", "V5"],
+        "signal_files": ["100.dat", "100.dat"]
+      },
+      "acceptance_tests": [
+        "parsea el encabezado local sin descargar señales",
+        "conserva comentarios y especificaciones por canal",
+        "verifica registro, canales, frecuencia, muestras, formato y etiquetas",
+        "rechaza un conteo de señales inconsistente",
+        "conserva atribución, versión, DOI y licencia"
+      ],
+      "limitations": [
+        "no incluye el archivo de señal 100.dat",
+        "no interpreta morfología, ritmo, ondas ni intervalos",
+        "no usa anotaciones como etiquetas clínicas",
+        "no clasifica arritmias ni compara sujetos"
+      ]
+    }
+  ],
+  "expected_default_thermal_sha256": "747101e345602e54db2c7dee72eea395e066ddb2024cf3165434599f5209fd45",
+  "validation": {
+    "entrypoint": "scripts/validate_bioinstrumentation_u1_practices.py",
+    "ci_step": "Validate Bioinstrumentation U1 practices",
+    "runs_offline": true,
+    "uses_temporary_directories": true,
+    "tracked_generated_dataset": false
+  },
+  "editorial_effect": "none",
+  "review_state": {
+    "internal_technical_validation": "implemented",
+    "disciplinary_review": "pending_human_review",
+    "student_cognitive_test": "pending",
+    "unit_developed": false,
+    "course_state_after_block": "pending"
+  }
+}
