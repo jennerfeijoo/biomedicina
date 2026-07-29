@@ -22,6 +22,9 @@ public_release_authorized: false
 disciplinary_review: pending_human_review
 student_cognitive_test: pending
 feedback_usability_review: pending
+scientific_editorial_audit: passed_with_corrections_applied
+unresolved_critical_findings: 0
+unresolved_major_findings: 0
 ```
 
 ## Material disponible
@@ -98,6 +101,23 @@ Las evaluaciones automáticas solo aceptan campos estructurados y deterministas.
 
 La retroalimentación se libera por intentos y no expone patrones, decisiones, rutas causales, valores objetivo, claves completas ni respuestas modelo.
 
+
+## Auditoría científica y editorial interna
+
+La auditoría conjunta de U2-P1 a U2-P3, U2-A1 a U2-A5 y las doce rutas de feedback fue aprobada con correcciones aplicadas. El registro estructurado es:
+
+```text
+data/course_audits/bioinstrumentacion/UNIT_02_PRACTICES_ASSESSMENT_SCIENTIFIC_EDITORIAL_AUDIT_2026-07-29.json
+```
+
+El gate permanente es:
+
+```text
+scripts/validate_bioinstrumentation_u2_scientific_editorial_audit.py
+```
+
+La auditoría resolvió la separación entre carga eléctrica y transferencia mecánica, precisó el alcance del rechazo del modelo simple de primer orden, corrigió una ruta diagnóstica no sustentada, añadió trazabilidad evaluación–evidencia y bloqueó la distribución pública de claves. No aporta evidencia humana ni autorización de teoría o publicación.
+
 ## Handoff disciplinar
 
 El contrato externo permanece en:
@@ -133,7 +153,7 @@ La revisión profesional operativa continúa en el issue `#161`. Las prácticas 
 
 Aún se requiere:
 
-- realizar auditoría científica y editorial de prácticas, evaluaciones y feedback;
+- mantener vigentes las correcciones y el gate de auditoría científica y editorial;
 - ejecutar una prueba cognitiva con estudiantes;
 - revisar usabilidad del feedback y concordancia entre revisores;
 - revisar continuidad pedagógica y suficiencia de fuentes;
@@ -143,4 +163,4 @@ Aún se requiere:
 
 ## Próximo bloque recomendado
 
-Auditar científicamente y editorialmente la implementación conjunta de U2-P1 a U2-P3 y U2-A1 a U2-A5. La auditoría debe verificar exactitud, trazabilidad, alineación, ausencia de filtración de respuestas y suficiencia de los límites antes de considerar una autorización de autoría. La teoría completa y la publicación continúan bloqueadas.
+Preparar una autorización provisional separada para autoría controlada de la Unidad 2, limitada por el contrato técnico y por las correcciones de auditoría. La teoría completa no queda autorizada por esta auditoría; la publicación, la promoción del curso y la revisión profesional continúan bloqueadas.
