@@ -31,7 +31,8 @@ def main() -> int:
     assert auth["status"] == "assessment_implementation_authorized_internal_only"
     assert auth["course_editorial_state"] == "pending"
 
-    assert blockers["resolution_status"] == "resolved_for_synthetic_practice_implementation"
+    assert blockers["status"] == "technical_blockers_resolved_internal_review"
+    assert [item["id"] for item in blockers["resolved_blockers"]] == [f"U4-B0{i}" for i in range(1, 7)]
     assert practices["unit"] == 4
     assert [item["id"] for item in practices["practices"]] == ["U4-P1", "U4-P2", "U4-P3"]
 
