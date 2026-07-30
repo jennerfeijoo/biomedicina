@@ -7,7 +7,7 @@
 
 ## Alcance del bloque
 
-Este bloque crea un borrador autoral interno completo de la Unidad 2, respaldado por la autorización provisional del propietario y por la auditoría previa de prácticas, evaluación y feedback. No publica la unidad, no la declara `developed` y no representa validación profesional, institucional, clínica, regulatoria o de seguridad.
+Este bloque crea un borrador autoral interno completo de la Unidad 2, respaldado por la autorización provisional del propietario y por la auditoría previa de prácticas, evaluación y feedback. Este bloque no publica la unidad, no la declara `developed` y no representa validación profesional, institucional, clínica, regulatoria o de seguridad.
 
 ## Fuente modular
 
