@@ -29,6 +29,14 @@ provisional_authoring_authorized: true
 authoring_authorization_status: controlled_authoring_authorized
 full_theory_drafting_authorized_provisionally: true
 external_professional_review: pending_human_review
+authoral_source_status: present
+unit_authoral_file_current: present_internal_review
+authoral_unit_status: authored_internal_review_pending_external_verification
+authoral_theory_sections: 6
+authoral_minimum_theory_words: 2200
+authoral_glossary_terms: 20
+authoral_worked_examples: 3
+authoral_source_count: 12
 ```
 
 ## Material disponible
@@ -142,6 +150,27 @@ La autorización permite crear el directorio fuente modular, redactar la teoría
 
 Esta autorización es un `project_owner_continuation_override`: no constituye revisión profesional, evidencia humana, autorización de publicación ni cambio del estado externo `pending_human_review`.
 
+## Borrador autoral completo
+
+La fuente modular y el artefacto canónico interno son:
+
+```text
+data/course_redevelopment/bioinstrumentacion/unit-02-source
+data/course_redevelopment/bioinstrumentacion/units/unit-02.json
+```
+
+El constructor, el validador y la documentación de implementación son:
+
+```text
+scripts/build_bioinstrumentation_u2_authoral_unit.py
+scripts/validate_bioinstrumentation_u2_authoral_unit.py
+docs/pilots/bioinstrumentacion/unit-02/AUTHORAL_UNIT_IMPLEMENTATION.md
+```
+
+El borrador contiene seis secciones teóricas con al menos 2.200 palabras, veinte términos de glosario, tres ejemplos razonados, cinco actividades alineadas, doce errores conceptuales, doce preguntas de autoevaluación, cinco conexiones biomédicas limitadas, tres prácticas ejecutables y doce fuentes localizadas. Integra las seis correcciones de la auditoría previa y mantiene las claves de evaluación fuera del contenido destinado al estudiante.
+
+La evidencia humana continúa pendiente. El curso permanece `pending`, la publicación continúa bloqueada y el archivo no debe incorporarse a la generación pública mientras no existan revisión profesional, prueba cognitiva, revisión de usabilidad y concordancia documentadas.
+
 ## Handoff disciplinar
 
 El contrato externo permanece en:
@@ -195,4 +224,4 @@ Antes de declarar la unidad desarrollada o publicarla todavía se requiere:
 
 ## Próximo bloque recomendado
 
-Crear el borrador autoral modular de la Unidad 2, su constructor determinista y su validador permanente. El resultado debe permanecer interno, con el curso en `pending`, sin publicación ni afirmaciones de validación profesional.
+Ejecutar una auditoría científica y editorial del borrador autoral completo, verificando teoría, ejemplos, glosario, continuidad pedagógica, trazabilidad y coherencia con las prácticas y evaluaciones. La auditoría seguirá siendo interna y no modificará `pending_human_review`, la publicación ni el estado del curso.

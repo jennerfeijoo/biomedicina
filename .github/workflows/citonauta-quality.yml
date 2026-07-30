@@ -44,16 +44,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Isolate authorized authoral draft for historical gates
+      - name: Isolate authorized authoral drafts for historical gates
         shell: bash
         run: |
           set -euo pipefail
-          unit="data/course_redevelopment/bioinstrumentacion/units/unit-01.json"
-          if [[ -f "$unit" ]]; then
-            mkdir -p "$RUNNER_TEMP/bioinstrumentacion-u1"
-            mv "$unit" "$RUNNER_TEMP/bioinstrumentacion-u1/unit-01.json"
-            echo "Authoral draft isolated while phase-specific historical gates run."
-          fi
+          for number in 01 02; do
+            unit="data/course_redevelopment/bioinstrumentacion/units/unit-${number}.json"
+            if [[ -f "$unit" ]]; then
+              destination="$RUNNER_TEMP/bioinstrumentacion-u${number}"
+              mkdir -p "$destination"
+              mv "$unit" "$destination/unit-${number}.json"
+              echo "Authoral draft unit-${number} isolated while phase-specific historical gates run."
+            fi
+          done
 
       - name: Validate curriculum data
         run: python scripts/validate_curriculum.py
@@ -130,8 +133,17 @@ jobs:
       - name: Build Bioinstrumentation U2 provisional authoring authorization
         run: python scripts/build_bioinstrumentation_u2_provisional_authorization.py
 
+      - name: Build Bioinstrumentation U2 authoral state
+        run: python scripts/build_bioinstrumentation_u2_authoral_state.py
+
+      - name: Build Bioinstrumentation U2 authoral unit
+        run: python scripts/build_bioinstrumentation_u2_authoral_unit.py
+
       - name: Validate Bioinstrumentation U2 provisional authoring authorization
         run: python scripts/validate_bioinstrumentation_u2_provisional_authorization.py
+
+      - name: Validate Bioinstrumentation U2 authoral unit
+        run: python scripts/validate_bioinstrumentation_u2_authoral_unit.py
 
       - name: Validate generated units
         run: python scripts/validate_generated_units.py

@@ -32,16 +32,19 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Isolate unpublished Bioinstrumentation authoral draft
+      - name: Isolate unpublished Bioinstrumentation authoral drafts
         shell: bash
         run: |
           set -euo pipefail
-          unit="data/course_redevelopment/bioinstrumentacion/units/unit-01.json"
-          if [[ -f "$unit" ]]; then
-            mkdir -p "$RUNNER_TEMP/bioinstrumentacion-u1"
-            mv "$unit" "$RUNNER_TEMP/bioinstrumentacion-u1/unit-01.json"
-            echo "Unpublished authoral draft excluded from public generation."
-          fi
+          for number in 01 02; do
+            unit="data/course_redevelopment/bioinstrumentacion/units/unit-${number}.json"
+            if [[ -f "$unit" ]]; then
+              destination="$RUNNER_TEMP/bioinstrumentacion-u${number}"
+              mkdir -p "$destination"
+              mv "$unit" "$destination/unit-${number}.json"
+              echo "Unpublished authoral draft unit-${number} excluded from public generation."
+            fi
+          done
 
       - name: Regenerate site deterministically
         shell: bash
@@ -91,8 +94,17 @@ jobs:
       - name: Build Bioinstrumentation U2 provisional authoring authorization
         run: python scripts/build_bioinstrumentation_u2_provisional_authorization.py
 
+      - name: Build Bioinstrumentation U2 authoral state
+        run: python scripts/build_bioinstrumentation_u2_authoral_state.py
+
+      - name: Build Bioinstrumentation U2 authoral unit
+        run: python scripts/build_bioinstrumentation_u2_authoral_unit.py
+
       - name: Validate Bioinstrumentation U2 provisional authoring authorization
         run: python scripts/validate_bioinstrumentation_u2_provisional_authorization.py
+
+      - name: Validate Bioinstrumentation U2 authoral unit
+        run: python scripts/validate_bioinstrumentation_u2_authoral_unit.py
 
       - name: Upload synchronization diagnostic
         if: always()
@@ -102,7 +114,7 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic site, audit and authorization state
+      - name: Commit deterministic site, audit and authoral state
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -118,14 +130,15 @@ jobs:
             docs/pilots/bioinstrumentacion/unit-02/AUTHORING_READINESS.md \
             docs/pilots/bioinstrumentacion/unit-02/INTERNAL_SCIENTIFIC_EDITORIAL_AUDIT.md \
             data/course_redevelopment/bioinstrumentacion/units/unit-01.json \
+            data/course_redevelopment/bioinstrumentacion/units/unit-02.json \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El sitio, la auditoría y la autorización provisional ya están sincronizados."
+            echo "El sitio público y los borradores autorales internos ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize provisional U2 authoring authorization"
+          git commit -m "Synchronize Bioinstrumentation U2 authoral draft"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
