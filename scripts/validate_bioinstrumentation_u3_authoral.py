@@ -52,9 +52,12 @@ def main() -> int:
 
     assert practices["status"] == "unit_03_practices_implemented_internal_review"
     assert assessment["status"] == "unit_03_assessment_implemented_internal_review"
-    assert audit["decision"]["full_theory_drafting_authorized"] is True
-    assert audit["decision"]["authoral_unit_creation_authorized"] is True
-    assert audit["decision"]["public_release_authorized"] is False
+    authorization = audit["authorization_result"]
+    assert authorization["full_theory_drafting_authorized"] is True
+    assert authorization["authoral_unit_creation_authorized"] is True
+    assert authorization["public_release_authorized"] is False
+    assert audit["review_claims"]["external_professional_review_completed"] is False
+    assert audit["review_claims"]["human_assessment_review_completed"] is False
 
     print("OK Bioinstrumentation U3 authoral unit")
     return 0
