@@ -4,7 +4,6 @@ from __future__ import annotations
 import csv
 import importlib.util
 import json
-import math
 import tempfile
 from pathlib import Path
 
@@ -26,7 +25,7 @@ def main() -> int:
     blockers = json.loads(BLOCKERS.read_text(encoding="utf-8"))
     assert contract["status"] == "unit_03_practices_implemented_internal_review"
     assert contract["course_editorial_state"] == "pending"
-    assert blockers["authorization_result"]["practice_implementation_authorized"] is True
+    assert blockers["authorization"]["practice_implementation_authorized"] is True
     assert [p["id"] for p in contract["practices"]] == ["U3-P1", "U3-P2", "U3-P3"]
     assert contract["reproducibility"] == {
         "network_required": False,
