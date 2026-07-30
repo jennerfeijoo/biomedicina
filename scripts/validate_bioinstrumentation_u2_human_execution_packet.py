@@ -6,6 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKET = ROOT / "data/review_packets/bioinstrumentacion-unit-02-human-execution.json"
+SUMMARY = ROOT / "data/review_templates/bioinstrumentacion/unit-02/human-execution-summary-template.json"
+KIT = ROOT / "docs/pilots/bioinstrumentacion/unit-02/HUMAN_REVIEW_RECRUITMENT_AND_EXECUTION_KIT.md"
 
 
 def main() -> int:
@@ -42,7 +44,33 @@ def main() -> int:
         "public_release_authorized": False,
         "human_evidence_present": False,
     }
-    print("OK Bioinstrumentation U2 frozen human execution packet")
+
+    summary = json.loads(SUMMARY.read_text(encoding="utf-8"))
+    assert summary["execution_status"] == "not_started"
+    assert summary["contains_real_participant_data"] is False
+    assert summary["contains_direct_identifiers"] is False
+    assert summary["frozen_packet_id"] == payload["packet_id"]
+    assert summary["frozen_commit"] == payload["frozen_commit"]
+    assert summary["coordination_issue"] == 171
+    assert summary["professional_review_issue"] == 161
+    assert summary["cognitive_test"]["completed_sessions"] == 0
+    assert summary["feedback_usability_review"]["completed_reviewers"] == 0
+    assert summary["inter_rater_round"]["completed_reviewers"] == 0
+    assert summary["professional_disciplinary_review"]["status"] == "pending_human_review"
+    assert summary["overall_decision"] == "pending_human_execution"
+
+    kit = KIT.read_text(encoding="utf-8")
+    for marker in (
+        "Participantes de prueba cognitiva",
+        "Revisores de usabilidad del feedback",
+        "Revisores para concordancia",
+        "Revisor disciplinar profesional",
+        "Criterios de detención",
+        "No deben subirse transcripciones",
+    ):
+        assert marker in kit, marker
+
+    print("OK Bioinstrumentation U2 frozen human execution packet and recruitment kit")
     return 0
 
 
