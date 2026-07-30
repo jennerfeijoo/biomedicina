@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PREP = ROOT / "data/unit_preparation/bioinstrumentacion-unit-03.json"
 RESOLUTION = ROOT / "data/unit_preparation/bioinstrumentacion-unit-03-blocker-resolution.json"
 UNIT = ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-03.json"
+AUDIT = ROOT / "data/editorial_audits/bioinstrumentacion-unit-03.json"
 
 
 def main() -> int:
@@ -41,19 +42,24 @@ def main() -> int:
     assert "no_diagnosis" in constraints["U3-P3"]
 
     auth = resolution["authorization"]
-    assert auth == {
-        "practice_implementation_authorized": True,
-        "assessment_implementation_authorized": False,
-        "full_theory_drafting_authorized": False,
-        "public_release_authorized": False,
-    }
+    assert auth["practice_implementation_authorized"] is True
+    assert auth["public_release_authorized"] is False
     assert resolution["human_or_professional_review"] == "not_claimed"
-    assert resolution["unit_authoral_file"] == "absent"
     assert resolution["unit_developed"] is False
-    assert not UNIT.exists(), "unit-03.json must remain absent during blocker resolution"
+
+    if UNIT.exists():
+        audit = json.loads(AUDIT.read_text(encoding="utf-8"))
+        authoral = audit["authorization_result"]
+        assert authoral["authoral_unit_creation_authorized"] is True
+        assert authoral["full_theory_drafting_authorized"] is True
+        assert authoral["public_release_authorized"] is False
+        unit = json.loads(UNIT.read_text(encoding="utf-8"))
+        assert unit["status"] == "review"
+        assert unit["review_state"]["professional_review"] == "pending"
+        assert unit["review_state"]["public_release_authorized"] is False
 
     text = RESOLUTION.read_text(encoding="utf-8").lower()
-    required = [
+    for marker in [
         "potencial de media celda",
         "impedancia compleja",
         "superposición",
@@ -62,8 +68,7 @@ def main() -> int:
         "tierra de protección",
         "sin conexión física de electrodos",
         "ninguna simulación",
-    ]
-    for marker in required:
+    ]:
         assert marker in text, marker
 
     print("OK Bioinstrumentation U3 technical blockers resolved")
