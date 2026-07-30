@@ -61,7 +61,7 @@ def main() -> int:
     assert assessments["unit"] == 4
 
     unit_text = UNIT.read_text(encoding="utf-8")
-    for marker in ("SINAD", "ENOB", "frontera de aislamiento", "U4-A5"):
+    for marker in ("SINAD", "ENOB", "Frontera conceptual de aislamiento", "U4-A5"):
         assert marker in unit_text, marker
 
     doc_text = DOC.read_text(encoding="utf-8")
