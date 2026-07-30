@@ -46,7 +46,7 @@ def main() -> int:
         "rango del adc",
         "lsb",
         "enob",
-        "pérdida",
+        "perder orden",
         "aislamiento",
     ):
         assert marker in joined, marker
