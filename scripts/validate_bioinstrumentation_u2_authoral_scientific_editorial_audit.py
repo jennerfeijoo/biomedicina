@@ -117,7 +117,7 @@ def validate_unit() -> None:
     review = unit.get("review_state")
     require(isinstance(review, dict), "review state is missing")
     require(review.get("external_professional_review") == "pending_human_review", "external review was fabricated")
-    require(review.get("public_release_authorized") is False, "public release was authorized")
+    require(review.get("public_release") is False, "public release was authorized")
     require(review.get("unit_developed") is False, "unit was promoted")
 
 
