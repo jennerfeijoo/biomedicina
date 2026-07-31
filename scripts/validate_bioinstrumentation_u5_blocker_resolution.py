@@ -47,7 +47,7 @@ def main() -> int:
 
     text = RESOLUTION.read_text(encoding="utf-8")
     for marker in (
-        "absolute",
+        "absoluta",
         "manométrica",
         "diferencial",
         "constante de tiempo",
