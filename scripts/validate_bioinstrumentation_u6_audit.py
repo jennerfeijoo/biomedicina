@@ -48,7 +48,16 @@ def main() -> None:
     ):
         assert decision[key] is False, key
 
-    assert not UNIT.exists(), "unit-06.json must remain absent until authoral drafting"
+    if UNIT.exists():
+        unit = load(UNIT)
+        assert unit["status"] == "authoral_draft_internal"
+        assert unit["course_editorial_state"] == "pending"
+        assert unit["release_state"] == "not_authorized"
+        assert unit["editorial_decision"]["human_review_executed"] is False
+        assert unit["editorial_decision"]["professional_review_executed"] is False
+        assert unit["editorial_decision"]["public_release_authorized"] is False
+        assert unit["editorial_decision"]["course_completion_authorized"] is False
+
     print("Bioinstrumentation U6 scientific editorial audit validated.")
 
 

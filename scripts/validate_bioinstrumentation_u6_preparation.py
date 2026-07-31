@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "data/unit_preparation/bioinstrumentacion-unit-06.json"
 AUTHORAL_UNIT = ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-06.json"
+AUDIT = ROOT / "data/editorial_audits/bioinstrumentacion-unit-06.json"
 
 
 def require(condition: bool, message: str) -> None:
@@ -34,7 +35,7 @@ def main() -> None:
 
     blockers = data.get("technical_blockers", [])
     require(len(blockers) == 4, "Four technical blockers are required")
-    require(all(item.get("status") == "open" for item in blockers), "All preparation blockers must remain open")
+    require(all(item.get("status") == "open" for item in blockers), "Preparation contract must preserve its original open-blocker snapshot")
 
     decision = data.get("authoring_decision", {})
     for key in (
@@ -44,9 +45,17 @@ def main() -> None:
         "professional_review_claimed",
         "public_release_authorized",
     ):
-        require(decision.get(key) is False, f"{key} must remain false")
+        require(decision.get(key) is False, f"Preparation snapshot requires {key}=false")
 
-    require(not AUTHORAL_UNIT.exists(), "unit-06.json must remain absent during preparation")
+    if AUTHORAL_UNIT.exists():
+        require(AUDIT.is_file(), "Authoral unit requires a completed editorial audit")
+        audit = json.loads(AUDIT.read_text(encoding="utf-8"))
+        require(audit.get("decision", {}).get("authoral_unit_creation_authorized") is True, "Audit must authorize authoral unit creation")
+        unit = json.loads(AUTHORAL_UNIT.read_text(encoding="utf-8"))
+        require(unit.get("status") == "authoral_draft_internal", "Unexpected authoral unit status")
+        require(unit.get("release_state") == "not_authorized", "Authoral unit must remain unreleased")
+        require(unit.get("course_editorial_state") == "pending", "Course must remain pending")
+
     print("Bioinstrumentation Unit 6 preparation contract is valid.")
 
 
