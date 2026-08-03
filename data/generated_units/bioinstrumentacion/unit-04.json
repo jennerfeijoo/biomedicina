@@ -1,0 +1,349 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "bioinstrumentacion",
+  "area_id": "ingenieria-biomedica",
+  "unit": 4,
+  "slug": "acondicionamiento-analogico-ruido-interferencias",
+  "title": "Acondicionamiento analógico, ruido y rechazo de interferencias",
+  "status": "review",
+  "purpose": "Separar la función del sensor de la etapa analógica que adapta nivel, impedancia, banda y referencia antes de la conversión digital.",
+  "learning_objectives": [
+    "Dimensionar una cadena de ganancia a partir de rango de entrada, margen y rango del convertidor.",
+    "Distinguir señal diferencial, modo común, referencia, retorno, blindaje y tierra.",
+    "Interpretar impedancia de entrada, carga, CMRR, ruido referido a entrada y saturación.",
+    "Relacionar filtrado analógico, anti-aliasing y recuperación ante sobrecarga.",
+    "Auditar una propuesta de acondicionamiento con unidades, supuestos y pruebas sintéticas."
+  ],
+  "theory_sections": [
+    {
+      "heading": "1. Presupuesto de rango, ganancia y margen",
+      "paragraphs": [
+        "El acondicionamiento no crea información: transforma una señal para que la etapa siguiente pueda representarla sin saturación ni pérdida innecesaria de resolución. El punto de partida es el rango de entrada documentado, no una amplitud típica aislada.",
+        "Una ganancia total se distribuye entre etapas para evitar que offsets, transitorios o interferencias saturen antes de que el filtrado pueda actuar. La alimentación, la excursión real del amplificador y el rango del ADC son restricciones diferentes.",
+        "Una tabla por nodo con mínimo, máximo, ganancia, offset y margen permite detectar incoherencias que un diagrama de bloques puede ocultar.",
+        "El presupuesto debe repetirse para tolerancias y estados transitorios, porque una cadena válida en condiciones nominales puede saturarse durante conexión, movimiento o recuperación."
+      ],
+      "key_points": [
+        "El rango precede a la ganancia.",
+        "El margen incluye offsets y transitorios.",
+        "La saturación intermedia no se corrige digitalmente.",
+        "Evaluar nominal, tolerancias y transitorios."
+      ],
+      "equations": [
+        {
+          "latex": "G_{max}\\leq\\frac{V_{ADC,usable}}{V_{in,max}+V_{offset}+V_{margin}}",
+          "meaning": "Cota conceptual de ganancia para evitar saturación.",
+          "variables": {
+            "G_max": "ganancia máxima",
+            "V_ADC,usable": "excursión utilizable"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "2. Medición diferencial, modo común e impedancia",
+      "paragraphs": [
+        "Una entrada diferencial responde a la diferencia entre terminales; el modo común describe la componente compartida. El rechazo de modo común depende de frecuencia, desbalance, montaje y trayectoria de retorno.",
+        "Una impedancia de entrada finita carga la fuente. En interfaces de alta impedancia, pequeñas asimetrías pueden convertir modo común en error diferencial.",
+        "Referencia de señal, tierra de protección y blindaje cumplen funciones distintas y deben nombrarse por la corriente o información que controlan.",
+        "La conversión de modo común a diferencial puede aparecer por impedancias de fuente desiguales incluso cuando el amplificador aislado tiene un CMRR elevado."
+      ],
+      "key_points": [
+        "CMRR del componente no es CMRR del sistema.",
+        "La carga modifica la entrada.",
+        "Referencia y protección no son sinónimos.",
+        "Incluir desbalance de fuente en el análisis de modo común."
+      ],
+      "equations": [
+        {
+          "latex": "V_o=A_dV_d+A_{cm}V_{cm},\\quad CMRR=20\\log_{10}|A_d/A_{cm}|",
+          "meaning": "Respuesta diferencial y común idealizada.",
+          "variables": {
+            "A_d": "ganancia diferencial",
+            "A_cm": "ganancia común"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "3. Ruido, interferencia y banda",
+      "paragraphs": [
+        "Ruido térmico, ruido electrónico, interferencia de red y acoplamientos capacitivos o inductivos son mecanismos distintos. Agruparlos impide seleccionar una prueba discriminante.",
+        "Referir el ruido a la entrada permite comparar contribuciones de distintas etapas. Las contribuciones independientes solo se combinan cuando comparten unidades y banda.",
+        "Ampliar la banda aumenta el ruido integrado; reducirla puede eliminar información. La selección debe derivarse de la pregunta de medición.",
+        "Una medición espectral necesita ventana, resolución y referencia; una línea visible no basta para atribuirla a red, reloj, conmutación u otro mecanismo."
+      ],
+      "key_points": [
+        "Identificar mecanismo antes de filtrar.",
+        "Comparar ruido en una referencia común.",
+        "La banda es una decisión de información.",
+        "Relacionar espectro con mecanismo y configuración."
+      ],
+      "equations": [
+        {
+          "latex": "e_{n,rms}=e_n\\sqrt{B}",
+          "meaning": "Ruido RMS aproximado para densidad blanca en una banda equivalente.",
+          "variables": {
+            "e_n": "densidad de ruido",
+            "B": "ancho de banda"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "4. Filtrado analógico y recuperación",
+      "paragraphs": [
+        "El filtro anti-alias actúa antes del muestreo. Su especificación incluye banda de paso, transición, atenuación, fase, tolerancias y carga.",
+        "Un filtro puede introducir retardo, distorsión de fase y recuperación lenta tras una sobrecarga. Por eso se evalúan respuesta temporal y frecuencia.",
+        "Las prácticas usan circuitos y señales sintéticas; no demuestran seguridad eléctrica, EMC ni aptitud clínica.",
+        "La recuperación se evalúa midiendo cuándo la salida vuelve a un intervalo válido y cuánto tiempo permanece contaminada después de retirar la sobrecarga."
+      ],
+      "key_points": [
+        "El anti-aliasing precede al ADC.",
+        "La respuesta temporal también importa.",
+        "Simulación no equivale a conformidad.",
+        "Incluir recuperación en los criterios temporales."
+      ]
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Presupuesto de ganancia sintético",
+      "scenario": "Una entrada diferencial ocupa ±2 mV, puede incluir 1 mV de offset y el ADC admite ±1 V utilizable.",
+      "reasoning_steps": [
+        "Combinar peor caso y margen.",
+        "Calcular una cota de ganancia.",
+        "Distribuirla en etapas.",
+        "Comprobar saturación por nodo."
+      ],
+      "interpretation": "Una ganancia cercana a 300 conserva margen en el modelo; debe verificarse en cada nodo.",
+      "limitations": [
+        "No incluye tolerancias reales.",
+        "No demuestra desempeño de hardware."
+      ]
+    },
+    {
+      "title": "Ruido integrado en dos bandas",
+      "scenario": "Una etapa tiene densidad blanca de 20 nV/√Hz y se compara una banda de 100 Hz con otra de 1000 Hz.",
+      "reasoning_steps": [
+        "Aplicar raíz del ancho de banda.",
+        "Calcular ambos valores RMS.",
+        "Comparar con la señal mínima.",
+        "Documentar la banda equivalente."
+      ],
+      "interpretation": "Ampliar la banda por un factor de diez aumenta el ruido RMS por √10 en el modelo.",
+      "limitations": [
+        "Ruido blanco ideal.",
+        "No incluye ruido 1/f ni filtro real."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Auditoría de una cadena analógica sintética",
+      "instructions": [
+        "Definir rango, banda y modo común.",
+        "Proponer etapas y ganancias.",
+        "Calcular ruido referido a entrada.",
+        "Evaluar saturación y recuperación."
+      ],
+      "problems": [
+        "Presupuesto de nodos.",
+        "Dos repartos de ganancia.",
+        "Dos bandas de filtrado.",
+        "Tres mecanismos de interferencia.",
+        "Dimensionar ganancia con peor caso.",
+        "Comparar dos impedancias de entrada.",
+        "Referir ruido de tres etapas.",
+        "Analizar desbalance de modo común.",
+        "Definir prueba de recuperación."
+      ],
+      "checking_criteria": [
+        "Unidades coherentes.",
+        "Margen explícito.",
+        "Ruido y señal en la misma referencia.",
+        "Sin afirmaciones clínicas."
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Elegir ganancia con una amplitud típica.",
+      "correction": "Usar rango, offset, transitorios y margen."
+    },
+    {
+      "error": "Usar CMRR del componente como CMRR del sistema.",
+      "correction": "Incluir desbalance, frecuencia y montaje."
+    },
+    {
+      "error": "Filtrar sin declarar banda útil.",
+      "correction": "Relacionar cada corte con información a preservar."
+    },
+    {
+      "error": "Sumar densidades de ruido directamente.",
+      "correction": "Convertir a varianzas en una banda y referirlas al mismo nodo."
+    },
+    {
+      "error": "Ignorar recuperación después de saturación.",
+      "correction": "Definir un criterio temporal de retorno a operación válida."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué fija la ganancia máxima?",
+      "answer": "El peor caso de entrada, offsets, transitorios, margen y excursión de cada etapa."
+    },
+    {
+      "question": "¿CMRR es constante?",
+      "answer": "No; depende de frecuencia e implementación."
+    },
+    {
+      "question": "¿Un filtro digital elimina aliasing ya ocurrido?",
+      "answer": "No; la información plegada no se separa de forma general."
+    },
+    {
+      "question": "¿Qué es ruido referido a entrada?",
+      "answer": "El ruido equivalente trasladado a la entrada mediante ganancias."
+    },
+    {
+      "question": "¿Qué define la banda útil?",
+      "answer": "La información que debe preservarse y el uso del resultado."
+    },
+    {
+      "question": "¿Qué causa conversión de modo común?",
+      "answer": "Ganancia común y desbalances de fuente o interfaz."
+    },
+    {
+      "question": "¿Por qué evaluar recuperación?",
+      "answer": "Porque una sobrecarga puede contaminar datos después de desaparecer."
+    },
+    {
+      "question": "¿La simulación demuestra desempeño real?",
+      "answer": "No; requiere hardware y condiciones verificadas."
+    }
+  ],
+  "biomedical_connections": [
+    {
+      "topic": "ECG, EEG y EMG",
+      "connection": "Las señales pequeñas requieren controlar carga, modo común, ruido y saturación."
+    },
+    {
+      "topic": "Puentes resistivos",
+      "connection": "Excitación, desbalance y ganancia determinan la salida útil."
+    }
+  ],
+  "sources": [
+    {
+      "title": "Circuits and Electronics",
+      "organization": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/",
+      "role": "Fundamentos de circuitos, amplificación y respuesta dinámica.",
+      "type": "curso abierto",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Signal processing reference",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
+      "role": "Referencia computacional para filtrado y respuesta en frecuencia.",
+      "type": "documentación",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "International Vocabulary of Metrology (VIM3)",
+      "organization": "BIPM/JCGM",
+      "url": "https://jcgm.bipm.org/vim/en/info.html",
+      "role": "Terminología internacional de medición, calibración y trazabilidad.",
+      "type": "vocabulario internacional",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Guidelines for Evaluating and Expressing the Uncertainty of NIST Measurement Results",
+      "organization": "NIST",
+      "url": "https://www.nist.gov/publications/guidelines-evaluating-and-expressing-uncertainty-nist-measurement-results-1994-edition",
+      "role": "Marco oficial para modelos y evaluación de incertidumbre.",
+      "type": "guía técnica",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "PhysioNet Tutorials",
+      "organization": "PhysioNet",
+      "url": "https://physionet.org/about/tutorial/",
+      "role": "Contexto abierto para señales fisiológicas, metadatos y evaluación técnica.",
+      "type": "tutorial",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "ISO 14971:2019",
+      "organization": "ISO",
+      "url": "https://www.iso.org/standard/72704.html",
+      "role": "Contexto oficial de gestión de riesgos; no se reproducen requisitos normativos.",
+      "type": "norma",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "PMA Quality System",
+      "organization": "U.S. Food and Drug Administration",
+      "url": "https://www.fda.gov/medical-devices/premarket-approval-pma/pma-quality-system",
+      "role": "Contexto oficial sobre controles de diseño, verificación y validación.",
+      "type": "guía regulatoria",
+      "verification_status": "verified_directly"
+    }
+  ],
+  "migration": {
+    "migration_id": "bioinstrumentacion-numbering-v1",
+    "origin": "new",
+    "canonical_unit": 4
+  },
+  "editorial_notice": "Contenido educativo estructurado y revisado internamente. No sustituye formación práctica supervisada, juicio profesional, evaluación clínica, ensayo de conformidad, certificación ni requisitos regulatorios aplicables.",
+  "glossary": [
+    {
+      "term": "Acondicionamiento",
+      "definition": "Transformaciones analógicas que adaptan nivel, impedancia, banda o referencia."
+    },
+    {
+      "term": "Ganancia",
+      "definition": "Relación entre amplitud de salida y amplitud de entrada."
+    },
+    {
+      "term": "Margen",
+      "definition": "Reserva entre el peor caso previsto y el límite de operación."
+    },
+    {
+      "term": "Amplificador diferencial",
+      "definition": "Etapa que amplifica principalmente la diferencia entre dos entradas."
+    },
+    {
+      "term": "CMRR",
+      "definition": "Relación entre ganancia diferencial y ganancia de modo común."
+    },
+    {
+      "term": "Impedancia de entrada",
+      "definition": "Impedancia presentada por el circuito a la fuente."
+    },
+    {
+      "term": "Ruido referido a entrada",
+      "definition": "Ruido equivalente expresado en la entrada de la cadena."
+    },
+    {
+      "term": "Densidad espectral de ruido",
+      "definition": "Ruido por raíz de unidad de ancho de banda."
+    },
+    {
+      "term": "Interferencia",
+      "definition": "Perturbación acoplada desde una fuente identificable."
+    },
+    {
+      "term": "Banda de paso",
+      "definition": "Intervalo de frecuencia que se pretende preservar."
+    },
+    {
+      "term": "Filtro anti-alias",
+      "definition": "Filtro analógico que limita banda antes del muestreo."
+    },
+    {
+      "term": "Recuperación de sobrecarga",
+      "definition": "Retorno de una etapa a operación válida después de saturación."
+    }
+  ]
+}
