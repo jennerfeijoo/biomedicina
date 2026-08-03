@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate-generated-units:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
           exit 1
 
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,21 +42,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-
-      - name: Isolate authorized authoral drafts for historical gates
-        shell: bash
-        run: |
-          set -euo pipefail
-          for number in 01 02; do
-            unit="data/course_redevelopment/bioinstrumentacion/units/unit-${number}.json"
-            if [[ -f "$unit" ]]; then
-              destination="$RUNNER_TEMP/bioinstrumentacion-u${number}"
-              mkdir -p "$destination"
-              mv "$unit" "$destination/unit-${number}.json"
-              echo "Authoral draft unit-${number} isolated while phase-specific historical gates run."
-            fi
-          done
+          python-version: "3.12"
 
       - name: Validate curriculum data
         run: python scripts/validate_curriculum.py
@@ -73,83 +59,21 @@ jobs:
       - name: Validate incremental course plans
         run: python scripts/validate_course_plan_packages.py
 
-      - name: Validate excellence pilot foundations
+      - name: Validate excellence pilot and current editorial state
         run: python scripts/validate_pilot_foundations.py
 
-      - name: Validate pilot unit preparation
-        run: python scripts/validate_pilot_unit_preparation.py
-
-      - name: Validate pilot unit blocker resolution
-        run: python scripts/validate_pilot_unit_blockers.py
-
-      - name: Validate Bioinstrumentation U1 practices
-        run: python scripts/validate_bioinstrumentation_u1_practices.py
-
-      - name: Validate Bioinstrumentation U1 assessment
-        run: python scripts/validate_bioinstrumentation_u1_assessment.py
-
-      - name: Validate Bioinstrumentation U1 human review protocols
-        run: python scripts/validate_bioinstrumentation_u1_human_review.py
-
-      - name: Validate Bioinstrumentation U1 disciplinary review handoff
-        run: python scripts/validate_bioinstrumentation_u1_review_handoff.py
-
-      - name: Validate Bioinstrumentation U1 provisional authoring authorization
-        run: python scripts/validate_bioinstrumentation_u1_provisional_authorization.py
-
-      - name: Build Bioinstrumentation U1 authoral unit
-        run: python scripts/build_bioinstrumentation_u1_authoral_unit.py
-
-      - name: Validate Bioinstrumentation U1 authoral unit
-        run: python scripts/validate_bioinstrumentation_u1_authoral_unit.py
-
-      - name: Validate Bioinstrumentation U1 scientific and editorial audit
-        run: python scripts/validate_bioinstrumentation_u1_scientific_editorial_audit.py
-
-      - name: Validate Bioinstrumentation U2 authoring preparation
-        run: python scripts/validate_bioinstrumentation_u2_preparation.py
-
-      - name: Validate Bioinstrumentation U2 technical blocker resolution
-        run: python scripts/validate_bioinstrumentation_u2_blockers.py
-
-      - name: Validate Bioinstrumentation U2 disciplinary review handoff
-        run: python scripts/validate_bioinstrumentation_u2_review_handoff.py
-
-      - name: Validate Bioinstrumentation U2 provisional practice authorization
-        run: python scripts/validate_bioinstrumentation_u2_provisional_practice_authorization.py
-
-      - name: Validate Bioinstrumentation U2 practices
-        run: python scripts/validate_bioinstrumentation_u2_practices.py
-
-      - name: Build Bioinstrumentation U2 scientific and editorial audit
-        run: python scripts/build_bioinstrumentation_u2_scientific_editorial_audit.py
-
-      - name: Validate Bioinstrumentation U2 assessment
-        run: python scripts/validate_bioinstrumentation_u2_assessment.py
-
-      - name: Validate Bioinstrumentation U2 scientific and editorial audit
-        run: python scripts/validate_bioinstrumentation_u2_scientific_editorial_audit.py
-
-      - name: Build Bioinstrumentation U2 provisional authoring authorization
-        run: python scripts/build_bioinstrumentation_u2_provisional_authorization.py
-
-      - name: Build Bioinstrumentation U2 authoral state
-        run: python scripts/build_bioinstrumentation_u2_authoral_state.py
-
-      - name: Build Bioinstrumentation U2 authoral unit
-        run: python scripts/build_bioinstrumentation_u2_authoral_unit.py
-
-      - name: Validate Bioinstrumentation U2 provisional authoring authorization
-        run: python scripts/validate_bioinstrumentation_u2_provisional_authorization.py
-
-      - name: Validate Bioinstrumentation U2 authoral unit
-        run: python scripts/validate_bioinstrumentation_u2_authoral_unit.py
-
-      - name: Validate Bioinstrumentation U2 human review protocols
-        run: python scripts/validate_bioinstrumentation_u2_human_review.py
+      - name: Validate canonical Bioinstrumentation migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/preflight_bioinstrumentation_atomic_migration.py
+          python scripts/validate_bioinstrumentation_public_canonical.py
 
       - name: Validate generated units
         run: python scripts/validate_generated_units.py
+
+      - name: Validate curriculum completeness
+        run: python scripts/audit_curriculum_completeness.py
 
       - name: Validate every course architecture
         run: |
@@ -208,7 +132,10 @@ jobs:
       - name: Check generator dry run
         run: python scripts/generate_site.py --dry-run --with-units
 
-      - name: Validar cobertura lectiva por unidades
+      - name: Validate public alignment
+        run: python scripts/audit_public_unit_alignment.py --strict
+
+      - name: Validate unit coverage
         run: python scripts/validate_units.py
 
       - name: Validate internal links
