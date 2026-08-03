@@ -1,0 +1,84 @@
+{
+  "schema_version": "2.0",
+  "subject_id": "bioinstrumentacion",
+  "area_id": "ingenieria-biomedica",
+  "unit": 5,
+  "slug": "muestreo-conversion-adquisicion-digital",
+  "title": "Muestreo, conversión y adquisición digital",
+  "status": "review",
+  "purpose": "Preservar el contenido autoral de la antigua Unidad 4 y separarlo del acondicionamiento analógico mediante una unidad dedicada a aliasing, ADC, cuantización, desempeño dinámico, sincronización e integridad temporal.",
+  "learning_objectives": [
+    "Distinguir banda analógica presente, anti-aliasing y frecuencia de muestreo.",
+    "Calcular rango, códigos, LSB nominal, cuantización y saturación.",
+    "Interpretar SINAD y ENOB bajo condiciones declaradas.",
+    "Diferenciar simultaneidad, reloj compartido, timestamps, jitter y deriva.",
+    "Detectar pérdidas, duplicados y reordenamientos mediante metadatos."
+  ],
+  "theory_sections": [
+    {
+      "heading": "1. Muestreo y aliasing",
+      "paragraphs": [
+        "La secuencia digital representa valores en instantes definidos por un reloj. La condición ideal de Nyquist presupone una señal limitada en banda; una adquisición real necesita especificar la banda analógica presente y el filtro previo.",
+        "Una componente por encima de la banda de Nyquist puede aparecer como otra frecuencia. Un filtro digital posterior no recupera la identidad original cuando el plegamiento ya ocurrió.",
+        "La frecuencia de muestreo debe justificarse con banda, transición del filtro, tolerancias del reloj y finalidad del análisis."
+      ],
+      "key_points": ["Nyquist es necesaria, no suficiente.", "El anti-aliasing precede al muestreo.", "La frecuencia de muestreo es metadato esencial."],
+      "equations": [{"latex": "f_{alias}=|f-kf_s|", "meaning": "Frecuencia alias ideal para un entero k que lleva el resultado a la banda observable.", "variables": {"f": "frecuencia analógica", "f_s": "frecuencia de muestreo"}}]
+    },
+    {
+      "heading": "2. ADC, códigos y cuantización",
+      "paragraphs": [
+        "El rango de entrada y el número de códigos determinan el LSB nominal. Este paso no equivale a exactitud, repetibilidad ni cambio mínimo detectable.",
+        "La cuantización ideal puede modelarse como un error acotado, pero un ADC real añade offset, error de ganancia, no linealidad, ruido y clipping.",
+        "La codificación bipolar, el punto cero y la saturación deben documentarse para reconstruir unidades físicas."
+      ],
+      "key_points": ["LSB no es exactitud.", "Los bits nominales no describen todo el desempeño.", "La escala física requiere referencia."],
+      "equations": [{"latex": "LSB=\\frac{V_{max}-V_{min}}{2^N}", "meaning": "Tamaño nominal de código para un ADC ideal uniforme.", "variables": {"N": "bits nominales"}}]
+    },
+    {
+      "heading": "3. SINAD, ENOB y condiciones de prueba",
+      "paragraphs": [
+        "SINAD resume señal respecto de ruido y distorsión bajo una señal de prueba, frecuencia, amplitud y configuración concretas.",
+        "ENOB deriva de SINAD para un modelo senoidal ideal. No representa exactitud en continua ni reemplaza la caracterización completa.",
+        "Toda métrica dinámica conserva condiciones, ventana, longitud de registro y método de cálculo."
+      ],
+      "key_points": ["ENOB es derivada.", "La condición de prueba forma parte del resultado.", "No extrapolar una métrica dinámica a cualquier uso."],
+      "equations": [{"latex": "ENOB=\\frac{SINAD-1.76}{6.02}", "meaning": "Relación convencional para una prueba senoidal ideal.", "variables": {"SINAD": "relación señal a ruido y distorsión en dB"}}]
+    },
+    {
+      "heading": "4. Sincronización e integridad temporal",
+      "paragraphs": [
+        "Simultaneidad física, multiplexación, reloj compartido, reloj de etiquetado y alineación posterior describen procesos diferentes. Timestamps iguales no prueban adquisición simultánea.",
+        "Jitter introduce incertidumbre de instante; deriva acumula desalineación entre relojes. Ambos efectos deben separarse de valores faltantes o reordenados.",
+        "Contadores de secuencia, identidad de canal y marcas de tiempo permiten detectar pérdidas y duplicados. Interpolar genera una estimación, no una muestra observada."
+      ],
+      "key_points": ["El reloj pertenece a la cadena.", "La integridad requiere más que una curva continua.", "La interpolación debe marcarse como dato derivado."]
+    }
+  ],
+  "worked_examples": [
+    {"title": "Aliasing de una componente sintética", "scenario": "Se muestrea una componente de 170 Hz a 200 Hz.", "reasoning_steps": ["Calcular la banda de Nyquist.", "Buscar la frecuencia equivalente.", "Comprobar las muestras.", "Explicar por qué el filtrado posterior no recupera el origen."], "interpretation": "La componente aparece idealmente a 30 Hz.", "limitations": ["Frecuencia y reloj ideales.", "Sin respuesta del filtro real."]},
+    {"title": "Resolución nominal y ENOB", "scenario": "Un ADC bipolar de ±1 V tiene 10 bits y SINAD de 61.96 dB.", "reasoning_steps": ["Calcular rango y LSB.", "Calcular ENOB.", "Separar las métricas.", "Registrar condiciones."], "interpretation": "LSB nominal es 1.953 mV y ENOB es 10 bits bajo esa prueba; ninguna cifra es exactitud DC.", "limitations": ["No incluye INL, DNL ni deriva."]}
+  ],
+  "guided_activities": [
+    {"title": "Auditoría de adquisición digital", "instructions": ["Generar una señal multicomponente.", "Aplicar prefiltrado y dos frecuencias de muestreo.", "Cuantizar con dos rangos.", "Añadir pérdida y deriva sintéticas."], "problems": ["Calcular alias previsto.", "Comparar LSB y error RMS.", "Detectar gaps.", "Distinguir jitter de deriva."], "checking_criteria": ["Banda analógica declarada.", "Escala documentada.", "Metadatos temporales conservados.", "Datos interpolados identificados."]}
+  ],
+  "common_errors": [
+    {"error": "Equiparar LSB con exactitud.", "correction": "Separar resolución nominal de errores y calibración."},
+    {"error": "Inferir simultaneidad por timestamps iguales.", "correction": "Identificar reloj y arquitectura."},
+    {"error": "Tratar interpolación como dato recuperado.", "correction": "Conservar máscara de observación y dato derivado."}
+  ],
+  "self_assessment": [
+    {"question": "¿Qué evita aliasing?", "answer": "Limitar la banda analógica antes del muestreo y elegir una frecuencia compatible."},
+    {"question": "¿Qué describe el LSB?", "answer": "El tamaño nominal de un código ideal dentro del rango."},
+    {"question": "¿ENOB es exactitud?", "answer": "No; deriva de desempeño dinámico bajo condiciones de prueba."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Monitores multicanal", "connection": "La alineación temporal condiciona relaciones entre canales."},
+    {"topic": "Dispositivos portátiles", "connection": "Reloj, energía, rango y transmisión interactúan con la integridad."}
+  ],
+  "sources": [
+    {"title": "Signal processing reference", "organization": "SciPy", "url": "https://docs.scipy.org/doc/scipy/reference/signal.html", "role": "Filtrado, respuesta en frecuencia y análisis de señales sintéticas.", "type": "documentación", "verification_status": "verified_directly"},
+    {"title": "NumPy reference", "organization": "NumPy", "url": "https://numpy.org/doc/stable/reference/", "role": "Cálculo reproducible y manejo de arreglos.", "type": "documentación", "verification_status": "verified_directly"}
+  ],
+  "migration": {"migration_id": "bioinstrumentacion-numbering-v1", "legacy_unit": 4, "canonical_unit": 5, "content_policy": "preserved_and_restructured"}
+}
