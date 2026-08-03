@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the academic and editorial foundation of CitoNauta pilot courses."""
+"""Validate the foundation and current editorial state of the Bioinstrumentation pilot."""
 from __future__ import annotations
 
 import json
@@ -14,6 +14,8 @@ SOURCES_PATH = ROOT / "data" / "source_registry" / "bioinstrumentacion.json"
 ALIGNMENT_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "ALIGNMENT_MATRIX.md"
 READINESS_PATH = ROOT / "docs" / "pilots" / "bioinstrumentacion" / "REVIEW_READINESS.md"
 CATALOG_STATUS_PATH = ROOT / "data" / "catalog_statuses.json"
+GENERATED_COURSE_PATH = ROOT / "data" / "generated_courses" / "bioinstrumentacion.json"
+PUBLIC_MIGRATION_PATH = ROOT / "data" / "course_migrations" / "bioinstrumentacion-public-canonical-v1.json"
 GENERATOR_PATH = ROOT / "scripts" / "generate_site.py"
 UNIT_TEMPLATE_PATH = ROOT / "templates" / "unidad.html"
 README_PATH = ROOT / "README.md"
@@ -80,7 +82,7 @@ def validate_planning() -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if data.get("area_id") != "ingenieria-biomedica":
         raise ValueError("area_id incorrecto en planificación")
     if data.get("status") != "foundation_review":
-        raise ValueError("la base piloto debe permanecer en foundation_review")
+        raise ValueError("la planificación histórica debe conservar foundation_review")
     require_text(data.get("purpose"), "purpose", 80)
     require_list(data.get("terminal_competencies"), "terminal_competencies", 8)
     require_list(data.get("entry_knowledge"), "entry_knowledge", 5)
@@ -98,7 +100,7 @@ def validate_planning() -> tuple[dict[str, Any], list[dict[str, Any]]]:
 
     units = require_list(data.get("units"), "units", 10)
     if len(units) != 10:
-        raise ValueError("Bioinstrumentación debe contener exactamente diez unidades en esta arquitectura")
+        raise ValueError("Bioinstrumentación debe contener exactamente diez unidades")
     expected_numbers = list(range(1, 11))
     numbers = [unit.get("unit") for unit in units if isinstance(unit, dict)]
     if numbers != expected_numbers:
@@ -121,14 +123,14 @@ def validate_planning() -> tuple[dict[str, Any], list[dict[str, Any]]]:
 
     constraints = require_list(data.get("publication_constraints"), "publication_constraints", 5)
     if not any("permanece pending" in str(item) for item in constraints):
-        raise ValueError("la planificación debe impedir la promoción prematura")
+        raise ValueError("la planificación histórica debe conservar su bloqueo de promoción original")
     return data, units
 
 
 def validate_package(units: list[dict[str, Any]]) -> None:
     package = load_json(PACKAGE_PATH)
     if package.get("status") != "foundation_review":
-        raise ValueError("el paquete piloto debe permanecer en foundation_review")
+        raise ValueError("el paquete histórico debe conservar foundation_review")
     if package.get("subject_count") != 1 or package.get("planned_unit_count") != 10:
         raise ValueError("conteos incorrectos en el paquete piloto")
     if package.get("generation_order") != ["bioinstrumentacion"]:
@@ -138,7 +140,7 @@ def validate_package(units: list[dict[str, Any]]) -> None:
         raise ValueError("el paquete piloto solo debe contener Bioinstrumentación")
     subject = subjects[0]
     if subject.get("status") != "foundation_review":
-        raise ValueError("estado incorrecto del sujeto piloto")
+        raise ValueError("estado histórico incorrecto del sujeto piloto")
     if subject.get("unit_source") != "data/course_planning/bioinstrumentacion-excellence.json#/units":
         raise ValueError("unit_source incorrecto")
     if subject.get("unit_count") != 10:
@@ -190,9 +192,9 @@ def validate_sources() -> None:
             if "No se consultó" not in source["limitations"]:
                 raise ValueError(f"{source_id} debe declarar explícitamente que no se consultó el texto completo")
     if directly_verified < 6:
-        raise ValueError("se requieren al menos seis fuentes consultadas directamente para aprobar la base")
+        raise ValueError("se requieren al menos seis fuentes consultadas directamente")
     if metadata_only < 1:
-        raise ValueError("la base debe conservar explícitamente las fuentes metadata-only relevantes")
+        raise ValueError("debe conservarse al menos una fuente metadata-only relevante")
     require_list(registry.get("coverage_gaps"), "coverage_gaps", 4)
     require_list(registry.get("review_notes"), "review_notes", 4)
 
@@ -219,10 +221,49 @@ def validate_editorial_truth() -> None:
     pending = set(statuses.get("pending", []))
     developed = set(statuses.get("developed", []))
     complete = set(statuses.get("complete", []))
-    if "bioinstrumentacion" not in pending:
-        raise ValueError("Bioinstrumentación debe permanecer pending durante la fase de base")
-    if "bioinstrumentacion" in developed or "bioinstrumentacion" in complete:
-        raise ValueError("Bioinstrumentación fue promovida prematuramente")
+    if "bioinstrumentacion" not in developed:
+        raise ValueError("Bioinstrumentación debe estar developed tras publicar diez unidades avanzadas")
+    if "bioinstrumentacion" in pending:
+        raise ValueError("Bioinstrumentación no debe seguir dependiendo de unidades de respaldo")
+    if "bioinstrumentacion" in complete:
+        raise ValueError("Bioinstrumentación no puede ser complete sin revisión disciplinar documentada")
+    if statuses.get("counts", {}).get("developed") != len(developed):
+        raise ValueError("conteo developed inconsistente")
+    if statuses.get("counts", {}).get("pending") != len(pending):
+        raise ValueError("conteo pending inconsistente")
+
+    generated = load_json(GENERATED_COURSE_PATH)
+    if generated.get("status") != "review":
+        raise ValueError("la capa pública de Bioinstrumentación debe permanecer review")
+    sequence = generated.get("curriculum_sequence")
+    if not isinstance(sequence, list) or [item.get("unit") for item in sequence] != list(range(1, 11)):
+        raise ValueError("la capa pública no expone una secuencia canónica 1–10")
+    migration = generated.get("migration")
+    if not isinstance(migration, dict) or migration.get("public_layer") != "canonical_ten_unit_sequence":
+        raise ValueError("falta el marcador de migración canónica")
+    if migration.get("human_review_executed") is not False:
+        raise ValueError("se declaró una revisión humana no ejecutada")
+    if migration.get("disciplinary_review_complete") is not False:
+        raise ValueError("se declaró una revisión disciplinar no ejecutada")
+
+    public_migration = load_json(PUBLIC_MIGRATION_PATH)
+    if public_migration.get("status") != "implemented_public_layer":
+        raise ValueError("la migración pública canónica no está registrada")
+    publication_state = public_migration.get("publication_state")
+    if not isinstance(publication_state, dict) or publication_state.get("educational_publication") != "review":
+        raise ValueError("estado de publicación educativa incorrecto")
+    for key in (
+        "human_review_executed",
+        "disciplinary_review_complete",
+        "professional_approval_claimed",
+        "clinical_validity_claimed",
+        "safety_conformity_claimed",
+        "emc_conformity_claimed",
+        "regulatory_conformity_claimed",
+        "accreditation_claimed",
+    ):
+        if publication_state.get(key) is not False:
+            raise ValueError(f"afirmación editorial indebida: {key}")
 
     generator = GENERATOR_PATH.read_text(encoding="utf-8")
     template = UNIT_TEMPLATE_PATH.read_text(encoding="utf-8")
@@ -236,12 +277,17 @@ def validate_editorial_truth() -> None:
     ]
     missing_generator = [item for item in required_generator_markers if item not in generator]
     if missing_generator:
-        raise ValueError("el generador no aplica todavía la verdad editorial: " + ", ".join(missing_generator))
+        raise ValueError("el generador no aplica la verdad editorial: " + ", ".join(missing_generator))
     if '{{ unit_status }}' not in template or '{{ unit_status_label }}' not in template:
         raise ValueError("la plantilla de unidad conserva un estado codificado")
     if "84 asignaturas" in readme or "--limit 84" in readme:
         raise ValueError("README conserva el inventario histórico de 84 asignaturas")
-    for required in ("94 asignaturas", "43 desarrolladas", "51 pendientes", "0 con revisión disciplinar completa"):
+    for required in (
+        "94 asignaturas",
+        f"{len(developed)} desarrolladas",
+        f"{len(pending)} pendientes",
+        "0 con revisión disciplinar completa",
+    ):
         if required not in readme:
             raise ValueError(f"README no declara el estado actual: {required}")
 
@@ -256,8 +302,8 @@ def main() -> int:
         validate_editorial_truth()
     except (OSError, ValueError, TypeError) as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
-    print("OK excellence pilot foundation: Bioinstrumentación")
-    print("10 units planned · 8 sources registered · course remains pending")
+    print("OK excellence pilot foundation and canonical publication: Bioinstrumentación")
+    print("10 canonical units · course developed in review · human and disciplinary review pending")
     return 0
 
 
