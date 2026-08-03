@@ -35,6 +35,8 @@ La implementación corrige la discrepancia entre el plan curricular de diez unid
 data/subjects/ingenieria-biomedica/bioinstrumentacion.json
 data/generated_courses/bioinstrumentacion.json
 data/generated_units/bioinstrumentacion/unit-01.json ... unit-10.json
+data/curriculum_coverage/bioinstrumentacion-2026.json
+data/catalog_statuses.json
 ingenieria-biomedica/bioinstrumentacion/index.html
 ingenieria-biomedica/bioinstrumentacion/unidades/index.html
 ingenieria-biomedica/bioinstrumentacion/unidades/unidad-01.html ... unidad-10.html
@@ -42,12 +44,15 @@ ingenieria-biomedica/bioinstrumentacion/unidades/unidad-01.html ... unidad-10.ht
 
 La navegación pública es continua de la unidad 1 a la 10. Las páginas se generan desde las fuentes estructuradas y no se mantienen como una segunda fuente académica independiente.
 
+La matriz curricular registra diez dominios, sus temas obligatorios, evidencias de dominio, requisitos prácticos, requisitos visuales y prioridades de revisión externa. El catálogo pasa de 43 a 44 asignaturas desarrolladas y de 51 a 50 pendientes, sin promover ninguna a `complete`.
+
 ## Controles técnicos
 
 La implementación se somete a:
 
 - validación curricular global;
 - validación del contrato avanzado de unidades;
+- auditoría de arquitectura y cobertura curricular;
 - auditoría bibliográfica;
 - auditoría de redundancia;
 - validación de conexiones biomédicas estructuradas;
@@ -57,10 +62,13 @@ La implementación se somete a:
 - preflight de preservación legacy;
 - gate canónico específico del curso.
 
+El workflow de sincronización fue generalizado para generar y validar la web desde las fuentes públicas estructuradas. Los compiladores y gates históricos de las antiguas unidades 1 y 2 ya no forman parte de la sincronización pública; su evidencia permanece conservada en Git y en los artefactos legacy.
+
 ## Frontera editorial
 
 ```text
 public_status: review
+catalog_state: developed
 human_review_executed: false
 disciplinary_review_complete: false
 professional_approval_claimed: false
