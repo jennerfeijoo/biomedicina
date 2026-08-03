@@ -1,0 +1,49 @@
+name: Bioinstrumentation Canonical Enrichment
+
+on:
+  pull_request:
+    paths:
+      - 'data/generated_units/bioinstrumentacion/**'
+      - 'scripts/enrich_bioinstrumentation_canonical_units.py'
+      - 'scripts/validate_generated_units.py'
+      - 'scripts/validate_bioinstrumentation_public_canonical.py'
+      - '.github/workflows/bioinstrumentation-canonical-enrichment.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bioinstrumentation-canonical-enrichment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  enrich-and-validate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout pull-request branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enrich canonical units deterministically
+        run: python scripts/enrich_bioinstrumentation_canonical_units.py
+      - name: Validate all generated units
+        run: python scripts/validate_generated_units.py
+      - name: Validate canonical Bioinstrumentation course
+        run: python scripts/validate_bioinstrumentation_public_canonical.py
+      - name: Commit enriched canonical units
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- data/generated_units/bioinstrumentacion
+          if git diff --cached --quiet; then
+            echo "Las unidades canónicas ya cumplen el contrato académico."
+            exit 0
+          fi
+          git commit -m "Enrich Bioinstrumentation canonical units"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
