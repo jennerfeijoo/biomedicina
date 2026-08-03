@@ -107,6 +107,7 @@
         <p>La secuencia digital representa valores en instantes definidos por un reloj. La condición ideal de Nyquist presupone una señal limitada en banda; una adquisición real necesita especificar la banda analógica presente y el filtro previo.</p>
         <p>Una componente por encima de la banda de Nyquist puede aparecer como otra frecuencia. Un filtro digital posterior no recupera la identidad original cuando el plegamiento ya ocurrió.</p>
         <p>La frecuencia de muestreo debe justificarse con banda, transición del filtro, tolerancias del reloj y finalidad del análisis.</p>
+        <p>Los relojes reales y la transición del filtro reducen el margen disponible, por lo que la selección debe evitar operar exactamente sobre el límite teórico.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
             <div class="math-display">\[f_{alias}=|f-kf_s|\]</div>
@@ -122,6 +123,7 @@
         <li>Nyquist es necesaria, no suficiente.</li>
         <li>El anti-aliasing precede al muestreo.</li>
         <li>La frecuencia de muestreo es metadato esencial.</li>
+        <li>Reservar margen respecto del límite ideal de muestreo.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
@@ -130,6 +132,7 @@
         <p>El rango de entrada y el número de códigos determinan el LSB nominal. Este paso no equivale a exactitud, repetibilidad ni cambio mínimo detectable.</p>
         <p>La cuantización ideal puede modelarse como un error acotado, pero un ADC real añade offset, error de ganancia, no linealidad, ruido y clipping.</p>
         <p>La codificación bipolar, el punto cero y la saturación deben documentarse para reconstruir unidades físicas.</p>
+        <p>La saturación debe detectarse mediante códigos, banderas o reglas explícitas; una meseta puede confundirse con una señal fisiológica estable si se ignora el rango.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
             <div class="math-display">\[LSB=\frac{V_{max}-V_{min}}{2^N}\]</div>
@@ -144,6 +147,7 @@
         <li>LSB no es exactitud.</li>
         <li>Los bits nominales no describen todo el desempeño.</li>
         <li>La escala física requiere referencia.</li>
+        <li>Detectar y marcar saturación en los datos.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
@@ -152,6 +156,7 @@
         <p>SINAD resume señal respecto de ruido y distorsión bajo una señal de prueba, frecuencia, amplitud y configuración concretas.</p>
         <p>ENOB deriva de SINAD para un modelo senoidal ideal. No representa exactitud en continua ni reemplaza la caracterización completa.</p>
         <p>Toda métrica dinámica conserva condiciones, ventana, longitud de registro y método de cálculo.</p>
+        <p>Comparar ENOB entre sistemas solo es válido cuando frecuencia, amplitud, ventana, banda y procedimiento de cálculo son compatibles.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
             <div class="math-display">\[ENOB=\frac{SINAD-1.76}{6.02}\]</div>
@@ -166,6 +171,7 @@
         <li>ENOB es derivada.</li>
         <li>La condición de prueba forma parte del resultado.</li>
         <li>No extrapolar una métrica dinámica a cualquier uso.</li>
+        <li>Comparar métricas dinámicas bajo condiciones equivalentes.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
@@ -174,11 +180,13 @@
         <p>Simultaneidad física, multiplexación, reloj compartido, reloj de etiquetado y alineación posterior describen procesos diferentes. Timestamps iguales no prueban adquisición simultánea.</p>
         <p>Jitter introduce incertidumbre de instante; deriva acumula desalineación entre relojes. Ambos efectos deben separarse de valores faltantes o reordenados.</p>
         <p>Contadores de secuencia, identidad de canal y marcas de tiempo permiten detectar pérdidas y duplicados. Interpolar genera una estimación, no una muestra observada.</p>
+        <p>La sincronización se verifica con estímulos o marcadores comunes y análisis de error temporal, no únicamente comparando campos de fecha generados por software.</p>
         <h4>Puntos de integración</h4>
       <ul>
         <li>El reloj pertenece a la cadena.</li>
         <li>La integridad requiere más que una curva continua.</li>
         <li>La interpolación debe marcarse como dato derivado.</li>
+        <li>Verificar sincronización con una referencia temporal común.</li>
       </ul>
       </article>
     </section>
@@ -237,6 +245,11 @@
         <li>Comparar LSB y error RMS.</li>
         <li>Detectar gaps.</li>
         <li>Distinguir jitter de deriva.</li>
+        <li>Calcular alias para cuatro componentes.</li>
+        <li>Comparar dos rangos de ADC.</li>
+        <li>Calcular ENOB desde SINAD.</li>
+        <li>Detectar pérdidas y duplicados.</li>
+        <li>Estimar deriva entre relojes.</li>
       </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
@@ -256,6 +269,8 @@
         <li><strong>Equiparar LSB con exactitud.</strong><p>Separar resolución nominal de errores y calibración.</p></li>
         <li><strong>Inferir simultaneidad por timestamps iguales.</strong><p>Identificar reloj y arquitectura.</p></li>
         <li><strong>Tratar interpolación como dato recuperado.</strong><p>Conservar máscara de observación y dato derivado.</p></li>
+        <li><strong>Operar exactamente en el límite de Nyquist.</strong><p>Reservar transición de filtro y tolerancia de reloj.</p></li>
+        <li><strong>Omitir códigos saturados o perdidos.</strong><p>Conservar banderas y máscaras de calidad.</p></li>
         </ul>
       </section>
 <div class="assessment-panels">
@@ -271,12 +286,45 @@
         <summary>3. ¿ENOB es exactitud?</summary>
         <p><strong>Respuesta:</strong> No; deriva de desempeño dinámico bajo condiciones de prueba.</p>
       </details>
+      <details class="answer-panel">
+        <summary>4. ¿Qué es clipping?</summary>
+        <p><strong>Respuesta:</strong> La limitación de códigos al exceder el rango.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>5. ¿Qué necesita una métrica SINAD?</summary>
+        <p><strong>Respuesta:</strong> Señal, frecuencia, amplitud, ventana, banda y configuración.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>6. ¿Qué diferencia jitter y deriva?</summary>
+        <p><strong>Respuesta:</strong> El jitter fluctúa a corto plazo; la deriva acumula error relativo.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>7. ¿Cómo se detecta una pérdida?</summary>
+        <p><strong>Respuesta:</strong> Con contador de secuencia, tiempo e identidad de canal.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>8. ¿Qué es un dato interpolado?</summary>
+        <p><strong>Respuesta:</strong> Una estimación derivada, no una observación recuperada.</p>
+      </details>
       </div>
     </section>
 
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
-      <p class="muted">La unidad no proporciona glosario.</p>
+      <ul class="rich-list advanced-glossary">
+        <li><strong>Muestreo</strong><p>Obtención de valores de una señal en instantes definidos.</p></li>
+        <li><strong>Frecuencia de muestreo</strong><p>Número de muestras adquirido por unidad de tiempo.</p></li>
+        <li><strong>Aliasing</strong><p>Indistinguibilidad de componentes analógicas después del muestreo.</p></li>
+        <li><strong>ADC</strong><p>Convertidor que asigna códigos digitales a niveles de entrada analógica.</p></li>
+        <li><strong>LSB</strong><p>Tamaño nominal de un incremento de código en un convertidor ideal.</p></li>
+        <li><strong>Cuantización</strong><p>Representación de amplitudes mediante un conjunto finito de niveles.</p></li>
+        <li><strong>Clipping</strong><p>Limitación de la salida al exceder el rango representable.</p></li>
+        <li><strong>SINAD</strong><p>Relación entre señal y suma de ruido y distorsión.</p></li>
+        <li><strong>ENOB</strong><p>Número efectivo de bits derivado de una prueba dinámica declarada.</p></li>
+        <li><strong>Jitter</strong><p>Variación de corto plazo en los instantes de muestreo.</p></li>
+        <li><strong>Deriva de reloj</strong><p>Acumulación de diferencia temporal entre relojes.</p></li>
+        <li><strong>Contador de secuencia</strong><p>Metadato que permite detectar pérdidas, duplicados o reordenamientos.</p></li>
+      </ul>
     </section>
 
     <section id="fuentes" class="section">
@@ -287,12 +335,18 @@
       <ol class="rich-list advanced-sources">
         <li><strong><a class="resource-link" href="https://docs.scipy.org/doc/scipy/reference/signal.html" rel="noopener noreferrer">Signal processing reference</a></strong><span class="course-tag">SciPy · documentación</span></li>
         <li><strong><a class="resource-link" href="https://numpy.org/doc/stable/reference/" rel="noopener noreferrer">NumPy reference</a></strong><span class="course-tag">NumPy · documentación</span></li>
+        <li><strong><a class="resource-link" href="https://jcgm.bipm.org/vim/en/info.html" rel="noopener noreferrer">International Vocabulary of Metrology (VIM3)</a></strong><span class="course-tag">BIPM/JCGM · vocabulario internacional</span></li>
+        <li><strong><a class="resource-link" href="https://www.nist.gov/publications/guidelines-evaluating-and-expressing-uncertainty-nist-measurement-results-1994-edition" rel="noopener noreferrer">Guidelines for Evaluating and Expressing the Uncertainty of NIST Measurement Results</a></strong><span class="course-tag">NIST · guía técnica</span></li>
+        <li><strong><a class="resource-link" href="https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/" rel="noopener noreferrer">Circuits and Electronics</a></strong><span class="course-tag">MIT OpenCourseWare · curso abierto</span></li>
+        <li><strong><a class="resource-link" href="https://physionet.org/about/tutorial/" rel="noopener noreferrer">PhysioNet Tutorials</a></strong><span class="course-tag">PhysioNet · tutorial</span></li>
+        <li><strong><a class="resource-link" href="https://www.iso.org/standard/72704.html" rel="noopener noreferrer">ISO 14971:2019</a></strong><span class="course-tag">ISO · norma</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/premarket-approval-pma/pma-quality-system" rel="noopener noreferrer">PMA Quality System</a></strong><span class="course-tag">U.S. Food and Drug Administration · guía regulatoria</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Preservar el contenido autoral de la antigua Unidad 4 y separarlo del acondicionamiento analógico mediante una unidad dedicada a aliasing, ADC, cuantización, desempeño dinámico, sincronización e integridad temporal. Conecta especialmente con Monitores multicanal: La alineación temporal condiciona relaciones entre canales, Dispositivos portátiles: Reloj, energía, rango y transmisión interactúan con la integridad.</p>
+      <p>Preservar el contenido autoral de la antigua Unidad 4 y separarlo del acondicionamiento analógico mediante una unidad dedicada a aliasing, ADC, cuantización, desempeño dinámico, sincronización e integridad temporal. Conecta especialmente con Monitores multicanal: La alineación temporal condiciona relaciones entre canales, Dispositivos portátiles: Reloj, energía, rango y transmisión interactúan con la integridad. Contenido educativo estructurado y revisado internamente. No sustituye formación práctica supervisada, juicio profesional, evaluación clínica, ensayo de conformidad, certificación ni requisitos regulatorios aplicables.</p>
       <div class="page-actions"><a class="btn-link secondary" href="unidad-04.html">← Unidad 4: Acondicionamiento analógico, ruido y rechazo de interferencias</a><a class="btn-link" href="unidad-06.html">Unidad 6: Sensores mecánicos, térmicos, de flujo y ópticos →</a></div>
     </section>
     </article>
