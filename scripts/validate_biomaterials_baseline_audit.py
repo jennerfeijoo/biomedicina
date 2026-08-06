@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Biomaterials baseline audit without changing public content."""
+"""Validate the Biomaterials baseline evidence and its current lifecycle state."""
 from __future__ import annotations
 
 import json
@@ -120,6 +120,97 @@ def validate_source() -> None:
         fail("future publication must require independent rewriting")
 
 
+def validate_pending_public_state() -> None:
+    if not PUBLIC_INDEX.exists():
+        fail("public Biomateriales course page is missing")
+    index_text = PUBLIC_INDEX.read_text(encoding="utf-8")
+    if 'data-status="placeholder"' not in index_text:
+        fail("pending public course page must retain the placeholder status")
+    for title in EXPECTED_CURRENT_TITLES:
+        if title not in index_text:
+            fail(f"current public unit missing from index: {title}")
+
+    for number, title in enumerate(EXPECTED_CURRENT_TITLES, start=1):
+        path = PUBLIC_UNITS / f"unidad-{number:02d}.html"
+        if not path.exists():
+            fail(f"missing public fallback unit {number}")
+        text = path.read_text(encoding="utf-8")
+        if title not in text:
+            fail(f"public unit {number} title mismatch")
+        if 'data-status="placeholder"' not in text:
+            fail(f"public unit {number} must remain placeholder while pending")
+        if "Contenido de respaldo" not in text:
+            fail(f"public unit {number} no longer identifies fallback content")
+
+    if GENERATED_COURSE.exists():
+        fail("advanced generated course must not exist while Biomateriales is pending")
+    if GENERATED_UNITS.exists():
+        fail("advanced generated units must not exist while Biomateriales is pending")
+    if SUBJECT_OVERLAY.exists():
+        fail("subject overlay must not exist while Biomateriales is pending")
+    if REDEVELOPMENT.exists():
+        fail("course redevelopment package must not exist while Biomateriales is pending")
+
+
+def validate_developed_public_state() -> None:
+    required_paths = (PUBLIC_INDEX, GENERATED_COURSE, GENERATED_UNITS, SUBJECT_OVERLAY, REDEVELOPMENT)
+    for path in required_paths:
+        if not path.exists():
+            fail(f"developed Biomateriales is missing {path.relative_to(ROOT)}")
+
+    index_text = PUBLIC_INDEX.read_text(encoding="utf-8")
+    if 'data-status="generated"' not in index_text:
+        fail("developed public course must use the generated status")
+    if "revisión experta pendiente" not in index_text.lower():
+        fail("developed public course must disclose pending expert review")
+    if "Contenido de respaldo" in index_text:
+        fail("developed public course cannot identify itself as fallback content")
+
+    course = load_object(REDEVELOPMENT / "course.json")
+    generated_course = load_object(GENERATED_COURSE)
+    overlay = load_object(SUBJECT_OVERLAY)
+    for label, payload in (
+        ("redevelopment course", course),
+        ("generated course", generated_course),
+        ("subject overlay", overlay),
+    ):
+        if payload.get("status") != "review":
+            fail(f"{label} must remain in review until external validation")
+        if payload.get("subject_id") != "biomateriales":
+            fail(f"{label} subject_id mismatch")
+
+    detailed_units = course.get("detailed_units")
+    if not isinstance(detailed_units, list) or len(detailed_units) != len(EXPECTED_CURRENT_TITLES):
+        fail("developed course must declare the six canonical detailed units")
+
+    expected_files = {f"unit-{number:02d}.json" for number in range(1, 7)}
+    actual_files = {path.name for path in GENERATED_UNITS.glob("unit-*.json")}
+    if actual_files != expected_files:
+        fail("developed generated-unit set must contain exactly units 01 through 06")
+
+    for number, title in enumerate(EXPECTED_CURRENT_TITLES, start=1):
+        html_path = PUBLIC_UNITS / f"unidad-{number:02d}.html"
+        if not html_path.exists():
+            fail(f"missing developed public unit {number}")
+        html = html_path.read_text(encoding="utf-8")
+        if title not in html or 'data-status="generated"' not in html:
+            fail(f"developed public unit {number} is not canonical")
+        if "Contenido de respaldo" in html:
+            fail(f"developed public unit {number} still identifies fallback content")
+
+        unit = load_object(GENERATED_UNITS / f"unit-{number:02d}.json")
+        if unit.get("status") != "review":
+            fail(f"developed unit {number} must remain in review")
+        for key, minimum in (("theory_sections", 4), ("guided_activities", 3), ("self_assessment", 8), ("sources", 5)):
+            require_list(unit, key, minimum, f"developed unit {number}")
+
+    completion = load_object(ROOT / "data" / "curriculum_coverage" / "catalog-completion-2026.json")
+    courses = completion.get("courses")
+    biomaterials = courses.get("biomateriales") if isinstance(courses, dict) else None
+    if not isinstance(biomaterials, dict) or biomaterials.get("coverage_state") != "implemented":
+        fail("developed Biomateriales must have implemented curriculum coverage")
+
+
 def validate_repository_baseline(audit: dict[str, Any]) -> None:
     baseline = audit.get("repository_baseline")
     if not isinstance(baseline, dict):
@@ -141,42 +232,17 @@ def validate_repository_baseline(audit: dict[str, Any]) -> None:
     pending = catalog.get("pending")
     developed = catalog.get("developed")
     complete = catalog.get("complete")
-    if not isinstance(pending, list) or "biomateriales" not in pending:
-        fail("Biomateriales must remain pending during the baseline audit")
-    if isinstance(developed, list) and "biomateriales" in developed:
-        fail("Biomateriales cannot be developed during the baseline audit")
     if isinstance(complete, list) and "biomateriales" in complete:
-        fail("Biomateriales cannot be complete")
+        fail("Biomateriales cannot be complete before external disciplinary review")
 
-    if not PUBLIC_INDEX.exists():
-        fail("public Biomateriales course page is missing")
-    index_text = PUBLIC_INDEX.read_text(encoding="utf-8")
-    if 'data-status="placeholder"' not in index_text:
-        fail("public course page must retain the placeholder status")
-    for title in EXPECTED_CURRENT_TITLES:
-        if title not in index_text:
-            fail(f"current public unit missing from index: {title}")
-
-    for number, title in enumerate(EXPECTED_CURRENT_TITLES, start=1):
-        path = PUBLIC_UNITS / f"unidad-{number:02d}.html"
-        if not path.exists():
-            fail(f"missing public fallback unit {number}")
-        text = path.read_text(encoding="utf-8")
-        if title not in text:
-            fail(f"public unit {number} title mismatch")
-        if 'data-status="placeholder"' not in text:
-            fail(f"public unit {number} must remain placeholder")
-        if "Contenido de respaldo" not in text:
-            fail(f"public unit {number} no longer identifies fallback content")
-
-    if GENERATED_COURSE.exists():
-        fail("advanced generated course must not exist in the baseline-audit PR")
-    if GENERATED_UNITS.exists():
-        fail("advanced generated units must not exist in the baseline-audit PR")
-    if SUBJECT_OVERLAY.exists():
-        fail("subject overlay must not exist in the baseline-audit PR")
-    if REDEVELOPMENT.exists():
-        fail("course redevelopment package must not exist in the baseline-audit PR")
+    is_pending = isinstance(pending, list) and "biomateriales" in pending
+    is_developed = isinstance(developed, list) and "biomateriales" in developed
+    if is_pending == is_developed:
+        fail("Biomateriales must belong to exactly one lifecycle state: pending or developed")
+    if is_pending:
+        validate_pending_public_state()
+    else:
+        validate_developed_public_state()
 
 
 def validate_audit() -> None:
@@ -287,8 +353,13 @@ def main() -> int:
     validate_source()
     validate_audit()
     validate_report()
-    print("OK: Biomateriales baseline audit completed internally")
-    print("Public course remains pending and placeholder; advanced drafting is authorized")
+    catalog = load_object(CATALOG)
+    developed = isinstance(catalog.get("developed"), list) and "biomateriales" in catalog["developed"]
+    print("OK: Biomateriales baseline evidence retained and internally validated")
+    if developed:
+        print("Current course is developed with six advanced units; expert review remains pending")
+    else:
+        print("Current course remains pending and placeholder; advanced drafting is authorized")
     print("Human and disciplinary review remain unexecuted")
     return 0
 
