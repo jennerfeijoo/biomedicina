@@ -7,8 +7,9 @@ CitoNauta es una plataforma educativa abierta para explorar ciencias básicas, b
 ## Estado del catálogo
 
 - 94 asignaturas en cuatro áreas académicas.
-- 44 desarrolladas con contenido lectivo sustantivo.
-- 50 pendientes que todavía dependen total o parcialmente de contenido de respaldo.
+- 94 desarrolladas con contenido lectivo y actividades sustantivas.
+- 0 pendientes de desarrollo lectivo.
+- 617 unidades avanzadas; 0 unidades de respaldo y 0 páginas ausentes.
 - 0 con revisión disciplinar completa.
 - Ninguna asignatura tiene estado editorial `complete`.
 
@@ -37,18 +38,22 @@ El material es educativo. No sustituye programas oficiales, supervisión compete
 ## Generación y validación
 
 ```bash
+python scripts/complete_catalog_content.py --close-existing-partials
+python scripts/publish_courses.py --all
 python scripts/validate_curriculum.py
 python scripts/validate_course_plan_packages.py
 python scripts/validate_pilot_foundations.py
 python scripts/validate_generated_units.py
+python scripts/audit_course_readiness.py --strict
 python scripts/audit_curriculum_completeness.py
+python scripts/audit_course_portfolio.py --strict
 python scripts/generate_site.py --force --with-units
 python scripts/check_generated_preview.py --limit 94
 python scripts/audit_public_unit_alignment.py --strict
 python scripts/validate_links.py --quiet
 ```
 
-Los controles verifican estructura, trazabilidad, cobertura, bibliografía, sincronización pública y enlaces. No promueven automáticamente una asignatura a `complete`.
+Los controles verifican estructura, trazabilidad, cobertura, bibliografía, diversidad textual, actividades, sincronización pública y enlaces. No promueven automáticamente una asignatura a `complete`.
 
 ## Estructura
 
