@@ -1,1 +1,346 @@
-{"schema_version":"2.0","subject_id":"descubrimiento-computacional-farmacos","area_id":"ingenieria-biomedica","unit":2,"slug":"gobernanza-datos-quimicos-bioactivos","title":"Gobernanza de datos químicos y bioactivos","status":"review","purpose":"Auditar conjuntos de datos por identidad, procedencia, unidades, contexto de ensayo, dependencia y aptitud para el propósito.","learning_objectives":["Definir la unidad científica independiente de un conjunto de datos.","Documentar identidad, estandarización y transformaciones.","Evaluar comparabilidad de endpoints, unidades y censura.","Detectar duplicados, conflictos, sesgo y leakage.","Versionar datos y vincularlos con análisis y modelos.","Decidir si un conjunto es apto para una pregunta concreta."],"theory_sections":[{"heading":"Identidad, procedencia y unidad de análisis","paragraphs":["Un conjunto de datos químico o bioactivo no es una simple tabla de estructuras y números. Cada fila representa una relación entre una entidad, una preparación experimental, un sistema biológico, un procedimiento de medición y una interpretación. La auditoría comienza definiendo la unidad de análisis: sustancia ensayada, estructura normalizada, lote, medición individual, resumen por ensayo o combinación de réplicas. Mezclar estas unidades crea pseudorreplicación y hace que el tamaño aparente del conjunto exceda su información independiente.","La identidad puede cambiar según sales, mezclas, estereoquímica, carga, tautomería, isotopía o ausencia de estructura definida. El objetivo de la estandarización no es borrar diferencias, sino aplicar reglas reproducibles y conservar tanto la forma original como la representación usada para análisis. Toda transformación debe registrar versión, motivo y posibles consecuencias. Dos registros que convergen a una misma representación pueden provenir de sustancias distintas o de condiciones incompatibles.","La procedencia conecta cada dato con su fuente primaria, fecha, método, responsable y transformaciones posteriores. Los registros derivados deben indicar cómo se combinaron mediciones, cómo se resolvieron conflictos y qué información se perdió. Una fuente secundaria puede ser útil para agregación, pero no sustituye revisar el contexto experimental. La trazabilidad permite detectar duplicados ocultos, reutilización de datos en entrenamiento y evaluación, y cambios de interpretación entre versiones."],"key_points":["La fila no siempre es la unidad independiente.","Estandarizar no significa borrar diferencias.","Debe conservarse la representación original.","La procedencia alcanza hasta el experimento primario."],"equations":[{"latex":"EffectiveN <= RecordedRows","meaning":"El número efectivo de observaciones no puede exceder las filas y suele ser menor por dependencia.","variables":{}}]},{"heading":"Contexto de ensayo, endpoints y comparabilidad","paragraphs":["Una medida de bioactividad solo puede interpretarse dentro del ensayo que la produjo. Deben registrarse tipo de sistema, organismo, preparación, sustrato, tiempo, temperatura, controles, tecnología de lectura y regla de cálculo. Valores con la misma etiqueta pueden medir fenómenos diferentes. Una concentración asociada a unión no equivale a una concentración asociada a efecto funcional, y un endpoint celular integra transporte, metabolismo y viabilidad además de la interacción de interés.","La comparabilidad requiere examinar unidades, escala, dirección y censura. Las transformaciones logarítmicas pueden facilitar modelado, pero deben conservar la unidad original y la relación exacta entre valor y límite de detección. Expresiones como mayor que, menor que o inactivo no son números exactos. Convertirlas sin declarar supuestos introduce precisión ficticia. El tratamiento de datos censurados debe definirse antes de entrenar modelos y evaluarse mediante análisis de sensibilidad.","Los endpoints agregados pueden ocultar heterogeneidad. Combinar múltiples ensayos en una etiqueta binaria puede mezclar protocolos, umbrales y niveles de evidencia. La auditoría decide si corresponde modelar por ensayo, por familia metodológica o mediante un modelo que represente explícitamente el contexto. Cuando la armonización no es defendible, mantener conjuntos separados es preferible a crear una variable aparentemente grande pero científicamente incoherente."],"key_points":["La bioactividad depende del ensayo.","Misma etiqueta no garantiza mismo fenómeno.","La censura no debe convertirse en exactitud inventada.","A veces separar datos es más válido que agregarlos."],"equations":[{"latex":"ObservedValue = BiologicalSignal + AssayContext + MeasurementError","meaning":"El valor observado combina señal, contexto y error.","variables":{}}]},{"heading":"Duplicados, conflictos, sesgos y leakage","paragraphs":["Los duplicados pueden ser exactos, estructurales, derivados de una misma publicación o relacionados por series químicas. No todos deben eliminarse: réplicas verdaderas informan variabilidad, mientras copias administrativas inflan evidencia. La decisión exige identificar dependencia. Si registros relacionados se distribuyen entre entrenamiento y prueba, el modelo puede memorizar patrones y aparentar generalización. La partición debe realizarse en el nivel que representa la unidad científica independiente.","Los conflictos entre mediciones son información. Pueden revelar variación experimental, diferencias de protocolo, inestabilidad, dependencia de contexto o errores de registro. Resolverlos mediante promedio automático puede ocultar el problema. La auditoría clasifica el conflicto, compara condiciones y decide si conservar réplicas, modelar distribución, excluir por falta de comparabilidad o solicitar revisión de dominio. Toda regla de resolución debe documentarse y aplicarse sin conocer el resultado de evaluación.","El sesgo de selección aparece cuando solo se registran resultados positivos, moléculas fáciles de medir o experimentos de determinadas instituciones. También puede existir sesgo temporal, de publicación o de disponibilidad estructural. Un modelo aprende la distribución de datos disponibles, no el universo de posibilidades. La dataset card debe describir cómo se generó la muestra, qué quedó fuera, qué grupos están subrepresentados y qué decisiones no deberían apoyarse en ella."],"key_points":["Los duplicados necesitan clasificación, no eliminación automática.","Los conflictos pueden revelar biología o error.","La partición debe respetar dependencia científica.","La dataset card declara selección y ausencias."],"equations":[{"latex":"LeakageRisk = RelatednessAcrossSplits × InformationOverlap","meaning":"El riesgo aumenta cuando entidades relacionadas comparten información entre particiones.","variables":{}}]},{"heading":"Versionado, auditoría y criterios de calidad","paragraphs":["Un conjunto de datos es un artefacto versionado. Cada versión debe registrar fuentes añadidas, reglas cambiadas, registros excluidos, correcciones y efectos sobre estadísticas. El identificador de versión se vincula con notebooks, modelos y resultados. Sin esa relación, una métrica no puede reproducirse ni atribuirse a un estado concreto. La inmutabilidad de versiones publicadas evita que una actualización silenciosa cambie la base de una decisión.","Los controles de calidad combinan validaciones automáticas y revisión científica. Las primeras detectan formatos inválidos, unidades ausentes, duplicados y rangos improbables; la segunda evalúa coherencia experimental, plausibilidad y significado del endpoint. Superar un esquema no demuestra que los datos sean adecuados. Los reportes deben distinguir errores corregibles, advertencias, exclusiones y limitaciones persistentes.","La preparación para modelado termina con una evaluación de aptitud para el propósito. Se revisan tamaño efectivo, diversidad, distribución temporal, cobertura del endpoint, faltantes, censura, dependencia y distancia respecto del uso previsto. La decisión puede ser modelar, limitar el objetivo, recolectar evidencia o no continuar. Documentar que un dataset no es apto es preferible a producir un modelo cuya aparente precisión depende de sesgos no reconocidos."],"key_points":["Los datos deben versionarse como código.","Esquema válido no implica aptitud científica.","Los controles automáticos y humanos son complementarios.","No modelar puede ser la decisión correcta."],"equations":[{"latex":"DataFitness = Relevance × Quality × Independence × Coverage","meaning":"La aptitud depende de relevancia, calidad, independencia y cobertura.","variables":{}}]}],"glossary":[{"term":"Unidad de análisis","definition":"Entidad independiente sobre la que se realiza inferencia."},{"term":"Identidad química","definition":"Definición de una entidad considerando estructura y forma registrada."},{"term":"Estandarización","definition":"Aplicación reproducible de reglas de representación."},{"term":"Procedencia","definition":"Origen y transformación documentados de un dato."},{"term":"Endpoint","definition":"Variable observada usada para responder una pregunta."},{"term":"Censura","definition":"Observación expresada como límite y no como valor exacto."},{"term":"Réplica","definition":"Medición repetida bajo condiciones definidas."},{"term":"Pseudorreplicación","definition":"Tratamiento de observaciones dependientes como independientes."},{"term":"Duplicado administrativo","definition":"Copia de un mismo dato sin información experimental nueva."},{"term":"Leakage","definition":"Transferencia de información entre desarrollo y evaluación."},{"term":"Sesgo de selección","definition":"Diferencia sistemática entre muestra disponible y población objetivo."},{"term":"Dataset card","definition":"Documento de composición, procedencia, uso y límites de un conjunto."},{"term":"Versión inmutable","definition":"Estado identificado que no cambia tras publicación."},{"term":"Aptitud para el propósito","definition":"Capacidad de los datos para sostener una decisión definida."}],"worked_examples":[{"title":"Mediciones aparentemente equivalentes","scenario":"Dos tablas usan la misma etiqueta de actividad, pero proceden de sistemas y tiempos distintos.","reasoning_steps":["Comparar protocolos.","Revisar unidades y dirección.","Clasificar comparabilidad.","Decidir separación o modelado contextual."],"interpretation":"La coincidencia nominal no justifica combinar endpoints.","limitations":["Faltan metadatos completos.","La heterogeneidad puede no estimarse."]},{"title":"Duplicados entre particiones","scenario":"Registros de una misma serie aparecen en entrenamiento y prueba.","reasoning_steps":["Rastrear dependencia.","Recalcular unidad independiente.","Rediseñar partición.","Comparar cambio de desempeño."],"interpretation":"La métrica original puede reflejar memorización estructural.","limitations":["La dependencia puede ser gradual.","No existe un único umbral universal."]}],"guided_activities":[{"title":"Auditoría de un conjunto biomédico ficticio","instructions":["Definir unidad de análisis.","Crear diccionario y reglas.","Clasificar conflictos.","Emitir decisión de aptitud."],"problems":["Detectar pseudorreplicación.","Normalizar unidades sin perder originales.","Clasificar datos censurados.","Identificar duplicados administrativos.","Proponer partición independiente.","Redactar dataset card.","Comparar dos versiones.","Justificar no modelar."],"checking_criteria":["La procedencia está completa.","Las reglas son reproducibles.","La dependencia guía particiones.","La aptitud se decide por propósito."]}],"common_errors":[{"error":"Tratar cada fila como independiente.","correction":"Definir unidad científica y dependencias."},{"error":"Eliminar todos los duplicados.","correction":"Separar réplicas, copias y entidades relacionadas."},{"error":"Promediar conflictos automáticamente.","correction":"Investigar contexto y causa antes de resumir."},{"error":"Convertir límites en valores exactos.","correction":"Representar censura y analizar sensibilidad."},{"error":"Versionar solo el modelo.","correction":"Versionar datos, reglas, código y resultados."}],"self_assessment":[{"question":"¿Qué puede reducir el tamaño efectivo?","answer":"Dependencia, réplicas y duplicados."},{"question":"¿Estandarizar elimina la forma original?","answer":"No, debe conservarse para trazabilidad."},{"question":"¿Misma etiqueta implica mismo endpoint?","answer":"No, depende del ensayo y contexto."},{"question":"¿Qué es censura?","answer":"Una observación limitada y no un valor exacto."},{"question":"¿Por qué importan conflictos?","answer":"Pueden revelar variación, contexto o error."},{"question":"¿Qué produce leakage?","answer":"Información compartida indebidamente entre particiones."},{"question":"¿Qué documenta una dataset card?","answer":"Composición, procedencia, procesos, usos y límites."},{"question":"¿Cuándo no debe modelarse?","answer":"Cuando datos no son aptos para la decisión prevista."}],"biomedical_connections":[{"topic":"Química analítica","connection":"La identidad y la medición condicionan interpretación."},{"topic":"Bioestadística","connection":"Dependencia y censura afectan estimación."},{"topic":"Ingeniería de datos","connection":"Versionado y linaje sostienen reproducibilidad."},{"topic":"Bioética","connection":"La omisión de sesgos puede producir decisiones injustificadas."}],"sources":[{"title":"FAIR Guiding Principles for scientific data management and stewardship","organization":"Comunidad científica internacional","url":"https://doi.org/10.1038/sdata.2016.18","role":"Principios para datos encontrables, accesibles, interoperables y reutilizables.","type":"artículo metodológico","verification_status":"verified_directly"},{"title":"Datasheets for Datasets","organization":"Comunidad de aprendizaje automático","url":"https://doi.org/10.1145/3458723","role":"Documentación estructurada de procedencia, composición y límites.","type":"artículo metodológico","verification_status":"verified_directly"},{"title":"Data leakage in machine learning","organization":"Fuente académica metodológica","url":"https://doi.org/10.1145/2382577.2382579","role":"Riesgos de información compartida entre desarrollo y evaluación.","type":"artículo metodológico","verification_status":"verified_metadata"},{"title":"Principios de validación de modelos cuantitativos","organization":"Fuente metodológica internacional","url":"https://www.oecd.org/chemicalsafety/risk-assessment/validationofqsarmodels.htm","role":"Definición de endpoint, aplicabilidad, interpretación y documentación.","type":"guía metodológica","verification_status":"verified_directly"},{"title":"Reproducible Research in Computational Science","organization":"Fuente académica metodológica","url":"https://doi.org/10.1126/science.1213847","role":"Versionado y reproducibilidad de datos, análisis y resultados computacionales.","type":"artículo metodológico","verification_status":"verified_metadata"}],"editorial_notice":"Material educativo en estado review. Presenta métodos computacionales y criterios de validación; no incluye síntesis, fabricación, adquisición, dosificación ni uso de sustancias, y no sustituye revisión química, biológica, toxicológica, clínica o regulatoria."}
+{
+  "schema_version": "2.0",
+  "subject_id": "descubrimiento-computacional-farmacos",
+  "area_id": "ingenieria-biomedica",
+  "unit": 2,
+  "slug": "gobernanza-datos-quimicos-bioactivos",
+  "title": "Gobernanza de datos químicos y bioactivos",
+  "status": "review",
+  "purpose": "Auditar conjuntos de datos por identidad, procedencia, unidades, contexto de ensayo, dependencia y aptitud para el propósito.",
+  "learning_objectives": [
+    "Definir la unidad científica independiente de un conjunto de datos.",
+    "Documentar identidad, estandarización y transformaciones.",
+    "Evaluar comparabilidad de endpoints, unidades y censura.",
+    "Detectar duplicados, conflictos, sesgo y leakage.",
+    "Versionar datos y vincularlos con análisis y modelos.",
+    "Decidir si un conjunto es apto para una pregunta concreta."
+  ],
+  "theory_sections": [
+    {
+      "heading": "Identidad, procedencia y unidad de análisis",
+      "paragraphs": [
+        "Un conjunto de datos químico o bioactivo no es una simple tabla de estructuras y números. Cada fila representa una relación entre una entidad, una preparación experimental, un sistema biológico, un procedimiento de medición y una interpretación. La auditoría comienza definiendo la unidad de análisis: sustancia ensayada, estructura normalizada, lote, medición individual, resumen por ensayo o combinación de réplicas. Mezclar estas unidades crea pseudorreplicación y hace que el tamaño aparente del conjunto exceda su información independiente.",
+        "La identidad puede cambiar según sales, mezclas, estereoquímica, carga, tautomería, isotopía o ausencia de estructura definida. El objetivo de la estandarización no es borrar diferencias, sino aplicar reglas reproducibles y conservar tanto la forma original como la representación usada para análisis. Toda transformación debe registrar versión, motivo y posibles consecuencias. Dos registros que convergen a una misma representación pueden provenir de sustancias distintas o de condiciones incompatibles.",
+        "La procedencia conecta cada dato con su fuente primaria, fecha, método, responsable y transformaciones posteriores. Los registros derivados deben indicar cómo se combinaron mediciones, cómo se resolvieron conflictos y qué información se perdió. Una fuente secundaria puede ser útil para agregación, pero no sustituye revisar el contexto experimental. La trazabilidad permite detectar duplicados ocultos, reutilización de datos en entrenamiento y evaluación, y cambios de interpretación entre versiones."
+      ],
+      "key_points": [
+        "La fila no siempre es la unidad independiente.",
+        "Estandarizar no significa borrar diferencias.",
+        "Debe conservarse la representación original.",
+        "La procedencia alcanza hasta el experimento primario."
+      ],
+      "equations": [
+        {
+          "latex": "EffectiveN <= RecordedRows",
+          "meaning": "El número efectivo de observaciones no puede exceder las filas y suele ser menor por dependencia.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Contexto de ensayo, endpoints y comparabilidad",
+      "paragraphs": [
+        "Una medida de bioactividad solo puede interpretarse dentro del ensayo que la produjo. Deben registrarse tipo de sistema, organismo, preparación, sustrato, tiempo, temperatura, controles, tecnología de lectura y regla de cálculo. Valores con la misma etiqueta pueden medir fenómenos diferentes. Una concentración asociada a unión no equivale a una concentración asociada a efecto funcional, y un endpoint celular integra transporte, metabolismo y viabilidad además de la interacción de interés.",
+        "La comparabilidad requiere examinar unidades, escala, dirección y censura. Las transformaciones logarítmicas pueden facilitar modelado, pero deben conservar la unidad original y la relación exacta entre valor y límite de detección. Expresiones como mayor que, menor que o inactivo no son números exactos. Convertirlas sin declarar supuestos introduce precisión ficticia. El tratamiento de datos censurados debe definirse antes de entrenar modelos y evaluarse mediante análisis de sensibilidad.",
+        "Los endpoints agregados pueden ocultar heterogeneidad. Combinar múltiples ensayos en una etiqueta binaria puede mezclar protocolos, umbrales y niveles de evidencia. La auditoría decide si corresponde modelar por ensayo, por familia metodológica o mediante un modelo que represente explícitamente el contexto. Cuando la armonización no es defendible, mantener conjuntos separados es preferible a crear una variable aparentemente grande pero científicamente incoherente."
+      ],
+      "key_points": [
+        "La bioactividad depende del ensayo.",
+        "Misma etiqueta no garantiza mismo fenómeno.",
+        "La censura no debe convertirse en exactitud inventada.",
+        "A veces separar datos es más válido que agregarlos."
+      ],
+      "equations": [
+        {
+          "latex": "ObservedValue = BiologicalSignal + AssayContext + MeasurementError",
+          "meaning": "El valor observado combina señal, contexto y error.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Duplicados, conflictos, sesgos y leakage",
+      "paragraphs": [
+        "Los duplicados pueden ser exactos, estructurales, derivados de una misma publicación o relacionados por series químicas. No todos deben eliminarse: réplicas verdaderas informan variabilidad, mientras copias administrativas inflan evidencia. La decisión exige identificar dependencia. Si registros relacionados se distribuyen entre entrenamiento y prueba, el modelo puede memorizar patrones y aparentar generalización. La partición debe realizarse en el nivel que representa la unidad científica independiente.",
+        "Los conflictos entre mediciones son información. Pueden revelar variación experimental, diferencias de protocolo, inestabilidad, dependencia de contexto o errores de registro. Resolverlos mediante promedio automático puede ocultar el problema. La auditoría clasifica el conflicto, compara condiciones y decide si conservar réplicas, modelar distribución, excluir por falta de comparabilidad o solicitar revisión de dominio. Toda regla de resolución debe documentarse y aplicarse sin conocer el resultado de evaluación.",
+        "El sesgo de selección aparece cuando solo se registran resultados positivos, moléculas fáciles de medir o experimentos de determinadas instituciones. También puede existir sesgo temporal, de publicación o de disponibilidad estructural. Un modelo aprende la distribución de datos disponibles, no el universo de posibilidades. La dataset card debe describir cómo se generó la muestra, qué quedó fuera, qué grupos están subrepresentados y qué decisiones no deberían apoyarse en ella."
+      ],
+      "key_points": [
+        "Los duplicados necesitan clasificación, no eliminación automática.",
+        "Los conflictos pueden revelar biología o error.",
+        "La partición debe respetar dependencia científica.",
+        "La dataset card declara selección y ausencias."
+      ],
+      "equations": [
+        {
+          "latex": "LeakageRisk = RelatednessAcrossSplits × InformationOverlap",
+          "meaning": "El riesgo aumenta cuando entidades relacionadas comparten información entre particiones.",
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "heading": "Versionado, auditoría y criterios de calidad",
+      "paragraphs": [
+        "Un conjunto de datos es un artefacto versionado. Cada versión debe registrar fuentes añadidas, reglas cambiadas, registros excluidos, correcciones y efectos sobre estadísticas. El identificador de versión se vincula con notebooks, modelos y resultados. Sin esa relación, una métrica no puede reproducirse ni atribuirse a un estado concreto. La inmutabilidad de versiones publicadas evita que una actualización silenciosa cambie la base de una decisión.",
+        "Los controles de calidad combinan validaciones automáticas y revisión científica. Las primeras detectan formatos inválidos, unidades ausentes, duplicados y rangos improbables; la segunda evalúa coherencia experimental, plausibilidad y significado del endpoint. Superar un esquema no demuestra que los datos sean adecuados. Los reportes deben distinguir errores corregibles, advertencias, exclusiones y limitaciones persistentes.",
+        "La preparación para modelado termina con una evaluación de aptitud para el propósito. Se revisan tamaño efectivo, diversidad, distribución temporal, cobertura del endpoint, faltantes, censura, dependencia y distancia respecto del uso previsto. La decisión puede ser modelar, limitar el objetivo, recolectar evidencia o no continuar. Documentar que un dataset no es apto es preferible a producir un modelo cuya aparente precisión depende de sesgos no reconocidos."
+      ],
+      "key_points": [
+        "Los datos deben versionarse como código.",
+        "Esquema válido no implica aptitud científica.",
+        "Los controles automáticos y humanos son complementarios.",
+        "No modelar puede ser la decisión correcta."
+      ],
+      "equations": [
+        {
+          "latex": "DataFitness = Relevance × Quality × Independence × Coverage",
+          "meaning": "La aptitud depende de relevancia, calidad, independencia y cobertura.",
+          "variables": {}
+        }
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Unidad de análisis",
+      "definition": "Entidad independiente sobre la que se realiza inferencia."
+    },
+    {
+      "term": "Identidad química",
+      "definition": "Definición de una entidad considerando estructura y forma registrada."
+    },
+    {
+      "term": "Estandarización",
+      "definition": "Aplicación reproducible de reglas de representación."
+    },
+    {
+      "term": "Procedencia",
+      "definition": "Origen y transformación documentados de un dato."
+    },
+    {
+      "term": "Endpoint",
+      "definition": "Variable observada usada para responder una pregunta."
+    },
+    {
+      "term": "Censura",
+      "definition": "Observación expresada como límite y no como valor exacto."
+    },
+    {
+      "term": "Réplica",
+      "definition": "Medición repetida bajo condiciones definidas."
+    },
+    {
+      "term": "Pseudorreplicación",
+      "definition": "Tratamiento de observaciones dependientes como independientes."
+    },
+    {
+      "term": "Duplicado administrativo",
+      "definition": "Copia de un mismo dato sin información experimental nueva."
+    },
+    {
+      "term": "Leakage",
+      "definition": "Transferencia de información entre desarrollo y evaluación."
+    },
+    {
+      "term": "Sesgo de selección",
+      "definition": "Diferencia sistemática entre muestra disponible y población objetivo."
+    },
+    {
+      "term": "Dataset card",
+      "definition": "Documento de composición, procedencia, uso y límites de un conjunto."
+    },
+    {
+      "term": "Versión inmutable",
+      "definition": "Estado identificado que no cambia tras publicación."
+    },
+    {
+      "term": "Aptitud para el propósito",
+      "definition": "Capacidad de los datos para sostener una decisión definida."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Mediciones aparentemente equivalentes",
+      "scenario": "Dos tablas usan la misma etiqueta de actividad, pero proceden de sistemas y tiempos distintos.",
+      "reasoning_steps": [
+        "Comparar protocolos.",
+        "Revisar unidades y dirección.",
+        "Clasificar comparabilidad.",
+        "Decidir separación o modelado contextual."
+      ],
+      "interpretation": "La coincidencia nominal no justifica combinar endpoints.",
+      "limitations": [
+        "Faltan metadatos completos.",
+        "La heterogeneidad puede no estimarse."
+      ]
+    },
+    {
+      "title": "Duplicados entre particiones",
+      "scenario": "Registros de una misma serie aparecen en entrenamiento y prueba.",
+      "reasoning_steps": [
+        "Rastrear dependencia.",
+        "Recalcular unidad independiente.",
+        "Rediseñar partición.",
+        "Comparar cambio de desempeño."
+      ],
+      "interpretation": "La métrica original puede reflejar memorización estructural.",
+      "limitations": [
+        "La dependencia puede ser gradual.",
+        "No existe un único umbral universal."
+      ]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Curación reproducible de una tabla de bioactividad",
+      "instructions": [
+        "Diseña un esquema para diez registros sintéticos con identificador de compuesto, estructura, diana, organismo, tipo de ensayo, relación, valor, unidad y procedencia.",
+        "Normaliza unidades sin mezclar IC50, Ki, Kd y porcentaje de inhibición.",
+        "Define reglas explícitas para sales, mezclas, estereoquímica, duplicados y mediciones censuradas.",
+        "Conserva una tabla de decisiones que permita reconstruir cada exclusión o transformación."
+      ],
+      "problems": [
+        "Detecta cuándo dos filas representan el mismo compuesto y cuándo no puede decidirse.",
+        "Separa identidad química, registro de sustancia y resultado experimental.",
+        "Convierte valores molares a una escala coherente conservando desigualdades.",
+        "Explica por qué no deben agregarse endpoints heterogéneos por promedio directo.",
+        "Propón una regla para réplicas concordantes y otra para resultados conflictivos.",
+        "Identifica leakage derivado de duplicados o análogos próximos.",
+        "Construye un diccionario de datos con restricciones de tipo y dominio.",
+        "Entrega un informe de procedencia, pérdidas y población final analizable."
+      ],
+      "checking_criteria": [
+        "La unidad de observación y el endpoint son inequívocos.",
+        "Las transformaciones son reversibles o quedan auditadas.",
+        "No se fusionan mediciones biológicamente no comparables.",
+        "Los conflictos se conservan como información, no se borran silenciosamente."
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Tratar cada fila como independiente.",
+      "correction": "Definir unidad científica y dependencias."
+    },
+    {
+      "error": "Eliminar todos los duplicados.",
+      "correction": "Separar réplicas, copias y entidades relacionadas."
+    },
+    {
+      "error": "Promediar conflictos automáticamente.",
+      "correction": "Investigar contexto y causa antes de resumir."
+    },
+    {
+      "error": "Convertir límites en valores exactos.",
+      "correction": "Representar censura y analizar sensibilidad."
+    },
+    {
+      "error": "Versionar solo el modelo.",
+      "correction": "Versionar datos, reglas, código y resultados."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Qué puede reducir el tamaño efectivo?",
+      "answer": "Dependencia, réplicas y duplicados."
+    },
+    {
+      "question": "¿Estandarizar elimina la forma original?",
+      "answer": "No, debe conservarse para trazabilidad."
+    },
+    {
+      "question": "¿Misma etiqueta implica mismo endpoint?",
+      "answer": "No, depende del ensayo y contexto."
+    },
+    {
+      "question": "¿Qué es censura?",
+      "answer": "Una observación limitada y no un valor exacto."
+    },
+    {
+      "question": "¿Por qué importan conflictos?",
+      "answer": "Pueden revelar variación, contexto o error."
+    },
+    {
+      "question": "¿Qué produce leakage?",
+      "answer": "Información compartida indebidamente entre particiones."
+    },
+    {
+      "question": "¿Qué documenta una dataset card?",
+      "answer": "Composición, procedencia, procesos, usos y límites."
+    },
+    {
+      "question": "¿Cuándo no debe modelarse?",
+      "answer": "Cuando datos no son aptos para la decisión prevista."
+    }
+  ],
+  "biomedical_connections": [
+    {
+      "topic": "Química analítica",
+      "connection": "La identidad y la medición condicionan interpretación."
+    },
+    {
+      "topic": "Bioestadística",
+      "connection": "Dependencia y censura afectan estimación."
+    },
+    {
+      "topic": "Ingeniería de datos",
+      "connection": "Versionado y linaje sostienen reproducibilidad."
+    },
+    {
+      "topic": "Bioética",
+      "connection": "La omisión de sesgos puede producir decisiones injustificadas."
+    }
+  ],
+  "sources": [
+    {
+      "title": "ChEMBL: a drug discovery platform spanning multiple bioactivity data types and time periods",
+      "organization": "EMBL-EBI",
+      "url": "https://doi.org/10.1093/nar/gkad1004",
+      "role": "Fundamenta procedencia, estructura y uso de datos químicos y bioactivos.",
+      "type": "artículo de recurso",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "PubChem PUG REST Tutorial",
+      "organization": "National Center for Biotechnology Information",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest-tutorial",
+      "role": "Documenta recuperación reproducible de identidad, propiedades y anotaciones químicas.",
+      "type": "documentación oficial",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "TeachOpenCADD: a teaching platform for computer-aided drug design",
+      "organization": "Volkamer Lab",
+      "url": "https://doi.org/10.1186/s13321-022-00637-2",
+      "role": "Proporciona flujos reproducibles y actividades de diseño de fármacos asistido por computadora.",
+      "type": "artículo metodológico",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Data leakage in machine learning",
+      "organization": "Fuente académica metodológica",
+      "url": "https://doi.org/10.1145/2382577.2382579",
+      "role": "Riesgos de información compartida entre desarrollo y evaluación.",
+      "type": "artículo metodológico",
+      "verification_status": "verified_metadata"
+    },
+    {
+      "title": "Principios de validación de modelos cuantitativos",
+      "organization": "Fuente metodológica internacional",
+      "url": "https://www.oecd.org/chemicalsafety/risk-assessment/validationofqsarmodels.htm",
+      "role": "Definición de endpoint, aplicabilidad, interpretación y documentación.",
+      "type": "guía metodológica",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Reproducible Research in Computational Science",
+      "organization": "Fuente académica metodológica",
+      "url": "https://doi.org/10.1126/science.1213847",
+      "role": "Versionado y reproducibilidad de datos, análisis y resultados computacionales.",
+      "type": "artículo metodológico",
+      "verification_status": "verified_metadata"
+    }
+  ],
+  "editorial_notice": "Material educativo en estado review. Presenta métodos computacionales y criterios de validación; no incluye síntesis, fabricación, adquisición, dosificación ni uso de sustancias, y no sustituye revisión química, biológica, toxicológica, clínica o regulatoria."
+}
