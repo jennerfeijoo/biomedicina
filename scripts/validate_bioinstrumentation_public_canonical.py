@@ -324,7 +324,10 @@ def main() -> int:
         fail("los títulos no están sincronizados entre las tres capas públicas")
 
     print("OK: Bioinstrumentación dispone de una capa pública canónica de diez unidades")
-    print("Estado editorial: review; revisión humana y disciplinar continúan pendientes")
+    print(
+        "Estado editorial: review; validación del revisor IA pendiente; "
+        "los registros humanos históricos se conservan como comparador"
+    )
     print("Fuentes autorales legacy 1–6 preservadas sin reescritura histórica")
     return 0
 

@@ -106,18 +106,18 @@ Cada unidad lectiva publicada debe contener, como mínimo:
 
 - `placeholder`: página creada como marcador estructural.
 - `draft`: contenido inicial útil, pero no completamente revisado.
-- `review`: curso detallado pendiente de revisión final.
-- `generated`: unidades lectivas disponibles y pendientes de revisión experta.
-- `complete`: contenido revisado por una persona especialista y coherente con el estándar.
+- `review`: curso detallado con revisión pendiente o provisional.
+- `generated`: unidades lectivas disponibles y pendientes de trazabilidad o validación final.
+- `complete`: contenido revisado por un sistema validado para su alcance y coherente con el estándar.
 
 ## 7. Estrategia de migración
 
 La generación masiva aporta una base coherente, pero no sustituye la edición especializada. La prioridad de revisión debe ser:
 
 1. consolidar el modelo común de unidad;
-2. revisar exactitud conceptual por familias disciplinares;
+2. revisar exactitud conceptual mediante roles IA independientes y pruebas deterministas;
 3. añadir ejemplos cuantitativos, figuras y referencias específicas donde aporten valor;
-4. promover a `complete` solo tras revisión identificable.
+4. promover a `complete` solo con una revisión identificable y un registro de validez aplicable.
 
 La regla práctica es:
 
@@ -137,4 +137,4 @@ Una asignatura puede considerarse `generated` cuando:
 - sus enlaces internos funcionan;
 - su página es legible en móvil.
 
-Solo puede considerarse `complete` cuando una revisión experta comprueba además definiciones, ejemplos, bibliografía, prácticas, respuestas y ausencia de afirmaciones clínicas no sustentadas.
+Solo puede considerarse `complete` cuando un sistema revisor validado para el alcance comprueba además definiciones, ejemplos, bibliografía, prácticas, respuestas y ausencia de afirmaciones clínicas no sustentadas.

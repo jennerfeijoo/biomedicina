@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import traceback
@@ -19,6 +20,7 @@ from .quality import (
 )
 from .rag import CatalogRAG
 from .research import ResearchClient
+from .reviewer_validation import find_applicable_validation
 from .schemas import (
     CourseContent,
     CourseReview,
@@ -56,6 +58,11 @@ class CitonautaAgent:
         missing = [str(path) for path in required_files if not path.exists()]
         if missing:
             raise RuntimeError("Faltan archivos requeridos:\n- " + "\n- ".join(missing))
+        if not self.config.reviewer_validation_path.exists():
+            raise RuntimeError(
+                "Falta el directorio de registros de validez del revisor: "
+                + str(self.config.reviewer_validation_path)
+            )
 
     @staticmethod
     def _resource_description(item: dict[str, Any]) -> str:
@@ -66,6 +73,26 @@ class CitonautaAgent:
         if len(description) >= 40:
             return description[:500]
         return "Recurso académico seleccionado para ampliar y contrastar los contenidos de esta asignatura."
+
+    @staticmethod
+    def _combine_reviews(primary: CourseReview, adversarial: CourseReview) -> CourseReview:
+        def unique(left: list[str], right: list[str]) -> list[str]:
+            return list(dict.fromkeys([*left, *right]))
+
+        return CourseReview(
+            approved=primary.approved and adversarial.approved,
+            clarity_score=min(primary.clarity_score, adversarial.clarity_score),
+            scientific_score=min(primary.scientific_score, adversarial.scientific_score),
+            pedagogical_score=min(primary.pedagogical_score, adversarial.pedagogical_score),
+            completeness_score=min(
+                primary.completeness_score, adversarial.completeness_score
+            ),
+            blocking_issues=unique(primary.blocking_issues, adversarial.blocking_issues),
+            improvements=unique(primary.improvements, adversarial.improvements),
+            unsupported_claims=unique(
+                primary.unsupported_claims, adversarial.unsupported_claims
+            ),
+        )
 
     def _source_pool(
         self,
@@ -110,16 +137,44 @@ class CitonautaAgent:
     ) -> CourseContent:
         course.id = subject.id
         course.area_id = subject.area_id
-        course.status = "complete"
+        course.status = "ai_draft"
         course.generation_metadata = GenerationMetadata(
             content_model=self.config.models.content,
             review_model=self.config.models.review,
+            review_provider=self.config.reviewer_validation.provider,
+            review_model_version=self.config.reviewer_validation.model_version,
+            review_prompt_id=self.config.reviewer_validation.prompt_id,
+            review_rubric_version=self.config.reviewer_validation.rubric_version,
+            review_domain=self.config.reviewer_validation.domain,
+            review_risk_level=self.config.reviewer_validation.risk_level,
+            review_claim_types=self.config.reviewer_validation.claim_types,
+            source_access=self.config.reviewer_validation.source_access,
         )
 
         source_records: list[SourceRecord] = []
         resources: list[RichItem] = []
         for item in source_pool:
-            source = SourceRecord.model_validate(item)
+            normalized_source = dict(item)
+            url = str(normalized_source.get("url") or "")
+            normalized_source["source_id"] = str(
+                normalized_source.get("source_id")
+                or "SRC-" + hashlib.sha256(url.encode("utf-8")).hexdigest()[:12].upper()
+            )
+            status_aliases = {
+                "metadata_verified": "verified_metadata",
+                "official_or_open_resource_checked_2026-08": "verified_metadata",
+                "consulted_full_text": "verified_directly",
+                "verified_from_repository_or_provided_source": "verified_directly",
+                "consulted_uploaded_source": "verified_directly",
+                "verified_from_supplied_source": "verified_directly",
+                "verified_with_correction": "verified_directly",
+                "identified_for_future_full_review": "recommended_future_review",
+            }
+            raw_status = str(normalized_source.get("verification_status") or "unverified")
+            normalized_source["verification_status"] = status_aliases.get(
+                raw_status, raw_status
+            )
+            source = SourceRecord.model_validate(normalized_source)
             source_records.append(source)
             resources.append(
                 RichItem(
@@ -131,6 +186,39 @@ class CitonautaAgent:
             )
         course.sources_used = source_records[:15]
         course.suggested_resources = resources[:12]
+        return CourseContent.model_validate(course.model_dump(mode="json"))
+
+    def _finalize_review(self, course: CourseContent) -> CourseContent:
+        settings = self.config.reviewer_validation
+        validation = find_applicable_validation(
+            self.config.reviewer_validation_path,
+            provider=settings.provider,
+            model=self.config.models.review,
+            model_version=settings.model_version,
+            prompt_id=settings.prompt_id,
+            rubric_version=settings.rubric_version,
+            domain=settings.domain,
+            risk_level=settings.risk_level,
+            claim_types=settings.claim_types,
+            language=settings.language,
+            source_access=settings.source_access,
+            author_context_isolated=True,
+            blind_to_author_rationale=True,
+        )
+        if validation is None:
+            course.status = "review"
+            course.generation_metadata.review_state = "ai_review_provisional"
+            course.generation_metadata.reviewer_validation_id = None
+            course.generation_metadata.reviewer_auto_merge_authorized = False
+        else:
+            course.status = "complete"
+            course.generation_metadata.review_state = "ai_review_validated"
+            course.generation_metadata.reviewer_validation_id = str(
+                validation["validation_id"]
+            )
+            course.generation_metadata.reviewer_auto_merge_authorized = bool(
+                (validation.get("authorization") or {}).get("can_auto_merge")
+            )
         return CourseContent.model_validate(course.model_dump(mode="json"))
 
     def _candidate_path(self, subject: SubjectRef) -> Path:
@@ -222,10 +310,18 @@ class CitonautaAgent:
 
             self._save_candidate(subject, course)
             print(f"[{subject.id}] revisión independiente")
-            review = self.ollama.review_course(course, source_pool)
+            primary_review = self.ollama.review_course(course, source_pool)
+            if primary_review.passes_gate:
+                print(f"[{subject.id}] revisión adversarial independiente")
+                adversarial_review = self.ollama.adversarial_review_course(
+                    course, source_pool
+                )
+                review = self._combine_reviews(primary_review, adversarial_review)
+            else:
+                review = primary_review
             if review.passes_gate:
                 candidate_path.unlink(missing_ok=True)
-                return course, review, source_pool
+                return self._finalize_review(course), review, source_pool
             print(
                 f"[{subject.id}] revisión rechazada: "
                 + "; ".join(review.blocking_issues + review.unsupported_claims)
@@ -246,6 +342,7 @@ class CitonautaAgent:
     def _write_pr_body(
         self,
         subject: SubjectRef,
+        course: CourseContent,
         review: CourseReview,
         sources: list[dict[str, Any]],
         check_results: list[tuple[str, str]],
@@ -254,7 +351,9 @@ class CitonautaAgent:
         source_lines = "\n".join(
             f"- [{item['title']}]({item['url']})" for item in sources[:12]
         )
-        body = f"""## Asignatura completada
+        review_state = course.generation_metadata.review_state
+        validation_id = course.generation_metadata.reviewer_validation_id or "ninguno"
+        body = f"""## Propuesta de contenido académico
 
 **{subject.title}** (`{subject.area_id}/{subject.id}`)
 
@@ -264,9 +363,16 @@ class CitonautaAgent:
 - Ejemplos guiados con razonamiento paso a paso.
 - Actividades, errores frecuentes y preguntas de autoevaluación.
 - Aplicaciones biomédicas y evaluación alineada con los resultados de aprendizaje.
-- Metadatos de generación y trazabilidad de fuentes.
+- Metadatos de generación y procedencia de fuentes.
 
-### Revisión automática
+### Estado de revisión IA
+
+- Decisión: `{review_state}`
+- Estado editorial resultante: `{course.status}`
+- Registro de validez aplicable: `{validation_id}`
+- Una revisión provisional no constituye validación científica ni autoriza fusión automática.
+
+### Resultado de la rúbrica automática
 
 - Claridad: {review.clarity_score}/10
 - Rigor científico: {review.scientific_score}/10
@@ -353,7 +459,7 @@ class CitonautaAgent:
             }
             self.git.ensure_expected_changes(expected)
             commit = self.git.commit(
-                sorted(expected), f"Complete {subject.title} course content"
+                sorted(expected), f"Generate {subject.title} course content for review"
             )
             print(f"[{subject.id}] commit {commit}")
 
@@ -362,19 +468,31 @@ class CitonautaAgent:
                 self.git.push(branch)
             if self.config.git.create_pull_request:
                 assert branch is not None
-                body_path = self._write_pr_body(subject, review, sources, check_results)
+                body_path = self._write_pr_body(
+                    subject, course, review, sources, check_results
+                )
                 pr_url = self.git.create_pr(
-                    branch, f"Complete {subject.title} course", body_path
+                    branch, f"Propose {subject.title} course content", body_path
                 )
                 self.state.update(subject.id, "pull_request", pr_url=pr_url)
                 print(f"[{subject.id}] PR: {pr_url}")
                 if self.config.git.wait_for_checks:
                     self.git.wait_for_checks(pr_url)
-                if self.config.git.auto_merge:
+                can_auto_merge = (
+                    course.generation_metadata.review_state == "ai_review_validated"
+                    and bool(course.generation_metadata.reviewer_validation_id)
+                    and course.generation_metadata.reviewer_auto_merge_authorized
+                )
+                if self.config.git.auto_merge and can_auto_merge:
                     self.git.merge(pr_url)
                     self.git.checkout_base()
                     self.state.update(subject.id, "published", pr_url=pr_url)
                 else:
+                    if self.config.git.auto_merge and not can_auto_merge:
+                        print(
+                            f"[{subject.id}] auto-merge bloqueado: "
+                            "el revisor no está validado para este alcance"
+                        )
                     self.state.update(subject.id, "awaiting_merge", pr_url=pr_url)
             else:
                 self.state.update(subject.id, "committed")

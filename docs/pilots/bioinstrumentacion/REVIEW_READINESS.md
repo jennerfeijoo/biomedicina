@@ -10,6 +10,8 @@
 
 Este bloque corrige la interpretación editorial del contenido de respaldo y define las condiciones necesarias antes de redactar las unidades.
 
+> **Transición del 14 de agosto de 2026:** los estados históricos `pending_human_review` se conservan como registro del piloto. Para nuevas decisiones, el gate es `reviewer_validation_pending`. Las personas expertas forman el comparador del estudio de equivalencia y apoyan vigilancia e incidentes; no aprueban obligatoriamente cada unidad. Véase `data/reviewer_validation_transitions/bioinstrumentacion-pilot.json`.
+
 ## Artefactos incluidos
 
 - contrato transversal de excelencia académica;
@@ -71,19 +73,19 @@ La estructura histórica de seis unidades se rechaza como base de autoría porqu
 - incertidumbre aplicada a cadenas fisiológicas;
 - casos reproducibles y datasets abiertos adecuados.
 
-## Revisiones humanas requeridas
+## Comparadores humanos y vigilancia disciplinar
 
-| Revisión | Alcance | Bloquea |
+| Comparador | Alcance | Función actual |
 |---|---|---|
-| Bioinstrumentación | transducción, electrónica, sensores, cadena completa | autoría final de todas las unidades |
-| Electrofisiología | biopotenciales, electrodos, artefactos | unidad 3 |
-| Señales y adquisición | ruido, filtros, muestreo, ADC | unidades 4 y 5 |
-| Metrología | mensurando, calibración, incertidumbre | unidades 1 y 8 |
-| Seguridad de equipo electromédico | aislamiento, riesgos, normas | unidad 7 y afirmaciones normativas |
-| Diseño y regulación | verificación, validación, riesgo | unidad 9 |
-| Ciencias del aprendizaje | feedback, misconceptions y recuperación | contrato de todas las unidades |
-| Accesibilidad | navegación, notación, visuales y feedback | publicación piloto autosuficiente |
-| Licencias | figuras, datos y recursos | publicación de activos externos |
+| Bioinstrumentación | transducción, electrónica, sensores, cadena completa | comparación ciega y adjudicación |
+| Electrofisiología | biopotenciales, electrodos, artefactos | estrato disciplinar de unidad 3 |
+| Señales y adquisición | ruido, filtros, muestreo, ADC | estrato técnico de unidades 4 y 5 |
+| Metrología | mensurando, calibración, incertidumbre | comparación de unidades 1 y 8 |
+| Seguridad de equipo electromédico | aislamiento, riesgos, normas | casos de riesgo alto y vigilancia |
+| Diseño y regulación | verificación, validación, riesgo | casos fuera de alcance y vigilancia |
+| Ciencias del aprendizaje | feedback, misconceptions y recuperación | estudio educativo separado |
+| Accesibilidad | navegación, notación, visuales y feedback | evaluación con personas usuarias |
+| Licencias | figuras, datos y recursos | verificación de derechos |
 
 ## Gates antes de comenzar la autoría
 
@@ -95,7 +97,7 @@ La estructura histórica de seis unidades se rechaza como base de autoría porqu
 - [x] el curso permanece `pending`;
 - [x] contrato de feedback definido;
 - [ ] brechas bibliográficas centrales resueltas;
-- [ ] revisión de arquitectura por especialista;
+- [ ] comparación ciega de arquitectura IA–humano;
 - [ ] diseño del esquema de feedback implementable en la plataforma;
 - [ ] decisión sobre datasets y simulaciones del proyecto.
 
@@ -114,8 +116,10 @@ La estructura histórica de seis unidades se rechaza como base de autoría porqu
 
 ## Gates antes de complete
 
-- revisión disciplinar documentada;
-- revisión de seguridad y metrología documentada;
+- afirmaciones de riesgo medio y alto con localizador exacto;
+- revisión `ai_review_validated` para Bioinstrumentación y riesgo aplicable;
+- manifiesto `validated_for_scope` vigente;
+- comparación humana del estudio de equivalencia documentada;
 - hallazgos bloqueantes resueltos;
 - prueba de autonomía con los perfiles objetivo;
 - mantenimiento, versión y fecha de próxima revisión;
@@ -127,7 +131,7 @@ La estructura histórica de seis unidades se rechaza como base de autoría porqu
 2. La norma de seguridad central no ha sido consultada en texto completo.
 3. La plataforma actual revela respuestas, pero aún no implementa feedback diagnóstico.
 4. No se han ejecutado pruebas de usuario.
-5. La arquitectura necesita revisión de una persona con experiencia real en bioinstrumentación.
+5. La arquitectura necesita formar parte de la comparación ciega con personas competentes.
 
 ## Decisión editorial
 

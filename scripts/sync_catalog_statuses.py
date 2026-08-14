@@ -21,8 +21,43 @@ if str(SCRIPTS) not in sys.path:
 
 import audit_course_completion  # noqa: E402
 import audit_developed_courses  # noqa: E402
+import audit_generic_content  # noqa: E402
+import validate_scientific_traceability  # noqa: E402
 
 DEFAULT_OUTPUT = ROOT / "data" / "catalog_statuses.json"
+
+
+def traced_subjects() -> list[str]:
+    subjects: list[str] = []
+    directory = ROOT / "data" / "claim_registry"
+    for path in sorted(directory.glob("*.json")):
+        if path.name.startswith("_"):
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        claims = payload.get("claims") if isinstance(payload, dict) else None
+        if claims and not validate_scientific_traceability.validate_registry(payload):
+            subjects.append(str(payload.get("subject_id")))
+    return sorted(set(subjects))
+
+
+def ai_validated_subjects() -> list[str]:
+    subjects: list[str] = []
+    for path in sorted((ROOT / "data" / "subjects").glob("*/*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        metadata = payload.get("generation_metadata") or {}
+        if (
+            payload.get("status") == "complete"
+            and metadata.get("review_state") == "ai_review_validated"
+            and metadata.get("reviewer_validation_id")
+        ):
+            subjects.append(str(payload.get("id") or path.stem))
+    return sorted(set(subjects))
 
 
 def build_manifest(report: dict[str, Any]) -> dict[str, Any]:
@@ -39,27 +74,69 @@ def build_manifest(report: dict[str, Any]) -> dict[str, Any]:
         if row["academic_review_complete"] and row["subject_id"] in developed
     )
     pending = sorted(set(catalog_subjects) - set(developed))
+    generic_report = audit_generic_content.audit()
+    template_detected = sorted(
+        set(generic_report["template_detected"]).intersection(developed)
+    )
+    screened = sorted(set(developed) - set(template_detected))
+    source_traced = traced_subjects()
+    ai_validated = ai_validated_subjects()
     return {
-        "schema_version": "1.1",
+        "schema_version": "2.0",
         "generated_from": [
             "scripts/audit_course_completion.py",
             "scripts/audit_developed_courses.py",
+            "scripts/audit_generic_content.py",
+            "scripts/validate_scientific_traceability.py",
         ],
         "definitions": {
-            "developed": (
-                "La asignatura dispone de contenido lectivo desarrollado, "
-                "aunque puede seguir en revisión académica."
+            "material_available": "Existen páginas y actividades; no implica especificidad ni validez.",
+            "screened_no_known_template_marker": (
+                "No se detectó un marcador de plantilla conocido; no equivale a validación científica."
             ),
-            "complete": "La asignatura tiene revisión disciplinar documentada.",
-            "pending": (
-                "La asignatura todavía depende total o parcialmente de unidades de respaldo."
-            ),
+            "template_detected": "El contenido conserva texto genérico y requiere reconstrucción disciplinar.",
+            "claim_traceability_present": "Existe un registro válido de afirmaciones con localizadores.",
+            "ai_review_validated": "La revisión IA coincide con un registro de validez vigente para su alcance.",
+            "pilot_evaluated": "Existe evidencia educativa versionada de un piloto con estudiantes.",
         },
         "counts": {
             "catalog_courses": len(catalog_subjects),
+            "material_available": len(developed),
+            "screened_no_known_template_marker": len(screened),
+            "template_detected": len(template_detected),
+            "claim_traceability_present": len(source_traced),
+            "ai_review_validated": len(ai_validated),
+            "pilot_evaluated": 0,
+            # Compatibilidad temporal con validadores históricos.
             "developed": len(developed),
             "complete": len(complete),
             "pending": len(pending),
+        },
+        "dimensions": {
+            "material": {
+                "available": developed,
+                "missing": pending,
+            },
+            "specificity": {
+                "screened_no_known_template_marker": screened,
+                "template_detected": template_detected,
+            },
+            "source_traceability": {
+                "claim_traceability_present": source_traced,
+            },
+            "review": {
+                "ai_review_validated": ai_validated,
+            },
+            "educational_evidence": {
+                "pilot_evaluated": [],
+            },
+        },
+        "legacy_compatibility": {
+            "deprecated": True,
+            "reason": (
+                "Se conserva temporalmente para validadores históricos. La interfaz pública usa dimensions."
+            ),
+            "top_level_fields": ["developed", "complete", "pending"],
         },
         "developed": developed,
         "complete": complete,
@@ -75,9 +152,10 @@ def status_summary(manifest: dict[str, Any]) -> str:
     counts = manifest["counts"]
     return (
         f"{counts['catalog_courses']} catalogadas, "
-        f"{counts['developed']} desarrolladas, "
-        f"{counts['pending']} pendientes y "
-        f"{counts['complete']} con revisión disciplinar completa"
+        f"{counts['material_available']} con material, "
+        f"{counts['template_detected']} con plantilla detectada, "
+        f"{counts['claim_traceability_present']} con trazabilidad de afirmaciones y "
+        f"{counts['ai_review_validated']} con revisión IA validada"
     )
 
 

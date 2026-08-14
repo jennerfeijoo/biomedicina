@@ -7,13 +7,14 @@ CitoNauta es una plataforma educativa abierta para explorar ciencias básicas, b
 ## Estado del catálogo
 
 - 94 asignaturas en cuatro áreas académicas.
-- 94 desarrolladas con contenido lectivo y actividades sustantivas.
-- 0 pendientes de desarrollo lectivo.
-- 617 unidades avanzadas; 0 unidades de respaldo y 0 páginas ausentes.
-- 0 con revisión disciplinar completa.
+- 94 con material lectivo y actividades disponibles.
+- 50 conservan marcadores de plantilla en 298 unidades y requieren reconstrucción disciplinar.
+- 44 no contienen esos marcadores conocidos; esto no equivale a validación científica.
+- 0 con registro completo de afirmaciones y localizadores.
+- 0 con revisión IA validada para un alcance científico.
 - Ninguna asignatura tiene estado editorial `complete`.
 
-Una página navegable o un workflow verde demuestra integridad técnica, no revisión académica externa. Las asignaturas desarrolladas permanecen en `review` hasta que exista revisión disciplinar documentada.
+Una página navegable o un workflow verde demuestra integridad técnica, no validez científica. Las asignaturas permanecen en `review` hasta que sus afirmaciones estén trazadas y el sistema revisor haya demostrado validez para el alcance correspondiente.
 
 ## Fuentes del sitio
 
@@ -47,6 +48,10 @@ python scripts/validate_generated_units.py
 python scripts/audit_course_readiness.py --strict
 python scripts/audit_curriculum_completeness.py
 python scripts/audit_course_portfolio.py --strict
+python scripts/audit_generic_content.py
+python scripts/validate_scientific_traceability.py
+python scripts/validate_reviewer_validations.py
+python -m unittest discover -s tests
 python scripts/generate_site.py --force --with-units
 python scripts/check_generated_preview.py --limit 94
 python scripts/audit_public_unit_alignment.py --strict
@@ -73,7 +78,7 @@ Las contribuciones deben:
 - distinguir observación, asociación, predicción, causalidad y utilidad;
 - conservar datos, código, parámetros y versiones cuando corresponda;
 - evitar texto genérico y referencias decorativas;
-- mantener `review` hasta una revisión disciplinar real.
+- mantener `review` hasta una revisión documentada por un sistema validado para el alcance.
 
 ## Tecnologías
 
@@ -85,4 +90,4 @@ Las contribuciones deben:
 
 ## Licencia
 
-El proyecto se distribuye bajo Creative Commons Attribution-NonCommercial 4.0 (CC BY-NC 4.0).
+El contenido original del proyecto se distribuye bajo Creative Commons Attribution-NonCommercial 4.0 (CC BY-NC 4.0). Los materiales de terceros conservan sus propias condiciones y no quedan relicenciados por su inclusión como referencia.

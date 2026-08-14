@@ -15,6 +15,8 @@ unit_developed: false
 
 Este bloque prepara la ejecución humana del borrador autoral de la Unidad 2. **No constituye evidencia humana**, revisión profesional, aprobación institucional, validación clínica, conformidad regulatoria ni autorización de publicación.
 
+> **Interpretación vigente:** desde el 14 de agosto de 2026, este paquete funciona como comparador y calibración del estudio IA–humano. Los estados históricos no se reescriben. Para decisiones futuras, `pending_human_review` se traduce operativamente a `reviewer_validation_pending`; no existe aprobación humana obligatoria por unidad.
+
 El contrato estructurado es:
 
 ```text
@@ -98,13 +100,13 @@ CI ejecuta dos fixtures explícitamente sintéticos:
 
 Los fixtures prueban el cálculo y el gate. No representan revisores reales ni pueden emplearse como evidencia de concordancia humana.
 
-## Gate permanente
+## Validador histórico y transición
 
 ```text
 scripts/validate_bioinstrumentation_u2_human_review.py
 ```
 
-El gate verifica contrato, plantillas vacías, gobernanza, controles sintéticos, unidad autoral, auditoría interna aprobada, ausencia de evidencia externa fabricada y permanencia del curso en `pending`.
+El validador conserva contrato, plantillas vacías, gobernanza, controles sintéticos, unidad autoral, auditoría interna aprobada y ausencia de evidencia fabricada. Sus estados humanos son evidencia histórica del piloto; la promoción futura depende del manifiesto de validez del revisor IA.
 
 ## Ejecución válida futura
 
@@ -118,4 +120,4 @@ Para registrar una ejecución humana real se requiere, fuera de este bloque:
 - nueva revisión después de cambios críticos;
 - decisión profesional separada en el issue `#161`.
 
-Hasta entonces permanecen `pending_human_execution` y `pending_human_review`.
+Hasta ejecutar la comparación permanecen los estados históricos `pending_human_execution` y `pending_human_review`; el estado operativo de publicación es `reviewer_validation_pending`.

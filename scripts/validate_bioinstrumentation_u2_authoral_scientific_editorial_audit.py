@@ -13,6 +13,7 @@ UNIT = ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-02.json"
 SOURCE_DIR = ROOT / "data/course_redevelopment/bioinstrumentacion/unit-02-source"
 REPORT = ROOT / "docs/pilots/bioinstrumentacion/unit-02/AUTHORAL_SCIENTIFIC_EDITORIAL_AUDIT.md"
 STATUS = ROOT / "data/catalog_statuses.json"
+REVIEWER_TRANSITION = ROOT / "data/reviewer_validation_transitions/bioinstrumentacion-pilot.json"
 DECISION = ROOT / "data/review_evidence/bioinstrumentacion-unit-02-disciplinary-review.json"
 MANIFEST = ROOT / "data/review_evidence/bioinstrumentacion-unit-02-review-packet.json"
 EXPECTED_FINDINGS = {f"U2-AUTH-SE-{number:02d}" for number in range(1, 7)}
@@ -123,8 +124,23 @@ def validate_unit() -> None:
 
 def validate_repository_state() -> None:
     statuses = load(STATUS)
-    require("bioinstrumentacion" in set(statuses.get("pending", [])), "Bioinstrumentation must remain pending")
-    require("bioinstrumentacion" not in set(statuses.get("developed", [])), "Bioinstrumentation was promoted")
+    dimensions = statuses.get("dimensions", {})
+    require(
+        "bioinstrumentacion"
+        in set(dimensions.get("material", {}).get("available", [])),
+        "Bioinstrumentation material must remain available",
+    )
+    require(
+        "bioinstrumentacion"
+        not in set(dimensions.get("review", {}).get("ai_review_validated", [])),
+        "Bioinstrumentation review was validated prematurely",
+    )
+    transition = load(REVIEWER_TRANSITION)
+    require(
+        transition.get("subject_id") == "bioinstrumentacion"
+        and transition.get("status") == "reviewer_validation_pending",
+        "Bioinstrumentation reviewer validation must remain pending",
+    )
     require(not DECISION.exists() and not MANIFEST.exists(), "audit fabricated external review evidence")
     report = REPORT.read_text(encoding="utf-8")
     for marker in (
@@ -148,7 +164,7 @@ def main() -> int:
         raise SystemExit(f"ERROR: {exc}") from exc
     print("OK Bioinstrumentation U2 authoral scientific and editorial audit")
     print("6 resolved findings · 0 critical open · 0 major open")
-    print("course pending · publication blocked · external professional review pending")
+    print("material available · AI reviewer validation pending · publication blocked")
     return 0
 
 

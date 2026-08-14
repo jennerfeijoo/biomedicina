@@ -5,6 +5,8 @@
 **Escala ordinal:** 0–2  
 **Efecto editorial:** ninguno
 
+> **Interpretación vigente:** este protocolo es parte del comparador humano para validar el sistema revisor IA. El estado histórico se conserva, pero su ejecución no constituye un gate humano permanente de publicación. El gate futuro es `reviewer_validation_pending` hasta demostrar equivalencia o no inferioridad.
+
 ## Propósito
 
 El protocolo comprueba si dos personas aplican de forma suficientemente consistente las rúbricas de `U1-A2`, `U1-A3` y `U1-A5`. El análisis debe realizarse antes de cualquier conciliación para que los desacuerdos no queden ocultos por discusión posterior.
@@ -114,4 +116,4 @@ El repositorio no debe contener nombres de revisores ni estudiantes. Las rondas 
 
 ## Estado real
 
-El calculador y el protocolo están implementados. La ronda con dos revisores competentes permanece **pendiente de ejecución humana**. Un workflow verde valida el software y los contratos, no el acuerdo real.
+El calculador y el protocolo están implementados. La ronda con dos revisores competentes permanece **pendiente de ejecución humana** como evidencia comparativa. Un workflow verde valida el software y los contratos, no el acuerdo real ni la equivalencia del revisor IA.

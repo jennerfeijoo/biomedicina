@@ -16,7 +16,7 @@ from citonauta_agent.orchestrator import CitonautaAgent  # noqa: E402
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Completa, valida, publica y fusiona asignaturas de CitoNauta con Ollama."
+        description="Genera, revisa y propone asignaturas de CitoNauta con Ollama."
     )
     parser.add_argument(
         "--config",

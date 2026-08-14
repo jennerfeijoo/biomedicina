@@ -17,6 +17,7 @@ class ModelConfig:
     output_tokens: int = 16384
     temperature: float = 0.2
     timeout_seconds: float = 3600.0
+    review_think: bool = True
 
 
 @dataclass(slots=True)
@@ -25,7 +26,7 @@ class GenerationConfig:
     maximum_generation_attempts: int = 3
     maximum_validation_repairs: int = 3
     related_courses: int = 4
-    research_results: int = 8
+    research_results: int = 12
     openalex_enabled: bool = True
     europe_pmc_enabled: bool = True
 
@@ -38,10 +39,35 @@ class GitConfig:
     auto_push: bool = True
     create_pull_request: bool = True
     wait_for_checks: bool = True
-    auto_merge: bool = True
+    auto_merge: bool = False
     merge_method: str = "squash"
     delete_branch: bool = True
     require_clean_worktree: bool = True
+
+
+@dataclass(slots=True)
+class ReviewerValidationConfig:
+    directory: Path = Path("data/reviewer_validations")
+    provider: str = "ollama"
+    model_version: str = "unfrozen"
+    prompt_id: str = "citonauta-course-review-v2"
+    rubric_version: str = "course-review-rubric-v2"
+    domain: str = "general_biomedicine"
+    risk_level: str = "high"
+    language: str = "es"
+    source_access: str = "metadata_or_abstract"
+    claim_types: list[str] = field(
+        default_factory=lambda: [
+            "definition",
+            "mechanism",
+            "equation",
+            "method",
+            "clinical",
+            "safety",
+            "regulation",
+            "pedagogy",
+        ]
+    )
 
 
 @dataclass(slots=True)
@@ -51,10 +77,18 @@ class AgentConfig:
     models: ModelConfig = field(default_factory=ModelConfig)
     generation: GenerationConfig = field(default_factory=GenerationConfig)
     git: GitConfig = field(default_factory=GitConfig)
+    reviewer_validation: ReviewerValidationConfig = field(default_factory=ReviewerValidationConfig)
 
     @property
     def state_path(self) -> Path:
         path = self.state_directory
+        if not path.is_absolute():
+            path = self.root / path
+        return path
+
+    @property
+    def reviewer_validation_path(self) -> Path:
+        path = self.reviewer_validation.directory
         if not path.is_absolute():
             path = self.root / path
         return path
@@ -78,6 +112,9 @@ def load_config(root: Path, config_path: Path | None = None) -> AgentConfig:
         _merge_dataclass(config.models, raw.get("models", {}))
         _merge_dataclass(config.generation, raw.get("generation", {}))
         _merge_dataclass(config.git, raw.get("git", {}))
+        _merge_dataclass(config.reviewer_validation, raw.get("reviewer_validation", {}))
+        if isinstance(config.reviewer_validation.directory, str):
+            config.reviewer_validation.directory = Path(config.reviewer_validation.directory)
         if "agent" in raw and "state_directory" in raw["agent"]:
             config.state_directory = Path(raw["agent"]["state_directory"])
 

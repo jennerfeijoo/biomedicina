@@ -27,6 +27,7 @@ AUTHORIZATION = ROOT / "data/authoring_authorizations/bioinstrumentacion-unit-02
 AUDIT = ROOT / "data/course_audits/bioinstrumentacion/UNIT_02_PRACTICES_ASSESSMENT_SCIENTIFIC_EDITORIAL_AUDIT_2026-07-29.json"
 PACKAGE = ROOT / "data/course_plan_packages/package-04-bioinstrumentation-excellence-pilot.json"
 STATUSES = ROOT / "data/catalog_statuses.json"
+REVIEWER_TRANSITION = ROOT / "data/reviewer_validation_transitions/bioinstrumentacion-pilot.json"
 READINESS = ROOT / "docs/pilots/bioinstrumentacion/unit-02/AUTHORING_READINESS.md"
 IMPLEMENTATION_DOC = ROOT / "docs/pilots/bioinstrumentacion/unit-02/AUTHORAL_UNIT_IMPLEMENTATION.md"
 DECISION = ROOT / "data/review_evidence/bioinstrumentacion-unit-02-disciplinary-review.json"
@@ -267,8 +268,23 @@ def validate_state_and_limits(unit: dict[str, Any]) -> None:
     require(section.get("public_release_authorized") is False and section.get("unit_developed") is False and section.get("course_state") == "pending", "package promoted unit")
 
     statuses = load(STATUSES)
-    require("bioinstrumentacion" in set(statuses.get("pending", [])), "course not pending")
-    require("bioinstrumentacion" not in set(statuses.get("developed", [])), "course developed prematurely")
+    dimensions = statuses.get("dimensions", {})
+    material = dimensions.get("material", {})
+    review_dimension = dimensions.get("review", {})
+    require(
+        "bioinstrumentacion" in set(material.get("available", [])),
+        "course material is not catalogued as available",
+    )
+    require(
+        "bioinstrumentacion" not in set(review_dimension.get("ai_review_validated", [])),
+        "course review was validated prematurely",
+    )
+    transition = load(REVIEWER_TRANSITION)
+    require(
+        transition.get("subject_id") == "bioinstrumentacion"
+        and transition.get("status") == "reviewer_validation_pending",
+        "reviewer-validation transition is missing or promoted",
+    )
     require(not DECISION.exists() and not MANIFEST.exists(), "external review evidence fabricated")
 
     full = json.dumps(unit, ensure_ascii=False).casefold()
@@ -305,7 +321,7 @@ def main() -> int:
 
     print("OK Bioinstrumentation U2 complete authoral draft")
     print(f"6 theory sections · {theory_words} theory words · 20 glossary terms · 3 worked examples · 5 assessments · 3 practices · 12 sources")
-    print("course pending · public release blocked · external professional review pending")
+    print("material available · AI reviewer validation pending · public release blocked")
     return 0
 
 

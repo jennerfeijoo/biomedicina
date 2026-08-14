@@ -63,8 +63,10 @@ def _compact_source(source: dict[str, Any]) -> dict[str, Any]:
         "authors": _list(source.get("authors"), 4, 100),
         "abstract_excerpt": _text(
             source.get("abstract_excerpt") or source.get("description"),
-            320,
+            1600,
         ),
+        "verification_status": source.get("verification_status", "unverified"),
+        "locators": source.get("locators", []),
     }
 
 
@@ -95,13 +97,15 @@ def generation_prompt(
     payload = {
         "ASIGNATURA": subject,
         "CONTENIDO_BASE": _compact_baseline(baseline),
-        "FUENTES_PERMITIDAS": [_compact_source(item) for item in sources[:8]],
+        "FUENTES_PERMITIDAS": [_compact_source(item) for item in sources[:12]],
         "CURSOS_RELACIONADOS": [_compact_related(item) for item in related_context[:4]],
     }
     compact_payload = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     return f"""
 Completa la asignatura indicada hasta convertirla en una guía educativa autosuficiente.
-Conserva id={subject['id']!r} y area_id={subject['area_id']!r}. El estado final debe ser complete.
+Conserva id={subject['id']!r} y area_id={subject['area_id']!r}. El estado de salida debe ser
+ai_draft. La promoción editorial ocurre después y nunca depende de que el modelo se autoasigne
+un estado de validez.
 
 Requisitos editoriales y de tamaño:
 - El campo description general del curso debe ser una síntesis sustantiva de entre 160 y 300
@@ -137,6 +141,26 @@ Audita el curso como revisor independiente. Evalúa claridad, rigor científico,
 pedagógica, completitud y respaldo por las fuentes permitidas. Rechaza el curso si contiene
 explicaciones genéricas, repeticiones, saltos conceptuales, afirmaciones médicas no respaldadas,
 referencias inventadas o ejemplos que no muestran razonamiento.
+
+CURSO:
+{course_json}
+
+FUENTES PERMITIDAS:
+{source_json}
+""".strip()
+
+
+def adversarial_review_prompt(course_json: str, source_json: str) -> str:
+    return f"""
+Actúa como revisor adversarial independiente. Tu objetivo no es mejorar ni defender el borrador,
+sino encontrar motivos concretos para rechazarlo. Busca afirmaciones sin apoyo, extrapolaciones,
+causalidad injustificada, cifras o unidades erróneas, ecuaciones fuera de alcance, ejemplos que
+ocultan supuestos, contradicciones internas, referencias decorativas, riesgos clínicos y texto que
+podría intercambiarse con otra asignatura. Declara unsupported_claims de forma específica.
+
+No presupongas que una fuente respalda el curso por aparecer en la bibliografía. Si el material
+recibido solo contiene metadatos o resúmenes y no permite verificar una afirmación, indícalo. Una
+puntuación alta no puede compensar un hallazgo crítico.
 
 CURSO:
 {course_json}
