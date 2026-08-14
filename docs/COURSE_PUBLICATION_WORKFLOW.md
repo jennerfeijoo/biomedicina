@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Este documento define la transición técnica desde un paquete académico reconstruido hasta una asignatura pública. La publicación comprueba integridad y sincronización; no sustituye la revisión disciplinar ni promueve automáticamente un curso a `complete`.
+Este documento define la transición técnica desde un paquete académico reconstruido hasta una asignatura pública. La publicación comprueba integridad y sincronización; no sustituye una revisión científicamente validada ni promueve automáticamente un curso a `complete`.
 
 ## Paquete fuente
 
@@ -84,6 +84,6 @@ La auditoría distingue:
 - páginas HTML sincronizadas;
 - unidades avanzadas, autorales, fallback o ausentes;
 - publicación técnica;
-- revisión académica completa.
+- revisión validada para el alcance.
 
-Un curso publicado con estado `review` sigue requiriendo revisión disciplinar. CI no puede convertirlo a `complete`.
+Un curso publicado con estado `review` conserva una revisión provisional. CI solo puede convertirlo a `complete` cuando encuentra un manifiesto `validated_for_scope` vigente y exactamente coincidente.

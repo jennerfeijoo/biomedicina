@@ -2,17 +2,24 @@
 """Valida el contenido enriquecido producido por el agente autónomo.
 
 Solo examina overlays con generation_metadata.autonomous_agent=true. De este modo puede
-incorporarse antes de que las 84 asignaturas hayan sido regeneradas por el agente.
+incorporarse antes de que todas las asignaturas hayan sido regeneradas por el agente.
 """
 from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from citonauta_agent.reviewer_validation import find_applicable_validation  # noqa: E402
+
 SUBJECTS_DIR = ROOT / "data" / "subjects"
+REVIEWER_VALIDATIONS = ROOT / "data" / "reviewer_validations"
 WORD_RE = re.compile(r"\b[\wáéíóúüñÁÉÍÓÚÜÑ]+\b", re.UNICODE)
 
 
@@ -39,8 +46,35 @@ def validate_overlay(path: Path) -> list[str]:
         return errors
 
     key = path.relative_to(ROOT).as_posix()
-    if data.get("status") != "complete":
-        errors.append(f"{key}.status debe ser complete")
+    status = data.get("status")
+    if status not in {"review", "complete"}:
+        errors.append(f"{key}.status debe ser review o complete")
+    review_state = metadata.get("review_state")
+    validation_id = metadata.get("reviewer_validation_id")
+    if status == "review" and review_state != "ai_review_provisional":
+        errors.append(f"{key}: review requiere ai_review_provisional")
+    if status == "complete":
+        if review_state != "ai_review_validated":
+            errors.append(f"{key}: complete requiere ai_review_validated")
+        if not str(validation_id or "").strip():
+            errors.append(f"{key}: complete requiere reviewer_validation_id")
+        applicable = find_applicable_validation(
+            REVIEWER_VALIDATIONS,
+            provider=str(metadata.get("review_provider") or ""),
+            model=str(metadata.get("review_model") or ""),
+            model_version=str(metadata.get("review_model_version") or ""),
+            prompt_id=str(metadata.get("review_prompt_id") or ""),
+            rubric_version=str(metadata.get("review_rubric_version") or ""),
+            domain=str(metadata.get("review_domain") or ""),
+            risk_level=str(metadata.get("review_risk_level") or ""),
+            claim_types=[str(item) for item in metadata.get("review_claim_types") or []],
+            language="es",
+            source_access=str(metadata.get("source_access") or ""),
+            author_context_isolated=True,
+            blind_to_author_rationale=True,
+        )
+        if applicable is None or applicable.get("validation_id") != validation_id:
+            errors.append(f"{key}: reviewer_validation_id no es aplicable o está vencido")
 
     minimums = {
         "prerequisites": 3,

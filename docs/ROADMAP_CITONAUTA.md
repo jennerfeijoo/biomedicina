@@ -1,143 +1,149 @@
 # Roadmap CitoNauta
 
-## Estado de ejecución — 29 de julio de 2026
+## Estado de ejecución — 14 de agosto de 2026
 
-La fábrica editorial, los generadores, los validadores y el catálogo navegable están operativos. El inventario actual contiene **94 asignaturas centrales** distribuidas en cuatro áreas y **607 unidades esperadas**.
+CitoNauta dispone de una fábrica editorial, un catálogo navegable y controles técnicos reproducibles. El inventario actual contiene **94 asignaturas**, **617 unidades** y **9 rutas interdisciplinarias**.
 
-El desarrollo lectivo no está terminado:
+La disponibilidad de archivos no se interpreta como validez científica:
 
-- **40 asignaturas** tienen todas sus unidades desarrolladas mediante JSON avanzado;
-- **54 asignaturas** todavía dependen de unidades generadas con contenido de respaldo;
-- existen **283 unidades avanzadas** y **324 unidades fallback**;
-- no existen páginas de unidad ausentes;
-- `provisional_subjects.json` no contiene entradas;
-- ninguna asignatura está en `complete`, porque todavía no existe revisión disciplinar documentada.
+- las 94 asignaturas tienen material lectivo disponible;
+- 50 cursos conservan marcadores de plantilla en 298 unidades;
+- 44 cursos no contienen esos marcadores conocidos, sin que esto demuestre validez;
+- ninguna asignatura dispone todavía de un registro completo afirmación–fuente;
+- ningún sistema revisor IA tiene aún estado `validated_for_scope`;
+- ninguna asignatura puede presentarse como científicamente validada o `complete`.
 
-La ausencia de asignaturas provisionales significa que todos los identificadores pertenecen al currículo central. No significa que las 94 asignaturas tengan desarrollo lectivo completo.
+## 1. Objetivo
 
-Entre las 40 asignaturas desarrolladas, 20 matrices de cobertura están declaradas como `implemented` y 20 como `partial`. Los controles automáticos verifican estructura, sincronización, enlaces, densidad, cobertura declarada y consistencia editorial; no certifican corrección disciplinar, suficiencia bibliográfica ni utilidad educativa final.
+Construir una plataforma abierta de estudio independiente en biomedicina que combine:
 
-## 1. Lectura estratégica del proyecto
+- lenguaje académico con explicaciones sencillas;
+- rutas adaptables y prerrequisitos explícitos;
+- práctica, evaluación, recuperación y transferencia;
+- afirmaciones científicas trazables;
+- revisión por IA con validez empíricamente demostrada;
+- cuentas, progreso versionado y logros asociados a evidencia.
 
-CitoNauta no es únicamente una colección de páginas HTML sobre biomedicina. El repositorio construye una plataforma educativa abierta para organizar rutas progresivas de aprendizaje que conecten ciencias básicas, ciencias biológicas y médicas, ingeniería biomédica aplicada, computación, gestión, ética y comunicación científica.
+## 2. Modelo editorial multidimensional
 
-La función principal del sitio es servir como atlas curricular y fábrica editorial: una estructura navegable capaz de convertir una malla amplia de asignaturas en cursos, unidades, prácticas, conexiones interdisciplinarias, recursos verificables y contenido reutilizable para formación y divulgación.
+El catálogo no reduce la madurez a una sola etiqueta. Informa por separado:
 
-## 2. Modelo editorial vigente
+| Dimensión | Pregunta |
+|---|---|
+| Material | ¿Existe contenido utilizable? |
+| Especificidad | ¿Conserva texto de plantilla conocido? |
+| Fuentes | ¿Las afirmaciones tienen fuente y localizador? |
+| Revisión | ¿La decisión es provisional o validada? |
+| Validez del revisor | ¿La configuración fue validada para este alcance? |
+| Evidencia educativa | ¿Se estudió aprendizaje, transferencia y retención? |
 
-El proyecto distingue cuatro conceptos que no deben confundirse:
+`complete` solo puede utilizarse cuando coinciden contenido trazable, revisión `ai_review_validated`, registro `validated_for_scope` vigente y ausencia de hallazgos bloqueantes.
 
-- **catalogada**: la asignatura existe en `data/citonauta_curriculum.json` y tiene página pública;
-- **pending**: la asignatura todavía depende total o parcialmente de unidades fallback;
-- **developed**: todas las unidades esperadas son avanzadas o autorales, aunque la revisión académica siga pendiente;
-- **complete**: existe revisión disciplinar documentada y una decisión editorial explícita.
+## 3. Gate 0 — Veracidad y control científico
 
-Una página generada no demuestra desarrollo académico. Un workflow verde tampoco convierte `review` en `complete`.
+### Implementado en la transición actual
 
-## 3. Arquitectura técnica
+- inventario público corregido a 94 asignaturas y 617 unidades;
+- detección reproducible de plantillas conocidas;
+- estados multidimensionales en el catálogo;
+- protocolo de equivalencia o no inferioridad IA–humano;
+- manifiesto versionado de validez del revisor;
+- estado provisional para el revisor actual;
+- bloqueo del `auto_merge` sin revisor validado;
+- registro estructurado de afirmaciones y localizadores;
+- migración conceptual de los gates humanos del piloto.
 
-La plataforma conserva HTML, CSS y JavaScript estáticos compatibles con GitHub Pages. La generación y validación se apoyan principalmente en:
+### Trabajo pendiente del Gate 0
 
-```text
-data/citonauta_curriculum.json
-data/subjects/
-data/generated_courses/
-data/generated_units/
-data/course_redevelopment/
-data/catalog_statuses.json
-templates/
-scripts/
-.github/workflows/
-```
+1. Normalizar el vocabulario de las fuentes existentes.
+2. Construir registros de afirmaciones para los cursos piloto.
+3. Recuperar texto completo autorizado y localizadores.
+4. Congelar corpus, modelo, prompt, rúbrica y análisis.
+5. Ejecutar el estudio ciego IA–humano.
+6. Publicar resultados e incertidumbre.
+7. Activar `validated_for_scope` únicamente si se supera el criterio predefinido.
 
-### Fuente curricular central
+## 4. Gate 1 — Producto de estudio independiente
 
-`data/citonauta_curriculum.json` mantiene áreas, asignaturas, rutas públicas, módulos y unidades esperadas. Los overlays de `data/subjects/` y los paquetes de `data/course_redevelopment/` amplían esa fuente sin convertir el HTML en origen manual de verdad.
+El MVP debe incluir:
 
-### Estados del catálogo
+- registro, inicio de sesión, recuperación y modo invitado;
+- progreso sincronizado por resultado de aprendizaje;
+- intentos, respuestas, pistas, feedback y reintentos;
+- estados `not_started`, `exploring`, `practiced`, `mastered` y `needs_review`;
+- logros vinculados a criterio, evidencia y versión;
+- exportación y borrado de datos;
+- aislamiento por usuario y pruebas de privacidad;
+- recorrido crítico conforme con WCAG 2.2 AA.
 
-`data/catalog_statuses.json` se genera desde las auditorías de desarrollo real. Debe contener una partición completa de las asignaturas centrales:
+No se marcará dominio por desplazamiento, tiempo de pantalla o simple visita.
 
-- `developed`;
-- `pending`;
-- `complete`, como subconjunto de `developed`.
+## 5. Gate 2 — Pilotos científicos
 
-El catálogo público puede calcular y filtrar estos estados, pero el manifiesto también debe conservarlos de forma explícita para auditoría y automatización.
+Orden recomendado:
 
-### Unidades avanzadas y fallback
+1. Bioestadística;
+2. Fundamentos de Programación;
+3. Bioinformática;
+4. Aprendizaje Automático Biomédico y Validación Clínica;
+5. Descubrimiento Computacional de Fármacos.
 
-Una unidad avanzada existe en `data/generated_units/<subject_id>/unit-XX.json` y supera los contratos de estructura y densidad. Una unidad fallback mantiene navegación y continuidad visual, pero no cuenta como desarrollo lectivo terminado.
+Cada piloto requiere:
 
-## 4. Estado de las fases
+- matriz competencia–unidad–evaluación;
+- afirmaciones localizadas;
+- ejercicios ejecutables y tests;
+- datos abiertos o sintéticos con licencia;
+- revisión ciega paralela IA–humano;
+- comparación IA–humano, humano–humano e IA–IA;
+- prueba de claridad del lenguaje;
+- medición de aprendizaje, transferencia y retención;
+- publicación de resultados negativos y limitaciones.
 
-### Fase 1 — Motor editorial base
+## 6. Gate 3 — Escalamiento
 
-**Implementada.** Existen fuentes estructuradas, plantillas, generadores, validadores de enlaces y workflows de control.
+Después de validar un curso completo:
 
-### Fase 2 — Inventario curricular
+- reconstruir los 50 cursos con plantilla detectada;
+- curar las conexiones curriculares faltantes;
+- consolidar workflows repetidos;
+- revalidar fuentes según fecha y riesgo;
+- mantener un registro de cambios científicos;
+- ampliar la validez del revisor por disciplina y riesgo;
+- emitir logros interoperables solo cuando sus criterios estén validados.
 
-**Implementada a nivel de catálogo.** Las 94 asignaturas centrales están registradas. El inventario debe mantenerse sincronizado con el manifiesto editorial y los índices públicos.
+## 7. Indicadores
 
-### Fase 3 — Generación controlada
+### Científicos
 
-**Implementada.** El sitio genera cursos, unidades, índices de área y catálogo de forma determinista.
+- cobertura de localizadores por riesgo;
+- sensibilidad y falsos negativos para errores críticos;
+- no inferioridad con intervalo de confianza;
+- acuerdo humano–humano, IA–humano e IA–IA;
+- estabilidad, abstención y detección fuera de alcance;
+- tiempo de corrección de fuentes retiradas o actualizadas.
 
-### Fase 4 — Migración progresiva
+### Educativos
 
-**Parcial.** Cuarenta asignaturas ya fueron sustituidas por unidades avanzadas; cincuenta y cuatro conservan contenido de respaldo.
+- desempeño diagnóstico, inmediato y diferido;
+- transferencia a problemas nuevos;
+- errores antes y después del feedback;
+- abandono y motivo declarado;
+- diferencias por base inicial y necesidades de accesibilidad.
 
-### Fase 5 — Enriquecimiento pedagógico
+### Producto
 
-**Parcial.** Las 40 asignaturas desarrolladas tienen arquitectura válida, pero solo la mitad declara cobertura `implemented`; ninguna dispone todavía de revisión disciplinar completa.
+- éxito al encontrar, retomar y practicar;
+- errores de sincronización;
+- incidentes de aislamiento de datos;
+- accesibilidad de tareas críticas;
+- logros con evidencia verificable y versión vigente.
 
-### Fase 6 — Investigación y divulgación
+## 8. Regla operativa
 
-**Pendiente de consolidación.** Debe conectarse con las asignaturas sin crear una segunda fuente curricular paralela.
+El siguiente hito no es añadir más volumen. Es completar un curso piloto capaz de responder de forma auditable:
 
-## 5. Trabajo restante
-
-### Desarrollo lectivo
-
-Reemplazar las **324 unidades fallback** correspondientes a **54 asignaturas pendientes** mediante paquetes trazables, decisiones curriculares justificadas y fuentes verificadas.
-
-La mayor concentración se encuentra en Ingeniería Biomédica Aplicada:
-
-- Ingeniería Biomédica Aplicada: 32 asignaturas pendientes;
-- Ciencias Básicas: 9;
-- Gestión, Ética y Comunicación: 9;
-- Biológicas y Médicas: 4.
-
-### Cobertura curricular
-
-Revisar las 20 matrices declaradas como `partial`. La promoción a `implemented` debe responder a cobertura real, no a una modificación nominal del estado.
-
-### Bibliografía
-
-Reducir advertencias por enlaces genéricos, concentración de dominios y repetición excesiva entre unidades. Las advertencias no bloqueantes deben tratarse como backlog editorial, no como evidencia de corrección bibliográfica.
-
-### Revisión disciplinar
-
-Definir revisores por dominio, registrar observaciones, corregir hallazgos críticos y conservar evidencia de la decisión antes de promover cualquier curso a `complete`.
-
-## 6. Reglas de operación
-
-- No modificar `main` directamente para cambios curriculares amplios.
-- No rebajar validadores para hacer pasar contenido insuficiente.
-- No equiparar cantidad de palabras con cobertura disciplinar.
-- No promover estados editoriales sin evidencia humana documentada.
-- Mantener separadas fuente canónica, material generado y páginas públicas.
-- Validar enlaces, estados, prerrequisitos y sincronización antes de fusionar.
-- Conservar GitHub Pages como objetivo de despliegue.
-- Usar una rama y un pull request por bloque curricular o auditoría coherente.
-
-## 7. Prioridad inmediata
-
-1. Mantener explícita la partición de 94 asignaturas en `developed`, `pending` y `complete`.
-2. Desarrollar las 54 asignaturas pendientes mediante bloques priorizados, comenzando por las dependencias más reutilizadas y por las áreas estratégicas de CitoNauta.
-3. Resolver las 20 coberturas parciales sin declarar exhaustividad inexistente.
-4. Reducir deuda bibliográfica y ampliar diversidad de fuentes primarias y oficiales.
-5. Organizar revisión disciplinar documentada de las 40 asignaturas desarrolladas.
-
-La pregunta guía continúa siendo:
-
-> ¿Este cambio aumenta la coherencia curricular, reduce trabajo manual futuro y mejora la trazabilidad de la evidencia sin exagerar el estado académico del contenido?
+1. qué debe aprender la persona;
+2. qué evidencia respalda cada afirmación importante;
+3. qué actividad demuestra dominio;
+4. qué sistema autorizó la versión y para qué alcance estaba validado.

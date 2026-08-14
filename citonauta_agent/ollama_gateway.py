@@ -8,7 +8,13 @@ from ollama import Client
 from pydantic import BaseModel
 
 from .config import ModelConfig
-from .prompts import SYSTEM_PROMPT, generation_prompt, repair_prompt, review_prompt
+from .prompts import (
+    SYSTEM_PROMPT,
+    adversarial_review_prompt,
+    generation_prompt,
+    repair_prompt,
+    review_prompt,
+)
 from .schemas import CourseContent, CourseReview
 
 
@@ -51,7 +57,7 @@ class OllamaGateway:
         if schema is CourseContent:
             return """
 CourseContent = {
-  id:string, area_id:string, status:"complete", description:string, level:string,
+  id:string, area_id:string, status:"ai_draft", description:string, level:string,
   biomedical_connection:string,
   prerequisites:[string], course_competencies:[string], learning_objectives:[string],
   learning_outcomes:[string], modules:[string],
@@ -68,7 +74,13 @@ CourseContent = {
   key_concepts:[string], related_subjects:[string],
   suggested_resources:[{title:string, description:string, weight:string|null, type:string|null, url:string|null}],
   sources_used:[{title:string, url:string, year:integer|null, type:string, authors:[string], abstract_excerpt:string}],
-  generation_metadata:{autonomous_agent:true, content_model:string, review_model:string, generated_at:string, schema_version:string}
+  generation_metadata:{autonomous_agent:true, content_model:string, review_model:string,
+    review_provider:"ollama", review_model_version:string, generated_at:string, schema_version:string,
+    review_state:"not_reviewed", reviewer_validation_id:null, reviewer_auto_merge_authorized:false,
+    review_prompt_id:string,
+    review_rubric_version:string, review_domain:string, review_risk_level:"high",
+    review_claim_types:[string],
+    source_access:"metadata_or_abstract"}
 }
 """.strip()
         if schema is CourseReview:
@@ -288,7 +300,24 @@ CourseReview = {
             CourseReview,
             prompt,
             temperature=0.0,
-            think=False,
+            think=self.config.review_think,
+        )
+        assert isinstance(result, CourseReview)
+        return result
+
+    def adversarial_review_course(
+        self, course: CourseContent, sources: list[dict[str, Any]]
+    ) -> CourseReview:
+        prompt = adversarial_review_prompt(
+            course.model_dump_json(indent=2),
+            json.dumps(sources, ensure_ascii=False, indent=2),
+        )
+        result = self._structured_chat(
+            self.config.review,
+            CourseReview,
+            prompt,
+            temperature=0.0,
+            think=self.config.review_think,
         )
         assert isinstance(result, CourseReview)
         return result

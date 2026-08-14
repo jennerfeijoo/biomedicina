@@ -60,7 +60,7 @@
       draft: "Borrador inicial",
       review: "Revisión pendiente",
       generated: "Revisión experta pendiente",
-      complete: "Revisado por especialista",
+      complete: "Revisión validada para su alcance",
     };
     return labels[status] || "Estado editorial";
   }

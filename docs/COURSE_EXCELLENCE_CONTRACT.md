@@ -10,9 +10,10 @@ Su primer caso de aplicación es la ruta piloto de Bioinstrumentación. El contr
 
 Los estados públicos deben derivarse de una única fuente de verdad:
 
-- `pending`: la asignatura depende total o parcialmente de contenido de respaldo;
-- `developed`: todas las unidades previstas tienen contenido lectivo sustantivo y específico, aunque permanezcan en revisión;
-- `complete`: existe revisión disciplinar documentada y se han resuelto los hallazgos bloqueantes.
+- `material_available`: existen páginas y actividades; no implica especificidad ni validez;
+- `template_detected`: existe texto genérico conocido y se requiere reconstrucción;
+- `review`: el contenido es sustantivo, pero la revisión sigue siendo provisional;
+- `complete`: existe una revisión documentada por un sistema validado para el alcance y se resolvieron los hallazgos bloqueantes.
 
 Una página generada, un JSON válido, un número mínimo de palabras o un workflow verde no permiten promover una asignatura. Catálogo, curso, unidades, mapa, metadatos y rutas deben mostrar el mismo estado.
 
@@ -131,19 +132,19 @@ Los ejemplos ejecutables deben validarse automáticamente o marcarse de forma ex
 
 Las páginas deben ser utilizables mediante teclado, tecnologías asistivas y pantallas estrechas. La publicación debe conservar contenido esencial sin depender de un enriquecimiento silencioso. Los fallos de JSON, notación matemática o recursos externos deben producir un aviso accesible, no únicamente un mensaje de consola.
 
-## 10. Revisión humana
+## 10. Validez del sistema revisor
 
 La promoción a `complete` requiere un registro que identifique:
 
-- revisor y competencia pertinente;
+- sistema revisor y configuración exacta;
 - fecha y versión revisada;
 - alcance de la revisión;
 - hallazgos y resolución;
-- conflictos de interés;
+- evidencia de validez para ese dominio y riesgo;
 - limitaciones no resueltas;
 - decisión editorial.
 
-En cursos biomédicos pueden requerirse revisores distintos para disciplina, estadística, práctica clínica, metrología, regulación, ética, accesibilidad o licencias.
+Una revisión IA puede constituir el gate autónomo si demostró equivalencia o no inferioridad mediante el protocolo preespecificado. Durante la validación se emplean varias personas competentes como comparador y para adjudicar desacuerdos; después participan en vigilancia, incidentes, abstenciones y casos fuera de alcance, no como autorización obligatoria de cada unidad.
 
 ## 11. Gates de publicación
 
@@ -167,7 +168,8 @@ En cursos biomédicos pueden requerirse revisores distintos para disciplina, est
 
 ### Curso completo
 
-- revisión disciplinar documentada;
+- afirmaciones de riesgo medio y alto con fuentes y localizadores;
+- `ai_review_validated` y registro `validated_for_scope` coincidente;
 - hallazgos bloqueantes resueltos;
 - prueba de accesibilidad definida;
 - prueba de autonomía con usuarios;
@@ -175,4 +177,4 @@ En cursos biomédicos pueden requerirse revisores distintos para disciplina, est
 
 ## 12. Regla de escalamiento
 
-El contrato se valida primero en una ruta piloto. Solo después de demostrar consistencia editorial, aprendizaje recuperable, trazabilidad y revisión humana debe replicarse en el resto del catálogo.
+El contrato se valida primero en una ruta piloto. Solo después de demostrar consistencia editorial, aprendizaje recuperable, trazabilidad y validez del sistema revisor debe replicarse en el resto del catálogo.

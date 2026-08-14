@@ -22,14 +22,16 @@
   ];
   const statusOptions = [
     ["", "Todos los estados"],
-    ["developed", "Material lectivo disponible"],
-    ["complete", "Revisión disciplinar completa"],
-    ["pending", "Contenido pendiente"],
+    ["review_pending", "Material en revisión"],
+    ["reconstruction", "Requiere reconstrucción"],
+    ["validated", "Revisión IA validada"],
+    ["content_pending", "Material pendiente"],
   ];
   const statusLabels = {
-    developed: "Material lectivo disponible · revisión disciplinar pendiente",
-    complete: "Contenido revisado por especialista",
-    pending: "Contenido pendiente",
+    review_pending: "Material disponible · revisión científica pendiente",
+    reconstruction: "Material disponible · plantilla detectada",
+    validated: "Revisión IA validada para su alcance",
+    content_pending: "Material lectivo pendiente",
   };
 
   function currentArea() {
@@ -50,16 +52,19 @@
   }
 
   function statusMembership(payload) {
+    const dimensions = payload?.dimensions || {};
     return {
-      developed: new Set(payload?.developed || []),
-      complete: new Set(payload?.complete || []),
+      materialAvailable: new Set(dimensions.material?.available || payload?.developed || []),
+      templateDetected: new Set(dimensions.specificity?.template_detected || []),
+      aiValidated: new Set(dimensions.review?.ai_review_validated || payload?.complete || []),
     };
   }
 
   function statusForSubject(subjectId, membership) {
-    if (membership.complete.has(subjectId)) return "complete";
-    if (membership.developed.has(subjectId)) return "developed";
-    return "pending";
+    if (!membership.materialAvailable.has(subjectId)) return "content_pending";
+    if (membership.aiValidated.has(subjectId)) return "validated";
+    if (membership.templateDetected.has(subjectId)) return "reconstruction";
+    return "review_pending";
   }
 
   function applyStatus(card, membership) {
@@ -245,7 +250,8 @@
       const selectedTrack = track.value;
       const selectedStatus = status.value;
       let visible = 0;
-      let developedVisible = 0;
+      let reconstructionVisible = 0;
+      let validatedVisible = 0;
 
       cards.forEach((card) => {
         const searchable = normalize(card.dataset.search);
@@ -253,20 +259,21 @@
           !queryTokens.length || queryTokens.every((token) => searchable.includes(token));
         const matchesArea = !selectedArea || card.dataset.area === selectedArea;
         const matchesTrack = !selectedTrack || tokens(card.dataset.tracks).includes(selectedTrack);
-        const matchesStatus =
-          !selectedStatus ||
-          card.dataset.status === selectedStatus ||
-          (selectedStatus === "developed" && card.dataset.status === "complete");
+        const matchesStatus = !selectedStatus || card.dataset.status === selectedStatus;
         const show = matchesSearch && matchesArea && matchesTrack && matchesStatus;
         card.hidden = !show;
         if (show) {
           visible += 1;
-          if (card.dataset.status !== "pending") developedVisible += 1;
+          if (card.dataset.status === "reconstruction") reconstructionVisible += 1;
+          if (card.dataset.status === "validated") validatedVisible += 1;
         }
       });
 
       count.textContent = String(visible);
-      if (statusSummary) statusSummary.textContent = `(${developedVisible} con material lectivo disponible).`;
+      if (statusSummary) {
+        statusSummary.textContent =
+          `(${reconstructionVisible} requieren reconstrucción; ${validatedVisible} con revisión IA validada).`;
+      }
       if (empty) empty.hidden = visible !== 0;
 
       const next = new URL(window.location.href);

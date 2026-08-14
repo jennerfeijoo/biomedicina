@@ -65,7 +65,7 @@ def validate_contract() -> None:
         "Modelos mentales y visualización",
         "Reproducibilidad",
         "Accesibilidad y resiliencia",
-        "Revisión humana",
+        "Validez del sistema revisor",
         "Gates de publicación",
     ]
     missing = [heading for heading in required if heading not in text]
@@ -284,9 +284,10 @@ def validate_editorial_truth() -> None:
         raise ValueError("README conserva el inventario histórico de 84 asignaturas")
     for required in (
         "94 asignaturas",
-        f"{len(developed)} desarrolladas",
-        f"{len(pending)} pendientes",
-        "0 con revisión disciplinar completa",
+        "94 con material lectivo",
+        "50 conservan marcadores de plantilla",
+        "0 con registro completo de afirmaciones",
+        "0 con revisión IA validada",
     ):
         if required not in readme:
             raise ValueError(f"README no declara el estado actual: {required}")
@@ -303,7 +304,10 @@ def main() -> int:
     except (OSError, ValueError, TypeError) as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
     print("OK excellence pilot foundation and canonical publication: Bioinstrumentación")
-    print("10 canonical units · course developed in review · human and disciplinary review pending")
+    print(
+        "10 canonical units · material available in review · "
+        "AI reviewer validation pending"
+    )
     return 0
 
 

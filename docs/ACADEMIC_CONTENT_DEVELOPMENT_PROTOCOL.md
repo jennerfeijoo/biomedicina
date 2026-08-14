@@ -166,13 +166,15 @@ La revisión debe comprobar cobertura disciplinar, precisión científica, actua
 
 No se debe inferir madurez académica a partir de existencia de archivos, cumplimiento de un esquema JSON, número de palabras, número de unidades, renderizado correcto o ausencia de errores técnicos.
 
+El sistema revisor puede ser IA y autorizar de forma autónoma cuando exista un registro `validated_for_scope` que coincida con su modelo, versión, prompt, rúbrica, disciplina, riesgo y acceso a fuentes. Hasta entonces su decisión es `ai_review_provisional`. Las personas expertas forman el comparador de la validación y se convocan después para vigilancia, incidentes, abstenciones o casos fuera de alcance.
+
 ### 11. Estados editoriales
 
 - `placeholder`: asignatura catalogada sin programa desarrollado;
 - `draft`: arquitectura o contenido inicial incompleto;
-- `review`: programa estructurado y contenido sustantivo pendiente de revisión disciplinar;
-- `generated`: unidades desarrolladas pendientes de revisión experta y validación final;
-- `complete`: contenido revisado mediante criterios documentados.
+- `review`: programa estructurado con revisión provisional o pendiente;
+- `generated`: unidades desarrolladas pendientes de trazabilidad o validación final;
+- `complete`: contenido revisado por un sistema validado para el alcance y con criterios documentados.
 
 Ningún proceso automático puede promover una asignatura a `complete` únicamente por superar validaciones técnicas.
 

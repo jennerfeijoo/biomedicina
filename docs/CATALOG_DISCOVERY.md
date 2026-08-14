@@ -26,4 +26,4 @@ python scripts/generate_site.py --force
 python scripts/validate_catalog.py
 ```
 
-El validador comprueba la existencia de las 84 asignaturas, la integridad de las rutas, su carácter interdisciplinario y la sincronización de las tarjetas publicadas.
+El validador comprueba las 94 asignaturas actuales, la integridad de las rutas, su carácter interdisciplinario, las dimensiones editoriales y la sincronización de las tarjetas publicadas.

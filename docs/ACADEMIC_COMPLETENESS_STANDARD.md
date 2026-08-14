@@ -4,7 +4,7 @@
 
 La completitud de una asignatura no se determina por el número de palabras, páginas, unidades o semanas. La extensión textual se conserva únicamente como métrica descriptiva y como señal de posibles truncamientos. No existe un máximo de palabras por unidad ni por asignatura.
 
-Una asignatura se considera preparada para revisión académica cuando cubre el conocimiento disciplinar pertinente con profundidad, progresión, práctica, evidencia y evaluación. El estado interno debe permanecer en `review` hasta que una persona experta en la disciplina complete una revisión externa documentada.
+Una asignatura se considera preparada para revisión académica cuando cubre el conocimiento disciplinar pertinente con profundidad, progresión, práctica, evidencia y evaluación. El estado interno debe permanecer en `review` hasta que exista una revisión documentada por un sistema cuya validez se haya demostrado para la disciplina, el riesgo y la configuración aplicables.
 
 ## Capas obligatorias de aprendizaje
 
@@ -128,13 +128,16 @@ Estos controles son necesarios para integridad editorial y técnica, pero no sus
 - Un tema complejo puede dividirse en capítulos, anexos o módulos suplementarios.
 - La claridad tiene prioridad sobre la brevedad y la exhaustividad tiene prioridad sobre una estructura uniforme.
 
-## Revisión externa
+## Revisión validada
 
 La transición de `review` a `complete` requiere:
 
-1. revisión por una persona experta;
+1. revisión independiente con estado `ai_review_validated`;
 2. matriz de cobertura sin dominios nucleares `missing` o `partial`;
-3. verificación de fuentes y afirmaciones;
+3. verificación de fuentes y afirmaciones con localizadores;
 4. revisión de problemas, soluciones y evaluaciones;
 5. comprobación de materiales prácticos;
-6. registro de fecha, alcance, revisor y cambios solicitados.
+6. registro de fecha, alcance, configuración del revisor y cambios solicitados;
+7. manifiesto `validated_for_scope` vigente y coincidente.
+
+La comparación con varias personas competentes es obligatoria para demostrar inicialmente equivalencia o no inferioridad del revisor IA. No constituye una aprobación humana permanente de cada contenido.

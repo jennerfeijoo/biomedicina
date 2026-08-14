@@ -112,26 +112,53 @@ class DetailedUnit(BaseModel):
 
 
 class SourceRecord(BaseModel):
+    source_id: str = ""
     title: str = Field(min_length=4)
     url: HttpUrl
     year: int | None = None
     type: str = "recurso académico"
     authors: list[str] = Field(default_factory=list)
     abstract_excerpt: str = ""
+    verification_status: Literal[
+        "unverified",
+        "verified_metadata",
+        "verified_directly",
+        "recommended_future_review",
+        "superseded",
+        "excluded",
+    ] = "unverified"
+    locators: list[dict[str, Any]] = Field(default_factory=list)
+    license: str | None = None
+    checksum_sha256: str | None = None
 
 
 class GenerationMetadata(BaseModel):
     autonomous_agent: bool = True
     content_model: str
     review_model: str
+    review_provider: str = "ollama"
+    review_model_version: str = "unfrozen"
     generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    schema_version: str = "1.0"
+    schema_version: str = "2.0"
+    review_state: Literal[
+        "not_reviewed", "ai_review_provisional", "ai_review_validated"
+    ] = "not_reviewed"
+    reviewer_validation_id: str | None = None
+    reviewer_auto_merge_authorized: bool = False
+    review_prompt_id: str = "citonauta-course-review-v2"
+    review_rubric_version: str = "course-review-rubric-v2"
+    review_domain: str = "general_biomedicine"
+    review_risk_level: Literal["low", "medium", "high"] = "high"
+    review_claim_types: list[str] = Field(default_factory=list)
+    source_access: Literal[
+        "metadata_or_abstract", "localized_excerpt", "localized_full_text"
+    ] = "metadata_or_abstract"
 
 
 class CourseContent(BaseModel):
     id: str
     area_id: str
-    status: Literal["complete"] = "complete"
+    status: Literal["ai_draft", "review", "complete"] = "ai_draft"
     description: str = Field(min_length=120)
     level: str = Field(min_length=10)
     biomedical_connection: str = Field(min_length=180)
@@ -200,6 +227,16 @@ class CourseContent(BaseModel):
         for marker in FORBIDDEN_PLACEHOLDERS:
             if marker in serialized:
                 raise ValueError(f"El contenido conserva un marcador incompleto: {marker}")
+        if self.status == "complete":
+            if self.generation_metadata.review_state != "ai_review_validated":
+                raise ValueError("complete requiere ai_review_validated")
+            if not self.generation_metadata.reviewer_validation_id:
+                raise ValueError("complete requiere reviewer_validation_id")
+        if self.status == "review" and self.generation_metadata.review_state not in {
+            "ai_review_provisional",
+            "ai_review_validated",
+        }:
+            raise ValueError("review requiere una decisión de revisión documentada")
         return self
 
 

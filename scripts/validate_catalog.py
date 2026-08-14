@@ -52,6 +52,9 @@ def validate_status_manifest(
 
     payload = load_json(STATUSES_PATH)
     known = set(core_subjects)
+    if payload.get("schema_version") != "2.0":
+        errors.append("catalog_statuses.json: schema_version debe ser 2.0")
+
     memberships = {
         key: status_ids(payload, key, known, errors)
         for key in ("developed", "complete", "pending")
@@ -84,12 +87,65 @@ def validate_status_manifest(
             + ", ".join(extra_partition)
         )
 
+    dimensions = payload.get("dimensions")
+    if not isinstance(dimensions, dict):
+        errors.append("catalog_statuses.json: falta dimensions")
+        dimensions = {}
+    material = dimensions.get("material") if isinstance(dimensions, dict) else {}
+    specificity = dimensions.get("specificity") if isinstance(dimensions, dict) else {}
+    traceability = dimensions.get("source_traceability") if isinstance(dimensions, dict) else {}
+    review = dimensions.get("review") if isinstance(dimensions, dict) else {}
+    education = dimensions.get("educational_evidence") if isinstance(dimensions, dict) else {}
+    for label, value in (
+        ("material", material),
+        ("specificity", specificity),
+        ("source_traceability", traceability),
+        ("review", review),
+        ("educational_evidence", education),
+    ):
+        if not isinstance(value, dict):
+            errors.append(f"catalog_statuses.json: dimensions.{label} debe ser un objeto")
+
+    material_available = status_ids(material or {}, "available", known, errors)
+    material_missing = status_ids(material or {}, "missing", known, errors)
+    screened = status_ids(
+        specificity or {}, "screened_no_known_template_marker", known, errors
+    )
+    template_detected = status_ids(specificity or {}, "template_detected", known, errors)
+    traced = status_ids(
+        traceability or {}, "claim_traceability_present", known, errors
+    )
+    ai_validated = status_ids(review or {}, "ai_review_validated", known, errors)
+    pilot_evaluated = status_ids(education or {}, "pilot_evaluated", known, errors)
+
+    if material_available != developed or material_missing != pending:
+        errors.append("catalog_statuses.json: la dimensión material no coincide con el inventario")
+    if screened.intersection(template_detected):
+        errors.append("catalog_statuses.json: los estados de especificidad se superponen")
+    if screened.union(template_detected) != material_available:
+        errors.append("catalog_statuses.json: la especificidad no cubre todo el material disponible")
+    for label, values in (
+        ("claim_traceability_present", traced),
+        ("ai_review_validated", ai_validated),
+        ("pilot_evaluated", pilot_evaluated),
+    ):
+        if not values.issubset(material_available):
+            errors.append(f"catalog_statuses.json: {label} debe ser subconjunto del material")
+    if complete != ai_validated:
+        errors.append("catalog_statuses.json: complete debe coincidir con ai_review_validated")
+
     counts = payload.get("counts")
     if not isinstance(counts, dict):
         errors.append("catalog_statuses.json: falta el objeto counts")
     else:
         expected_counts = {
             "catalog_courses": len(known),
+            "material_available": len(material_available),
+            "screened_no_known_template_marker": len(screened),
+            "template_detected": len(template_detected),
+            "claim_traceability_present": len(traced),
+            "ai_review_validated": len(ai_validated),
+            "pilot_evaluated": len(pilot_evaluated),
             "developed": len(developed),
             "complete": len(complete),
             "pending": len(pending),
@@ -100,7 +156,15 @@ def validate_status_manifest(
                     f"catalog_statuses.json: counts.{key}={counts.get(key)!r}; se esperaba {expected}"
                 )
 
-    return memberships
+    return {
+        **memberships,
+        "material_available": material_available,
+        "screened_no_known_template_marker": screened,
+        "template_detected": template_detected,
+        "claim_traceability_present": traced,
+        "ai_review_validated": ai_validated,
+        "pilot_evaluated": pilot_evaluated,
+    }
 
 
 def main() -> int:
@@ -232,9 +296,13 @@ def main() -> int:
     print(f"- {len(core_subjects)} asignaturas centrales")
     print(f"- {len(provisional_subjects)} asignaturas provisionales")
     print(f"- {len(subjects)} asignaturas catalogadas")
-    print(f"- {len(statuses['developed'])} con material lectivo desarrollado")
-    print(f"- {len(statuses['pending'])} dependientes de unidades de respaldo")
-    print(f"- {len(statuses['complete'])} con revisión disciplinar documentada")
+    print(f"- {len(statuses['material_available'])} con material disponible")
+    print(f"- {len(statuses['template_detected'])} con plantilla conocida detectada")
+    print(
+        f"- {len(statuses['screened_no_known_template_marker'])} sin marcador de plantilla conocido"
+    )
+    print(f"- {len(statuses['claim_traceability_present'])} con afirmaciones localizadas")
+    print(f"- {len(statuses['ai_review_validated'])} con revisión IA validada para su alcance")
     print(f"- {len(areas)} áreas")
     print(f"- {len(tracks)} rutas interdisciplinarias")
     print("- búsqueda, filtros, estados y relaciones sincronizados con sus fuentes curriculares")
