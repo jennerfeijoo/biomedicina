@@ -21,6 +21,7 @@ def registry() -> dict:
         "claims": [
             {
                 "claim_id": "BIO-U01-C001",
+                "unit": 1,
                 "text": "La afirmación sometida a trazabilidad.",
                 "claim_type": "method",
                 "risk": "high",
@@ -45,11 +46,46 @@ class ScientificTraceabilityTests(unittest.TestCase):
         errors = MODULE.validate_registry(payload)
         self.assertTrue(any("localizador exacto" in error for error in errors))
 
+    def test_claim_without_positive_unit_is_rejected(self) -> None:
+        payload = registry()
+        payload["claims"][0].pop("unit")
+        errors = MODULE.validate_registry(payload)
+        self.assertTrue(any("unit debe ser un entero positivo" in error for error in errors))
+
     def test_validated_claim_requires_validation_record(self) -> None:
         payload = registry()
         payload["claims"][0]["review_state"] = "ai_review_validated"
         errors = MODULE.validate_registry(payload)
         self.assertTrue(any("reviewer_validation_id" in error for error in errors))
+
+    def test_unknown_canonical_source_is_rejected(self) -> None:
+        errors = MODULE.validate_registry(
+            registry(),
+            source_records={"OTHER": {"verification_status": "verified_directly"}},
+        )
+        self.assertTrue(any("no existe en el registro canónico" in error for error in errors))
+
+    def test_claim_must_exist_in_declared_unit(self) -> None:
+        errors = MODULE.validate_registry(
+            registry(),
+            content_strings={1: ["Otro contenido"]},
+        )
+        self.assertTrue(any("no aparece en la unidad canónica" in error for error in errors))
+
+    def test_claim_matching_canonical_source_and_content_is_valid(self) -> None:
+        errors = MODULE.validate_registry(
+            registry(),
+            source_records={"SRC-001": {"verification_status": "verified_directly"}},
+            content_strings={1: ["La afirmación sometida a trazabilidad."]},
+        )
+        self.assertEqual(errors, [])
+
+    def test_direct_claim_cannot_use_metadata_only_source(self) -> None:
+        errors = MODULE.validate_registry(
+            registry(),
+            source_records={"SRC-001": {"verification_status": "verified_metadata"}},
+        )
+        self.assertTrue(any("no está verificada directamente" in error for error in errors))
 
 
 if __name__ == "__main__":

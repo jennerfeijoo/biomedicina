@@ -38,7 +38,9 @@ def traced_subjects() -> list[str]:
         except json.JSONDecodeError:
             continue
         claims = payload.get("claims") if isinstance(payload, dict) else None
-        if claims and not validate_scientific_traceability.validate_registry(payload):
+        if claims and not validate_scientific_traceability.validate_repository_registry(
+            payload, path.relative_to(ROOT).as_posix()
+        ):
             subjects.append(str(payload.get("subject_id")))
     return sorted(set(subjects))
 
