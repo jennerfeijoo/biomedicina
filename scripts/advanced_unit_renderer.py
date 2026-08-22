@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 ADVANCED_UNIT_ROOT = Path("data/generated_units")
+CANONICAL_COURSE_ROOT = Path("data/courses")
 ADVANCED_MARKER = "<!-- advanced-unit-renderer:v1 -->"
 
 
@@ -58,13 +59,130 @@ def as_biomedical_connection_list(value: Any) -> list[str]:
     return output
 
 
+def load_json_object(path: Path) -> dict[str, Any]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: la raíz debe ser un objeto JSON")
+    return data
+
+
+def canonical_course_directory(root: Path, subject_id: str) -> Path:
+    return root / CANONICAL_COURSE_ROOT / subject_id
+
+
+def canonical_records(course_dir: Path, filename: str, field: str) -> dict[str, dict[str, Any]]:
+    path = course_dir / filename
+    if not path.exists():
+        return {}
+    payload = load_json_object(path)
+    records = payload.get(field)
+    if not isinstance(records, list):
+        return {}
+    return {
+        str(item.get("id") or "").strip(): item
+        for item in records
+        if isinstance(item, dict) and str(item.get("id") or "").strip()
+    }
+
+
+def canonical_unit_to_advanced(root: Path, unit: dict[str, Any]) -> dict[str, Any]:
+    """Project canonical topic blocks and registries into the legacy renderer API."""
+    subject_id = str(unit.get("course_id") or "").strip()
+    course_dir = canonical_course_directory(root, subject_id)
+    theory_sections: list[dict[str, Any]] = []
+    for topic in as_dict_list(unit.get("topics")):
+        paragraphs: list[str] = []
+        key_points: list[str] = []
+        for subtopic in as_dict_list(topic.get("subtopics")):
+            title = str(subtopic.get("title") or "").strip()
+            if title:
+                key_points.append(title.rstrip(".") + ".")
+            for block in as_dict_list(subtopic.get("blocks")):
+                if block.get("type") == "paragraph" and str(block.get("text") or "").strip():
+                    paragraphs.append(str(block["text"]).strip())
+        equations = []
+        for block in as_dict_list(topic.get("blocks")):
+            if block.get("type") != "equation":
+                continue
+            equation = {"latex": str(block.get("latex") or "").strip()}
+            if block.get("label"):
+                equation["label"] = block["label"]
+            if isinstance(block.get("variables"), dict):
+                equation["variables"] = block["variables"]
+            equations.append(equation)
+        theory_sections.append(
+            {
+                "heading": str(topic.get("title") or "Tema").strip(),
+                "paragraphs": paragraphs,
+                "equations": equations,
+                "key_points": key_points,
+            }
+        )
+
+    assessment_path = course_dir / str(unit.get("assessment_file") or "")
+    assessment = load_json_object(assessment_path) if assessment_path.exists() else {}
+    self_assessment = []
+    for item in as_dict_list(assessment.get("items")):
+        answer_key = item.get("answer_key") if isinstance(item.get("answer_key"), dict) else {}
+        misconceptions = as_text_list(answer_key.get("common_misconceptions"))
+        self_assessment.append(
+            {
+                "question": str(item.get("prompt") or "").strip(),
+                "answer": str(answer_key.get("expected_answer") or "").strip(),
+                "explanation": str(answer_key.get("explanation") or "").strip(),
+                "common_error": misconceptions[0] if misconceptions else "",
+            }
+        )
+
+    glossary_records = canonical_records(course_dir, "glossary.json", "entries")
+    source_records = canonical_records(course_dir, "sources.json", "sources")
+    glossary = [glossary_records[item] for item in unit.get("glossary_entry_ids", []) if item in glossary_records]
+    sources = [source_records[item] for item in unit.get("source_ids", []) if item in source_records]
+    learning_outcomes = [
+        str(item.get("statement") or "").strip()
+        for item in as_dict_list(unit.get("learning_outcomes"))
+        if str(item.get("statement") or "").strip()
+    ]
+    return {
+        "schema_version": "canonical-1.0",
+        "subject_id": subject_id,
+        "area_id": str(unit.get("area_id") or ""),
+        "unit": int(unit.get("order", 0)),
+        "slug": str(unit.get("slug") or ""),
+        "title": str(unit.get("title") or ""),
+        "status": str((unit.get("status") or {}).get("content") or "in_review")
+        if isinstance(unit.get("status"), dict)
+        else str(unit.get("status") or "in_review"),
+        "purpose": str(unit.get("purpose") or ""),
+        "learning_objectives": learning_outcomes,
+        "theory_sections": theory_sections,
+        "worked_examples": as_dict_list(unit.get("examples")),
+        "guided_activities": as_dict_list(unit.get("activities")),
+        "common_errors": unit.get("common_errors", []),
+        "self_assessment": self_assessment,
+        "glossary": glossary,
+        "biomedical_connections": unit.get("biomedical_connections", []),
+        "sources": sources,
+        "editorial_notice": str(unit.get("editorial_notice") or ""),
+    }
+
+
 def load_advanced_unit(root: Path, subject_id: str, unit_number: int) -> dict[str, Any] | None:
+    canonical_path = (
+        canonical_course_directory(root, subject_id) / "units" / f"unit-{unit_number:02d}.json"
+    )
+    if canonical_path.exists():
+        data = load_json_object(canonical_path)
+        if str(data.get("course_id") or "").strip() != subject_id:
+            raise ValueError(f"{canonical_path.relative_to(root)}: course_id no coincide")
+        if int(data.get("order", 0)) != unit_number:
+            raise ValueError(f"{canonical_path.relative_to(root)}: orden de unidad no coincide")
+        return canonical_unit_to_advanced(root, data)
+
     path = root / ADVANCED_UNIT_ROOT / subject_id / f"unit-{unit_number:02d}.json"
     if not path.exists():
         return None
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError(f"{path.relative_to(root)}: la raíz debe ser un objeto JSON")
+    data = load_json_object(path)
     if str(data.get("subject_id", "")).strip() != subject_id:
         raise ValueError(f"{path.relative_to(root)}: subject_id no coincide")
     if int(data.get("unit", 0)) != unit_number:
@@ -376,14 +494,14 @@ def advanced_replacements(unit: dict[str, Any]) -> dict[str, str]:
 
 def advanced_unit_summaries(root: Path, subject_id: str) -> list[dict[str, Any]]:
     """Build course-outline summaries from validated advanced unit files."""
-    directory = root / ADVANCED_UNIT_ROOT / subject_id
+    canonical_directory = canonical_course_directory(root, subject_id) / "units"
+    directory = canonical_directory if canonical_directory.exists() else root / ADVANCED_UNIT_ROOT / subject_id
     if not directory.exists():
         return []
     summaries: list[dict[str, Any]] = []
     for path in sorted(directory.glob("unit-*.json")):
-        data = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(data, dict):
-            raise ValueError(f"{path.relative_to(root)}: la raíz debe ser un objeto JSON")
+        raw = load_json_object(path)
+        data = canonical_unit_to_advanced(root, raw) if directory == canonical_directory else raw
         unit_number = int(data.get("unit", 0))
         if unit_number < 1 or str(data.get("subject_id", "")).strip() != subject_id:
             raise ValueError(f"{path.relative_to(root)}: identidad de unidad inconsistente")
@@ -406,6 +524,95 @@ def advanced_unit_summaries(root: Path, subject_id: str) -> list[dict[str, Any]]
             "biomedical_applications": as_text_list(data.get("biomedical_connections")),
         })
     return summaries
+
+
+def canonical_course_overlay(root: Path, subject_id: str) -> dict[str, Any] | None:
+    """Return a generator-compatible course view from the canonical corpus."""
+    course_dir = canonical_course_directory(root, subject_id)
+    course_path = course_dir / "course.json"
+    if not course_path.exists():
+        return None
+    course = load_json_object(course_path)
+    if str(course.get("id") or "").strip() != subject_id:
+        raise ValueError(f"{course_path.relative_to(root)}: id no coincide")
+    summaries = advanced_unit_summaries(root, subject_id)
+    glossary = canonical_records(course_dir, "glossary.json", "entries")
+    sources = canonical_records(course_dir, "sources.json", "sources")
+    course_assessment_path = course_dir / "assessments" / "course-assessment.json"
+    course_assessment = load_json_object(course_assessment_path) if course_assessment_path.exists() else {}
+
+    practical_activities: list[dict[str, str]] = []
+    for unit_file in course.get("unit_files", []):
+        unit_path = course_dir / str(unit_file)
+        if not unit_path.exists():
+            continue
+        unit = load_json_object(unit_path)
+        for activity in as_dict_list(unit.get("activities")):
+            practical_activities.append(
+                {
+                    "title": str(activity.get("title") or "Actividad").strip(),
+                    "description": str(activity.get("purpose") or "").strip(),
+                    "type": "actividad canónica",
+                }
+            )
+
+    assessment = []
+    for component in as_dict_list(course_assessment.get("assessment_plan")):
+        weight = component.get("weight_percent")
+        assessment.append(
+            {
+                "title": str(component.get("component") or component.get("title") or "Evaluación").strip(),
+                "description": str(component.get("description") or "").strip(),
+                "weight": f"{weight}%" if isinstance(weight, (int, float)) else str(weight or ""),
+            }
+        )
+
+    prerequisite_statements = [
+        str(item.get("statement") or "").strip()
+        for item in as_dict_list(course.get("prerequisites"))
+        if str(item.get("statement") or "").strip()
+    ]
+    competency_statements = [
+        str(item.get("statement") or "").strip()
+        for item in as_dict_list(course.get("competencies"))
+        if str(item.get("statement") or "").strip()
+    ]
+    outcome_statements = [
+        str(item.get("statement") or "").strip()
+        for item in as_dict_list(course.get("learning_outcomes"))
+        if str(item.get("statement") or "").strip()
+    ]
+    core_source_ids = as_text_list(course.get("core_source_ids"))
+    suggested_resources = [
+        {
+            "title": str(source.get("title") or source_id),
+            "organization": str(source.get("organization") or ""),
+            "url": str(source.get("url") or ""),
+            "type": str(source.get("type") or ""),
+            "description": str(source.get("curricular_function") or source.get("description") or ""),
+        }
+        for source_id in core_source_ids
+        if (source := sources.get(source_id)) is not None
+        if str(source.get("url") or "").startswith(("https://", "http://"))
+    ]
+    return {
+        "title": str(course.get("title") or subject_id),
+        "description": str(course.get("purpose") or ""),
+        "level": str(course.get("academic_level") or ""),
+        "prerequisites": prerequisite_statements,
+        "course_competencies": competency_statements,
+        "learning_objectives": outcome_statements,
+        "learning_outcomes": outcome_statements,
+        "modules": [
+            f"{item['title']}: {'; '.join(topic.rstrip('.') for topic in item.get('topics', []))}."
+            for item in summaries
+        ],
+        "detailed_units": summaries,
+        "practical_activities": practical_activities,
+        "assessment": assessment,
+        "key_concepts": [str(entry.get("term") or "") for entry in glossary.values() if entry.get("term")][:24],
+        "suggested_resources": suggested_resources,
+    }
 
 
 def merge_advanced_unit_summaries(root: Path, course: dict[str, Any]) -> dict[str, Any]:
@@ -435,4 +642,3 @@ def merge_advanced_unit_summaries(root: Path, course: dict[str, Any]) -> dict[st
             current[number] = summary
     merged_course["detailed_units"] = [current[number] for number in sorted(current)]
     return merged_course
-

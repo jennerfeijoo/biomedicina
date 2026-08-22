@@ -25,6 +25,7 @@
 python scripts/validate_curriculum.py
 python scripts/validate_catalog.py
 python scripts/audit_generic_content.py
+python scripts/validate_academic_courses.py
 python scripts/validate_scientific_traceability.py
 python scripts/validate_reviewer_validations.py
 python -m unittest discover -s tests
