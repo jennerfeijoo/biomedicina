@@ -10,6 +10,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DIRECTORY = ROOT / "data" / "claim_registry"
 SOURCE_DIRECTORY = ROOT / "data" / "source_registry"
+CANONICAL_COURSE_DIRECTORY = ROOT / "data" / "courses"
 ALLOWED_RISKS = {"low", "medium", "high"}
 ALLOWED_TYPES = {
     "definition",
@@ -50,9 +51,13 @@ def collect_strings(value: Any) -> list[str]:
 def load_source_records(subject_id: str) -> tuple[dict[str, dict[str, Any]], list[str]]:
     records: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
-    paths = [SOURCE_DIRECTORY / f"{subject_id}.json"]
-    paths.extend(sorted(SOURCE_DIRECTORY.glob(f"{subject_id}-*.json")))
-    paths = [path for path in paths if path.exists()]
+    canonical_path = CANONICAL_COURSE_DIRECTORY / subject_id / "sources.json"
+    if canonical_path.exists():
+        paths = [canonical_path]
+    else:
+        paths = [SOURCE_DIRECTORY / f"{subject_id}.json"]
+        paths.extend(sorted(SOURCE_DIRECTORY.glob(f"{subject_id}-*.json")))
+        paths = [path for path in paths if path.exists()]
     if not paths:
         return {}, [f"{subject_id}: falta registro canónico de fuentes"]
 
@@ -62,8 +67,9 @@ def load_source_records(subject_id: str) -> tuple[dict[str, dict[str, Any]], lis
         except json.JSONDecodeError as exc:
             errors.append(f"{path.relative_to(ROOT)}: JSON inválido: {exc}")
             continue
-        if not isinstance(payload, dict) or payload.get("subject_id") != subject_id:
-            errors.append(f"{path.relative_to(ROOT)}: subject_id inconsistente")
+        payload_subject_id = payload.get("course_id") or payload.get("subject_id") if isinstance(payload, dict) else None
+        if not isinstance(payload, dict) or payload_subject_id != subject_id:
+            errors.append(f"{path.relative_to(ROOT)}: course_id/subject_id inconsistente")
             continue
         sources = payload.get("sources")
         if not isinstance(sources, list):
@@ -91,9 +97,14 @@ def load_source_records(subject_id: str) -> tuple[dict[str, dict[str, Any]], lis
 
 def load_unit_strings(subject_id: str) -> dict[int, list[str]]:
     by_unit: dict[int, list[str]] = {}
+    canonical = CANONICAL_COURSE_DIRECTORY / subject_id / "units"
     directories = (
-        ROOT / "data" / "generated_units" / subject_id,
-        ROOT / "data" / "course_redevelopment" / subject_id / "units",
+        (canonical,)
+        if canonical.exists()
+        else (
+            ROOT / "data" / "generated_units" / subject_id,
+            ROOT / "data" / "course_redevelopment" / subject_id / "units",
+        )
     )
     for directory in directories:
         if not directory.exists():
@@ -106,7 +117,7 @@ def load_unit_strings(subject_id: str) -> dict[int, list[str]]:
             if not isinstance(payload, dict):
                 continue
             try:
-                unit = int(payload.get("unit"))
+                unit = int(payload.get("order") or payload.get("unit"))
             except (TypeError, ValueError):
                 continue
             by_unit.setdefault(unit, []).extend(collect_strings(payload))
