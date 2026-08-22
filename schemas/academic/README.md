@@ -13,5 +13,6 @@ La versión 1.0 separa:
 
 Los identificadores son estables y no dependen del título visible. Los estados
 son multidimensionales para no confundir publicación técnica con validación
-académica. Ejecute `python scripts/validate_academic_courses.py` antes de publicar.
-
+académica. Ejecute `python scripts/validate_academic_courses.py` durante la
+edición, `--strict-content` antes de revisión experta de contenido y
+`--strict-academic` antes de la publicación académica completa.

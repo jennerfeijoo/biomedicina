@@ -81,13 +81,17 @@ documentada puede promover una dimensión; publicar HTML no modifica ninguna.
 
 ```bash
 python scripts/validate_academic_courses.py
+python scripts/validate_academic_courses.py --strict-content
 python scripts/validate_academic_courses.py --strict-academic
 ```
 
 El primer comando exige integridad estructural y referencial: archivos,
 identidades, jerarquía, identificadores, mapeo de resultados, pesos, fuentes,
 afirmaciones y ausencia de marcadores genéricos conocidos. El modo estricto
-también falla mientras existan brechas explícitas, por ejemplo:
+de contenido falla mientras existan brechas en teoría, fuentes, actividades o
+evaluaciones, pero permite diferir multimedia. El modo académico completo exige
+además producir y documentar los recursos multimedia planificados. Entre las
+brechas explícitas se incluyen:
 
 - una actividad sin producto o duración estimada;
 - una pregunta sin dificultad, nivel cognitivo, explicación o feedback;
@@ -113,8 +117,9 @@ no se vuelve a ejecutar la migración para regenerar contenido ya corregido.
 
 ## Criterio para revisión externa
 
-Una asignatura puede presentarse a especialistas cuando el modo
-`--strict-academic` no informa brechas y, además, la revisión interna confirma:
+Una asignatura puede presentarse a especialistas de contenido cuando el modo
+`--strict-content` no informa brechas. La publicación académica completa exige
+además que `--strict-academic` pase sin brechas y que la revisión interna confirme:
 
 1. alcance, nivel, audiencia y prerrequisitos coherentes;
 2. cobertura completa y progresiva de todos los resultados;
@@ -126,4 +131,3 @@ Una asignatura puede presentarse a especialistas cuando el modo
 8. ecuaciones con variables, unidades y supuestos cuando corresponda;
 9. límites clínicos, regulatorios, éticos y de generalización declarados;
 10. paquete de revisión generado desde el mismo corpus canónico.
-

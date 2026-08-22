@@ -37,13 +37,15 @@ class Report:
     course_id: str
     errors: list[str] = field(default_factory=list)
     gaps: list[str] = field(default_factory=list)
+    multimedia_gaps: list[str] = field(default_factory=list)
     counts: Counter[str] = field(default_factory=Counter)
 
     def error(self, location: str, message: str) -> None:
         self.errors.append(f"{self.course_id}:{location}: {message}")
 
-    def gap(self, location: str, message: str) -> None:
-        self.gaps.append(f"{self.course_id}:{location}: {message}")
+    def gap(self, location: str, message: str, *, category: str = "content") -> None:
+        target = self.multimedia_gaps if category == "multimedia" else self.gaps
+        target.append(f"{self.course_id}:{location}: {message}")
 
 
 def load_json(path: Path, report: Report, location: str) -> dict[str, Any]:
@@ -511,7 +513,11 @@ def validate_course_directory(course_dir: Path) -> Report:
         if unit_id not in all_unit_ids:
             report.error(f"media.json.items[{media_id}].unit_id", f"unidad inexistente {unit_id}")
         if item.get("status") == "planned":
-            report.gap(f"media.json.items[{media_id}]", "recurso multimedia planificado, aún no producido")
+            report.gap(
+                f"media.json.items[{media_id}]",
+                "recurso multimedia planificado, aún no producido",
+                category="multimedia",
+            )
 
     assessment_files = text_list(course.get("assessment_files"), report, "course.json.assessment_files", minimum=1)
     referenced_unit_assessments = {str(unit.get("assessment_file") or "") for _, unit in unit_preloads}
@@ -537,6 +543,11 @@ def validate_course_directory(course_dir: Path) -> Report:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Valida el corpus académico canónico.")
     parser.add_argument("--course", action="append", default=[], help="Valida solo este course_id; puede repetirse.")
+    parser.add_argument(
+        "--strict-content",
+        action="store_true",
+        help="Exige cerrar brechas de contenido, fuentes, actividades y evaluación; permite diferir multimedia.",
+    )
     parser.add_argument("--strict-academic", action="store_true", help="Convierte brechas académicas explícitas en errores.")
     args = parser.parse_args()
 
@@ -555,14 +566,23 @@ def main() -> int:
     reports = [validate_course_directory(path) for path in directories]
     errors = [error for report in reports for error in report.errors]
     gaps = [gap for report in reports for gap in report.gaps]
+    multimedia_gaps = [gap for report in reports for gap in report.multimedia_gaps]
+    if args.strict_content:
+        errors.extend("BRECHA DE CONTENIDO " + gap for gap in gaps)
     if args.strict_academic:
         errors.extend("BRECHA " + gap for gap in gaps)
+        errors.extend("BRECHA MULTIMEDIA " + gap for gap in multimedia_gaps)
 
     for report in reports:
         counts = " · ".join(f"{key}={value}" for key, value in sorted(report.counts.items()))
-        print(f"{report.course_id}: {counts} · brechas_académicas={len(report.gaps)}")
-    if gaps and not args.strict_academic:
-        print(f"Brechas académicas explícitas: {len(gaps)} (use --strict-academic para exigir su cierre)")
+        print(
+            f"{report.course_id}: {counts} · brechas_contenido={len(report.gaps)} · "
+            f"brechas_multimedia={len(report.multimedia_gaps)}"
+        )
+    if gaps and not (args.strict_content or args.strict_academic):
+        print(f"Brechas de contenido explícitas: {len(gaps)} (use --strict-content para exigir su cierre)")
+    if multimedia_gaps and not args.strict_academic:
+        print(f"Brechas multimedia diferibles: {len(multimedia_gaps)} (use --strict-academic para exigir su cierre)")
     if errors:
         print("\n".join(errors))
         print(f"Validación canónica fallida: {len(errors)} error(es)")
