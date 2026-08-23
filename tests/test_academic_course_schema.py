@@ -50,6 +50,48 @@ class AcademicCourseSchemaTests(unittest.TestCase):
             for item in assessment["items"]:
                 self.assertTrue(set(item["linked_learning_outcome_ids"]).issubset(outcomes))
 
+    def test_course_assessment_covers_all_outcomes_and_has_a_complete_rubric(self) -> None:
+        course_dir = ROOT / "data" / "courses" / "bioestadistica"
+        course = json.loads((course_dir / "course.json").read_text(encoding="utf-8"))
+        assessment = json.loads(
+            (course_dir / "assessments" / "course-assessment.json").read_text(encoding="utf-8")
+        )
+        outcomes = {item["id"] for item in course["learning_outcomes"]}
+        sources = {
+            item["id"]
+            for item in json.loads((course_dir / "sources.json").read_text(encoding="utf-8"))["sources"]
+        }
+
+        self.assertEqual(assessment["status"], "curated_pending_expert_review")
+        self.assertEqual(sum(item["weight_percent"] for item in assessment["assessment_plan"]), 100)
+        self.assertEqual(
+            {outcome for item in assessment["assessment_plan"] for outcome in item["linked_learning_outcome_ids"]},
+            outcomes,
+        )
+        self.assertEqual(sum(item["weight_percent"] for item in assessment["midterm_blueprint"]), 100)
+        self.assertEqual(
+            {outcome for item in assessment["midterm_blueprint"] for outcome in item["linked_learning_outcome_ids"]},
+            {"BIOEST-LO01", "BIOEST-LO02", "BIOEST-LO03", "BIOEST-LO04"},
+        )
+
+        capstone = assessment["capstone"]
+        rubric = capstone["rubric"]
+        rubric_ids = {item["id"] for item in rubric}
+        self.assertEqual(sum(item["weight_percent"] for item in rubric), 100)
+        self.assertEqual(
+            {outcome for item in capstone["phases"] for outcome in item["linked_learning_outcome_ids"]},
+            outcomes,
+        )
+        self.assertEqual(
+            {outcome for item in capstone["deliverables"] for outcome in item["linked_learning_outcome_ids"]},
+            outcomes,
+        )
+        for criterion in rubric:
+            self.assertTrue({"excellent", "competent", "developing", "insufficient"}.issubset(criterion))
+            self.assertTrue(set(criterion["linked_learning_outcome_ids"]).issubset(outcomes))
+        self.assertTrue(set(capstone["completion_rule"]["essential_criterion_ids"]).issubset(rubric_ids))
+        self.assertTrue(set(capstone["source_ids"]).issubset(sources))
+
     def test_claims_reference_canonical_units_and_sources(self) -> None:
         course_dir = ROOT / "data" / "courses" / "bioestadistica"
         claims = json.loads((course_dir / "claims.json").read_text(encoding="utf-8"))["claims"]
