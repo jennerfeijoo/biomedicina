@@ -22,6 +22,7 @@ from typing import Any
 
 from advanced_unit_renderer import (
     advanced_replacements,
+    canonical_course_overlay,
     load_advanced_unit,
     merge_advanced_unit_summaries,
 )
@@ -930,10 +931,11 @@ def render_key_value_list(items: list[dict[str, Any]], empty_message: str) -> st
         else:
             title_html = title
         meta = f'<span class="course-tag">{extra}</span>' if extra else ""
+        description_html = f"<p>{description}</p>" if description else ""
         rendered_items.append(
             "        <li>"
             f"<strong>{title_html}</strong>{meta}"
-            f"<p>{description}</p>"
+            f"{description_html}"
             "</li>"
         )
     return '<ul class="rich-list">\n' + "\n".join(rendered_items) + "\n      </ul>"
@@ -1326,48 +1328,51 @@ def merge_subject_overlay(area: dict[str, Any], subject: dict[str, Any]) -> dict
     """Combina metadatos centrales con contenido editorial opcional por asignatura."""
     merged = synthesize_course(area, subject)
     overlay_path = subject_overlay_path(area["id"], subject["id"])
-    if not overlay_path.exists():
-        merged = merge_advanced_unit_summaries(ROOT, merged)
-        merged["status"] = catalog_editorial_status(subject["id"])
-        merged["status_label"] = STATUS_LABELS.get(merged["status"], merged["status"])
-        return merged
+    if overlay_path.exists():
+        overlay = load_json(overlay_path)
+        if overlay.get("id") != subject["id"]:
+            raise ValueError(f"Overlay con id inconsistente en {overlay_path.relative_to(ROOT)}")
+        if overlay.get("area_id") != area["id"]:
+            raise ValueError(f"Overlay con area_id inconsistente en {overlay_path.relative_to(ROOT)}")
 
-    overlay = load_json(overlay_path)
-    if overlay.get("id") != subject["id"]:
-        raise ValueError(f"Overlay con id inconsistente en {overlay_path.relative_to(ROOT)}")
-    if overlay.get("area_id") != area["id"]:
-        raise ValueError(f"Overlay con area_id inconsistente en {overlay_path.relative_to(ROOT)}")
+        list_minimums = {
+            "prerequisites": 3,
+            "course_competencies": 4,
+            "learning_objectives": 4,
+            "learning_outcomes": 6,
+            "modules": 6,
+            "detailed_units": 6,
+            "practical_activities": 4,
+            "assessment": 3,
+            "key_concepts": 10,
+            "related_subjects": 4,
+            "suggested_resources": 5,
+        }
+        for key, value in overlay.items():
+            if key in {"id", "area_id"} or value in (None, "", []):
+                continue
+            minimum = list_minimums.get(key)
+            if minimum is not None and isinstance(value, list) and len(value) < minimum:
+                combined = list(value)
+                seen = {json.dumps(item, ensure_ascii=False, sort_keys=True) for item in combined}
+                for item in merged.get(key, []):
+                    marker = json.dumps(item, ensure_ascii=False, sort_keys=True)
+                    if marker not in seen:
+                        combined.append(item)
+                        seen.add(marker)
+                    if len(combined) >= minimum:
+                        break
+                merged[key] = combined
+            else:
+                merged[key] = value
 
-    list_minimums = {
-        "prerequisites": 3,
-        "course_competencies": 4,
-        "learning_objectives": 4,
-        "learning_outcomes": 6,
-        "modules": 6,
-        "detailed_units": 6,
-        "practical_activities": 4,
-        "assessment": 3,
-        "key_concepts": 10,
-        "related_subjects": 4,
-        "suggested_resources": 5,
-    }
-    for key, value in overlay.items():
-        if key in {"id", "area_id"} or value in (None, "", []):
-            continue
-        minimum = list_minimums.get(key)
-        if minimum is not None and isinstance(value, list) and len(value) < minimum:
-            combined = list(value)
-            seen = {json.dumps(item, ensure_ascii=False, sort_keys=True) for item in combined}
-            for item in merged.get(key, []):
-                marker = json.dumps(item, ensure_ascii=False, sort_keys=True)
-                if marker not in seen:
-                    combined.append(item)
-                    seen.add(marker)
-                if len(combined) >= minimum:
-                    break
-            merged[key] = combined
-        else:
-            merged[key] = value
+    canonical = canonical_course_overlay(ROOT, subject["id"])
+    if canonical is not None:
+        # For migrated courses the canonical corpus is the authoring source.
+        # Legacy overlays remain readable only as migration compatibility data.
+        for key, value in canonical.items():
+            if value not in (None, "", []):
+                merged[key] = value
     merged = merge_advanced_unit_summaries(ROOT, merged)
     merged["status"] = catalog_editorial_status(subject["id"])
     merged["status_label"] = STATUS_LABELS.get(merged["status"], merged["status"])

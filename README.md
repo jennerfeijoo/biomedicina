@@ -20,6 +20,7 @@ Una página navegable o un workflow verde demuestra integridad técnica, no vali
 
 El contenido se genera de forma reproducible a partir de:
 
+- `data/courses/`, fuente académica canónica para las asignaturas migradas;
 - `data/citonauta_curriculum.json`;
 - `data/course_outlines.json`;
 - `data/catalog_statuses.json`;
@@ -28,7 +29,10 @@ El contenido se genera de forma reproducible a partir de:
 - `data/generated_units/`;
 - paquetes especializados bajo `data/course_redevelopment/`.
 
-El HTML público es una salida generada y no debe mantenerse como una segunda fuente académica independiente.
+Cuando existe `data/courses/<course_id>/course.json`, esa carpeta tiene prioridad
+sobre los archivos heredados. El HTML público y `data/generated_*` son salidas o
+espejos de compatibilidad y no deben mantenerse como fuentes académicas
+independientes. Consulte [el modelo académico canónico](docs/academic-content-model.md).
 
 ## Modelo de aprendizaje
 
@@ -44,6 +48,7 @@ python scripts/publish_courses.py --all
 python scripts/validate_curriculum.py
 python scripts/validate_course_plan_packages.py
 python scripts/validate_pilot_foundations.py
+python scripts/validate_academic_courses.py
 python scripts/validate_generated_units.py
 python scripts/audit_course_readiness.py --strict
 python scripts/audit_curriculum_completeness.py
