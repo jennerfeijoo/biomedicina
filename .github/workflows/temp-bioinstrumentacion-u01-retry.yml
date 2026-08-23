@@ -1,0 +1,130 @@
+name: Curate Bioinstrumentation Unit 01 retry
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    if: github.head_ref == 'codex/bioinstrumentacion-unit-01-academic-quality'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Apply original curator and normalize literal claims
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import textwrap
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/temp-bioinstrumentacion-u01-curation.yml').read_text(encoding='utf-8')
+          marker = "          python - <<'PY'\n"
+          start = workflow.index(marker) + len(marker)
+          end = workflow.index("\n          PY\n", start)
+          embedded = textwrap.dedent(workflow[start:end])
+          exec(compile(embedded, '<embedded-u01-curator>', 'exec'), {})
+
+          claims_path = Path('data/courses/bioinstrumentacion/claims.json')
+          claims_payload = json.loads(claims_path.read_text(encoding='utf-8'))
+          exact_specs = [
+              ('El mensurando es la cantidad que se pretende medir.', 'definition', 'low', 'bipm-vim-measurand', 'VIM3 entry 2.3', 'direct'),
+              ('El nombre del fenómeno o del analito no especifica por sí solo el mensurando.', 'interpretation_boundary', 'medium', 'bipm-vim-measurand', 'VIM3 entry 2.3 and notes', 'direct'),
+              ('La indicación no tiene que ser de la misma clase de cantidad que el mensurando.', 'definition', 'low', 'bipm-vim-indication', 'VIM3 entry 4.1 and notes', 'direct'),
+              ('El resultado es más amplio: reúne uno o varios valores atribuidos al mensurando y la información relevante necesaria para interpretarlos.', 'definition', 'low', 'bipm-vim-measurement-result', 'VIM3 entry 2.9 and notes', 'direct'),
+              ('Una cadena de medición es una serie de elementos del sistema que constituye una única ruta de señal desde un sensor hasta un elemento de salida.', 'definition', 'low', 'bipm-vim-measuring-chain', 'VIM3 entry 3.10', 'direct'),
+              ('La cadena sigue una ruta de señal; el modelo explica relaciones entre cantidades.', 'interpretation_boundary', 'medium', 'bipm-vim-measurement-model', 'VIM3 entries 2.48 and 3.10', 'indirect'),
+              ('El modelo de medición es la relación matemática entre todas las cantidades conocidas que intervienen en una medición.', 'definition', 'low', 'bipm-vim-measurement-model', 'VIM3 entry 2.48', 'direct'),
+              ('Una corrección compensa un efecto sistemático reconocido, pero no borra el conocimiento imperfecto de ese efecto.', 'methodological_requirement', 'medium', 'jcgm-gum-6-2020', 'Clauses on model effects, corrections and uncertainty contributions', 'direct'),
+              ('La incertidumbre de medición es un parámetro no negativo que caracteriza la dispersión de los valores atribuidos al mensurando a partir de la información utilizada.', 'definition', 'low', 'bipm-vim-uncertainty', 'VIM3 entry 2.26 and notes', 'direct'),
+              ('La calibración establece, bajo condiciones especificadas, una relación entre valores y sus incertidumbres proporcionados por patrones y las indicaciones correspondientes; después permite usar esa relación para obtener resultados a partir de indicaciones.', 'definition', 'medium', 'bipm-vim-calibration', 'VIM3 entry 2.39 and notes', 'direct'),
+              ('Un certificado documenta una calibración realizada en un momento, intervalo y configuración determinados.', 'interpretation_boundary', 'medium', 'nist-tn-2156', 'Sections 3.2 and 5.1', 'direct'),
+              ('No garantiza que toda medición futura sea correcta, que el sistema permanezca estable ni que el modelo sea apropiado.', 'interpretation_boundary', 'medium', 'nist-tn-2156', 'Sections 3.2 and 5.1', 'direct'),
+              ('La trazabilidad metrológica es una propiedad de un resultado de medición.', 'definition', 'medium', 'bipm-vim-traceability', 'VIM3 entry 2.41 and notes', 'direct'),
+              ('Relaciona ese resultado con una referencia mediante una cadena documentada e ininterrumpida de calibraciones, cada una con contribución a la incertidumbre.', 'methodological_requirement', 'medium', 'bipm-vim-traceability', 'VIM3 entry 2.41', 'direct'),
+              ('La trazabilidad tampoco elimina equivocaciones, errores de identificación o uso fuera de rango.', 'interpretation_boundary', 'high', 'bipm-vim-traceability', 'VIM3 entry 2.41 note 5', 'direct'),
+              ('La aptitud para el uso responde a una pregunta distinta de la trazabilidad.', 'interpretation_boundary', 'high', 'nist-tn-2156', 'Sections on traceability and fitness for purpose', 'indirect'),
+              ('Cumplir una incertidumbre objetivo puede ser necesario, pero nunca basta por sí solo para declarar aptitud.', 'decision_principle', 'high', 'jcgm-gum-1-2023', 'Clauses 2.1–2.6 and 3.1–3.5', 'indirect'),
+              ('Una señal ECG técnicamente bien documentada no autoriza diagnóstico sin un proceso validado para ese uso.', 'interpretation_boundary', 'high', 'physionet-mit-bih-arrhythmia', 'Data Description and unit educational boundary', 'indirect'),
+          ]
+          claims = [c for c in claims_payload.get('claims', []) if c.get('unit_id') != 'BIOINST-U01']
+          for idx, (text, ctype, risk, source_id, locator, support) in enumerate(exact_specs, start=1):
+              cid = f'BIOINST-U01-C{idx:03d}'
+              claims.append({
+                  'claim_id': cid,
+                  'unit': 1,
+                  'text': text,
+                  'claim_type': ctype,
+                  'risk': risk,
+                  'context': 'Aplicado a una cadena educativa de bioinstrumentación; la conclusión concreta depende del mensurando, el modelo, las referencias, las condiciones y el uso previsto.',
+                  'source_id': source_id,
+                  'locator': {'section': locator},
+                  'support': support,
+                  'source_verification_status': 'verified_directly',
+                  'review_state': 'ai_review_provisional',
+                  'reviewer_validation_id': None,
+                  'reviewed_at': '2026-08-23',
+                  'id': cid,
+                  'unit_id': 'BIOINST-U01',
+              })
+          claims_payload['claims'] = claims
+          claims_path.write_text(json.dumps(claims_payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
+      - name: Regenerate public site
+        run: python scripts/generate_site.py --force --with-units
+
+      - name: Validate academic courses
+        run: python scripts/validate_academic_courses.py
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests
+
+      - name: Validate Bioinstrumentation migration
+        run: |
+          python scripts/preflight_bioinstrumentation_atomic_migration.py
+          python scripts/validate_bioinstrumentation_public_canonical.py
+
+      - name: Validate generated units
+        run: python scripts/validate_generated_units.py
+
+      - name: Validate previews
+        run: python scripts/check_generated_preview.py --all
+
+      - name: Audit public alignment
+        run: python scripts/audit_public_unit_alignment.py --strict
+
+      - name: Validate links
+        run: python scripts/validate_links.py
+
+      - name: Remove temporary curators
+        run: rm -f .github/workflows/temp-bioinstrumentacion-u01-curation.yml .github/workflows/temp-bioinstrumentacion-u01-retry.yml
+
+      - name: Commit validated result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Curate canonical Bioinstrumentation Unit 1"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
