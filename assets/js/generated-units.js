@@ -382,6 +382,233 @@
     }
   }
 
+  // pedagogy-guided-activities:v1
+  function normalizedTaskVerb(task) {
+    return String(task || "")
+      .trim()
+      .toLocaleLowerCase("es")
+      .split(/\s+/)[0]
+      .replace(/[^a-záéíóúüñ]/g, "");
+  }
+
+  function taskScaffold(task) {
+    const verb = normalizedTaskVerb(task);
+    const guides = {
+      elegir: [
+        "Enumera primero las opciones plausibles y define con qué criterio las compararás antes de escoger.",
+        "La respuesta debe nombrar la elección y justificar por qué es adecuada frente a al menos una alternativa."
+      ],
+      seleccionar: [
+        "Define criterios de selección antes de mirar el resultado que te gustaría obtener.",
+        "La respuesta debe dejar visible qué criterio se usó, qué opción se descartó y por qué."
+      ],
+      identificar: [
+        "Recorre el proceso en orden y señala cada elemento que cumple la condición pedida; evita limitarte a una lista sin justificarla.",
+        "La respuesta debe mostrar qué identificaste y la razón concreta por la que pertenece a esa categoría."
+      ],
+      detectar: [
+        "Busca señales observables del problema y vincula cada una con el mecanismo que la produciría.",
+        "La respuesta debe distinguir evidencia del problema de una simple sospecha."
+      ],
+      comparar: [
+        "Construye una comparación por dimensiones: supuesto, ventaja, limitación, coste o complejidad y situación de uso.",
+        "La respuesta debe terminar con una conclusión condicionada: qué opción preferirías y bajo qué circunstancias."
+      ],
+      diferenciar: [
+        "Define primero el criterio que separa los conceptos y después aplica ese criterio a cada uno.",
+        "La respuesta debe incluir al menos una diferencia que cambie una decisión práctica."
+      ],
+      explicar: [
+        "Organiza la explicación como una cadena: condición inicial → mecanismo → consecuencia → límite o excepción.",
+        "La respuesta debe explicar el porqué, no solo repetir una definición."
+      ],
+      interpretar: [
+        "Describe primero qué muestra el resultado, después qué significa en contexto y finalmente qué no permite concluir.",
+        "La respuesta debe separar observación, interpretación y limitación."
+      ],
+      justificar: [
+        "Formula la decisión, explicita el criterio y aporta la evidencia o razonamiento que conecta ambos.",
+        "La respuesta debe permitir que otra persona audite la decisión."
+      ],
+      diseñar: [
+        "Especifica objetivo, entradas, secuencia de decisiones, salida esperada y controles antes de añadir detalles opcionales.",
+        "La respuesta debe ser suficientemente concreta para que otra persona pueda ejecutar el diseño."
+      ],
+      planificar: [
+        "Ordena las acciones, dependencias, criterios de avance y puntos de comprobación.",
+        "La respuesta debe indicar qué ocurre primero, qué depende de qué y cómo se sabrá si el plan funciona."
+      ],
+      proponer: [
+        "Define el problema que resuelve la propuesta, los supuestos que necesita y la evidencia que permitiría aceptarla o rechazarla.",
+        "La respuesta debe incluir al menos una limitación o condición de uso."
+      ],
+      corregir: [
+        "Señala el error, explica qué sesgo o fallo introduce, reordena el procedimiento y añade una comprobación final.",
+        "La respuesta debe mostrar tanto el procedimiento corregido como la razón de la corrección."
+      ],
+      revisar: [
+        "Contrasta el trabajo con criterios explícitos uno por uno y registra cualquier incumplimiento antes de proponer cambios.",
+        "La respuesta debe distinguir hallazgos, consecuencias y acciones correctivas."
+      ],
+      auditar: [
+        "Usa una lista de criterios predefinidos, conserva evidencia para cada hallazgo y separa ausencia de evidencia de evidencia de ausencia.",
+        "La respuesta debe ser trazable: criterio, evidencia, conclusión y acción."
+      ],
+      redactar: [
+        "Convierte la idea en una regla explícita con condición, decisión y excepción; evita frases que dependan de interpretación implícita.",
+        "La respuesta debe poder aplicarse de la misma forma por dos personas distintas."
+      ],
+      formular: [
+        "Expresa con precisión población u objeto, variable o mecanismo relevante, condición y resultado esperado.",
+        "La respuesta debe ser específica, comprobable y sin términos ambiguos innecesarios."
+      ],
+      crear: [
+        "Empieza por una estructura mínima con campos obligatorios y completa cada campo con información verificable.",
+        "El producto final debe ser reutilizable por otra persona sin depender de explicaciones verbales adicionales."
+      ],
+      construir: [
+        "Divide el producto en componentes, define la función de cada uno y comprueba las interfaces entre componentes.",
+        "La respuesta debe incluir el producto y una forma concreta de verificar que cumple su función."
+      ],
+      calcular: [
+        "Escribe datos, fórmula o algoritmo, sustitución, unidades y resultado; después interpreta el valor obtenido.",
+        "La respuesta debe permitir comprobar el cálculo y detectar errores de unidades o supuestos."
+      ],
+      estimar: [
+        "Declara el estimando, los datos utilizados, el método, la incertidumbre y los supuestos que sostienen la estimación.",
+        "La respuesta debe incluir una interpretación compatible con la incertidumbre, no solo un valor puntual."
+      ]
+    };
+    return guides[verb] || [
+      "Divide la tarea en decisión, justificación, evidencia y comprobación. Responde primero lo esencial y añade detalle solo donde cambie la conclusión.",
+      "La respuesta debe permitir que otra persona entienda qué hiciste, por qué lo hiciste y cómo comprobarlo."
+    ];
+  }
+
+  function activityHeadingList(activity, fragment) {
+    const headings = [...activity.querySelectorAll(":scope > h4")];
+    const heading = headings.find((item) => item.textContent.toLocaleLowerCase("es").includes(fragment));
+    const list = heading?.nextElementSibling;
+    return { heading, list: list?.matches("ul, ol") ? list : null };
+  }
+
+  function addTaskGuidance(list) {
+    if (!list) return;
+    list.classList.add("pedagogy-task-list");
+    [...list.children].forEach((item) => {
+      if (item.querySelector(":scope > .activity-task-help")) return;
+      const task = [...item.childNodes]
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent)
+        .join(" ")
+        .trim() || item.firstChild?.textContent?.trim() || item.textContent.trim();
+      const [method, evidence] = taskScaffold(task);
+      const details = element("details", "activity-task-help");
+      details.appendChild(element("summary", "", "Cómo abordar esta tarea"));
+      const methodParagraph = element("p");
+      methodParagraph.appendChild(element("strong", "", "Método: "));
+      methodParagraph.appendChild(document.createTextNode(method));
+      details.appendChild(methodParagraph);
+      const evidenceParagraph = element("p");
+      evidenceParagraph.appendChild(element("strong", "", "Tu respuesta está lista cuando: "));
+      evidenceParagraph.appendChild(document.createTextNode(evidence));
+      details.appendChild(evidenceParagraph);
+      item.appendChild(details);
+    });
+  }
+
+  function showActivityGuide(activity, activityData) {
+    const existing = document.querySelector("#activity-pedagogy-dialog");
+    if (existing) existing.remove();
+    const dialog = element("dialog", "pedagogy-dialog");
+    dialog.id = "activity-pedagogy-dialog";
+    const card = element("div", "pedagogy-dialog-card");
+    const title = activity.querySelector(":scope > h3")?.textContent || activityData?.title || "Actividad guiada";
+    card.appendChild(element("p", "eyebrow", "Guía de trabajo"));
+    card.appendChild(element("h3", "", title));
+    if (activityData?.purpose) card.appendChild(element("p", "pedagogy-dialog-purpose", activityData.purpose));
+    const ordered = element("ol", "pedagogy-dialog-steps");
+    [
+      "Lee el propósito y define qué producto final demostraría que lo alcanzaste.",
+      "Sigue el procedimiento en orden; registra decisiones y supuestos en lugar de confiar en la memoria.",
+      "Resuelve cada tarea justificando tus decisiones. Usa «Cómo abordar esta tarea» si no sabes cómo empezar.",
+      "Construye los entregables como evidencia del trabajo, no como una lista de respuestas aisladas.",
+      "Antes de terminar, revisa uno por uno los criterios de comprobación y corrige cualquier punto que no puedas demostrar."
+    ].forEach((step) => ordered.appendChild(element("li", "", step)));
+    card.appendChild(ordered);
+    if (activityData?.estimated_duration_minutes) {
+      card.appendChild(element("p", "pedagogy-dialog-time", `Tiempo orientativo: ${activityData.estimated_duration_minutes} min. Puedes dividirlo en varias sesiones.`));
+    }
+    const close = element("button", "pedagogy-dialog-close", "Cerrar");
+    close.type = "button";
+    close.addEventListener("click", () => dialog.close());
+    card.appendChild(close);
+    dialog.appendChild(card);
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    document.body.appendChild(dialog);
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+  }
+
+  function enhanceAdvancedActivities(root, canonicalUnit = null) {
+    const activities = [...root.querySelectorAll(".advanced-guided-activity")];
+    const records = Array.isArray(canonicalUnit?.activities) ? canonicalUnit.activities : [];
+    activities.forEach((activity, index) => {
+      if (activity.dataset.pedagogyEnhanced === "true") return;
+      activity.dataset.pedagogyEnhanced = "true";
+      const data = records[index] || null;
+      const title = activity.querySelector(":scope > h3");
+
+      const brief = element("div", "activity-learning-brief");
+      brief.appendChild(element("strong", "", "Qué vas a conseguir"));
+      brief.appendChild(element(
+        "p",
+        "",
+        data?.purpose || "Aplicar los conceptos de la unidad en un producto verificable, explicando las decisiones y comprobando el resultado."
+      ));
+      const meta = element("div", "activity-meta-row");
+      if (data?.estimated_duration_minutes) meta.appendChild(element("span", "activity-meta-chip", `${data.estimated_duration_minutes} min aprox.`));
+      const taskCount = Array.isArray(data?.tasks) ? data.tasks.length : activityHeadingList(activity, "problemas").list?.children.length;
+      const deliverableCount = Array.isArray(data?.deliverables) ? data.deliverables.length : activityHeadingList(activity, "entregables").list?.children.length;
+      if (taskCount) meta.appendChild(element("span", "activity-meta-chip", `${taskCount} tareas`));
+      if (deliverableCount) meta.appendChild(element("span", "activity-meta-chip", `${deliverableCount} entregables`));
+      if (meta.childElementCount) brief.appendChild(meta);
+      const help = element("button", "pedagogy-help-button", "¿Cómo trabajo esta actividad?");
+      help.type = "button";
+      help.addEventListener("click", () => showActivityGuide(activity, data));
+      brief.appendChild(help);
+      if (title) title.insertAdjacentElement("afterend", brief);
+      else activity.prepend(brief);
+
+      const procedure = activityHeadingList(activity, "procedimiento");
+      if (procedure.heading) procedure.heading.textContent = "Ruta de trabajo paso a paso";
+      if (procedure.list) procedure.list.classList.add("pedagogy-step-list");
+
+      const tasks = activityHeadingList(activity, "problemas");
+      if (tasks.heading) tasks.heading.textContent = "Tareas: demuestra que comprendiste";
+      addTaskGuidance(tasks.list);
+
+      const deliverables = activityHeadingList(activity, "entregables");
+      if (deliverables.heading) deliverables.heading.textContent = "Qué debes entregar";
+      if (deliverables.list) deliverables.list.classList.add("activity-deliverables");
+
+      const criteria = activityHeadingList(activity, "criterios");
+      if (criteria.heading) criteria.heading.textContent = "Auto-comprobación antes de terminar";
+      if (criteria.list) criteria.list.classList.add("activity-self-check");
+    });
+  }
+
+  async function fetchCanonicalUnit(rootUrl, subjectId, unitNumber) {
+    const file = `unit-${String(unitNumber).padStart(2, "0")}.json`;
+    const url = new URL(`data/courses/${subjectId}/units/${file}`, rootUrl);
+    const response = await fetch(url, { cache: "no-cache" });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`No se pudo cargar ${url.pathname}: ${response.status}`);
+    return response.json();
+  }
+
   async function fetchUnit(rootUrl, subjectId, unitNumber) {
     const file = `unit-${String(unitNumber).padStart(2, "0")}.json`;
     const url = new URL(`data/generated_units/${subjectId}/${file}`, rootUrl);
@@ -501,12 +728,27 @@
       const subjectId = currentSubjectId();
       const unitNumber = Number(unitPage.dataset.unitNumber);
       if (!subjectId || !Number.isInteger(unitNumber) || unitNumber < 1) return;
+      ensureGeneratedUnitStyles(rootUrl);
+
+      // Las páginas canónicas ya contienen la versión académica más reciente.
+      // No deben ser reemplazadas por data/generated_units, que existe solo como compatibilidad.
+      const hasCanonicalMarkup = Boolean(
+        unitPage.querySelector(".advanced-theory-section, .advanced-guided-activity")
+      );
+      if (hasCanonicalMarkup) {
+        const canonicalUnit = await fetchCanonicalUnit(rootUrl, subjectId, unitNumber).catch((error) => {
+          console.error(error);
+          return null;
+        });
+        enhanceAdvancedActivities(unitPage, canonicalUnit);
+        return;
+      }
+
       const unit = await fetchUnit(rootUrl, subjectId, unitNumber).catch((error) => {
         console.error(error);
         return null;
       });
       if (!unit) return;
-      ensureGeneratedUnitStyles(rootUrl);
       renderUnitPage(unitPage, unit);
       await typesetMath(unitPage);
       return;
