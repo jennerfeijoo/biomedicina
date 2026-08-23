@@ -110,7 +110,7 @@
         <p>El valor incremental debe medirse sobre el referente y en varias dimensiones. Una mejora pequeña de discriminación puede acompañarse de peor calibración, mayor latencia o necesidad de datos no disponibles. Un baseline simple también ayuda a detectar atajos: si el centro o una variable administrativa explican casi todo el desempeño, el modelo puede estar aprendiendo diferencias de proceso. La comparación debe incluir incertidumbre y análisis de casos donde ambos modelos discrepan.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[LogLoss = -mean(y*log(p) + (1-y)*log(1-p))\]</div>
+            <div class="math-display">\[\operatorname{LogLoss} = -\frac{1}{n}\sum_{i=1}^{n}\left[y_i\log(\hat p_i)+(1-y_i)\log(1-\hat p_i)\right]\]</div>
             <figcaption>Pérdida probabilística que penaliza predicciones seguras e incorrectas; no sustituye evaluación de calibración y utilidad.</figcaption>
           </figure>
         </div>
@@ -125,13 +125,13 @@
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
         <h3>Pipelines, preprocesamiento e ingeniería de predictores</h3>
-        <p>El pipeline debe representar exactamente las transformaciones que se aplicarán a un nuevo paciente. Incluye selección de columnas, unidades, limpieza, imputación, codificación, escalado, reducción de dimensionalidad y modelo. Cada transformación que aprende parámetros se ajusta solo con entrenamiento dentro de cada resample. Aplicar selección de variables o normalización antes de validación permite que la información de evaluación influya en el desarrollo y produce optimismo.</p>
+        <p>El pipeline debe representar exactamente las transformaciones que se aplicarán a un nuevo paciente. Incluye selección de columnas, unidades, limpieza, imputación, codificación, escalado, reducción de dimensionalidad y modelo. Cada transformación que aprende parámetros se ajusta solo con datos de entrenamiento dentro de cada remuestreo. Aplicar selección de variables o normalización antes de validación permite que la información de evaluación influya en el desarrollo y produce optimismo.</p>
         <p>La ingeniería de predictores debe respetar tiempo cero. Agregados como máximo, tendencia o número de mediciones requieren una ventana histórica definida. Una tendencia calculada con observaciones posteriores produce fuga. Variables categóricas con niveles raros necesitan reglas para categorías nuevas. En señales y series temporales deben fijarse frecuencia, filtrado, longitud, alineación y manejo de segmentos ausentes. Las variables derivadas se documentan con fórmula, unidad y versión.</p>
         <p>La selección de predictores no debe basarse únicamente en significación univariada. Una variable débil aislada puede ser útil en combinación, y una variable fuerte puede duplicar información o introducir inestabilidad. El conocimiento clínico ayuda a evitar predictores imposibles de obtener o proxies problemáticos. La reducción de dimensionalidad y la selección supervisada se consideran parte del modelo y deben reestimarse dentro del entrenamiento.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[Pipeline(X) = Model(Transform_k(...Transform_2(Transform_1(X))))\]</div>
-            <figcaption>La predicción depende de una secuencia versionada de transformaciones y del modelo final.</figcaption>
+            <div class="math-display">\[\hat p(x)=f_{\theta}\!\left(T_k(\cdots T_2(T_1(x))\cdots)\right)\]</div>
+            <figcaption>La predicción depende de transformaciones T1,…,Tk y de un modelo fθ versionados; todo parámetro de Tj y θ se estima solo con datos de entrenamiento.</figcaption>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
@@ -146,12 +146,12 @@
         <p class="eyebrow">Desarrollo 3</p>
         <h3>Familias de modelos, regularización y complejidad</h3>
         <p>La regresión logística proporciona probabilidades mediante una relación paramétrica entre predictores y log-odds. Puede incorporar términos no lineales e interacciones, y con penalización funciona como baseline competitivo en datos tabulares. L1 favorece coeficientes exactamente cero; L2 reduce magnitudes; elastic net combina ambas. Estas penalizaciones controlan complejidad, pero sus parámetros deben seleccionarse dentro del desarrollo y los predictores deben escalarse cuando la penalización depende de magnitudes.</p>
-        <p>Los árboles dividen el espacio mediante reglas y capturan interacciones sin especificarlas manualmente. Un árbol individual es interpretable pero inestable. Random forests reducen varianza promediando árboles, mientras boosting construye secuencias que corrigen errores. Estos métodos pueden manejar no linealidad y mezclas de variables, aunque requieren controlar profundidad, tasa de aprendizaje, número de árboles y tratamiento de faltantes. La importancia de variables puede estar sesgada por cardinalidad y correlación.</p>
-        <p>Las redes neuronales son útiles cuando existen representaciones complejas, grandes volúmenes o datos no estructurados. En cohortes tabulares pequeñas no son automáticamente superiores. El número de parámetros, la regularización, el preentrenamiento y la calidad de datos condicionan su desempeño. La elección de familia debe considerar tamaño muestral efectivo, estructura del dato, latencia, necesidad de actualización y posibilidad de validación. La complejidad solo se justifica si mejora evidencia relevante y no solo el ajuste interno.</p>
+        <p>Los árboles dividen el espacio mediante reglas y capturan interacciones sin especificarlas manualmente. Un árbol individual puede ser legible, pero suele ser sensible a perturbaciones de los datos. Random forests combinan árboles construidos mediante aleatorización y agregan sus predicciones. Gradient boosting construye una secuencia aditiva que mejora la función ajustada siguiendo el gradiente negativo de una pérdida especificada. Estos métodos pueden manejar no linealidad y mezclas de variables, aunque requieren controlar profundidad, tasa de aprendizaje, número de árboles y tratamiento de faltantes. La importancia de variables puede estar sesgada por cardinalidad y correlación.</p>
+        <p>Las redes neuronales son útiles cuando existen representaciones complejas, grandes volúmenes o datos no estructurados. En cohortes tabulares pequeñas, las redes neuronales no son automáticamente superiores. El número de parámetros, la regularización, el preentrenamiento y la calidad de datos condicionan su desempeño. La elección de familia debe considerar tamaño muestral efectivo, estructura del dato, latencia, necesidad de actualización y posibilidad de validación. La complejidad solo se justifica si mejora evidencia relevante y no solo el ajuste interno.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[Objective = Loss(y, f(X)) + lambda * Penalty(parameters)\]</div>
-            <figcaption>La regularización añade una penalización controlada por lambda para limitar complejidad y mejorar estabilidad.</figcaption>
+            <div class="math-display">\[\widehat{\beta}=\arg\min_{\beta}\left\{L(y,X\beta)+\lambda\left[\alpha\lVert\beta\rVert_1+\frac{1-\alpha}{2}\lVert\beta\rVert_2^2\right]\right\}\]</div>
+            <figcaption>Forma general de elastic net: λ controla la intensidad de contracción y α la mezcla entre penalizaciones L1 y L2; las convenciones de α pueden variar entre implementaciones.</figcaption>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
@@ -165,18 +165,18 @@
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 4</p>
         <h3>Desbalance, tuning, reproducibilidad y bloqueo</h3>
-        <p>En eventos infrecuentes, el desbalance afecta aprendizaje y evaluación. Ponderar la pérdida, sobremuestrear o submuestrear puede ayudar, pero estas operaciones ocurren solo en entrenamiento. La prevalencia de la prueba debe representar el objetivo de evaluación; modificarla altera valores predictivos y calibración. Técnicas sintéticas pueden crear ejemplos poco plausibles y deben validarse según estructura biomédica, no solo por mejora de una métrica.</p>
+        <p>En eventos infrecuentes, el número de eventos condiciona la precisión y la complejidad que puede sostenerse. El desbalance de eventos no constituye por sí mismo una razón para reequilibrar las clases. En modelos logísticos de riesgo clínico, el sobremuestreo, el submuestreo o SMOTE pueden deteriorar la calibración de probabilidades sin mejorar la discriminación. Si otro algoritmo u objetivo requiere ponderación o remuestreo, la operación se restringe al entrenamiento, se documenta el cambio de objetivo y se comprueba la calibración. La evaluación conserva una distribución compatible con la población objetivo; alterar su prevalencia cambia valores predictivos y la interpretación de las probabilidades.</p>
         <p>El tuning compara configuraciones dentro de un resampling interno. Probar muchas combinaciones y reportar la mejor puntuación en los mismos folds introduce optimismo. La búsqueda debe definir espacio, presupuesto, métrica y regla de selección. También puede preferirse el modelo más simple dentro de una tolerancia del mejor resultado. Las semillas ayudan a reproducir procesos estocásticos, pero no garantizan estabilidad; conviene repetir ajustes y analizar variación.</p>
         <p>El modelo final se bloquea después de seleccionar pipeline, hiperparámetros, umbral y reglas de exclusión. Deben conservarse versiones de datos, entorno, dependencias, código, artefactos y metadatos. Un archivo serializado sin procedencia no es un modelo clínicamente auditable. La ficha del modelo documenta uso previsto, población, entradas, salidas, desempeño, límites y condiciones no soportadas. Cualquier cambio posterior crea una versión nueva que requiere evaluación proporcional.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[Best configuration = argmin_h ValidationLoss(h | training only)\]</div>
+            <div class="math-display">\[\widehat h=\arg\min_{h\in\mathcal{H}}\widehat L_{\mathrm{CV,dev}}(h)\]</div>
             <figcaption>Los hiperparámetros h se seleccionan usando solo información interna del conjunto de desarrollo.</figcaption>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>El balance de entrenamiento no debe confundirse con prevalencia de evaluación.</li>
+        <li>La rareza del evento no justifica automáticamente reequilibrar las clases.</li>
         <li>El tuning pertenece al desarrollo y necesita evaluación separada.</li>
         <li>Semillas reproducen ejecuciones, no garantizan generalización.</li>
         <li>El modelo bloqueado incluye pipeline, umbral y artefactos versionados.</li>
@@ -228,10 +228,11 @@
         <h3>Comparación reproducible de modelos</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Definir baseline y modelo candidato.</li>
-        <li>Construir pipeline sin fuga.</li>
-        <li>Seleccionar hiperparámetros internamente.</li>
-        <li>Bloquear y documentar el modelo.</li>
+        <li>Elegir una predicción clínica definida en las unidades previas y especificar práctica habitual, baseline estadístico y al menos dos modelos candidatos con la misma información disponible.</li>
+        <li>Diseñar un pipeline ejecutable que incluya selección de columnas, temporalidad, imputación, codificación, escalado, selección o reducción y estimador sin usar información reservada.</li>
+        <li>Preespecificar función de pérdida, métricas de selección, espacio de hiperparámetros, presupuesto computacional, remuestreo interno y regla de desempate por simplicidad.</li>
+        <li>Evaluar el tratamiento del evento infrecuente sin alterar la distribución de validación y justificar cualquier ponderación o remuestreo mediante calibración y plausibilidad clínica.</li>
+        <li>Bloquear la versión elegida y producir código, manifiesto, artefactos y ficha del modelo suficientes para repetir la predicción en datos nuevos.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
@@ -244,12 +245,26 @@
         <li>Redactar una regla para elegir el modelo más simple.</li>
         <li>Crear una ficha mínima del modelo bloqueado.</li>
       </ul>
+        <h4>Entregables</h4>
+      <ul>
+        <li>Protocolo breve con uso previsto, baseline clínico, baseline estadístico, modelos candidatos, función de pérdida y regla de selección.</li>
+        <li>Diagrama del pipeline que indique qué pasos aprenden parámetros, en qué partición se ajustan y cómo se aplican a un paciente nuevo.</li>
+        <li>Notebook o script reproducible que compare como mínimo regresión penalizada y una familia no lineal usando las mismas particiones.</li>
+        <li>Registro de tuning con espacio de búsqueda, valores evaluados, métrica interna, presupuesto, semillas y decisión final sin consultar la prueba.</li>
+        <li>Tabla comparativa con incertidumbre, discriminación, calibración, errores clínicamente relevantes, latencia, complejidad y requisitos de datos.</li>
+        <li>Paquete del modelo bloqueado con manifiesto de datos y dependencias, hashes, parámetros, umbral, artefacto serializado y ficha del modelo.</li>
+      </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>Existe baseline explícito.</li>
-        <li>No hay transformaciones ajustadas con prueba.</li>
-        <li>El tuning está separado de evaluación.</li>
-        <li>El modelo final es reproducible y versionado.</li>
+        <li>La práctica habitual y el baseline estadístico son implementables, usan información disponible en el mismo momento y se evalúan en las mismas particiones que los candidatos.</li>
+        <li>La función de pérdida y la regla de selección corresponden a probabilidades, ranking o clasificación según el uso previsto y no sustituyen la evaluación clínica final.</li>
+        <li>Imputación, codificación, escalado, selección y reducción se ajustan dentro de cada partición de entrenamiento.</li>
+        <li>Las ventanas temporales, unidades y fórmulas de variables derivadas son reproducibles y no contienen información posterior al tiempo cero.</li>
+        <li>La comparación entre regresión penalizada, árboles, boosting o redes considera tamaño efectivo, estructura del dato, sesgo-varianza, latencia y mantenimiento.</li>
+        <li>El espacio de hiperparámetros, presupuesto, métrica y regla de desempate se fijan antes de inspeccionar la evaluación reservada.</li>
+        <li>La rareza del evento se trata sin modificar la distribución de evaluación y cualquier remuestreo o ponderación incluye comprobación de calibración.</li>
+        <li>La elección final comunica incertidumbre y no privilegia complejidad por una diferencia puntual irrelevante.</li>
+        <li>El paquete bloqueado permite repetir predicciones e identifica versiones de datos, código, entorno, parámetros, umbral y limitaciones.</li>
       </ul>
       </article>
     </section>
@@ -268,36 +283,52 @@
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Qué debe representar un baseline?</summary>
-        <p><strong>Respuesta:</strong> Una alternativa clínica o estadística creíble bajo las mismas condiciones.</p>
+        <summary>1. Un equipo propone un modelo de boosting para reingreso a 30 días y lo compara únicamente con AUC 0,50. En el hospital ya se utiliza una regla de cinco variables y el médico dispone de su propio juicio. Defina los referentes necesarios y las condiciones para una comparación justa.</summary>
+        <p><strong>Respuesta:</strong> Deben incluirse la práctica habitual o juicio estructurado cuando pueda medirse, la regla clínica vigente y un baseline estadístico reproducible, por ejemplo regresión logística penalizada con predictores disponibles. Todos deben usar la misma población, tiempo cero, desenlace, información disponible y particiones. La comparación debe considerar incertidumbre, discriminación, calibración, utilidad en umbrales pertinentes, carga, latencia y coste de obtener variables. Superar 0,50 no demuestra valor incremental.</p>
+        <p><strong>Razonamiento:</strong> El referente representa la alternativa que el modelo pretende complementar o reemplazar. Cambiar datos, momento o población entre modelos confunde la contribución del algoritmo con diferencias en la información disponible.</p>
+        <p><strong>Error que evita:</strong> Usar el azar como único comparador aunque exista una alternativa clínica implementada.</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿Por qué el preprocesamiento pertenece al pipeline?</summary>
-        <p><strong>Respuesta:</strong> Porque aprende parámetros que deben estimarse sin información de evaluación.</p>
+        <summary>2. Antes de la validación cruzada, un analista imputa, estandariza y conserva los 50 predictores con mayor asociación univariada usando toda la cohorte. Luego introduce solo la regresión en los folds. Identifique las fugas y describa un pipeline correcto para datos nuevos.</summary>
+        <p><strong>Respuesta:</strong> Las medianas, medias y desviaciones, y la selección supervisada incorporaron información de las observaciones que luego actúan como validación. Dentro de cada fold se deben ajustar con el subconjunto de entrenamiento la imputación, codificación, escalado y selección; el pipeline resultante se aplica sin reajuste al fold de validación. Tras elegir configuración, el pipeline completo se reajusta con los datos de desarrollo permitidos y se aplica sin cambios a la prueba bloqueada y a pacientes nuevos. Las reglas deterministas también deben versionarse.</p>
+        <p><strong>Razonamiento:</strong> La unidad evaluada es el pipeline completo, no solo el estimador final. Cualquier paso que aprende del conjunto puede producir optimismo si se ejecuta antes del remuestreo.</p>
+        <p><strong>Error que evita:</strong> Considerar no supervisados la imputación y el escalado y, por ello, seguros antes de dividir.</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Qué efecto tiene L1?</summary>
-        <p><strong>Respuesta:</strong> Penaliza valores absolutos y puede llevar coeficientes a cero.</p>
+        <summary>3. Una cohorte ómica tiene 250 pacientes y 20 000 genes, muchos fuertemente correlacionados. Compare L1, L2 y elastic net para construir un referente y explique qué debe ocurrir dentro del remuestreo.</summary>
+        <p><strong>Respuesta:</strong> L1 puede producir una solución dispersa con coeficientes exactamente cero, pero ante grupos correlacionados puede seleccionar representantes de forma inestable. L2 contrae magnitudes y conserva predictores correlacionados, sin hacer selección exacta. Elastic net mezcla ambas penalizaciones y puede favorecer selección agrupada. Estandarización, filtrado dependiente de datos, selección de alpha y lambda, y cualquier reducción deben repetirse dentro de cada partición de entrenamiento. La estabilidad de genes seleccionados debe evaluarse entre remuestreos y no interpretarse causalmente.</p>
+        <p><strong>Razonamiento:</strong> La regularización intercambia sesgo por menor varianza y controla complejidad en alta dimensión. La penalización apropiada depende de correlación, objetivo predictivo y estabilidad, no solo del número final de variables.</p>
+        <p><strong>Error que evita:</strong> Interpretar coeficiente cero o no cero como prueba de irrelevancia o causalidad biológica.</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Cuándo son útiles los árboles?</summary>
-        <p><strong>Respuesta:</strong> Cuando hay no linealidad e interacciones, con control de complejidad.</p>
+        <summary>4. Para una cohorte tabular de 5 000 pacientes y 300 eventos se consideran regresión penalizada, un árbol, random forest, gradient boosting y una red profunda. Proponga una comparación razonada y anticipe las principales fuentes de varianza o complejidad.</summary>
+        <p><strong>Respuesta:</strong> La regresión penalizada debe ser un referente fuerte y puede incorporar no linealidades preespecificadas. Un árbol aislado puede captar interacciones, pero es sensible a perturbaciones. Random forest agrega árboles aleatorizados para reducir dependencia de un árbol; boosting ajusta una secuencia aditiva y exige controlar profundidad, tasa y número de iteraciones. La red añade muchos parámetros y no tiene superioridad presumida con pocos eventos tabulares. Deben usar el mismo pipeline, remuestreo y presupuesto razonable, comparar incertidumbre, calibración, utilidad, latencia y estabilidad, y seleccionar complejidad solo por ganancia relevante.</p>
+        <p><strong>Razonamiento:</strong> La familia del algoritmo determina qué estructura puede aprender y cuánta variación introduce. El tamaño efectivo viene dado en gran parte por eventos y dependencias, no solo por filas.</p>
+        <p><strong>Error que evita:</strong> Elegir la red por reputación sin justificar representación, datos o capacidad de validación.</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Por qué una red no siempre supera regresión?</summary>
-        <p><strong>Respuesta:</strong> Puede necesitar más datos y añadir varianza sin señal suficiente.</p>
+        <summary>5. Un boosting obtiene AUC 0,812 y una regresión penalizada 0,808 en desarrollo. La calibración es similar, pero el boosting tarda diez veces más, exige una variable adicional y la incertidumbre de la diferencia se solapa. ¿Qué modelo elegiría y qué información faltaría antes de afirmarlo?</summary>
+        <p><strong>Respuesta:</strong> Con la información disponible se favorece provisionalmente la regresión penalizada porque la ganancia puntual del boosting no está demostrada como relevante y añade coste y dependencia de datos. Aún deben compararse intervalos o distribución de la diferencia, calibración detallada, utilidad en umbrales clínicos, subgrupos, estabilidad, disponibilidad de la variable, latencia y desempeño en una evaluación independiente. Si el boosting muestra beneficio reproducible que compensa esas cargas, la decisión puede cambiar.</p>
+        <p><strong>Razonamiento:</strong> El modelo ganador no es el de mayor cifra puntual, sino el que aporta valor incremental suficientemente preciso y operativo frente al referente.</p>
+        <p><strong>Error que evita:</strong> Declarar vencedor al boosting por una diferencia de AUC de 0,004 sin incertidumbre.</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Dónde se aplica sobremuestreo?</summary>
-        <p><strong>Respuesta:</strong> Solo dentro de las particiones de entrenamiento.</p>
+        <summary>6. El evento ocurre en 2 % de los pacientes. El equipo aplica SMOTE hasta 50:50, entrena una regresión logística, usa umbral 0,50 y celebra mayor sensibilidad aunque las probabilidades se han elevado. Evalúe el procedimiento y proponga un análisis compatible con decisiones clínicas.</summary>
+        <p><strong>Respuesta:</strong> La rareza del evento no obliga a balancear. En regresión logística, SMOTE altera la distribución efectiva y puede sobreestimar probabilidades sin mejorar discriminación; el cambio de sensibilidad también puede lograrse eligiendo un umbral clínicamente pertinente. Se debe entrenar primero con la distribución original y regularización apropiada, evaluar calibración, discriminación y net benefit en una muestra con prevalencia objetivo, y seleccionar umbrales según consecuencias. Si se usa ponderación o remuestreo, solo ocurre dentro de entrenamiento, se documenta el objetivo y se recalibran y validan las probabilidades.</p>
+        <p><strong>Razonamiento:</strong> Clasificación y estimación de riesgo no son equivalentes. Reequilibrar puede cambiar la escala probabilística, mientras el umbral permite expresar costes sin reescribir la prevalencia de evaluación.</p>
+        <p><strong>Error que evita:</strong> Suponer que una distribución 50:50 es necesaria para que el algoritmo aprenda.</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Qué se bloquea antes de evaluar externamente?</summary>
-        <p><strong>Respuesta:</strong> Pipeline, hiperparámetros, coeficientes, umbral y reglas.</p>
+        <summary>7. Se prueban 1 000 configuraciones y se publica como rendimiento interno la mejor media obtenida en los mismos folds usados para elegir hiperparámetros. Explique el optimismo y diseñe una estrategia de selección y evaluación separadas.</summary>
+        <p><strong>Respuesta:</strong> La mejor configuración aprovecha variación aleatoria de los folds; cuanto mayor es la búsqueda, mayor puede ser el sesgo de selección. Deben preespecificarse espacio, presupuesto, métrica y regla de selección. Los hiperparámetros se eligen en un ciclo interno y el pipeline seleccionado se evalúa en folds externos o en una partición independiente no usada para tuning. Se reporta la distribución de rendimiento, se puede usar una regla de simplicidad dentro de una tolerancia y la prueba final permanece bloqueada.</p>
+        <p><strong>Razonamiento:</strong> El rendimiento usado para elegir una configuración no es una estimación independiente de esa elección. La separación puede implementarse mediante validación anidada o desarrollo y validación claramente distintos.</p>
+        <p><strong>Error que evita:</strong> Creer que validación cruzada elimina cualquier optimismo aunque también seleccione el modelo.</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿Qué demuestra una semilla fija?</summary>
-        <p><strong>Respuesta:</strong> Reproducibilidad de una ejecución, no estabilidad ni generalización.</p>
+        <summary>8. El equipo entrega un archivo pickle y una semilla fija como «modelo reproducible». Enumere qué falta para convertirlo en un modelo bloqueado auditable y explique qué demuestra realmente la semilla.</summary>
+        <p><strong>Respuesta:</strong> Faltan versiones y hashes de datos, criterios de cohorte, código, dependencias, entorno, pipeline completo, orden y unidades de entradas, hiperparámetros, coeficientes o artefactos, umbral, reglas de exclusión, pruebas de integridad y una ficha con uso previsto, población, desempeño, límites y condiciones no soportadas. La semilla ayuda a repetir ciertas operaciones estocásticas bajo un entorno compatible, pero no demuestra estabilidad frente a nuevas muestras, reproducibilidad entre plataformas ni generalización clínica.</p>
+        <p><strong>Razonamiento:</strong> El modelo clínico es una versión del sistema de transformación y decisión, no solo un objeto serializado. Persistir software sin procedencia puede incluso impedir una carga segura o equivalente en otro entorno.</p>
+        <p><strong>Error que evita:</strong> Equiparar archivo serializado con pipeline completo y documentado.</p>
       </details>
       </div>
     </section>
@@ -306,17 +337,17 @@
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
         <li><strong>Baseline</strong><p>Referencia implementable —como la práctica vigente, una regla clínica o un modelo simple— frente a la cual se estima el valor incremental del modelo candidato.</p></li>
-        <li><strong>Pipeline</strong><p>Secuencia completa de transformaciones y modelo aplicada a nuevos datos.</p></li>
-        <li><strong>Función de pérdida</strong><p>Criterio optimizado durante el entrenamiento.</p></li>
-        <li><strong>Regularización</strong><p>Penalización o restricción destinada a controlar complejidad.</p></li>
-        <li><strong>L1</strong><p>Penalización por suma de valores absolutos de coeficientes.</p></li>
-        <li><strong>L2</strong><p>Penalización por suma de cuadrados de coeficientes.</p></li>
-        <li><strong>Boosting</strong><p>Ensamble secuencial que corrige errores de modelos previos.</p></li>
-        <li><strong>Random forest</strong><p>Ensamble de árboles construidos con remuestreo y subconjuntos de variables.</p></li>
-        <li><strong>Hiperparámetro</strong><p>Configuración elegida fuera del ajuste directo de parámetros del modelo.</p></li>
-        <li><strong>Desbalance</strong><p>Distribución desigual de clases o eventos.</p></li>
-        <li><strong>Modelo bloqueado</strong><p>Versión fija de pipeline, parámetros, umbral y reglas preparada para evaluación.</p></li>
-        <li><strong>Ficha del modelo</strong><p>Documento de uso, datos, desempeño, límites y condiciones del sistema.</p></li>
+        <li><strong>Pipeline</strong><p>Secuencia reproducible que encadena transformaciones y un predictor, ajusta cada componente solo con los datos permitidos y aplica el mismo flujo a cada nuevo caso.</p></li>
+        <li><strong>Función de pérdida</strong><p>Criterio matemático cuyo valor guía el ajuste de los parámetros del modelo; puede diferir de la métrica clínica empleada para evaluar su utilidad.</p></li>
+        <li><strong>Regularización</strong><p>Penalización incorporada a la función objetivo para controlar la magnitud o la cantidad efectiva de parámetros y reducir el sobreajuste.</p></li>
+        <li><strong>L1</strong><p>Penalización proporcional a la suma de los valores absolutos de los coeficientes, capaz de llevar algunos de ellos exactamente a cero.</p></li>
+        <li><strong>L2</strong><p>Penalización proporcional a la suma de los cuadrados de los coeficientes, que contrae sus magnitudes sin imponer por regla general ceros exactos.</p></li>
+        <li><strong>Boosting</strong><p>Procedimiento aditivo y secuencial que incorpora aprendices débiles para descender el gradiente de una función de pérdida especificada.</p></li>
+        <li><strong>Random forest</strong><p>Ensamble que combina predictores de árbol aleatorizados y agrega sus predicciones para controlar la variabilidad y mejorar la generalización.</p></li>
+        <li><strong>Hiperparámetro</strong><p>Configuración del algoritmo o del pipeline que no se estima como parámetro ordinario durante un ajuste y que debe seleccionarse usando exclusivamente datos de desarrollo.</p></li>
+        <li><strong>Desbalance</strong><p>Situación en la que las frecuencias de las clases o del evento y no evento son muy diferentes; en predicción de riesgo no implica por sí sola que deba alterarse la distribución de entrenamiento.</p></li>
+        <li><strong>Modelo bloqueado</strong><p>Versión inmutable y trazable del pipeline, parámetros, hiperparámetros, umbral, entradas y reglas de exclusión preparada para una evaluación reservada.</p></li>
+        <li><strong>Ficha del modelo</strong><p>Documento estructurado que comunica propósito, usuarios, datos, métricas desagregadas, condiciones de uso, limitaciones y advertencias de una versión del modelo.</p></li>
       </ul>
     </section>
 
@@ -329,7 +360,16 @@
         <li><strong><a class="resource-link" href="https://www.bmj.com/content/385/bmj-2023-078378" rel="noopener noreferrer">TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods</a></strong><span class="course-tag">The BMJ / TRIPOD+AI Group · guía de reporte · 2024</span></li>
         <li><strong><a class="resource-link" href="https://www.bmj.com/content/388/bmj-2024-082505" rel="noopener noreferrer">PROBAST+AI: an updated quality, risk of bias, and applicability assessment tool</a></strong><span class="course-tag">The BMJ / PROBAST+AI Group · herramienta metodológica · 2025</span></li>
         <li><strong><a class="resource-link" href="https://www.imdrf.org/sites/default/files/2025-02/IMDRF_AIML%20WG_GMLP_N88%20Final.pdf" rel="noopener noreferrer">Good Machine Learning Practice for Medical Device Development: Guiding Principles</a></strong><span class="course-tag">International Medical Device Regulators Forum / U.S. FDA · principios regulatorios · 2025</span></li>
-        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/user_guide.html" rel="noopener noreferrer">scikit-learn User Guide</a></strong><span class="course-tag">scikit-learn · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11369751/" rel="noopener noreferrer">Developing clinical prediction models: a step-by-step guide</a></strong><span class="course-tag">The BMJ · guía metodológica · 2024</span></li>
+        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/user_guide.html" rel="noopener noreferrer">scikit-learn User Guide</a></strong><span class="course-tag">scikit-learn · documentación técnica oficial · 2026</span></li>
+        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/model_selection.html" rel="noopener noreferrer">scikit-learn Model Selection</a></strong><span class="course-tag">scikit-learn · documentación técnica oficial · 2026</span></li>
+        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/common_pitfalls.html" rel="noopener noreferrer">Common pitfalls and recommended practices</a></strong><span class="course-tag">scikit-learn · documentación técnica oficial · 2026</span></li>
+        <li><strong><a class="resource-link" href="https://academic.oup.com/jrsssb/article/67/2/301/7109482" rel="noopener noreferrer">Regularization and Variable Selection Via the Elastic Net</a></strong><span class="course-tag">Journal of the Royal Statistical Society: Series B · artículo metodológico · 2005</span></li>
+        <li><strong><a class="resource-link" href="https://link.springer.com/article/10.1023/A%3A1010933404324" rel="noopener noreferrer">Random Forests</a></strong><span class="course-tag">Machine Learning · artículo metodológico · 2001</span></li>
+        <li><strong><a class="resource-link" href="https://projecteuclid.org/journals/annals-of-statistics/volume-29/issue-5/Greedy-function-approximation-A-gradient-boosting-machine/10.1214/aos/1013203451.short" rel="noopener noreferrer">Greedy function approximation: A gradient boosting machine</a></strong><span class="course-tag">The Annals of Statistics · artículo metodológico · 2001</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/30763612/" rel="noopener noreferrer">A systematic review shows no performance benefit of machine learning over logistic regression for clinical prediction models</a></strong><span class="course-tag">Journal of Clinical Epidemiology · revisión sistemática metodológica · 2019</span></li>
+        <li><strong><a class="resource-link" href="https://academic.oup.com/jamia/article/29/9/1525/6605096" rel="noopener noreferrer">The harm of class imbalance corrections for risk prediction models: illustration and simulation using logistic regression</a></strong><span class="course-tag">Journal of the American Medical Informatics Association · estudio metodológico de simulación · 2022</span></li>
+        <li><strong><a class="resource-link" href="https://dl.acm.org/doi/10.1145/3287560.3287596" rel="noopener noreferrer">Model Cards for Model Reporting</a></strong><span class="course-tag">ACM Conference on Fairness, Accountability, and Transparency · artículo de documentación responsable · 2019</span></li>
         <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/software-medical-device-samd/transparency-machine-learning-enabled-medical-devices-guiding-principles" rel="noopener noreferrer">Transparency for Machine Learning-Enabled Medical Devices: Guiding Principles</a></strong><span class="course-tag">U.S. FDA, Health Canada y MHRA · principios de transparencia</span></li>
       </ol>
     </section>
