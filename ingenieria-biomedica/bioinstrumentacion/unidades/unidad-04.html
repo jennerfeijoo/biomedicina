@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unidad 4. Acondicionamiento analógico, ruido y rechazo de interferencias | Bioinstrumentación | CitoNauta</title>
-  <meta name="description" content="Separar la función del sensor de la etapa analógica que adapta nivel, impedancia, banda y referencia antes de la conversión digital." />
+  <meta name="description" content="Diseñar y auditar una cadena de acondicionamiento analógico que preserve la información del mensurando dentro de rangos, bandas y márgenes explícitos, separando señal diferencial, modo común, carga, ruido, filtrado y recuperación ante sobrecarga antes de la conversión digital." />
   <link rel="stylesheet" href="../../../assets/css/style.css" />
   <link rel="stylesheet" href="../../../assets/css/editorial.css" />
   <script>
@@ -52,7 +52,7 @@
       </div>
       <p class="eyebrow">Unidad 4 de 10</p>
       <h1>Acondicionamiento analógico, ruido y rechazo de interferencias</h1>
-      <p>Separar la función del sensor de la etapa analógica que adapta nivel, impedancia, banda y referencia antes de la conversión digital.</p>
+      <p>Diseñar y auditar una cadena de acondicionamiento analógico que preserve la información del mensurando dentro de rangos, bandas y márgenes explícitos, separando señal diferencial, modo común, carga, ruido, filtrado y recuperación ante sobrecarga antes de la conversión digital.</p>
       <dl class="course-meta">
         <div><dt>Asignatura</dt><dd>Bioinstrumentación</dd></div>
         <div><dt>Estado</dt><dd data-status="generated">Lección desarrollada · revisión experta pendiente</dd></div>
@@ -89,9 +89,9 @@
       <h3>Mapa de contenidos</h3>
             <ul>
         <li>1. Presupuesto de rango, ganancia y margen</li>
-        <li>2. Medición diferencial, modo común e impedancia</li>
-        <li>3. Ruido, interferencia y banda</li>
-        <li>4. Filtrado analógico y recuperación</li>
+        <li>2. Señal diferencial, modo común, impedancia y CMRR</li>
+        <li>3. Ruido referido a entrada, banda e interferencia</li>
+        <li>4. Filtrado anti-alias, estabilidad temporal y recuperación</li>
       </ul>
     </section>
 
@@ -104,91 +104,102 @@
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 1</p>
         <h3>1. Presupuesto de rango, ganancia y margen</h3>
-        <p>El acondicionamiento no crea información: transforma una señal para que la etapa siguiente pueda representarla sin saturación ni pérdida innecesaria de resolución. El punto de partida es el rango de entrada documentado, no una amplitud típica aislada.</p>
-        <p>Una ganancia total se distribuye entre etapas para evitar que offsets, transitorios o interferencias saturen antes de que el filtrado pueda actuar. La alimentación, la excursión real del amplificador y el rango del ADC son restricciones diferentes.</p>
-        <p>Una tabla por nodo con mínimo, máximo, ganancia, offset y margen permite detectar incoherencias que un diagrama de bloques puede ocultar.</p>
-        <p>El presupuesto debe repetirse para tolerancias y estados transitorios, porque una cadena válida en condiciones nominales puede saturarse durante conexión, movimiento o recuperación.</p>
+        <p>El presupuesto de rango empieza con la mayor excursión que la cadena debe aceptar sin abandonar su región lineal, no con la amplitud que aparece con mayor frecuencia. En una señal biomédica pequeña pueden coexistir offset de electrodo, variación del sensor, transitorios de conexión e interferencia de modo común mucho mayores que la componente diferencial de interés. Por ello se declara, para cada entrada, qué parte es señal diferencial, qué parte es offset o modo común, qué tolerancia se admite y qué condición constituye peor caso. La ganancia solo se elige después de esa tabla. Aprovechar todo el rango nominal del ADC en el caso típico puede ser un diseño frágil si una etapa previa satura durante un evento previsto.</p>
+        <p>La ganancia total debe repartirse entre etapas porque cada nodo posee límites propios de entrada, salida, alimentación, linealidad y banda. Una primera etapa con ganancia muy alta puede maximizar la señal respecto del ruido de etapas posteriores, pero también amplifica offsets diferenciales, reduce margen y puede tardar en recuperarse de una sobrecarga. Una etapa posterior puede aceptar más ganancia después de eliminar componentes fuera de banda o corregir una referencia, siempre que esas operaciones no dependan de información ya perdida. El análisis útil es una tabla por nodo con mínimo, máximo, ganancia acumulada, offset, modo común, salida prevista y distancia a los límites lineales; un único valor de ganancia global oculta dónde ocurre realmente la saturación.</p>
+        <p>El margen es una decisión explícita sobre incertidumbre de diseño y estados transitorios. Debe cubrir tolerancias de componentes, variación de alimentación, diferencias entre canales, error de referencia y perturbaciones previsibles dentro del uso educativo planteado. No existe un porcentaje de margen universal: el valor se justifica a partir de escenarios y consecuencias. Un presupuesto nominal puede complementarse con casos de esquina que cambien simultáneamente señal, offset y alimentación para comprobar si la conclusión es robusta. Si un estado transitorio es aceptable solo porque se descartarán unos segundos de datos, esa decisión debe documentar cuánto dura la contaminación y cómo se detecta; no debe presentarse como si la cadena hubiese permanecido lineal.</p>
+        <p>Una saturación analógica intermedia no puede corregirse de forma general con procesamiento digital posterior porque varias entradas diferentes pueden producir la misma salida recortada. Cuando la etapa sale de su región lineal se pierde la relación de ganancia asumida y pueden aparecer retardos de recuperación, inversión u otros comportamientos dependientes del dispositivo. Por eso el presupuesto distingue saturación prevista de clipping observado y define una prueba de recuperación. El ADC tampoco protege a la cadena de saturación previa: que su código final permanezca dentro del rango digital no demuestra que el amplificador anterior haya operado linealmente. La evidencia necesaria es por nodo, no solo en la salida final.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[G_{max}\leq\frac{V_{ADC,usable}}{V_{in,max}+V_{offset}+V_{margin}}\]</div>
-            <figcaption>Cota conceptual de ganancia para evitar saturación.</figcaption>
+            <div class="math-display">\[G_{max}\leq\frac{V_{out,usable}}{V_{in,worst}}\]</div>
+            <figcaption>Cota inicial de ganancia: la excursión de peor caso, no la amplitud típica, debe permanecer dentro de la salida lineal utilizable.</figcaption>
             <ul class="equation-variables">
-              <li><code>G_max</code>: ganancia máxima</li>
-              <li><code>V_ADC,usable</code>: excursión utilizable</li>
+              <li><code>G_max</code>: ganancia total máxima compatible con el presupuesto</li>
+              <li><code>V_out,usable</code>: excursión lineal utilizable de la etapa o interfaz siguiente</li>
+              <li><code>V_in,worst</code>: peor caso de señal, offset, interferencia y margen expresado en la misma referencia</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
         <li>El rango precede a la ganancia.</li>
-        <li>El margen incluye offsets y transitorios.</li>
-        <li>La saturación intermedia no se corrige digitalmente.</li>
-        <li>Evaluar nominal, tolerancias y transitorios.</li>
+        <li>La ganancia se distribuye por nodos.</li>
+        <li>El margen incluye estados no nominales.</li>
+        <li>La saturación destruye información antes del ADC.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
-        <h3>2. Medición diferencial, modo común e impedancia</h3>
-        <p>Una entrada diferencial responde a la diferencia entre terminales; el modo común describe la componente compartida. El rechazo de modo común depende de frecuencia, desbalance, montaje y trayectoria de retorno.</p>
-        <p>Una impedancia de entrada finita carga la fuente. En interfaces de alta impedancia, pequeñas asimetrías pueden convertir modo común en error diferencial.</p>
-        <p>Referencia de señal, tierra de protección y blindaje cumplen funciones distintas y deben nombrarse por la corriente o información que controlan.</p>
-        <p>La conversión de modo común a diferencial puede aparecer por impedancias de fuente desiguales incluso cuando el amplificador aislado tiene un CMRR elevado.</p>
+        <h3>2. Señal diferencial, modo común, impedancia y CMRR</h3>
+        <p>Una entrada diferencial responde a la diferencia entre dos terminales, mientras que el modo común representa la componente compartida respecto de una referencia. Esta descomposición es un modelo útil para analizar una cadena, pero no implica que todo acoplamiento externo llegue de forma perfectamente idéntica a ambos terminales. La geometría, las impedancias de contacto y las rutas capacitivas pueden convertir una perturbación inicialmente común en una diferencia antes de entrar al amplificador. Por ello el presupuesto registra por separado rango diferencial y rango de modo común y verifica que ambos permanezcan dentro de las regiones de operación especificadas. Amplificar correctamente microvoltios diferenciales exige también tolerar voltajes comunes mucho mayores sin salir del régimen lineal.</p>
+        <p>El rechazo de modo común se expresa mediante la relación entre ganancia diferencial y ganancia común, pero su valor depende de frecuencia, ganancia, circuito y condiciones de ensayo. Un CMRR elevado en continua no autoriza asumir el mismo rechazo a 50/60 Hz o a frecuencias superiores. La documentación de amplificadores de instrumentación suele especificar CMRR bajo configuraciones concretas precisamente porque el apareamiento de resistencias, la ganancia y la frecuencia influyen. En una auditoría educativa, cada cifra de CMRR se acompaña de frecuencia y condición. Si el diseño depende de rechazar una interferencia concreta, se evalúa el rechazo en esa región y no se usa un único número de portada como garantía universal.</p>
+        <p>La impedancia de entrada finita modifica la fuente cuando circula corriente o forma un divisor con impedancias previas. En una medición diferencial, además de atenuar, un desbalance entre las dos rutas puede convertir modo común en error diferencial. Esta es una razón por la que una impedancia de entrada alta debe analizarse junto con corrientes de polarización, capacitancias, frecuencia e impedancias de fuente, no como una cifra aislada. El efecto puede ser insignificante en un montaje y dominante en otro. El criterio correcto es cuantificar la perturbación en el rango y banda de interés, declarar las aproximaciones y diseñar una prueba que modifique deliberadamente el desbalance para comprobar si el error responde como predice el modelo.</p>
+        <p>El CMRR nominal de un amplificador no es el CMRR efectivo de todo el sistema. La cadena añade desbalance de fuente, tolerancias de componentes, acoplamiento de cables, impedancias de interfaz, referencia, blindaje y geometría. Una forma de evaluar esta diferencia es comparar primero el error ideal asociado al CMRR del componente y luego incorporar una asimetría conocida en las entradas. Si la perturbación diferencial aumenta, la limitación ya no puede atribuirse solo al amplificador. La mitigación tampoco se reduce a insertar un filtro notch: equilibrar impedancias, controlar rutas de retorno y reducir acoplamiento pueden actuar sobre el mecanismo antes de sacrificar banda útil.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[V_o=A_dV_d+A_{cm}V_{cm},\quad CMRR=20\log_{10}|A_d/A_{cm}|\]</div>
-            <figcaption>Respuesta diferencial y común idealizada.</figcaption>
+            <div class="math-display">\[V_o=A_dV_d+A_{cm}V_{cm},\qquad CMRR=20\log_{10}\left|\frac{A_d}{A_{cm}}\right|\]</div>
+            <figcaption>Modelo lineal idealizado para separar ganancia diferencial y ganancia de modo común.</figcaption>
             <ul class="equation-variables">
+              <li><code>V_d</code>: componente diferencial de entrada</li>
+              <li><code>V_cm</code>: componente de modo común</li>
               <li><code>A_d</code>: ganancia diferencial</li>
-              <li><code>A_cm</code>: ganancia común</li>
+              <li><code>A_cm</code>: ganancia de modo común</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>CMRR del componente no es CMRR del sistema.</li>
-        <li>La carga modifica la entrada.</li>
-        <li>Referencia y protección no son sinónimos.</li>
-        <li>Incluir desbalance de fuente en el análisis de modo común.</li>
+        <li>Diferencial y modo común son componentes distintas.</li>
+        <li>CMRR depende de frecuencia y configuración.</li>
+        <li>La impedancia de entrada puede cargar y desbalancear la fuente.</li>
+        <li>El CMRR del componente no es el rechazo del sistema.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 3</p>
-        <h3>3. Ruido, interferencia y banda</h3>
-        <p>Ruido térmico, ruido electrónico, interferencia de red y acoplamientos capacitivos o inductivos son mecanismos distintos. Agruparlos impide seleccionar una prueba discriminante.</p>
-        <p>Referir el ruido a la entrada permite comparar contribuciones de distintas etapas. Las contribuciones independientes solo se combinan cuando comparten unidades y banda.</p>
-        <p>Ampliar la banda aumenta el ruido integrado; reducirla puede eliminar información. La selección debe derivarse de la pregunta de medición.</p>
-        <p>Una medición espectral necesita ventana, resolución y referencia; una línea visible no basta para atribuirla a red, reloj, conmutación u otro mecanismo.</p>
+        <h3>3. Ruido referido a entrada, banda e interferencia</h3>
+        <p>Referir el ruido a la entrada permite comparar contribuciones producidas en etapas con ganancias diferentes. Una fuente de ruido medida en la salida se divide por la ganancia desde la entrada hasta ese nodo para expresar cuánto ruido equivalente habría sido necesario en la entrada ideal. Esta operación no cambia físicamente el origen del ruido; crea una referencia común para el presupuesto. Deben incluirse ruido de tensión del amplificador, ruido de corriente actuando sobre impedancias, ruido térmico de resistencias y, cuando corresponda, otras fuentes con espectros distintos. Una cifra de nV/√Hz sin impedancia, frecuencia y banda no determina por sí sola el ruido RMS de la cadena.</p>
+        <p>La densidad espectral de ruido y el ruido RMS integrado responden preguntas diferentes. Para ruido aproximadamente blanco, el RMS crece con la raíz del ancho de banda equivalente, no linealmente con la frecuencia de corte nominal. En filtros reales el ancho de banda equivalente depende de la forma de la respuesta y puede diferir de la banda de paso rotulada. A baja frecuencia puede aparecer ruido 1/f, de modo que multiplicar una única densidad por √B puede subestimar la contribución. El procedimiento académico debe mostrar el intervalo de integración, las hipótesis de blancura o el espectro utilizado y la unidad final. Solo entonces puede compararse ruido con la señal mínima o con un requisito de relación señal-ruido.</p>
+        <p>Las fuentes aleatorias no correlacionadas se combinan sumando potencias o, en amplitud RMS, mediante raíz de suma de cuadrados. Sumar directamente amplitudes RMS produce una cota conservadora distinta y no representa el resultado esperado para fuentes independientes. Si dos fuentes están correlacionadas, la fórmula RSS simple deja de ser suficiente y debe incorporarse la correlación o modelarse el mecanismo común. Esta distinción es importante cuando una misma referencia, alimentación o interferencia externa afecta varias etapas: llamarla simplemente &#x27;ruido independiente&#x27; puede ocultar una causa sistemática. El presupuesto debe clasificar cada contribución antes de decidir cómo combinarla.</p>
+        <p>La banda analógica es un compromiso entre información, ruido y respuesta temporal. Reducirla puede disminuir ruido integrado y atenuar interferencias, pero también puede deformar transitorios, eliminar componentes relevantes o aumentar retardo. Aumentarla preserva más contenido y facilita ciertos tiempos de subida, pero admite más ruido y exige mayor atención a señales fuera de banda antes del muestreo. Un notch en 50/60 Hz puede ser útil en un contexto y destructivo en otro si la señal de interés contiene energía cercana o si el verdadero problema es saturación por modo común. La selección de filtros se justifica desde el contenido que debe preservarse y el mecanismo que se desea controlar, no desde la apariencia visual de una traza.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[e_{n,rms}=e_n\sqrt{B}\]</div>
-            <figcaption>Ruido RMS aproximado para densidad blanca en una banda equivalente.</figcaption>
+            <div class="math-display">\[e_{n,rms}\approx e_n\sqrt{B_{eq}}\]</div>
+            <figcaption>Aproximación para densidad blanca constante integrada sobre una banda equivalente de ruido.</figcaption>
             <ul class="equation-variables">
-              <li><code>e_n</code>: densidad de ruido</li>
-              <li><code>B</code>: ancho de banda</li>
+              <li><code>e_n</code>: densidad espectral de ruido de tensión</li>
+              <li><code>B_eq</code>: ancho de banda equivalente de ruido</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[e_{tot}=\sqrt{e_1^2+e_2^2+\cdots+e_N^2}\]</div>
+            <figcaption>Combinación RMS de contribuciones de ruido no correlacionadas expresadas en la misma referencia y banda.</figcaption>
+            <ul class="equation-variables">
+              <li><code>e_i</code>: contribución RMS individual referida al mismo nodo</li>
+              <li><code>e_tot</code>: ruido RMS combinado</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Identificar mecanismo antes de filtrar.</li>
-        <li>Comparar ruido en una referencia común.</li>
-        <li>La banda es una decisión de información.</li>
-        <li>Relacionar espectro con mecanismo y configuración.</li>
+        <li>El ruido se compara en una referencia común.</li>
+        <li>Densidad espectral e RMS no son la misma magnitud.</li>
+        <li>Las fuentes no correlacionadas se combinan por potencia.</li>
+        <li>Reducir banda intercambia ruido por información y dinámica.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 4</p>
-        <h3>4. Filtrado analógico y recuperación</h3>
-        <p>El filtro anti-alias actúa antes del muestreo. Su especificación incluye banda de paso, transición, atenuación, fase, tolerancias y carga.</p>
-        <p>Un filtro puede introducir retardo, distorsión de fase y recuperación lenta tras una sobrecarga. Por eso se evalúan respuesta temporal y frecuencia.</p>
-        <p>Las prácticas usan circuitos y señales sintéticas; no demuestran seguridad eléctrica, EMC ni aptitud clínica.</p>
-        <p>La recuperación se evalúa midiendo cuándo la salida vuelve a un intervalo válido y cuánto tiempo permanece contaminada después de retirar la sobrecarga.</p>
+        <h3>4. Filtrado anti-alias, estabilidad temporal y recuperación</h3>
+        <p>Un filtro anti-alias tiene una función que ningún filtro digital posterior puede sustituir: atenuar componentes analógicas fuera de la banda que, al muestrearse, se plegarían dentro de la banda digital. Una vez que dos componentes producen la misma secuencia de muestras, el procesamiento posterior no puede decidir de forma general cuál era la frecuencia original. Por eso el requisito de anti-aliasing se formula antes del ADC y considera la amplitud máxima plausible de interferencias fuera de banda, la banda que debe conservarse y el rango dinámico requerido. La frase &#x27;muestrear por encima de Nyquist&#x27; es incompleta si no se especifica qué banda llega realmente al muestreador.</p>
+        <p>La frecuencia de muestreo y la banda de transición del filtro se diseñan conjuntamente. Elegir una frecuencia de muestreo mayor puede ampliar la región disponible para que el filtro pase de baja pérdida a alta atenuación, reduciendo la complejidad analógica a costa de un ADC y procesamiento más rápidos. La atenuación necesaria en la banda de rechazo depende de cuánto contenido fuera de banda puede existir y de cuánto alias tolera el presupuesto de error. Por ello no existe un filtro anti-alias universal de una sola frecuencia de corte. La especificación mínima incluye banda de paso, ondulación o error admitido, transición, atenuación requerida, fase o retardo cuando importen y tolerancias de componentes.</p>
+        <p>La respuesta temporal del acondicionamiento debe evaluarse junto con su respuesta en frecuencia. Un filtro que cumple magnitud puede introducir retardo, dispersión de fase o un tiempo de establecimiento incompatible con el evento que se desea observar. De forma similar, un amplificador puede tener ancho de banda suficiente en pequeña señal y comportarse de forma distinta durante una excursión grande por límites de slew rate o salida. Los ensayos educativos deben incluir escalones o transitorios además de senoidales, y definir un criterio de retorno a un intervalo de error aceptable. El objetivo no es maximizar velocidad sino demostrar que la cadena responde dentro del tiempo requerido sin sacrificar las componentes relevantes.</p>
+        <p>La recuperación tras sobrecarga es el tiempo y comportamiento con que una etapa vuelve a su región lineal después de haber saturado o excedido un límite de operación. El mecanismo y la duración dependen del dispositivo y del tipo de sobrecarga, por lo que no deben inferirse únicamente del ancho de banda o slew rate. Un sistema que recorta durante un transitorio puede seguir produciendo datos sesgados después de que la entrada vuelva al rango nominal. La auditoría debe marcar el intervalo contaminado, medir cuándo la salida vuelve a una tolerancia definida y comprobar si existe asimetría entre saturación positiva y negativa. Una simulación ideal que recupera instantáneamente no constituye evidencia del hardware real.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>El anti-aliasing precede al ADC.</li>
-        <li>La respuesta temporal también importa.</li>
-        <li>Simulación no equivale a conformidad.</li>
-        <li>Incluir recuperación en los criterios temporales.</li>
+        <li>El anti-aliasing actúa antes del muestreo.</li>
+        <li>La transición del filtro y la frecuencia de muestreo se diseñan juntas.</li>
+        <li>La respuesta temporal importa además de la magnitud en frecuencia.</li>
+        <li>La recuperación tras sobrecarga es parte del desempeño de la cadena.</li>
       </ul>
       </article>
     </section>
@@ -196,37 +207,54 @@
     <section id="caso" class="section">
       <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
             <article class="worked-example advanced-worked-example">
-        <h3>Presupuesto de ganancia sintético</h3>
-        <p><strong>Situación.</strong> Una entrada diferencial ocupa ±2 mV, puede incluir 1 mV de offset y el ADC admite ±1 V utilizable.</p>
+        <h3>Presupuesto de rango por nodos</h3>
+        <p><strong>Situación.</strong> Una fuente diferencial ocupa ±2 mV; puede sumar 1 mV de offset diferencial y la primera etapa dispone de ±0,9 V lineales. Se desea reservar 20% de margen adicional.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Combinar peor caso y margen.</li>
-        <li>Calcular una cota de ganancia.</li>
-        <li>Distribuirla en etapas.</li>
-        <li>Comprobar saturación por nodo.</li>
+        <li>Construir el peor caso de entrada en la misma referencia.</li>
+        <li>Aplicar el margen antes de elegir ganancia.</li>
+        <li>Calcular una cota de ganancia para la primera etapa.</li>
+        <li>Propagar el rango hacia la etapa siguiente y comprobar límites de modo común/salida.</li>
       </ol>
-        <p><strong>Interpretación.</strong> Una ganancia cercana a 300 conserva margen en el modelo; debe verificarse en cada nodo.</p>
+        <p><strong>Interpretación.</strong> La ganancia máxima surge del peor caso y de la excursión lineal de cada nodo; usar solo ±2 mV produciría una ganancia artificialmente agresiva.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>No incluye tolerancias reales.</li>
-        <li>No demuestra desempeño de hardware.</li>
+        <li>Valores sintéticos y modelo lineal.</li>
+        <li>No incluye tolerancias ni límites de un dispositivo real concreto.</li>
       </ul>
       </article>
       <article class="worked-example advanced-worked-example">
-        <h3>Ruido integrado en dos bandas</h3>
-        <p><strong>Situación.</strong> Una etapa tiene densidad blanca de 20 nV/√Hz y se compara una banda de 100 Hz con otra de 1000 Hz.</p>
+        <h3>Presupuesto de ruido referido a entrada</h3>
+        <p><strong>Situación.</strong> Tres contribuciones independientes y ya referidas a entrada valen 40, 25 y 15 nV RMS dentro de la misma banda.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Aplicar raíz del ancho de banda.</li>
-        <li>Calcular ambos valores RMS.</li>
-        <li>Comparar con la señal mínima.</li>
-        <li>Documentar la banda equivalente.</li>
+        <li>Confirmar misma referencia, unidad y banda.</li>
+        <li>Elevar cada contribución al cuadrado.</li>
+        <li>Sumar potencias y tomar la raíz.</li>
+        <li>Comparar con señal mínima y repetir si cambia la banda.</li>
       </ol>
-        <p><strong>Interpretación.</strong> Ampliar la banda por un factor de diez aumenta el ruido RMS por √10 en el modelo.</p>
+        <p><strong>Interpretación.</strong> El ruido combinado es √(40²+25²+15²) ≈ 49,5 nV RMS; sumar 80 nV sería una cota lineal, no el RMS esperado de fuentes no correlacionadas.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>Ruido blanco ideal.</li>
-        <li>No incluye ruido 1/f ni filtro real.</li>
+        <li>Independencia asumida.</li>
+        <li>No representa ruido 1/f ni correlación común.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Anti-aliasing y transición</h3>
+        <p><strong>Situación.</strong> La banda de interés termina en 100 Hz y el sistema considera muestrear a 250 Hz o a 500 Hz.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Identificar Nyquist en ambos casos.</li>
+        <li>Comparar el ancho disponible entre 100 Hz y la región donde debe lograrse atenuación.</li>
+        <li>Relacionar transición con complejidad del filtro.</li>
+        <li>Definir qué amplitud fuera de banda debe atenuarse para cumplir el error permitido.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> 500 Hz ofrece una transición analógica más amplia que 250 Hz para la misma banda de interés, pero aumenta requisitos de conversión/procesamiento; la elección es un compromiso de sistema.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>Ejemplo conceptual, sin orden de filtro ni especificación completa.</li>
+        <li>No sustituye la U5 sobre muestreo y ADC.</li>
       </ul>
       </article>
     </section>
@@ -234,32 +262,47 @@
     <section id="practica" class="section">
       <div class="section-header"><h2>Actividad aplicada</h2></div>
             <article class="guided-activity advanced-guided-activity">
-        <h3>Auditoría de una cadena analógica sintética</h3>
+        <h3>Auditoría reproducible de una cadena analógica sintética</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Definir rango, banda y modo común.</li>
-        <li>Proponer etapas y ganancias.</li>
-        <li>Calcular ruido referido a entrada.</li>
-        <li>Evaluar saturación y recuperación.</li>
+        <li>Define un caso sintético con rango diferencial, modo común, offset, banda de interés, señal mínima, perturbación fuera de banda y rango lineal de las etapas. Conserva una tabla de unidades y referencias.</li>
+        <li>Construye un presupuesto por nodo: entrada mínima/máxima, ganancia, offset, modo común, salida prevista y margen. Evalúa al menos un caso nominal y dos casos de esquina antes de aceptar la distribución de ganancia.</li>
+        <li>Añade impedancias de fuente desiguales y un modo común conocido. Calcula el error ideal asociado a CMRR y separa ese cálculo del error adicional causado por desbalance; registra frecuencia y condiciones de cualquier CMRR usado.</li>
+        <li>Construye un presupuesto de ruido referido a entrada con al menos cuatro contribuciones, indicando densidad o RMS, banda, impedancia asociada y regla de combinación. Compara dos anchos de banda y explica qué información se sacrifica al reducirla.</li>
+        <li>Especifica un filtro anti-alias y una prueba temporal: banda de paso, transición, atenuación, frecuencia de muestreo propuesta, respuesta a escalón/sobrecarga y criterio de recuperación. Cierra con límites y pruebas que exigiría un hardware real.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
-        <li>Presupuesto de nodos.</li>
-        <li>Dos repartos de ganancia.</li>
-        <li>Dos bandas de filtrado.</li>
-        <li>Tres mecanismos de interferencia.</li>
-        <li>Dimensionar ganancia con peor caso.</li>
-        <li>Comparar dos impedancias de entrada.</li>
-        <li>Referir ruido de tres etapas.</li>
-        <li>Analizar desbalance de modo común.</li>
-        <li>Definir prueba de recuperación.</li>
+        <li>Dimensiona dos repartos alternativos de ganancia para el mismo peor caso y demuestra en qué nodo aparece primero la pérdida de margen.</li>
+        <li>Analiza un transitorio que supera temporalmente el rango de una etapa; identifica qué información queda irrecuperable y qué intervalo debería marcarse como contaminado.</li>
+        <li>Calcula el error de modo común ideal para dos valores de CMRR y explica por qué la comparación debe hacerse a una frecuencia y ganancia declaradas.</li>
+        <li>Introduce una asimetría de impedancias de fuente y redacta una prueba que permita distinguir limitación del amplificador de conversión common-mode a diferencial por el sistema.</li>
+        <li>Construye un presupuesto de ruido con tensión, corriente sobre impedancia, resistencias y una contribución de etapa posterior; refiere todas a entrada y combina solo las independientes mediante RSS.</li>
+        <li>Compara el ruido RMS previsto para dos bandas y justifica cuál conserva mejor el contenido requerido en lugar de escoger automáticamente la banda más estrecha.</li>
+        <li>Diseña dos opciones de anti-aliasing con distinta frecuencia de muestreo y compara transición, atenuación exigida, retardo y complejidad sin entrar todavía en cuantización del ADC.</li>
+        <li>Define una prueba de recuperación positiva y negativa después de sobrecarga con criterio temporal de retorno a operación válida y explica por qué slew rate o ancho de banda no bastan para predecirla.</li>
+      </ul>
+        <h4>Entregables</h4>
+      <ul>
+        <li>Especificación del caso sintético con rangos diferencial/common-mode, offsets, banda, señal mínima, perturbaciones y límites por nodo.</li>
+        <li>Tabla de presupuesto de rango/ganancia para dos arquitecturas y casos nominales/de esquina, con margen explícito.</li>
+        <li>Informe de modo común y carga con CMRR condicionado, asimetría de fuente, mecanismo propuesto y prueba discriminante.</li>
+        <li>Presupuesto de ruido referido a entrada con fuentes, unidades, banda, método de combinación y comparación de dos anchos de banda.</li>
+        <li>Especificación anti-aliasing con frecuencia de muestreo, banda de paso, transición, atenuación, retardo/criterio temporal y justificación del compromiso.</li>
+        <li>Plan de sobrecarga/recuperación y síntesis final de límites: qué demuestra el modelo sintético y qué requiere medición de hardware, seguridad, EMC o validación adicional.</li>
       </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>Unidades coherentes.</li>
-        <li>Margen explícito.</li>
-        <li>Ruido y señal en la misma referencia.</li>
-        <li>Sin afirmaciones clínicas.</li>
+        <li>La ganancia se deriva del peor caso y de límites lineales por nodo, no de una amplitud típica.</li>
+        <li>El presupuesto separa señal diferencial, offset, modo común y margen y comprueba al menos dos estados no nominales.</li>
+        <li>CMRR siempre se interpreta con frecuencia, ganancia y condición, y no se equipara al rechazo efectivo del sistema.</li>
+        <li>La carga y el desbalance de fuente se modelan por separado de la ganancia de modo común intrínseca del amplificador.</li>
+        <li>Todas las contribuciones de ruido se expresan en una referencia, unidad y banda comunes antes de compararse.</li>
+        <li>RSS se aplica solo a contribuciones tratadas como no correlacionadas; las causas comunes se conservan como tales.</li>
+        <li>La selección de banda declara información a preservar y no se justifica únicamente por reducción visual de ruido.</li>
+        <li>El filtro anti-alias está antes del muestreo y su transición/atenuación se diseñan junto con la frecuencia de muestreo.</li>
+        <li>La recuperación se evalúa con un criterio temporal después de sobrecarga y no se deduce solo de bandwidth o slew rate.</li>
+        <li>Ninguna simulación o presupuesto se presenta como evidencia de conformidad, seguridad, EMC, desempeño de hardware real o aptitud clínica.</li>
       </ul>
       </article>
     </section>
@@ -278,36 +321,52 @@
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Qué fija la ganancia máxima?</summary>
-        <p><strong>Respuesta:</strong> El peor caso de entrada, offsets, transitorios, margen y excursión de cada etapa.</p>
+        <summary>1. Una señal diferencial nominal es ±2 mV, pero existe hasta 1 mV de offset diferencial y se exige 20% de margen. Una etapa dispone de ±0,9 V lineales. ¿Por qué G=450, calculada usando solo ±2 mV, es una elección incorrecta y cómo obtendrías una cota más defendible?</summary>
+        <p><strong>Respuesta:</strong> Debe formarse el peor caso con señal+offset y margen coherentes antes de dividir la excursión lineal por la entrada máxima; después se verifica cada nodo y los estados transitorios.</p>
+        <p><strong>Razonamiento:</strong> La ganancia se deriva del peor caso y de la región lineal, no de la amplitud nominal ni del rango del ADC aislado.</p>
+        <p><strong>Error que evita:</strong> gain-from-typical-amplitude</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿CMRR es constante?</summary>
-        <p><strong>Respuesta:</strong> No; depende de frecuencia e implementación.</p>
+        <summary>2. Dos repartos de ganancia producen la misma ganancia total. En A la primera etapa satura por un offset transitorio; en B la primera etapa conserva margen y la ganancia restante se aplica después. ¿Puede un filtro digital o el ADC reconstruir la señal perdida en A?</summary>
+        <p><strong>Respuesta:</strong> No de forma general. Una etapa saturada deja de mantener la relación lineal y el clipping hace indistinguibles entradas diferentes; además puede existir recuperación posterior.</p>
+        <p><strong>Razonamiento:</strong> El presupuesto debe demostrar linealidad por nodo. Mantener el código final dentro del ADC no prueba que las etapas previas no saturaron.</p>
+        <p><strong>Error que evita:</strong> digital-fixes-analog-clipping</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Un filtro digital elimina aliasing ya ocurrido?</summary>
-        <p><strong>Respuesta:</strong> No; la información plegada no se separa de forma general.</p>
+        <summary>3. Un in-amp especifica CMRR alto en DC, pero la aplicación tiene interferencia a 50 Hz y fuentes desbalanceadas. Explica qué información adicional necesitas antes de predecir el error y por qué el CMRR nominal no es el del sistema.</summary>
+        <p><strong>Respuesta:</strong> Se necesita CMRR vs frecuencia/ganancia, rango de modo común, impedancias de fuente/contacto, geometría y otras rutas de acoplamiento. El desbalance puede convertir modo común en diferencial y degradar rechazo total.</p>
+        <p><strong>Razonamiento:</strong> CMRR es una propiedad condicionada; el sistema añade asimetrías y acoplamientos que el número nominal del amplificador no incluye.</p>
+        <p><strong>Error que evita:</strong> cmrr-is-constant</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Qué es ruido referido a entrada?</summary>
-        <p><strong>Respuesta:</strong> El ruido equivalente trasladado a la entrada mediante ganancias.</p>
+        <summary>4. Una entrada tiene impedancia finita y las dos fuentes presentan 10 kΩ y 100 kΩ. ¿Por qué no basta con decir que la impedancia de entrada es &#x27;alta&#x27; y qué prueba propondrías para estudiar conversión de modo común a diferencial?</summary>
+        <p><strong>Respuesta:</strong> Debe cuantificarse la relación entre impedancias, frecuencia, corrientes/capacitancias y error. Una prueba puede variar o equilibrar deliberadamente una impedancia manteniendo la perturbación común y observar el componente diferencial resultante.</p>
+        <p><strong>Razonamiento:</strong> Carga y desbalance son mecanismos de sistema; &#x27;alta impedancia&#x27; sin comparación dimensional y banda no demuestra error despreciable.</p>
+        <p><strong>Error que evita:</strong> high-input-impedance-means-no-loading</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Qué define la banda útil?</summary>
-        <p><strong>Respuesta:</strong> La información que debe preservarse y el uso del resultado.</p>
+        <summary>5. Tres fuentes no correlacionadas referidas a entrada producen 40, 25 y 15 nV RMS en la misma banda. Un alumno las suma como 80 nV. Corrige el cálculo y explica cuándo RSS tampoco sería suficiente.</summary>
+        <p><strong>Respuesta:</strong> El RMS esperado es sqrt(40²+25²+15²)≈49,5 nV. RSS presupone contribuciones no correlacionadas y misma referencia/banda; una causa correlacionada o común necesita términos de correlación/modelo específico.</p>
+        <p><strong>Razonamiento:</strong> El presupuesto de ruido exige clasificar fuentes y condiciones antes de combinarlas.</p>
+        <p><strong>Error que evita:</strong> sum-rms-linearly</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Qué causa conversión de modo común?</summary>
-        <p><strong>Respuesta:</strong> Ganancia común y desbalances de fuente o interfaz.</p>
+        <summary>6. Una densidad de ruido plana es 20 nV/√Hz. Compara conceptualmente el RMS en 100 y 1000 Hz de banda equivalente y explica por qué reducir siempre la banda no es una regla de diseño válida.</summary>
+        <p><strong>Respuesta:</strong> Bajo ruido blanco el RMS escala con √B, por lo que 1000 Hz aporta √10 veces el RMS de 100 Hz. Pero estrechar banda puede eliminar señal, distorsionar transitorios y aumentar retardo; además 1/f u otras formas espectrales rompen la simplificación.</p>
+        <p><strong>Razonamiento:</strong> La banda se deriva de la información requerida y del espectro, no de minimizar una cifra de ruido aislada.</p>
+        <p><strong>Error que evita:</strong> noise-grows-linearly-with-bandwidth</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Por qué evaluar recuperación?</summary>
-        <p><strong>Respuesta:</strong> Porque una sobrecarga puede contaminar datos después de desaparecer.</p>
+        <summary>7. La señal útil llega a 100 Hz. Compara muestrear a 250 Hz y a 500 Hz desde el punto de vista del filtro analógico anti-alias, sin discutir todavía bits o cuantización.</summary>
+        <p><strong>Respuesta:</strong> Ambas frecuencias superan 2×100 Hz, pero 500 Hz deja una transición mucho más amplia antes de Nyquist para alcanzar la atenuación requerida. Eso puede simplificar el filtro a costa de mayor velocidad de conversión/procesamiento. Deben especificarse interferencias fuera de banda y error alias tolerable.</p>
+        <p><strong>Razonamiento:</strong> Nyquist es una condición de muestreo ideal, no una garantía de que el contenido analógico fuera de banda esté suficientemente atenuado.</p>
+        <p><strong>Error que evita:</strong> nyquist-alone-prevents-alias</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿La simulación demuestra desempeño real?</summary>
-        <p><strong>Respuesta:</strong> No; requiere hardware y condiciones verificadas.</p>
+        <summary>8. Una simulación ideal muestra recuperación instantánea después de clipping. Un equipo concluye que el hardware real también recuperará de inmediato y que la cadena es apta. Diseña una prueba de recuperación defendible y limita la conclusión.</summary>
+        <p><strong>Respuesta:</strong> Debe aplicar sobrecarga positiva/negativa controlada, retirar el estímulo, medir el tiempo hasta volver a un intervalo lineal/tolerancia definido, registrar contaminación y repetir bajo condiciones relevantes. La recuperación depende del dispositivo y no se deduce de una simulación ideal, bandwidth o slew rate.</p>
+        <p><strong>Razonamiento:</strong> Una prueba sintética organiza el criterio; solo medición del hardware específico puede sostener desempeño real y aun así no prueba seguridad/EMC/aptitud clínica.</p>
+        <p><strong>Error que evita:</strong> simulation-proves-recovery</p>
       </details>
       </div>
     </section>
@@ -336,19 +395,19 @@
         <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
       </div>
       <ol class="rich-list advanced-sources">
-        <li><strong><a class="resource-link" href="https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/" rel="noopener noreferrer">Circuits and Electronics</a></strong><span class="course-tag">MIT OpenCourseWare · curso abierto</span></li>
-        <li><strong><a class="resource-link" href="https://docs.scipy.org/doc/scipy/reference/signal.html" rel="noopener noreferrer">Signal processing reference</a></strong><span class="course-tag">SciPy · documentación</span></li>
-        <li><strong><a class="resource-link" href="https://jcgm.bipm.org/vim/en/info.html" rel="noopener noreferrer">International Vocabulary of Metrology (VIM3)</a></strong><span class="course-tag">BIPM/JCGM · vocabulario internacional</span></li>
-        <li><strong><a class="resource-link" href="https://www.nist.gov/publications/guidelines-evaluating-and-expressing-uncertainty-nist-measurement-results-1994-edition" rel="noopener noreferrer">Guidelines for Evaluating and Expressing the Uncertainty of NIST Measurement Results</a></strong><span class="course-tag">NIST · guía técnica</span></li>
-        <li><strong><a class="resource-link" href="https://physionet.org/about/tutorial/" rel="noopener noreferrer">PhysioNet Tutorials</a></strong><span class="course-tag">PhysioNet · tutorial</span></li>
-        <li><strong><a class="resource-link" href="https://www.iso.org/standard/72704.html" rel="noopener noreferrer">ISO 14971:2019</a></strong><span class="course-tag">ISO · norma</span></li>
-        <li><strong><a class="resource-link" href="https://www.fda.gov/medical-devices/premarket-approval-pma/pma-quality-system" rel="noopener noreferrer">PMA Quality System</a></strong><span class="course-tag">U.S. Food and Drug Administration · guía regulatoria</span></li>
+        <li><strong><a class="resource-link" href="https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf" rel="noopener noreferrer">MT-061 — Instrumentation Amplifier Basics</a></strong><span class="course-tag">Analog Devices · manufacturer_tutorial</span></li>
+        <li><strong><a class="resource-link" href="https://www.ti.com/lit/pdf/sloa163" rel="noopener noreferrer">Input and Output Voltage Range of Op Amps</a></strong><span class="course-tag">Texas Instruments · manufacturer_application_report</span></li>
+        <li><strong><a class="resource-link" href="https://www.analog.com/MT-047" rel="noopener noreferrer">MT-047 — Op Amp Noise</a></strong><span class="course-tag">Analog Devices · manufacturer_tutorial</span></li>
+        <li><strong><a class="resource-link" href="https://www.analog.com/en/resources/app-notes/an-940.html" rel="noopener noreferrer">AN-940 — Low Noise Amplifier Selection Guide for Optimal Noise Performance</a></strong><span class="course-tag">Analog Devices · manufacturer_application_note</span></li>
+        <li><strong><a class="resource-link" href="https://www.analog.com/media/en/training-seminars/tutorials/mt-002.pdf" rel="noopener noreferrer">MT-002 — What the Nyquist Criterion Means to Your Sampled Data System Design</a></strong><span class="course-tag">Analog Devices · manufacturer_tutorial</span></li>
+        <li><strong><a class="resource-link" href="https://www.ti.com/lit/wp/sboa583/sboa583.pdf" rel="noopener noreferrer">Op Amp Input and Output Swing Limitations</a></strong><span class="course-tag">Texas Instruments · manufacturer_white_paper</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/41129458/" rel="noopener noreferrer">Common-Mode Interference in Biopotential Amplifiers: Modeling, Analysis, and Design Strategies for Various Recording Setups</a></strong><span class="course-tag">IEEE Transactions on Biomedical Circuits and Systems · peer_reviewed_review</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Separar la función del sensor de la etapa analógica que adapta nivel, impedancia, banda y referencia antes de la conversión digital. Conecta especialmente con ECG, EEG y EMG: Las señales pequeñas requieren controlar carga, modo común, ruido y saturación, Puentes resistivos: Excitación, desbalance y ganancia determinan la salida útil. Contenido educativo estructurado y revisado internamente. No sustituye formación práctica supervisada, juicio profesional, evaluación clínica, ensayo de conformidad, certificación ni requisitos regulatorios aplicables. Esta unidad se incorporó en la secuencia pública de diez unidades y todavía no tiene un documento autoral histórico equivalente en data/course_redevelopment.</p>
+      <p>Diseñar y auditar una cadena de acondicionamiento analógico que preserve la información del mensurando dentro de rangos, bandas y márgenes explícitos, separando señal diferencial, modo común, carga, ruido, filtrado y recuperación ante sobrecarga antes de la conversión digital. Conecta especialmente con ECG, EEG y EMG: Las señales pequeñas requieren controlar carga, modo común, ruido y saturación, Puentes resistivos: Excitación, desbalance y ganancia determinan la salida útil. Unidad canónica creada en la secuencia pública de diez unidades; no tiene un documento autoral histórico equivalente en la antigua numeración. La curación actual usa fuentes técnicas externas y razonamiento sintético. Revisión humana interna y externa siguen pendientes. No sustituye caracterización de hardware, ensayo EMC/seguridad ni validación clínica; U5 aborda muestreo, cuantización y adquisición digital.</p>
       <div class="page-actions"><a class="btn-link secondary" href="unidad-03.html">← Unidad 3: Biopotenciales, electrodos e interfaz electrodo-tejido</a><a class="btn-link" href="unidad-05.html">Unidad 5: Muestreo, conversión y adquisición digital →</a></div>
     </section>
     </article>
