@@ -38,26 +38,41 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(report.counts["units"], 8)
         self.assertEqual(report.counts["topics"], 32)
         self.assertEqual(report.counts["assessment_items"], 64)
-        self.assertEqual(report.counts["claims"], 14)
+        self.assertEqual(report.counts["claims"], 28)
         self.assertFalse(any("sin afirmaciones centrales trazadas" in gap for gap in report.gaps))
         self.assertFalse(any("estado de verificación no declarado" in gap for gap in report.gaps))
 
         course_dir = ROOT / "data" / "courses" / "machine-learning-biomedico-validacion-clinica"
-        unit = json.loads((course_dir / "units" / "unit-01.json").read_text(encoding="utf-8"))
-        assessment = json.loads(
-            (course_dir / "assessments" / "unit-01.json").read_text(encoding="utf-8")
+        for unit_number in (1, 2):
+            unit = json.loads(
+                (course_dir / "units" / f"unit-{unit_number:02d}.json").read_text(encoding="utf-8")
+            )
+            assessment = json.loads(
+                (course_dir / "assessments" / f"unit-{unit_number:02d}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            outcome_ids = {outcome["id"] for outcome in unit["learning_outcomes"]}
+            assessed_outcomes = {
+                outcome_id
+                for item in assessment["items"]
+                for outcome_id in item["linked_learning_outcome_ids"]
+            }
+            self.assertEqual(assessed_outcomes, outcome_ids)
+            self.assertEqual(assessment["status"], "curated_pending_expert_review")
+            self.assertTrue(
+                all(item["difficulty"] != "unclassified" for item in assessment["items"])
+            )
+            self.assertEqual(unit["activities"][0]["status"], "curated_pending_expert_review")
+            self.assertTrue(unit["activities"][0]["deliverables"])
+
+        glossary = json.loads((course_dir / "glossary.json").read_text(encoding="utf-8"))
+        unit_2_glossary = [entry for entry in glossary["entries"] if "MLBIO-U02" in entry["unit_ids"]]
+        self.assertTrue(unit_2_glossary)
+        self.assertTrue(
+            all(entry["verification_status"] == "verified_directly" for entry in unit_2_glossary)
         )
-        outcome_ids = {outcome["id"] for outcome in unit["learning_outcomes"]}
-        assessed_outcomes = {
-            outcome_id
-            for item in assessment["items"]
-            for outcome_id in item["linked_learning_outcome_ids"]
-        }
-        self.assertEqual(assessed_outcomes, outcome_ids)
-        self.assertEqual(assessment["status"], "curated_pending_expert_review")
-        self.assertTrue(all(item["difficulty"] != "unclassified" for item in assessment["items"]))
-        self.assertEqual(unit["activities"][0]["status"], "curated_pending_expert_review")
-        self.assertTrue(unit["activities"][0]["deliverables"])
+        self.assertTrue(all(entry.get("source_locators") for entry in unit_2_glossary))
 
     def test_renderer_prefers_the_canonical_unit(self) -> None:
         unit = RENDERER.load_advanced_unit(ROOT, "bioestadistica", 1)
@@ -82,6 +97,18 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(len(unit["theory_sections"][0]["key_points"]), 4)
         self.assertTrue(unit["theory_sections"][0]["equations"][0]["label"])
         self.assertEqual(len(unit["self_assessment"]), 8)
+
+    def test_renderer_includes_curated_machine_learning_unit_2(self) -> None:
+        unit = RENDERER.load_advanced_unit(
+            ROOT, "machine-learning-biomedico-validacion-clinica", 2
+        )
+        self.assertIsNotNone(unit)
+        assert unit is not None
+        self.assertEqual(unit["schema_version"], "canonical-1.0")
+        self.assertEqual(unit["unit"], 2)
+        self.assertEqual(unit["title"], "Datos clínicos, cohortes, etiquetas y fuga de información")
+        self.assertEqual(len(unit["self_assessment"]), 8)
+        self.assertTrue(unit["guided_activities"][0]["deliverables"])
 
     def test_every_assessment_item_maps_to_a_unit_outcome(self) -> None:
         course_dir = ROOT / "data" / "courses" / "bioestadistica"
