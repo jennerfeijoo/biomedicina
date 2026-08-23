@@ -16,7 +16,10 @@
     "publication": "published_provisional"
   },
   "purpose": "Construir modelos predictivos biomédicos reproducibles y comparables con referentes clínicos simples, controlando complejidad, transformaciones, desbalance y selección de hiperparámetros.",
-  "prerequisite_unit_ids": [],
+  "prerequisite_unit_ids": [
+    "MLBIO-U01",
+    "MLBIO-U02"
+  ],
   "course_learning_outcome_ids": [
     "MLBIO-LO03"
   ],
@@ -54,7 +57,7 @@
         {
           "id": "MLBIO-U03-T01-B01",
           "type": "equation",
-          "latex": "LogLoss = -mean(y*log(p) + (1-y)*log(1-p))",
+          "latex": "\\operatorname{LogLoss} = -\\frac{1}{n}\\sum_{i=1}^{n}\\left[y_i\\log(\\hat p_i)+(1-y_i)\\log(1-\\hat p_i)\\right]",
           "label": "Pérdida probabilística que penaliza predicciones seguras e incorrectas; no sustituye evaluación de calibración y utilidad."
         }
       ],
@@ -107,8 +110,8 @@
         {
           "id": "MLBIO-U03-T02-B01",
           "type": "equation",
-          "latex": "Pipeline(X) = Model(Transform_k(...Transform_2(Transform_1(X))))",
-          "label": "La predicción depende de una secuencia versionada de transformaciones y del modelo final."
+          "latex": "\\hat p(x)=f_{\\theta}\\!\\left(T_k(\\cdots T_2(T_1(x))\\cdots)\\right)",
+          "label": "La predicción depende de transformaciones T1,…,Tk y de un modelo fθ versionados; todo parámetro de Tj y θ se estima solo con datos de entrenamiento."
         }
       ],
       "key_points": [
@@ -125,7 +128,7 @@
             {
               "id": "MLBIO-U03-T02-ST01-B01",
               "type": "paragraph",
-              "text": "El pipeline debe representar exactamente las transformaciones que se aplicarán a un nuevo paciente. Incluye selección de columnas, unidades, limpieza, imputación, codificación, escalado, reducción de dimensionalidad y modelo. Cada transformación que aprende parámetros se ajusta solo con entrenamiento dentro de cada resample. Aplicar selección de variables o normalización antes de validación permite que la información de evaluación influya en el desarrollo y produce optimismo."
+              "text": "El pipeline debe representar exactamente las transformaciones que se aplicarán a un nuevo paciente. Incluye selección de columnas, unidades, limpieza, imputación, codificación, escalado, reducción de dimensionalidad y modelo. Cada transformación que aprende parámetros se ajusta solo con datos de entrenamiento dentro de cada remuestreo. Aplicar selección de variables o normalización antes de validación permite que la información de evaluación influya en el desarrollo y produce optimismo."
             }
           ]
         },
@@ -160,8 +163,8 @@
         {
           "id": "MLBIO-U03-T03-B01",
           "type": "equation",
-          "latex": "Objective = Loss(y, f(X)) + lambda * Penalty(parameters)",
-          "label": "La regularización añade una penalización controlada por lambda para limitar complejidad y mejorar estabilidad."
+          "latex": "\\widehat{\\beta}=\\arg\\min_{\\beta}\\left\\{L(y,X\\beta)+\\lambda\\left[\\alpha\\lVert\\beta\\rVert_1+\\frac{1-\\alpha}{2}\\lVert\\beta\\rVert_2^2\\right]\\right\\}",
+          "label": "Forma general de elastic net: λ controla la intensidad de contracción y α la mezcla entre penalizaciones L1 y L2; las convenciones de α pueden variar entre implementaciones."
         }
       ],
       "key_points": [
@@ -189,7 +192,7 @@
             {
               "id": "MLBIO-U03-T03-ST02-B01",
               "type": "paragraph",
-              "text": "Los árboles dividen el espacio mediante reglas y capturan interacciones sin especificarlas manualmente. Un árbol individual es interpretable pero inestable. Random forests reducen varianza promediando árboles, mientras boosting construye secuencias que corrigen errores. Estos métodos pueden manejar no linealidad y mezclas de variables, aunque requieren controlar profundidad, tasa de aprendizaje, número de árboles y tratamiento de faltantes. La importancia de variables puede estar sesgada por cardinalidad y correlación."
+              "text": "Los árboles dividen el espacio mediante reglas y capturan interacciones sin especificarlas manualmente. Un árbol individual puede ser legible, pero suele ser sensible a perturbaciones de los datos. Random forests combinan árboles construidos mediante aleatorización y agregan sus predicciones. Gradient boosting construye una secuencia aditiva que mejora la función ajustada siguiendo el gradiente negativo de una pérdida especificada. Estos métodos pueden manejar no linealidad y mezclas de variables, aunque requieren controlar profundidad, tasa de aprendizaje, número de árboles y tratamiento de faltantes. La importancia de variables puede estar sesgada por cardinalidad y correlación."
             }
           ]
         },
@@ -200,7 +203,7 @@
             {
               "id": "MLBIO-U03-T03-ST03-B01",
               "type": "paragraph",
-              "text": "Las redes neuronales son útiles cuando existen representaciones complejas, grandes volúmenes o datos no estructurados. En cohortes tabulares pequeñas no son automáticamente superiores. El número de parámetros, la regularización, el preentrenamiento y la calidad de datos condicionan su desempeño. La elección de familia debe considerar tamaño muestral efectivo, estructura del dato, latencia, necesidad de actualización y posibilidad de validación. La complejidad solo se justifica si mejora evidencia relevante y no solo el ajuste interno."
+              "text": "Las redes neuronales son útiles cuando existen representaciones complejas, grandes volúmenes o datos no estructurados. En cohortes tabulares pequeñas, las redes neuronales no son automáticamente superiores. El número de parámetros, la regularización, el preentrenamiento y la calidad de datos condicionan su desempeño. La elección de familia debe considerar tamaño muestral efectivo, estructura del dato, latencia, necesidad de actualización y posibilidad de validación. La complejidad solo se justifica si mejora evidencia relevante y no solo el ajuste interno."
             }
           ]
         }
@@ -213,12 +216,12 @@
         {
           "id": "MLBIO-U03-T04-B01",
           "type": "equation",
-          "latex": "Best configuration = argmin_h ValidationLoss(h | training only)",
+          "latex": "\\widehat h=\\arg\\min_{h\\in\\mathcal{H}}\\widehat L_{\\mathrm{CV,dev}}(h)",
           "label": "Los hiperparámetros h se seleccionan usando solo información interna del conjunto de desarrollo."
         }
       ],
       "key_points": [
-        "El balance de entrenamiento no debe confundirse con prevalencia de evaluación.",
+        "La rareza del evento no justifica automáticamente reequilibrar las clases.",
         "El tuning pertenece al desarrollo y necesita evaluación separada.",
         "Semillas reproducen ejecuciones, no garantizan generalización.",
         "El modelo bloqueado incluye pipeline, umbral y artefactos versionados."
@@ -231,7 +234,7 @@
             {
               "id": "MLBIO-U03-T04-ST01-B01",
               "type": "paragraph",
-              "text": "En eventos infrecuentes, el desbalance afecta aprendizaje y evaluación. Ponderar la pérdida, sobremuestrear o submuestrear puede ayudar, pero estas operaciones ocurren solo en entrenamiento. La prevalencia de la prueba debe representar el objetivo de evaluación; modificarla altera valores predictivos y calibración. Técnicas sintéticas pueden crear ejemplos poco plausibles y deben validarse según estructura biomédica, no solo por mejora de una métrica."
+              "text": "En eventos infrecuentes, el número de eventos condiciona la precisión y la complejidad que puede sostenerse. El desbalance de eventos no constituye por sí mismo una razón para reequilibrar las clases. En modelos logísticos de riesgo clínico, el sobremuestreo, el submuestreo o SMOTE pueden deteriorar la calibración de probabilidades sin mejorar la discriminación. Si otro algoritmo u objetivo requiere ponderación o remuestreo, la operación se restringe al entrenamiento, se documenta el cambio de objetivo y se comprueba la calibración. La evaluación conserva una distribución compatible con la población objetivo; alterar su prevalencia cambia valores predictivos y la interpretación de las probabilidades."
             }
           ]
         },
@@ -298,13 +301,17 @@
     {
       "id": "MLBIO-U03-ACT01",
       "title": "Comparación reproducible de modelos",
-      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
-      "prerequisite_unit_ids": [],
+      "purpose": "Comparar un referente implementable y modelos candidatos mediante un pipeline sin fuga, una selección interna preespecificada y un paquete reproducible listo para evaluación independiente.",
+      "prerequisite_unit_ids": [
+        "MLBIO-U01",
+        "MLBIO-U02"
+      ],
       "instructions": [
-        "Definir baseline y modelo candidato.",
-        "Construir pipeline sin fuga.",
-        "Seleccionar hiperparámetros internamente.",
-        "Bloquear y documentar el modelo."
+        "Elegir una predicción clínica definida en las unidades previas y especificar práctica habitual, baseline estadístico y al menos dos modelos candidatos con la misma información disponible.",
+        "Diseñar un pipeline ejecutable que incluya selección de columnas, temporalidad, imputación, codificación, escalado, selección o reducción y estimador sin usar información reservada.",
+        "Preespecificar función de pérdida, métricas de selección, espacio de hiperparámetros, presupuesto computacional, remuestreo interno y regla de desempate por simplicidad.",
+        "Evaluar el tratamiento del evento infrecuente sin alterar la distribución de validación y justificar cualquier ponderación o remuestreo mediante calibración y plausibilidad clínica.",
+        "Bloquear la versión elegida y producir código, manifiesto, artefactos y ficha del modelo suficientes para repetir la predicción en datos nuevos."
       ],
       "tasks": [
         "Elegir un baseline para una predicción de readmisión.",
@@ -316,15 +323,27 @@
         "Redactar una regla para elegir el modelo más simple.",
         "Crear una ficha mínima del modelo bloqueado."
       ],
-      "deliverables": [],
-      "checking_criteria": [
-        "Existe baseline explícito.",
-        "No hay transformaciones ajustadas con prueba.",
-        "El tuning está separado de evaluación.",
-        "El modelo final es reproducible y versionado."
+      "deliverables": [
+        "Protocolo breve con uso previsto, baseline clínico, baseline estadístico, modelos candidatos, función de pérdida y regla de selección.",
+        "Diagrama del pipeline que indique qué pasos aprenden parámetros, en qué partición se ajustan y cómo se aplican a un paciente nuevo.",
+        "Notebook o script reproducible que compare como mínimo regresión penalizada y una familia no lineal usando las mismas particiones.",
+        "Registro de tuning con espacio de búsqueda, valores evaluados, métrica interna, presupuesto, semillas y decisión final sin consultar la prueba.",
+        "Tabla comparativa con incertidumbre, discriminación, calibración, errores clínicamente relevantes, latencia, complejidad y requisitos de datos.",
+        "Paquete del modelo bloqueado con manifiesto de datos y dependencias, hashes, parámetros, umbral, artefacto serializado y ficha del modelo."
       ],
-      "estimated_duration_minutes": null,
-      "status": "migrated_requires_pedagogical_review"
+      "checking_criteria": [
+        "La práctica habitual y el baseline estadístico son implementables, usan información disponible en el mismo momento y se evalúan en las mismas particiones que los candidatos.",
+        "La función de pérdida y la regla de selección corresponden a probabilidades, ranking o clasificación según el uso previsto y no sustituyen la evaluación clínica final.",
+        "Imputación, codificación, escalado, selección y reducción se ajustan dentro de cada partición de entrenamiento.",
+        "Las ventanas temporales, unidades y fórmulas de variables derivadas son reproducibles y no contienen información posterior al tiempo cero.",
+        "La comparación entre regresión penalizada, árboles, boosting o redes considera tamaño efectivo, estructura del dato, sesgo-varianza, latencia y mantenimiento.",
+        "El espacio de hiperparámetros, presupuesto, métrica y regla de desempate se fijan antes de inspeccionar la evaluación reservada.",
+        "La rareza del evento se trata sin modificar la distribución de evaluación y cualquier remuestreo o ponderación incluye comprobación de calibración.",
+        "La elección final comunica incertidumbre y no privilegia complejidad por una diferencia puntual irrelevante.",
+        "El paquete bloqueado permite repetir predicciones e identifica versiones de datos, código, entorno, parámetros, umbral y limitaciones."
+      ],
+      "estimated_duration_minutes": 240,
+      "status": "curated_pending_expert_review"
     }
   ],
   "assessment_file": "assessments/unit-03.json",
@@ -346,10 +365,34 @@
     "tripod-ai",
     "probast-ai",
     "imdrf-fda-gmlp",
+    "efthimiou-clinical-prediction-guide-2024",
     "scikit-learn-user-guide",
+    "scikit-learn-model-selection",
+    "scikit-learn-common-pitfalls",
+    "zou-hastie-elastic-net-2005",
+    "breiman-random-forests-2001",
+    "friedman-gradient-boosting-2001",
+    "christodoulou-ml-vs-logistic-2019",
+    "van-den-goorbergh-class-imbalance-2022",
+    "mitchell-model-cards-2019",
     "fda-transparency-mlmd"
   ],
-  "claim_ids": [],
+  "claim_ids": [
+    "MLBIO-U03-C001",
+    "MLBIO-U03-C002",
+    "MLBIO-U03-C003",
+    "MLBIO-U03-C004",
+    "MLBIO-U03-C005",
+    "MLBIO-U03-C006",
+    "MLBIO-U03-C007",
+    "MLBIO-U03-C008",
+    "MLBIO-U03-C009",
+    "MLBIO-U03-C010",
+    "MLBIO-U03-C011",
+    "MLBIO-U03-C012",
+    "MLBIO-U03-C013",
+    "MLBIO-U03-C014"
+  ],
   "media_ids": [
     "MLBIO-U03-MED01"
   ],

@@ -38,12 +38,12 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(report.counts["units"], 8)
         self.assertEqual(report.counts["topics"], 32)
         self.assertEqual(report.counts["assessment_items"], 64)
-        self.assertEqual(report.counts["claims"], 28)
+        self.assertEqual(report.counts["claims"], 42)
         self.assertFalse(any("sin afirmaciones centrales trazadas" in gap for gap in report.gaps))
         self.assertFalse(any("estado de verificación no declarado" in gap for gap in report.gaps))
 
         course_dir = ROOT / "data" / "courses" / "machine-learning-biomedico-validacion-clinica"
-        for unit_number in (1, 2):
+        for unit_number in (1, 2, 3):
             unit = json.loads(
                 (course_dir / "units" / f"unit-{unit_number:02d}.json").read_text(encoding="utf-8")
             )
@@ -67,12 +67,16 @@ class AcademicCourseSchemaTests(unittest.TestCase):
             self.assertTrue(unit["activities"][0]["deliverables"])
 
         glossary = json.loads((course_dir / "glossary.json").read_text(encoding="utf-8"))
-        unit_2_glossary = [entry for entry in glossary["entries"] if "MLBIO-U02" in entry["unit_ids"]]
-        self.assertTrue(unit_2_glossary)
+        curated_glossary = [
+            entry
+            for entry in glossary["entries"]
+            if {"MLBIO-U02", "MLBIO-U03"}.intersection(entry["unit_ids"])
+        ]
+        self.assertTrue(curated_glossary)
         self.assertTrue(
-            all(entry["verification_status"] == "verified_directly" for entry in unit_2_glossary)
+            all(entry["verification_status"] == "verified_directly" for entry in curated_glossary)
         )
-        self.assertTrue(all(entry.get("source_locators") for entry in unit_2_glossary))
+        self.assertTrue(all(entry.get("source_locators") for entry in curated_glossary))
 
     def test_renderer_prefers_the_canonical_unit(self) -> None:
         unit = RENDERER.load_advanced_unit(ROOT, "bioestadistica", 1)
@@ -109,6 +113,18 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(unit["title"], "Datos clínicos, cohortes, etiquetas y fuga de información")
         self.assertEqual(len(unit["self_assessment"]), 8)
         self.assertTrue(unit["guided_activities"][0]["deliverables"])
+
+    def test_renderer_includes_curated_machine_learning_unit_3(self) -> None:
+        unit = RENDERER.load_advanced_unit(
+            ROOT, "machine-learning-biomedico-validacion-clinica", 3
+        )
+        self.assertIsNotNone(unit)
+        assert unit is not None
+        self.assertEqual(unit["schema_version"], "canonical-1.0")
+        self.assertEqual(unit["unit"], 3)
+        self.assertEqual(unit["title"], "Desarrollo de modelos y referentes clínicos")
+        self.assertEqual(len(unit["self_assessment"]), 8)
+        self.assertEqual(len(unit["guided_activities"][0]["deliverables"]), 6)
 
     def test_every_assessment_item_maps_to_a_unit_outcome(self) -> None:
         course_dir = ROOT / "data" / "courses" / "bioestadistica"
