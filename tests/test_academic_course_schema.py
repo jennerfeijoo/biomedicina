@@ -38,8 +38,26 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(report.counts["units"], 8)
         self.assertEqual(report.counts["topics"], 32)
         self.assertEqual(report.counts["assessment_items"], 64)
-        self.assertTrue(any("sin afirmaciones centrales trazadas" in gap for gap in report.gaps))
+        self.assertEqual(report.counts["claims"], 14)
+        self.assertFalse(any("sin afirmaciones centrales trazadas" in gap for gap in report.gaps))
         self.assertFalse(any("estado de verificación no declarado" in gap for gap in report.gaps))
+
+        course_dir = ROOT / "data" / "courses" / "machine-learning-biomedico-validacion-clinica"
+        unit = json.loads((course_dir / "units" / "unit-01.json").read_text(encoding="utf-8"))
+        assessment = json.loads(
+            (course_dir / "assessments" / "unit-01.json").read_text(encoding="utf-8")
+        )
+        outcome_ids = {outcome["id"] for outcome in unit["learning_outcomes"]}
+        assessed_outcomes = {
+            outcome_id
+            for item in assessment["items"]
+            for outcome_id in item["linked_learning_outcome_ids"]
+        }
+        self.assertEqual(assessed_outcomes, outcome_ids)
+        self.assertEqual(assessment["status"], "curated_pending_expert_review")
+        self.assertTrue(all(item["difficulty"] != "unclassified" for item in assessment["items"]))
+        self.assertEqual(unit["activities"][0]["status"], "curated_pending_expert_review")
+        self.assertTrue(unit["activities"][0]["deliverables"])
 
     def test_renderer_prefers_the_canonical_unit(self) -> None:
         unit = RENDERER.load_advanced_unit(ROOT, "bioestadistica", 1)
