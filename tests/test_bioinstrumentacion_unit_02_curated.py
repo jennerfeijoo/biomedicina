@@ -71,7 +71,7 @@ class BioinstrumentacionUnit02CuratedTests(unittest.TestCase):
         covered = {lo for item in items for lo in item["linked_learning_outcome_ids"]}
         self.assertEqual(covered, {f"BIOINST-U02-LO{i:02d}" for i in range(1, 6)})
         prompts = " ".join(item["prompt"] for item in items).lower()
-        self.assertIn("retardo", prompts)
+        self.assertIn("permanece plana 0,4 s", prompts)
         self.assertIn("oscila", prompts)
         self.assertIn("sin eje temporal", prompts)
 
