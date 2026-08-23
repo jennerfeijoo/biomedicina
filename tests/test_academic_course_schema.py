@@ -38,12 +38,12 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(report.counts["units"], 8)
         self.assertEqual(report.counts["topics"], 32)
         self.assertEqual(report.counts["assessment_items"], 64)
-        self.assertEqual(report.counts["claims"], 70)
+        self.assertEqual(report.counts["claims"], 84)
         self.assertFalse(any("sin afirmaciones centrales trazadas" in gap for gap in report.gaps))
         self.assertFalse(any("estado de verificación no declarado" in gap for gap in report.gaps))
 
         course_dir = ROOT / "data" / "courses" / "machine-learning-biomedico-validacion-clinica"
-        for unit_number in (1, 2, 3, 4, 5):
+        for unit_number in (1, 2, 3, 4, 5, 6):
             unit = json.loads(
                 (course_dir / "units" / f"unit-{unit_number:02d}.json").read_text(encoding="utf-8")
             )
@@ -70,7 +70,7 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         curated_glossary = [
             entry
             for entry in glossary["entries"]
-            if {"MLBIO-U02", "MLBIO-U03", "MLBIO-U04", "MLBIO-U05"}.intersection(entry["unit_ids"])
+            if {"MLBIO-U02", "MLBIO-U03", "MLBIO-U04", "MLBIO-U05", "MLBIO-U06"}.intersection(entry["unit_ids"])
         ]
         self.assertTrue(curated_glossary)
         self.assertTrue(
@@ -149,6 +149,20 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(unit["title"], "Validación externa, transportabilidad y actualización")
         self.assertEqual(len(unit["self_assessment"]), 8)
         self.assertEqual(len(unit["guided_activities"][0]["deliverables"]), 6)
+
+    def test_renderer_includes_curated_machine_learning_unit_6(self) -> None:
+        unit = RENDERER.load_advanced_unit(
+            ROOT, "machine-learning-biomedico-validacion-clinica", 6
+        )
+        self.assertIsNotNone(unit)
+        assert unit is not None
+        self.assertEqual(unit["schema_version"], "canonical-1.0")
+        self.assertEqual(unit["unit"], 6)
+        self.assertEqual(unit["title"], "Discriminación, calibración y utilidad clínica")
+        self.assertEqual(len(unit["self_assessment"]), 8)
+        self.assertEqual(len(unit["guided_activities"][0]["deliverables"]), 6)
+        self.assertEqual(unit["guided_activities"][0]["estimated_duration_minutes"], 240)
+        self.assertEqual(len(unit["guided_activities"][0]["checking_criteria"]), 10)
 
     def test_every_assessment_item_maps_to_a_unit_outcome(self) -> None:
         course_dir = ROOT / "data" / "courses" / "bioestadistica"
