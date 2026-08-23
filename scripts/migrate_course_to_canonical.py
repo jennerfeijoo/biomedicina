@@ -130,7 +130,9 @@ def build_topics(unit: dict[str, Any], unit_id: str) -> list[dict[str, Any]]:
                 "type": "equation",
                 "latex": str(equation.get("latex") or "").strip(),
             }
-            label = str(equation.get("label") or equation.get("description") or "").strip()
+            label = str(
+                equation.get("label") or equation.get("description") or equation.get("meaning") or ""
+            ).strip()
             if label:
                 block["label"] = label
             if isinstance(equation.get("variables"), dict) and equation["variables"]:
@@ -142,6 +144,7 @@ def build_topics(unit: dict[str, Any], unit_id: str) -> list[dict[str, Any]]:
                 "id": topic_id,
                 "title": str(section.get("heading") or section.get("title") or f"Tema {topic_number}").strip(),
                 "blocks": blocks,
+                "key_points": key_points,
                 "subtopics": subtopics,
             }
         )
@@ -263,6 +266,7 @@ def migrate(subject_id: str, course_code: str, *, force: bool = False) -> Path:
         used_source_ids.add(source_id)
         record = dict(source)
         record["id"] = source_id
+        record.setdefault("verification_status", "unverified")
         record["used_by_unit_ids"] = []
         known_sources[source_id] = record
         source_keys[(str(source.get("registry_id") or source.get("id") or ""), str(source.get("url") or ""))] = source_id
@@ -305,6 +309,16 @@ def migrate(subject_id: str, course_code: str, *, force: bool = False) -> Path:
                 record.setdefault("verification_status", "unverified")
                 record["used_by_unit_ids"] = []
                 known_sources[source_id] = record
+            else:
+                record = known_sources[source_id]
+                for key, value in source.items():
+                    upgrades_unverified = (
+                        key == "verification_status"
+                        and record.get(key) == "unverified"
+                        and value != "unverified"
+                    )
+                    if value not in (None, "", []) and (not record.get(key) or upgrades_unverified):
+                        record[key] = value
             unit_source_ids.append(source_id)
             used_by = known_sources[source_id].setdefault("used_by_unit_ids", [])
             if unit_id not in used_by:
@@ -419,7 +433,7 @@ def migrate(subject_id: str, course_code: str, *, force: bool = False) -> Path:
         "schema_version": "1.0",
         "course_id": subject_id,
         "source_policy": str(source_registry.get("source_policy") or ""),
-        "consulted_on": source_registry.get("consulted_on"),
+        "consulted_on": source_registry.get("consulted_on") or source_registry.get("review_date"),
         "coverage_gaps": source_registry.get("coverage_gaps", []),
         "sources": list(known_sources.values()),
     }

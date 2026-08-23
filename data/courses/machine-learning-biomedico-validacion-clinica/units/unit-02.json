@@ -1,0 +1,386 @@
+{
+  "$schema": "../../../../schemas/academic/unit-v1.schema.json",
+  "schema_version": "1.0",
+  "id": "MLBIO-U02",
+  "course_id": "machine-learning-biomedico-validacion-clinica",
+  "order": 2,
+  "slug": "datos-clinicos-cohortes-etiquetas-leakage",
+  "title": "Datos clínicos, cohortes, etiquetas y fuga de información",
+  "status": {
+    "content": "in_review",
+    "sources": "partial",
+    "pedagogy": "in_review",
+    "multimedia": "planned",
+    "internal_review": "pending",
+    "external_review": "pending",
+    "publication": "published_provisional"
+  },
+  "purpose": "Auditar cómo el proceso asistencial genera datos, ausencias y etiquetas, y diseñar una cohorte y particiones que permitan evaluar un modelo sin sesgo evitable ni fuga de información.",
+  "prerequisite_unit_ids": [],
+  "course_learning_outcome_ids": [
+    "MLBIO-LO02"
+  ],
+  "learning_outcomes": [
+    {
+      "id": "MLBIO-U02-LO01",
+      "statement": "Representar el proceso de generación de datos clínicos antes de modelar."
+    },
+    {
+      "id": "MLBIO-U02-LO02",
+      "statement": "Distinguir población fuente, cohorte analítica y población objetivo."
+    },
+    {
+      "id": "MLBIO-U02-LO03",
+      "statement": "Evaluar etiquetas, sesgo de verificación y errores de medición."
+    },
+    {
+      "id": "MLBIO-U02-LO04",
+      "statement": "Analizar mecanismos de datos faltantes y decisiones de imputación."
+    },
+    {
+      "id": "MLBIO-U02-LO05",
+      "statement": "Detectar leakage por paciente, tiempo, centro, preprocesamiento y selección."
+    },
+    {
+      "id": "MLBIO-U02-LO06",
+      "statement": "Construir particiones reproducibles compatibles con el uso previsto."
+    }
+  ],
+  "topics": [
+    {
+      "id": "MLBIO-U02-T01",
+      "title": "Proceso asistencial y generación de datos",
+      "blocks": [
+        {
+          "id": "MLBIO-U02-T01-B01",
+          "type": "equation",
+          "latex": "Observed data = Biology + Care process + Measurement + Recording",
+          "label": "Representación conceptual de las fuentes que determinan una variable clínica observada."
+        }
+      ],
+      "key_points": [
+        "Los datos reflejan biología, acceso, práctica y tecnología.",
+        "La cohorte analítica surge de múltiples filtros y decisiones.",
+        "La ausencia de una medición puede ser informativa.",
+        "Los rastros operativos pueden convertirse en atajos inestables."
+      ],
+      "subtopics": [
+        {
+          "id": "MLBIO-U02-T01-ST01",
+          "title": "Los datos reflejan biología, acceso, práctica y tecnología",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T01-ST01-B01",
+              "type": "paragraph",
+              "text": "Los datos clínicos no son una muestra neutra de la biología. Son el resultado de quién accede al sistema, qué profesionales solicitan pruebas, qué dispositivos se utilizan, qué variables se registran y cómo se codifican decisiones. Una medición puede faltar porque no era necesaria, porque el paciente estaba demasiado grave, porque un centro no dispone de la prueba o porque ocurrió un fallo técnico. Estas causas contienen información y pueden cambiar entre desarrollo y despliegue."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T01-ST02",
+          "title": "La cohorte analítica surge de múltiples filtros y decisiones",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T01-ST02-B01",
+              "type": "paragraph",
+              "text": "Antes de construir una tabla conviene dibujar el flujo desde la población fuente hasta la cohorte analítica. Deben identificarse criterios de elegibilidad, puntos de entrada, exclusiones, duplicados, ventanas temporales y fuentes enlazadas. La fecha de extracción y la versión de cada sistema importan: los códigos, equipos y prácticas pueden cambiar. El diccionario de datos debe documentar significado, unidad, frecuencia, límites plausibles y relación temporal con el tiempo cero."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T01-ST03",
+          "title": "La ausencia de una medición puede ser informativa",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T01-ST03-B01",
+              "type": "paragraph",
+              "text": "La observación también depende de la intervención clínica. Los pacientes con mayor sospecha reciben más pruebas, y quienes sobreviven más tiempo generan más registros. Por ello, la densidad de datos puede funcionar como proxy de gravedad o atención. Un modelo puede aprender intensidad de vigilancia en lugar de fisiología. El análisis debe distinguir variables clínicas intencionadas de rastros operativos y evaluar si esas señales existirán de forma estable en el entorno previsto."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "MLBIO-U02-T02",
+      "title": "Selección, representatividad y diseño de cohorte",
+      "blocks": [
+        {
+          "id": "MLBIO-U02-T02-B01",
+          "type": "equation",
+          "latex": "Selection probability = P(Included = 1 | X, Y, Care process)",
+          "label": "La inclusión puede depender de predictores, desenlace y proceso asistencial, generando diferencias entre cohorte y población objetivo."
+        }
+      ],
+      "key_points": [
+        "Población fuente, cohorte analítica y población objetivo no son equivalentes.",
+        "Las exclusiones deben cuantificarse y justificarse.",
+        "Muestras enriquecidas alteran prevalencia y calibración.",
+        "Centro, tiempo y desenlace pueden quedar confundidos."
+      ],
+      "subtopics": [
+        {
+          "id": "MLBIO-U02-T02-ST01",
+          "title": "Población fuente, cohorte analítica y población objetivo no son equivalentes",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T02-ST01-B01",
+              "type": "paragraph",
+              "text": "La población fuente incluye a quienes podrían haber sido elegibles en el entorno definido. La cohorte analítica contiene a quienes finalmente aparecen después de aplicar disponibilidad de datos, exclusiones y enlazado. Si estas etapas dependen del desenlace, los predictores o la capacidad de acceso, la muestra puede no representar la población objetivo. La representatividad no exige copiar cada proporción poblacional, pero sí comprender qué relaciones y rangos deben transportarse."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T02-ST02",
+          "title": "Las exclusiones deben cuantificarse y justificarse",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T02-ST02-B01",
+              "type": "paragraph",
+              "text": "Las cohortes retrospectivas son útiles, aunque su tiempo cero y elegibilidad deben reconstruirse con reglas reproducibles. Los diseños caso-control o las muestras enriquecidas pueden servir para desarrollo, pero alteran prevalencia y requieren cuidado al estimar probabilidades y valores predictivos. El muestreo por conveniencia puede excluir centros pequeños, pacientes con datos incompletos o grupos que reciben atención diferente. Cada exclusión necesita cantidad, motivo y comparación básica con los incluidos."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T02-ST03",
+          "title": "Muestras enriquecidas alteran prevalencia y calibración",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T02-ST03-B01",
+              "type": "paragraph",
+              "text": "La separación por centro o tiempo puede ser parte del diseño, no solo una técnica de validación. Reservar un periodo posterior permite evaluar cambios temporales; reservar centros completos prueba transportabilidad geográfica. Sin embargo, si un centro aporta casi todos los eventos o utiliza una práctica exclusiva, centro y desenlace quedan confundidos. El protocolo debe describir solapamiento de poblaciones, distribución de predictores y si la evaluación responde al uso previsto o a una pregunta distinta."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "MLBIO-U02-T03",
+      "title": "Etiquetas, referencia estándar y datos faltantes",
+      "blocks": [
+        {
+          "id": "MLBIO-U02-T03-B01",
+          "type": "equation",
+          "latex": "Observed label = True state + Measurement error + Verification process",
+          "label": "Representación conceptual de cómo referencia y verificación condicionan la etiqueta utilizada."
+        }
+      ],
+      "key_points": [
+        "La etiqueta es una medición con error, no una verdad automática.",
+        "El sesgo de verificación aparece cuando no todos reciben la referencia.",
+        "Decisiones clínicas históricas pueden codificar desigualdad o capacidad.",
+        "La imputación debe formar parte del pipeline de entrenamiento."
+      ],
+      "subtopics": [
+        {
+          "id": "MLBIO-U02-T03-ST01",
+          "title": "La etiqueta es una medición con error, no una verdad automática",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T03-ST01-B01",
+              "type": "paragraph",
+              "text": "Una etiqueta puede provenir de adjudicación clínica, prueba de laboratorio, informe, código administrativo o regla computacional. Cada fuente tiene sensibilidad, especificidad y variación temporal. Los códigos de facturación pueden ser reproducibles pero no representar exactamente la condición clínica. Una prueba confirmatoria puede ser más específica, aunque solo se aplica a pacientes con alta sospecha. Cuando la probabilidad de verificar depende del modelo de atención, la evaluación puede sobrestimar o subestimar desempeño."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T03-ST02",
+          "title": "El sesgo de verificación aparece cuando no todos reciben la referencia",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T03-ST02-B01",
+              "type": "paragraph",
+              "text": "Las etiquetas derivadas de decisiones humanas pueden incorporar sesgos previos. Predecir ingreso, derivación o tratamiento puede reproducir disponibilidad de recursos y práctica local. El desenlace debe alinearse con el objetivo: predecir una decisión existente no es igual que predecir necesidad clínica. La revisión debe documentar cegamiento de evaluadores, concordancia, resolución de discrepancias y relación entre predictores y proceso de etiquetado."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T03-ST03",
+          "title": "Decisiones clínicas históricas pueden codificar desigualdad o capacidad",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T03-ST03-B01",
+              "type": "paragraph",
+              "text": "Los datos faltantes se describen por mecanismo y contexto, no solo por porcentaje. Bajo ausencia completamente aleatoria, los faltantes no dependen de variables observadas ni no observadas; bajo ausencia al azar, pueden explicarse por información observada; bajo ausencia no al azar, dependen de valores no observados o del propio proceso. La imputación debe ajustarse dentro del entrenamiento y respetar tiempo, unidades y plausibilidad. Añadir indicadores de ausencia puede mejorar predicción, pero también aprender una práctica local que no se transporta."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "MLBIO-U02-T04",
+      "title": "Leakage, particiones y procedencia",
+      "blocks": [
+        {
+          "id": "MLBIO-U02-T04-B01",
+          "type": "equation",
+          "latex": "Train entities intersect Test entities = empty set",
+          "label": "Las entidades dependientes definidas por paciente, centro, familia u otro nivel relevante no deben cruzar particiones."
+        }
+      ],
+      "key_points": [
+        "Leakage incluye variables, transformaciones y relaciones entre observaciones.",
+        "La unidad de partición depende del objetivo de generalización.",
+        "El conjunto de prueba debe permanecer bloqueado.",
+        "La procedencia conecta la cohorte publicada con las fuentes originales."
+      ],
+      "subtopics": [
+        {
+          "id": "MLBIO-U02-T04-ST01",
+          "title": "Leakage incluye variables, transformaciones y relaciones entre observaciones",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T04-ST01-B01",
+              "type": "paragraph",
+              "text": "Existe fuga cuando el desarrollo utiliza información que no estaría disponible al aplicar el modelo o que pertenece a la evaluación reservada. La fuga directa incluye variables posteriores al desenlace. La fuga indirecta aparece cuando se normaliza, imputa, selecciona variables o armoniza usando toda la base antes de dividir. También ocurre cuando el mismo paciente, familia, dispositivo, hospital o episodio relacionado aparece en entrenamiento y prueba. El resultado suele ser una estimación optimista difícil de reproducir."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T04-ST02",
+          "title": "La unidad de partición depende del objetivo de generalización",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T04-ST02-B01",
+              "type": "paragraph",
+              "text": "La partición debe corresponder al nivel de independencia y al objetivo de generalización. Para imágenes o registros repetidos, todas las observaciones de un paciente permanecen juntas. Para evaluar un nuevo hospital, se reservan centros completos. Para pronóstico temporal, el entrenamiento precede a la prueba y las variables se construyen sin mirar al futuro. La estratificación puede preservar eventos, pero no debe romper agrupaciones. Las decisiones de partición se registran antes de ajustar modelos."
+            }
+          ]
+        },
+        {
+          "id": "MLBIO-U02-T04-ST03",
+          "title": "El conjunto de prueba debe permanecer bloqueado",
+          "blocks": [
+            {
+              "id": "MLBIO-U02-T04-ST03-B01",
+              "type": "paragraph",
+              "text": "La procedencia permite reconstruir qué datos, reglas y versiones produjeron cada conjunto. Deben conservarse identificadores pseudonimizados, fechas de extracción, hashes, consultas, criterios, transformaciones y exclusiones. Un conjunto de prueba pierde valor si se consulta repetidamente para elegir modelos; con el tiempo se convierte en parte del entrenamiento intelectual. Por ello, los resultados externos se inspeccionan después de bloquear pipeline, umbrales y plan de análisis, y cualquier ajuste posterior se evalúa en una cohorte nueva."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "id": "MLBIO-U02-EJ01",
+      "title": "Imputación antes de dividir",
+      "scenario": "Se calcula la mediana de cada variable con toda la cohorte y después se separan entrenamiento y prueba.",
+      "reasoning_steps": [
+        "Identificar qué parámetros aprendió la imputación.",
+        "Reconocer que la prueba influyó en esos parámetros.",
+        "Dividir primero por paciente.",
+        "Ajustar la imputación solo en entrenamiento."
+      ],
+      "interpretation": "La transformación produjo fuga indirecta y una evaluación optimista, aunque nunca se usó explícitamente la etiqueta de prueba.",
+      "limitations": [
+        "El efecto puede ser pequeño en algunos datos.",
+        "Todas las transformaciones aprendidas deben revisarse, no solo la imputación."
+      ]
+    },
+    {
+      "id": "MLBIO-U02-EJ02",
+      "title": "Etiqueta administrativa de complicación",
+      "scenario": "El desenlace se define mediante un código de facturación que varía entre hospitales.",
+      "reasoning_steps": [
+        "Comparar reglas de codificación por centro.",
+        "Validar una muestra contra revisión clínica.",
+        "Estimar error de clasificación.",
+        "Analizar desempeño por centro y fuente de etiqueta."
+      ],
+      "interpretation": "El modelo puede aprender diferencias administrativas y no únicamente riesgo clínico.",
+      "limitations": [
+        "La revisión clínica también puede discrepar.",
+        "La validación parcial debe considerar selección."
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "id": "MLBIO-U02-ACT01",
+      "title": "Auditoría de cohorte y leakage",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [],
+      "instructions": [
+        "Dibujar el proceso de generación de datos.",
+        "Definir población fuente, objetivo y analítica.",
+        "Auditar etiqueta y faltantes.",
+        "Diseñar particiones y procedencia."
+      ],
+      "tasks": [
+        "Identificar tres rastros operativos que podrían actuar como atajos.",
+        "Construir un diagrama de selección desde población fuente hasta cohorte.",
+        "Evaluar sesgo de verificación en una prueba confirmatoria.",
+        "Clasificar ejemplos de faltantes como MCAR, MAR o MNAR con cautela.",
+        "Corregir un pipeline que escala variables antes de dividir.",
+        "Diseñar una partición por paciente y centro.",
+        "Proponer una validación temporal con tiempo cero coherente.",
+        "Crear un registro mínimo de procedencia y exclusiones."
+      ],
+      "deliverables": [],
+      "checking_criteria": [
+        "La selección está cuantificada.",
+        "La etiqueta tiene fuente y limitaciones.",
+        "Las transformaciones se ajustan en entrenamiento.",
+        "Las entidades dependientes no cruzan particiones."
+      ],
+      "estimated_duration_minutes": null,
+      "status": "migrated_requires_pedagogical_review"
+    }
+  ],
+  "assessment_file": "assessments/unit-02.json",
+  "glossary_entry_ids": [
+    "MLBIO-GLO-013",
+    "MLBIO-GLO-014",
+    "MLBIO-GLO-015",
+    "MLBIO-GLO-016",
+    "MLBIO-GLO-017",
+    "MLBIO-GLO-018",
+    "MLBIO-GLO-019",
+    "MLBIO-GLO-020",
+    "MLBIO-GLO-021",
+    "MLBIO-GLO-022",
+    "MLBIO-GLO-023",
+    "MLBIO-GLO-024"
+  ],
+  "source_ids": [
+    "tripod-ai",
+    "probast-ai",
+    "decide-ai",
+    "imdrf-fda-gmlp",
+    "fda-transparency-mlmd"
+  ],
+  "claim_ids": [],
+  "media_ids": [
+    "MLBIO-U02-MED01"
+  ],
+  "common_errors": [
+    {
+      "error": "Asumir que la base representa la población objetivo.",
+      "correction": "Mapear selección, acceso, exclusiones y cambios de práctica."
+    },
+    {
+      "error": "Tratar la etiqueta como verdad perfecta.",
+      "correction": "Documentar referencia, verificación, error y concordancia."
+    },
+    {
+      "error": "Imputar o escalar antes de dividir.",
+      "correction": "Ajustar cada transformación dentro del entrenamiento."
+    },
+    {
+      "error": "Dividir registros y no pacientes.",
+      "correction": "Mantener entidades dependientes en una sola partición."
+    },
+    {
+      "error": "Consultar repetidamente el conjunto de prueba.",
+      "correction": "Bloquear plan y reservar una nueva cohorte para ajustes posteriores."
+    }
+  ],
+  "biomedical_connections": [
+    "Historia clínica electrónica: Registro y solicitud de pruebas generan faltantes y proxies operativos.",
+    "Diagnóstico: La verificación selectiva condiciona las etiquetas y métricas.",
+    "Ómicas: Batch, centro y preprocesamiento pueden confundirse con el desenlace.",
+    "Salud digital: Wearables y aplicaciones presentan pérdidas, adherencia y selección dependientes del usuario."
+  ],
+  "editorial_notice": "Material educativo en estado review. Una cohorte retrospectiva técnicamente limpia no demuestra por sí sola aplicabilidad, seguridad o utilidad clínica.",
+  "legacy_origin": "data/generated_units/machine-learning-biomedico-validacion-clinica/unit-02.json"
+}

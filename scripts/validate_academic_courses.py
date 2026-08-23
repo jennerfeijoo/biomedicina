@@ -319,6 +319,8 @@ def validate_unit(
         topic_location = f"{location}.topics[{topic_index}]"
         topic_id = require_nonempty_text(topic, "id", report, topic_location)
         require_nonempty_text(topic, "title", report, topic_location)
+        if "key_points" in topic:
+            text_list(topic.get("key_points"), report, f"{topic_location}.key_points", minimum=1)
         if topic_id in seen_content_ids:
             report.error(f"{topic_location}.id", f"identificador duplicado {topic_id}")
         seen_content_ids.add(topic_id)
@@ -455,8 +457,13 @@ def validate_course_directory(course_dir: Path) -> Report:
         if source_id not in source_records:
             report.error("course.json.core_source_ids", f"fuente inexistente {source_id}")
     for source_id, source in source_records.items():
-        if source.get("verification_status") == "unverified":
+        verification_status = str(source.get("verification_status") or "").strip()
+        if not verification_status:
+            report.gap(f"sources.json.sources[{source_id}]", "estado de verificación no declarado")
+        elif verification_status == "unverified":
             report.gap(f"sources.json.sources[{source_id}]", "fuente aún no verificada")
+    if not claim_records:
+        report.gap("claims.json.claims", "sin afirmaciones centrales trazadas")
     for glossary_id, entry in glossary_records.items():
         if entry.get("verification_status") == "unverified" or not entry.get("source_ids"):
             report.gap(f"glossary.json.entries[{glossary_id}]", "definición sin fuente exacta verificada")
