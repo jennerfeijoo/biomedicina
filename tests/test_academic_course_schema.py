@@ -78,6 +78,30 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         )
         self.assertTrue(all(entry.get("source_locators") for entry in curated_glossary))
 
+    def test_machine_learning_course_assessment_is_complete(self) -> None:
+        course_dir = ROOT / "data" / "courses" / "machine-learning-biomedico-validacion-clinica"
+        course = json.loads((course_dir / "course.json").read_text(encoding="utf-8"))
+        assessment = json.loads((course_dir / "assessments" / "course-assessment.json").read_text(encoding="utf-8"))
+        outcomes = {item["id"] for item in course["learning_outcomes"]}
+        plan_outcomes = {outcome_id for item in assessment["assessment_plan"] for outcome_id in item["linked_learning_outcome_ids"]}
+        capstone_outcomes = set(assessment["capstone"]["linked_learning_outcome_ids"])
+        self.assertEqual(assessment["status"], "curated_pending_expert_review")
+        self.assertEqual(sum(item["weight_percent"] for item in assessment["assessment_plan"]), 100)
+        self.assertEqual(plan_outcomes, outcomes)
+        self.assertEqual(capstone_outcomes, outcomes)
+        self.assertTrue(assessment["midterm_blueprint"])
+        self.assertEqual(sum(item["weight_percent"] for item in assessment["midterm_blueprint"]), 100)
+        self.assertEqual(sum(item["weight_percent"] for item in assessment["capstone"]["rubric"]), 100)
+        self.assertTrue(all(len(item["performance_levels"]) == 4 for item in assessment["capstone"]["rubric"]))
+        self.assertGreaterEqual(len(assessment["capstone"]["deliverables"]), 8)
+        self.assertEqual(course["status"]["content"], "complete")
+        self.assertEqual(course["status"]["pedagogy"], "complete")
+        self.assertEqual(course["status"]["sources"], "traceable")
+        source_ids = [item["id"] for item in json.loads((course_dir / "sources.json").read_text(encoding="utf-8"))["sources"]]
+        self.assertEqual(len(source_ids), len(set(source_ids)))
+        self.assertNotIn("consort-ai-2020", source_ids)
+        self.assertNotIn("spirit-ai-2020", source_ids)
+
     def test_renderer_prefers_the_canonical_unit(self) -> None:
         unit = RENDERER.load_advanced_unit(ROOT, "bioestadistica", 1)
         self.assertIsNotNone(unit)
