@@ -104,3 +104,5 @@ class BioinstrumentacionUnit07CuratedTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Normal repository commit: final gate trigger after the temporary curator was removed.
