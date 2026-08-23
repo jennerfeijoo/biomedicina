@@ -48,7 +48,7 @@ class BioinstrumentacionUnit05CuratedTests(unittest.TestCase):
         self.assertEqual(len(activity["deliverables"]), 6)
         self.assertEqual(len(activity["checking_criteria"]), 10)
         text = " ".join(activity["instructions"] + activity["tasks"]).lower()
-        for marker in ["u4_practice_u4p1", "u4_practice_u4p2", "u4_practice_u4p3"]:
+        for marker in ["u4_practice_u4p1", "u4p2.py", "u4p3.py"]:
             self.assertIn(marker, text)
 
     def test_assessment_covers_all_local_outcomes(self) -> None:
