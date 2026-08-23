@@ -5,177 +5,234 @@
   "course_id": "machine-learning-biomedico-validacion-clinica",
   "scope": "unit",
   "unit_id": "MLBIO-U04",
-  "purpose": "Autoevaluación formativa de los resultados de aprendizaje de la unidad.",
+  "purpose": "Evaluar si el estudiante puede diseñar y auditar una validación interna del procedimiento completo, separar selección de evaluación y decidir si el modelo está suficientemente estable para bloquearse.",
   "student_payload_policy": "En una aplicación dinámica, answer_key y feedback se excluyen del payload inicial del estudiante.",
   "items": [
     {
       "id": "MLBIO-U04-Q01",
-      "type": "short_answer",
-      "prompt": "¿Qué es desempeño aparente?",
+      "type": "case_analysis",
+      "prompt": "Un modelo de deterioro hospitalario alcanza AUC 0,89 y Brier 0,08 cuando se evalúa en los mismos pacientes usados para imputar, seleccionar variables, ajustar y calibrar. El equipo lo denomina validación interna. Clasifique esa estimación y explique qué puede y qué no puede concluirse.",
       "linked_learning_outcome_ids": [
         "MLBIO-U04-LO01"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "intermediate",
+      "cognitive_level": "analyze",
       "answer_key": {
-        "expected_answer": "El calculado en los datos usados para ajustar el modelo.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "Es rendimiento aparente, no validación interna, porque todos los componentes aprendieron de los mismos pacientes evaluados. Puede describir el ajuste a esa cohorte, pero suele ser optimista y no estima desempeño en nuevos pacientes. Debe repetirse el procedimiento completo mediante bootstrap o validación cruzada apropiada. Aun una validación interna correcta solo informa generalización a observaciones similares y no demuestra transportabilidad a otros centros o periodos.",
+        "explanation": "La etiqueta de la evaluación depende de qué información estuvo disponible para cada decisión, no del nombre que le asigne el equipo. Imputación, selección y calibración también forman parte del modelo evaluado.",
+        "common_misconceptions": [
+          "Considerar independiente una métrica porque se calculó después del entrenamiento del algoritmo.",
+          "Interpretar una validación interna como evidencia suficiente de transportabilidad externa."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha distinguido rendimiento aparente, validación interna y transportabilidad, incluyendo el pipeline completo.",
+        "incorrect": "Pregunte si algún paciente evaluado influyó en imputación, selección, calibración o tuning. Si la respuesta es sí, la estimación no es independiente."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "steyerberg-internal-validation-2001",
+        "tripod-ai"
+      ],
+      "status": "curated_pending_expert_review"
     },
     {
       "id": "MLBIO-U04-Q02",
-      "type": "short_answer",
-      "prompt": "¿Qué estima la validación interna?",
+      "type": "case_analysis",
+      "prompt": "Una cohorte contiene 900 ingresos, 120 eventos y varias mediciones por paciente. El protocolo propone una división aleatoria 70/30 por filas. Compare partición simple, validación cruzada y bootstrap, y recomiende un diseño interno.",
       "linked_learning_outcome_ids": [
         "MLBIO-U04-LO02"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "advanced",
+      "cognitive_level": "evaluate",
       "answer_key": {
-        "expected_answer": "Generalización a observaciones similares bajo el procedimiento evaluado.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "La división por filas permite que un mismo paciente aparezca en entrenamiento y evaluación y debe rechazarse. Una partición simple por paciente dejaría pocos eventos para ambos fines y sería sensible a una asignación. Se recomienda remuestrear a nivel de paciente: bootstrap para estimar optimismo y estabilidad del modelo final, o validación cruzada repetida y agrupada para comparar procedimientos. La elección depende del estimando; ambos deben repetir el pipeline completo. Ningún resampling crea información nueva ni reemplaza una validación externa.",
+        "explanation": "El nivel de remuestreo debe corresponder a la unidad independiente. Con pocos eventos, reservar una fracción grande reduce la información para desarrollo y produce una evaluación imprecisa.",
+        "common_misconceptions": [
+          "Estratificar por evento y asumir que con ello se evita la dependencia entre filas del mismo paciente.",
+          "Elegir 70/30 como regla universal sin justificar eventos, objetivo ni evaluación externa posterior."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha elegido el nivel paciente y ha vinculado bootstrap o validación cruzada con el objetivo de estimación.",
+        "incorrect": "Resuelva primero cuál es la unidad independiente. Después valore cuántos eventos pierde cada partición y qué pregunta responde el remuestreo."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "steyerberg-internal-validation-2001",
+        "scikit-learn-cross-validation-guide",
+        "probast-ai"
+      ],
+      "status": "curated_pending_expert_review"
     },
     {
       "id": "MLBIO-U04-Q03",
-      "type": "short_answer",
-      "prompt": "¿Qué ventaja tiene bootstrap?",
+      "type": "case_analysis",
+      "prompt": "En una validación cruzada de cinco folds, el equipo imputa y estandariza toda la cohorte una vez, crea los folds después y reporta la media y el desvío estándar entre cinco AUC como intervalo de incertidumbre. Identifique al menos tres problemas y corrija el análisis.",
       "linked_learning_outcome_ids": [
-        "MLBIO-U04-LO03"
+        "MLBIO-U04-LO02",
+        "MLBIO-U04-LO04"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "advanced",
+      "cognitive_level": "analyze",
       "answer_key": {
-        "expected_answer": "Usa eficientemente datos y permite estimar optimismo y estabilidad.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "Imputación y escalado globales filtran información y deben reajustarse dentro de cada entrenamiento. Las particiones deben respetar pacientes, centro o tiempo según el objetivo. Los AUC de los folds no son cinco experimentos independientes, por lo que su desvío estándar no es un intervalo válido de generalización. Deben conservarse predicciones fuera de muestra pareadas y emplearse bootstrap u otro método de incertidumbre coherente con la dependencia y el procedimiento; también conviene repetir particiones preespecificadas y reportar su variabilidad sin confundirla con un intervalo de confianza.",
+        "explanation": "Los folds comparten gran parte de los datos de entrenamiento y sus estimaciones están correlacionadas. La incertidumbre debe corresponder a la unidad muestral y al diseño real.",
+        "common_misconceptions": [
+          "Aceptar transformaciones globales porque no utilizan explícitamente la etiqueta.",
+          "Tratar el número de folds como si fuera el tamaño muestral para calcular error estándar."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha corregido fuga, dependencia y cuantificación ingenua de incertidumbre entre folds.",
+        "incorrect": "Separe qué se aprende de los datos, cuál es la unidad independiente y por qué los folds comparten observaciones de entrenamiento."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "scikit-learn-common-pitfalls",
+        "varoquaux-cv-small-samples-2018",
+        "scikit-learn-cross-validation-guide"
+      ],
+      "status": "curated_pending_expert_review"
     },
     {
       "id": "MLBIO-U04-Q04",
-      "type": "short_answer",
-      "prompt": "¿Cuándo se necesita validación anidada?",
+      "type": "case_analysis",
+      "prompt": "Se prueban 200 combinaciones de variables, algoritmo e hiperparámetros mediante validación cruzada de diez folds. Se elige la combinación con mayor AUC media y se publica esa misma AUC como desempeño esperado. Diseñe una evaluación anidada y especifique qué representa cada bucle.",
       "linked_learning_outcome_ids": [
-        "MLBIO-U04-LO04"
+        "MLBIO-U04-LO03"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "advanced",
+      "cognitive_level": "create",
       "answer_key": {
-        "expected_answer": "Cuando se seleccionan hiperparámetros, variables o modelos.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "El bucle externo divide observaciones o grupos independientes y estima el desempeño del procedimiento de selección. Dentro de cada conjunto externo de entrenamiento, un bucle interno repite preprocesamiento, selección de variables, algoritmo e hiperparámetros y elige una configuración sin ver el fold externo. Esa configuración se reajusta con todo el entrenamiento externo y produce predicciones una sola vez sobre su fold externo. Las predicciones externas se agregan para métricas e incertidumbre. Después de evaluar el procedimiento, la configuración final se selecciona usando solo todos los datos de desarrollo, sin tocar la prueba reservada.",
+        "explanation": "La validación cruzada utilizada para elegir el ganador deja de ser una evaluación independiente. El bucle externo incluye la variación introducida por la propia selección.",
+        "common_misconceptions": [
+          "Usar folds externos únicamente para ajustar de nuevo la configuración elegida con toda la cohorte.",
+          "Preseleccionar variables con todos los datos antes de iniciar el bucle interno."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha separado correctamente selección interna y evaluación externa del procedimiento completo.",
+        "incorrect": "El fold externo no puede intervenir en ninguna elección. Todo lo que decide la configuración debe ocurrir dentro del entrenamiento externo."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "varma-simon-nested-cv-2006",
+        "cawley-talbot-selection-bias-2010",
+        "scikit-learn-model-selection"
+      ],
+      "status": "curated_pending_expert_review"
     },
     {
       "id": "MLBIO-U04-Q05",
-      "type": "short_answer",
-      "prompt": "¿Qué es double dipping?",
+      "type": "case_analysis",
+      "prompt": "Tras revisar la evaluación reservada, el equipo observa baja sensibilidad en pacientes mayores, añade una interacción con edad, ajusta el umbral y vuelve a medir en los mismos pacientes. La segunda versión mejora. ¿Cómo debe clasificarse este proceso y qué evidencia puede reportarse?",
       "linked_learning_outcome_ids": [
-        "MLBIO-U04-LO05"
+        "MLBIO-U04-LO03",
+        "MLBIO-U04-LO06"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "advanced",
+      "cognitive_level": "evaluate",
       "answer_key": {
-        "expected_answer": "Usar la misma información para decidir y luego tratarla como evaluación independiente.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "La evaluación reservada informó dos cambios, por lo que esos pacientes pasaron a formar parte del desarrollo y la segunda medición incurre en double dipping. El resultado original puede describirse como la primera evaluación de la versión bloqueada, incluyendo el hallazgo por edad con su incertidumbre. La interacción y el nuevo umbral definen una versión nueva que debe volver al desarrollo, quedar documentada y evaluarse en datos independientes adicionales. No puede presentarse la segunda cifra como confirmación independiente.",
+        "explanation": "Observar un resultado y actuar sobre él transmite información desde la evaluación al modelo. Renombrar el conjunto o ejecutar de nuevo el código no restaura independencia.",
+        "common_misconceptions": [
+          "Considerar legítimo el cambio porque corrige una inequidad clínicamente importante.",
+          "Mantener la etiqueta de prueba reservada porque los predictores originales no cambiaron."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha identificado double dipping, preservado el resultado de la versión original y exigido una nueva evaluación para la modificación.",
+        "incorrect": "Determine qué información motivó el cambio. Si provino de la prueba, esa prueba ya no es independiente para la nueva versión."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "cawley-talbot-selection-bias-2010",
+        "imdrf-fda-gmlp",
+        "tripod-ai"
+      ],
+      "status": "curated_pending_expert_review"
     },
     {
       "id": "MLBIO-U04-Q06",
-      "type": "short_answer",
-      "prompt": "¿Por qué una sola partición puede ser mala?",
+      "type": "case_analysis",
+      "prompt": "Tres modelos obtienen AUC externas al bucle interno de 0,804, 0,807 y 0,811. El modelo de 0,811 gana solo en 4 de 10 particiones, sus diferencias pareadas incluyen cero y cambia de configuración en casi cada repetición. Interprete el ranking y proponga una regla de selección defendible.",
       "linked_learning_outcome_ids": [
-        "MLBIO-U04-LO06"
+        "MLBIO-U04-LO04"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "advanced",
+      "cognitive_level": "evaluate",
       "answer_key": {
-        "expected_answer": "Desperdicia datos y depende fuertemente del azar.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "El orden de medias no demuestra superioridad: las diferencias son pequeñas frente a su incertidumbre y el supuesto ganador es inestable. Deben reportarse diferencias pareadas, intervalos o distribuciones, frecuencia de selección, calibración, recursos y relevancia clínica. Una regla preespecificada puede elegir el modelo más simple, estable y mantenible cuyo desempeño sea compatible con el máximo dentro de una tolerancia clínica. La selección final debe reconocer que la búsqueda entre alternativas introduce sesgo del ganador.",
+        "explanation": "Optimizar un criterio ruidoso selecciona parcialmente ruido. La variación del procedimiento puede ser tan importante como la diferencia media entre algoritmos.",
+        "common_misconceptions": [
+          "Declarar ganador al mayor tercer decimal sin cuantificar la diferencia pareada.",
+          "Interpretar que diez folds proporcionan diez réplicas independientes del experimento."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha reemplazado el ranking por una comparación pareada que incorpora incertidumbre, estabilidad y complejidad.",
+        "incorrect": "Compare el tamaño de la diferencia con su variación y pregunte si la misma opción gana de forma consistente."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "cawley-talbot-selection-bias-2010",
+        "varoquaux-cv-small-samples-2018"
+      ],
+      "status": "curated_pending_expert_review"
     },
     {
       "id": "MLBIO-U04-Q07",
-      "type": "short_answer",
-      "prompt": "¿Qué debe incluir un intervalo?",
+      "type": "case_analysis",
+      "prompt": "Para desarrollar un modelo con 45 predictores candidatos y 90 eventos, el protocolo justifica suficiencia porque cumple «dos eventos por variable» después de LASSO. Explique por qué la justificación es insuficiente y qué planificación o diagnóstico exigiría.",
       "linked_learning_outcome_ids": [
-        "MLBIO-U04-LO01"
+        "MLBIO-U04-LO05"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "advanced",
+      "cognitive_level": "evaluate",
       "answer_key": {
-        "expected_answer": "La estructura de dependencia y el diseño de evaluación.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "Una regla fija de eventos por variable no incorpora prevalencia, señal esperada, número total de parámetros candidatos, precisión del riesgo basal, calibración, sobreajuste admisible ni incertidumbre de la selección. LASSO no crea información y su selección puede ser inestable. Debe calcularse tamaño muestral para el desenlace y modelo previstos con criterios de sobreajuste y precisión, reducir grados de libertad de forma clínica o recopilar datos. Además se requieren curvas de aprendizaje y bootstrap del procedimiento completo para examinar selección, coeficientes, calibración y riesgos individuales.",
+        "explanation": "La suficiencia depende del objetivo predictivo y la complejidad candidata, no solo del número de variables retenidas en una realización del modelo.",
+        "common_misconceptions": [
+          "Contar únicamente las variables finalmente seleccionadas para justificar retrospectivamente la muestra.",
+          "Asumir que la penalización elimina el problema de tamaño muestral e inestabilidad."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha sustituido la regla fija por una planificación vinculada a sobreajuste, precisión y estabilidad del procedimiento.",
+        "incorrect": "El cálculo debe realizarse antes de conocer qué variables seleccionará el modelo y debe considerar todos los parámetros candidatos."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "riley-sample-size-development-2020",
+        "riley-collins-model-stability-2023",
+        "probast-ai"
+      ],
+      "status": "curated_pending_expert_review"
     },
     {
       "id": "MLBIO-U04-Q08",
-      "type": "short_answer",
-      "prompt": "¿Qué indica inestabilidad de predicciones?",
+      "type": "case_analysis",
+      "prompt": "Un modelo presenta AUC bootstrap estable alrededor de 0,80, pero para pacientes cercanos al umbral clínico sus riesgos oscilan entre 0,18 y 0,47 según la muestra bootstrap. El umbral de intervención es 0,30. Decida si debe bloquearse y detalle la evidencia adicional necesaria.",
       "linked_learning_outcome_ids": [
-        "MLBIO-U04-LO02"
+        "MLBIO-U04-LO04",
+        "MLBIO-U04-LO05",
+        "MLBIO-U04-LO06"
       ],
-      "difficulty": "unclassified",
-      "cognitive_level": "unclassified",
+      "difficulty": "advanced",
+      "cognitive_level": "evaluate",
       "answer_key": {
-        "expected_answer": "Que pequeñas variaciones de muestra producen decisiones individuales diferentes.",
-        "explanation": null,
-        "common_misconceptions": []
+        "expected_answer": "No debe bloquearse para decisiones en 0,30 solo por estabilidad de AUC: las predicciones individuales cruzan el umbral y pueden cambiar la intervención. Deben presentarse gráficos e índices de inestabilidad individual, estabilidad de calibración y clasificación, sensibilidad a muestras y semillas, curvas de aprendizaje y análisis de los subgrupos afectados. Puede requerirse simplificar, reducir grados de libertad, aumentar la muestra, redefinir el uso o abstenerse cerca del umbral. Cualquier cambio ocurre antes del bloqueo y la evaluación reservada permanece intacta.",
+        "explanation": "La discriminación resume ordenamiento poblacional y puede parecer estable aunque los valores absolutos de riesgo que activan decisiones sean volátiles.",
+        "common_misconceptions": [
+          "Considerar suficiente una AUC media estable para decisiones basadas en probabilidades y umbrales.",
+          "Ajustar el umbral con la evaluación reservada hasta reducir los cambios de clasificación."
+        ]
       },
       "feedback": {
-        "correct": null,
-        "incorrect": null
+        "correct": "Ha priorizado estabilidad individual y calibración en torno al umbral antes de bloquear la versión.",
+        "incorrect": "Observe si las mismas personas permanecen al mismo lado del umbral entre procedimientos repetidos; la AUC no responde esa pregunta."
       },
-      "source_ids": [],
-      "status": "migrated_requires_pedagogical_review"
+      "source_ids": [
+        "riley-collins-model-stability-2023",
+        "imdrf-fda-gmlp"
+      ],
+      "status": "curated_pending_expert_review"
     }
   ],
-  "status": "migrated_requires_pedagogical_review"
+  "status": "curated_pending_expert_review"
 }

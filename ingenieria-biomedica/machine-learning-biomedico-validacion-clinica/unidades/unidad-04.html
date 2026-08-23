@@ -107,11 +107,11 @@
         <h3>Rendimiento aparente, generalización y optimismo</h3>
         <p>El rendimiento aparente se calcula en los mismos datos utilizados para ajustar el modelo. Tiende a ser optimista porque parámetros, variables e hiperparámetros fueron elegidos para explicar particularidades de esa muestra. El optimismo aumenta con flexibilidad, número de decisiones, predictores candidatos y ruido. Un resultado perfecto en desarrollo puede indicar fuga, sobreajuste o una tarea demasiado cercana al desenlace, no una solución clínica excelente.</p>
         <p>La validación interna estima cuánto se degradaría el procedimiento al aplicarse a nuevas observaciones de una población similar. No demuestra transportabilidad a otros centros o periodos. Debe reproducir todas las decisiones del desarrollo: imputación, selección, tuning, calibración y umbral. Validar solo el algoritmo después de fijar transformaciones con toda la cohorte evalúa un proceso diferente y mantiene optimismo oculto.</p>
-        <p>La evaluación debe dirigirse al procedimiento que se pretende repetir. Si el objetivo es estimar un modelo final construido con todos los datos, el resampling puede estimar corrección por optimismo. Si se comparan algoritmos, se necesita una capa separada para selección. La pregunta no es qué técnica es universalmente mejor, sino qué estimación responde al diseño, volumen de datos y decisiones realizadas.</p>
+        <p>La unidad evaluada debe ser el procedimiento de desarrollo completo. Si el objetivo es estimar un modelo final construido con todos los datos, el resampling puede estimar corrección por optimismo. Si se comparan algoritmos, se necesita una capa separada para selección. La pregunta no es qué técnica es universalmente mejor, sino qué estimación responde al diseño, volumen de datos y decisiones realizadas.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[Optimism = ApparentPerformance - TestPerformance\]</div>
-            <figcaption>Diferencia entre desempeño en datos usados para ajustar y desempeño en observaciones no utilizadas por ese ajuste.</figcaption>
+            <div class="math-display">\[\widehat{O}=\widehat{M}_{\mathrm{app}}-\frac{1}{B}\sum_{b=1}^{B}\left(\widehat{M}_{\mathrm{test}}^{(b)}-\widehat{M}_{\mathrm{train}}^{(b)}+\widehat{M}_{\mathrm{app}}\right)\]</div>
+            <figcaption>Estimación conceptual de optimismo para una métrica en la que valores mayores indican mejor desempeño; el signo debe adaptarse cuando se usa una pérdida.</figcaption>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
@@ -125,12 +125,12 @@
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
         <h3>Bootstrap, validación cruzada y partición simple</h3>
-        <p>El bootstrap genera muestras con reemplazo del mismo tamaño que la cohorte. En cada repetición se ajusta el procedimiento y se compara desempeño en la muestra bootstrap y en los datos originales o fuera de bolsa según el estimador. Permite estimar optimismo y estabilidad utilizando eficientemente los datos. Sin embargo, debe respetar agrupaciones por paciente, centro o familia; remuestrear filas dependientes rompe la estructura y subestima variación.</p>
+        <p>El bootstrap genera muestras con reemplazo del mismo tamaño que la cohorte. En cada repetición se ajusta el procedimiento y se compara desempeño en la muestra bootstrap y en los datos originales o fuera de bolsa según el estimador. Permite estimar optimismo y estabilidad utilizando eficientemente los datos. Sin embargo, debe respetar agrupaciones por paciente, centro o familia. Remuestrear filas dependientes rompe la estructura y puede subestimar la variación.</p>
         <p>La validación cruzada divide los datos en pliegues. Cada pliegue actúa como evaluación mientras los demás entrenan. Repetir el proceso reduce dependencia de una única división y permite examinar variabilidad. El número de pliegues equilibra tamaño de entrenamiento, coste y correlación entre estimaciones. En datos longitudinales o multicéntricos puede requerirse validación agrupada o temporal, porque una división aleatoria no representa el objetivo de generalización.</p>
-        <p>Una partición simple de entrenamiento y validación es fácil de comunicar, pero desperdicia información y produce una estimación muy dependiente del azar, especialmente en muestras pequeñas. Puede ser razonable en conjuntos grandes con muchos eventos y cuando existe una evaluación externa independiente, pero no debe convertirse en regla automática de 70/30. La elección se justifica por eventos, agrupación, recursos y finalidad.</p>
+        <p>Una partición simple puede ser ineficiente e inestable, especialmente en muestras pequeñas. Reduce simultáneamente la información disponible para ajustar y evaluar, y su resultado depende de una asignación aleatoria concreta. Puede ser razonable en conjuntos grandes con muchos eventos y cuando existe una evaluación externa independiente, pero no debe convertirse en regla automática de 70/30. La elección se justifica por eventos, agrupación, recursos y finalidad.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[CV estimate = mean_k Metric(model trained without fold k, fold k)\]</div>
+            <div class="math-display">\[\widehat{M}_{CV}=\frac{1}{K}\sum_{k=1}^{K}M\!\left(f^{(-k)},D^{(k)}\right)\]</div>
             <figcaption>Promedio de desempeño en pliegues no utilizados para ajustar el modelo correspondiente.</figcaption>
           </figure>
         </div>
@@ -147,10 +147,10 @@
         <h3>Validación anidada, selección y double dipping</h3>
         <p>Cuando se eligen hiperparámetros, variables o algoritmos, los mismos datos no deben servir simultáneamente para seleccionar y estimar desempeño final. La validación anidada utiliza un bucle interno para elegir configuración y uno externo para evaluar el procedimiento de selección. El resultado externo refleja que en la práctica también se tomarían decisiones de tuning con datos limitados.</p>
         <p>El double dipping aparece cuando se inspeccionan resultados de validación y se modifica el pipeline repetidamente, pero se sigue reportando esa misma estimación como independiente. También ocurre al elegir la semilla, el horizonte o el subgrupo que mejor funciona. Cada iteración informada por la evaluación incorpora esa información al desarrollo. La solución es preespecificar, usar resampling anidado y conservar una evaluación verdaderamente reservada.</p>
-        <p>La comparación de muchos modelos necesita considerar multiplicidad y sesgo del ganador. El mejor promedio puede deberse al azar y mostrar alta inestabilidad entre folds. Conviene reportar distribución de diferencias pareadas, no solo rankings. Una regla de selección puede preferir el modelo más simple cuyo desempeño sea compatible con el máximo dentro de una tolerancia. Esto reduce decisiones oportunistas y mejora mantenibilidad.</p>
+        <p>La comparación de muchos modelos necesita considerar multiplicidad y sesgo del ganador. El mejor promedio entre muchas configuraciones puede deberse al azar y mostrar alta inestabilidad entre folds. Conviene reportar la distribución de diferencias pareadas y la frecuencia con que cada configuración resulta seleccionada, no solo rankings. Una regla de selección puede preferir el modelo más simple cuyo desempeño sea compatible con el máximo dentro de una tolerancia. Esto reduce decisiones oportunistas y mejora mantenibilidad.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[OuterScore_j = Metric(Fit(SelectHyperparameters(InnerData_j)), OuterFold_j)\]</div>
+            <div class="math-display">\[\widehat{M}_{\mathrm{nested}}=\frac{1}{J}\sum_{j=1}^{J}M\!\left(\operatorname{Fit}(D_{-j};\widehat{\lambda}_{j}),D_j\right),\quad \widehat{\lambda}_{j}=\arg\max_{\lambda}\widehat{M}_{\mathrm{inner},j}(\lambda)\]</div>
             <figcaption>Cada fold externo evalúa un modelo cuyo tuning se realizó únicamente dentro de los datos internos correspondientes.</figcaption>
           </figure>
         </div>
@@ -165,13 +165,13 @@
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 4</p>
         <h3>Tamaño muestral, intervalos y estabilidad del modelo</h3>
-        <p>El tamaño muestral útil depende del número de eventos, prevalencia, número efectivo de parámetros, fuerza de señal, heterogeneidad y desempeño esperado. Reglas fijas como diez eventos por variable son insuficientes para todos los contextos. Los modelos flexibles pueden tener una complejidad efectiva elevada incluso con pocos hiperparámetros visibles. La planificación debe considerar precisión de calibración, estimación de riesgo basal y sobreajuste admisible.</p>
-        <p>Los intervalos de confianza describen incertidumbre de métricas bajo supuestos y diseño determinados. Deben respetar agrupación y dependencia. Para AUC, sensibilidad o calibración, un intervalo amplio puede hacer compatibles conclusiones muy distintas. Reportar solo la media de validación cruzada oculta variabilidad entre pliegues y pacientes. Bootstrap o métodos analíticos pueden complementar, pero ninguna técnica corrige una cohorte pequeña o poco representativa.</p>
-        <p>La estabilidad se evalúa repitiendo desarrollo y observando variación en predicciones, variables seleccionadas, coeficientes y métricas. Un modelo puede tener AUC promedio aceptable y producir probabilidades muy diferentes entre repeticiones. Esa inestabilidad afecta decisiones individuales y actualización. Antes de bloquear, deben revisarse curvas de aprendizaje, sensibilidad a semillas, casos influyentes y distribución de predicciones. Si el modelo es inestable, la respuesta puede ser simplificar, recopilar datos o limitar el uso.</p>
+        <p>El tamaño muestral debe relacionarse con eventos, prevalencia, número de parámetros candidatos, señal esperada y sobreajuste admisible. Reglas fijas como diez eventos por variable son insuficientes para todos los contextos. Los modelos flexibles pueden tener una complejidad efectiva elevada incluso con pocos hiperparámetros visibles. La planificación también debe considerar precisión de calibración, estimación de riesgo basal y heterogeneidad de la población objetivo.</p>
+        <p>Los intervalos de confianza describen incertidumbre de métricas bajo supuestos y diseño determinados. Los intervalos de confianza deben respetar la agrupación y la dependencia inducida por el diseño. Para AUC, sensibilidad o calibración, un intervalo amplio puede hacer compatibles conclusiones muy distintas. El error estándar calculado a partir de los folds no representa necesariamente la incertidumbre de generalización porque sus estimaciones están correlacionadas. Bootstrap o métodos analíticos pueden complementar, pero ninguna técnica corrige una cohorte pequeña o poco representativa.</p>
+        <p>La estabilidad se evalúa repitiendo el procedimiento de desarrollo y observando la variación de las predicciones individuales, los parámetros y las métricas. Un modelo puede mostrar estabilidad promedio en discriminación y aun producir riesgos individuales inestables. Esa inestabilidad puede cambiar decisiones clínicas para una misma persona. Antes de bloquear, deben revisarse curvas de aprendizaje, sensibilidad a semillas, casos influyentes, selección de variables y distribución de predicciones. Los datos de evaluación reservada no se utilizan para corregir el modelo; cualquier modificación inicia una nueva versión y una nueva evaluación. Si el modelo es inestable, la respuesta puede ser simplificar, recopilar datos o limitar el uso.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[Uncertainty = Sampling variation + Model selection variation + Measurement variation\]</div>
-            <figcaption>Representación conceptual de componentes que afectan la incertidumbre del desempeño y de las predicciones.</figcaption>
+            <div class="math-display">\[I_i=\frac{1}{B}\sum_{b=1}^{B}\left|\widehat{p}_{i}^{(b)}-\widehat{p}_{i}\right|\]</div>
+            <figcaption>Índice de inestabilidad individual: diferencia absoluta media entre el riesgo original de una persona y los riesgos producidos por procedimientos repetidos en muestras bootstrap.</figcaption>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
@@ -228,10 +228,11 @@
         <h3>Diseño de validación interna</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Enumerar decisiones del pipeline.</li>
-        <li>Elegir esquema de resampling.</li>
-        <li>Separar tuning y evaluación.</li>
-        <li>Cuantificar variabilidad y estabilidad.</li>
+        <li>Parta del uso previsto, la cohorte y el pipeline definidos en las unidades anteriores; identifique paciente, centro y tiempo como posibles niveles de dependencia.</li>
+        <li>Preespecifique qué se estimará —optimismo del modelo final, desempeño del procedimiento de selección o ambos— y qué métricas, contrastes e intervalos se reportarán.</li>
+        <li>Implemente bootstrap o validación cruzada con particiones agrupadas; si existe selección de variables, algoritmo o hiperparámetros, añada un bucle interno completamente separado.</li>
+        <li>Repita dentro de cada remuestreo toda operación aprendida de los datos y registre semillas, índices, fallos, configuraciones elegidas y predicciones fuera de muestra.</li>
+        <li>Analice desempeño promedio, diferencias pareadas, incertidumbre, frecuencia de selección, curvas de aprendizaje e inestabilidad de predicciones individuales antes de emitir la recomendación.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
@@ -244,12 +245,26 @@
         <li>Proponer una curva de aprendizaje.</li>
         <li>Definir criterios para bloquear o simplificar el modelo.</li>
       </ul>
+        <h4>Entregables</h4>
+      <ul>
+        <li>Protocolo de validación de dos páginas con objetivo, población de generalización, unidad independiente, métricas, número de repeticiones y regla de decisión preespecificada.</li>
+        <li>Diagrama de los bucles externo e interno que ubique imputación, escalado, selección, ajuste, calibración y elección de umbral.</li>
+        <li>Notebook o script reproducible que genere particiones agrupadas y ejecute el procedimiento completo sin acceder a la evaluación reservada.</li>
+        <li>Registro de remuestreo con semilla, identificadores de partición, hiperparámetros elegidos, incidencias y hash del código o configuración.</li>
+        <li>Informe con desempeño aparente y corregido, distribución de diferencias pareadas, intervalos justificados, curva de aprendizaje y gráficos de inestabilidad individual.</li>
+        <li>Memorando de decisión que recomiende bloquear, simplificar, recopilar datos o limitar el uso, con criterios cuantitativos y limitaciones explícitas.</li>
+      </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>El pipeline completo se repite.</li>
-        <li>Selección y evaluación están separadas.</li>
-        <li>Se respeta dependencia.</li>
-        <li>Se reportan incertidumbre e inestabilidad.</li>
+        <li>La pregunta de validación y la población de generalización están declaradas.</li>
+        <li>Paciente, centro, familia o tiempo se mantienen íntegros cuando generan dependencia.</li>
+        <li>El pipeline completo se reajusta dentro de cada conjunto de entrenamiento.</li>
+        <li>Selección de variables, algoritmos e hiperparámetros ocurre únicamente en el bucle interno.</li>
+        <li>La evaluación externa o reservada no informa ninguna corrección del modelo.</li>
+        <li>Las comparaciones usan predicciones pareadas obtenidas sobre las mismas observaciones.</li>
+        <li>La incertidumbre no se reduce al desvío ingenuo entre folds correlacionados.</li>
+        <li>La estabilidad incluye predicciones individuales y no solo una métrica promedio.</li>
+        <li>La recomendación final sigue la regla preespecificada y conserva artefactos auditables.</li>
       </ul>
       </article>
     </section>
@@ -268,36 +283,52 @@
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Qué es desempeño aparente?</summary>
-        <p><strong>Respuesta:</strong> El calculado en los datos usados para ajustar el modelo.</p>
+        <summary>1. Un modelo de deterioro hospitalario alcanza AUC 0,89 y Brier 0,08 cuando se evalúa en los mismos pacientes usados para imputar, seleccionar variables, ajustar y calibrar. El equipo lo denomina validación interna. Clasifique esa estimación y explique qué puede y qué no puede concluirse.</summary>
+        <p><strong>Respuesta:</strong> Es rendimiento aparente, no validación interna, porque todos los componentes aprendieron de los mismos pacientes evaluados. Puede describir el ajuste a esa cohorte, pero suele ser optimista y no estima desempeño en nuevos pacientes. Debe repetirse el procedimiento completo mediante bootstrap o validación cruzada apropiada. Aun una validación interna correcta solo informa generalización a observaciones similares y no demuestra transportabilidad a otros centros o periodos.</p>
+        <p><strong>Razonamiento:</strong> La etiqueta de la evaluación depende de qué información estuvo disponible para cada decisión, no del nombre que le asigne el equipo. Imputación, selección y calibración también forman parte del modelo evaluado.</p>
+        <p><strong>Error que evita:</strong> Considerar independiente una métrica porque se calculó después del entrenamiento del algoritmo.</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿Qué estima la validación interna?</summary>
-        <p><strong>Respuesta:</strong> Generalización a observaciones similares bajo el procedimiento evaluado.</p>
+        <summary>2. Una cohorte contiene 900 ingresos, 120 eventos y varias mediciones por paciente. El protocolo propone una división aleatoria 70/30 por filas. Compare partición simple, validación cruzada y bootstrap, y recomiende un diseño interno.</summary>
+        <p><strong>Respuesta:</strong> La división por filas permite que un mismo paciente aparezca en entrenamiento y evaluación y debe rechazarse. Una partición simple por paciente dejaría pocos eventos para ambos fines y sería sensible a una asignación. Se recomienda remuestrear a nivel de paciente: bootstrap para estimar optimismo y estabilidad del modelo final, o validación cruzada repetida y agrupada para comparar procedimientos. La elección depende del estimando; ambos deben repetir el pipeline completo. Ningún resampling crea información nueva ni reemplaza una validación externa.</p>
+        <p><strong>Razonamiento:</strong> El nivel de remuestreo debe corresponder a la unidad independiente. Con pocos eventos, reservar una fracción grande reduce la información para desarrollo y produce una evaluación imprecisa.</p>
+        <p><strong>Error que evita:</strong> Estratificar por evento y asumir que con ello se evita la dependencia entre filas del mismo paciente.</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Qué ventaja tiene bootstrap?</summary>
-        <p><strong>Respuesta:</strong> Usa eficientemente datos y permite estimar optimismo y estabilidad.</p>
+        <summary>3. En una validación cruzada de cinco folds, el equipo imputa y estandariza toda la cohorte una vez, crea los folds después y reporta la media y el desvío estándar entre cinco AUC como intervalo de incertidumbre. Identifique al menos tres problemas y corrija el análisis.</summary>
+        <p><strong>Respuesta:</strong> Imputación y escalado globales filtran información y deben reajustarse dentro de cada entrenamiento. Las particiones deben respetar pacientes, centro o tiempo según el objetivo. Los AUC de los folds no son cinco experimentos independientes, por lo que su desvío estándar no es un intervalo válido de generalización. Deben conservarse predicciones fuera de muestra pareadas y emplearse bootstrap u otro método de incertidumbre coherente con la dependencia y el procedimiento; también conviene repetir particiones preespecificadas y reportar su variabilidad sin confundirla con un intervalo de confianza.</p>
+        <p><strong>Razonamiento:</strong> Los folds comparten gran parte de los datos de entrenamiento y sus estimaciones están correlacionadas. La incertidumbre debe corresponder a la unidad muestral y al diseño real.</p>
+        <p><strong>Error que evita:</strong> Aceptar transformaciones globales porque no utilizan explícitamente la etiqueta.</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Cuándo se necesita validación anidada?</summary>
-        <p><strong>Respuesta:</strong> Cuando se seleccionan hiperparámetros, variables o modelos.</p>
+        <summary>4. Se prueban 200 combinaciones de variables, algoritmo e hiperparámetros mediante validación cruzada de diez folds. Se elige la combinación con mayor AUC media y se publica esa misma AUC como desempeño esperado. Diseñe una evaluación anidada y especifique qué representa cada bucle.</summary>
+        <p><strong>Respuesta:</strong> El bucle externo divide observaciones o grupos independientes y estima el desempeño del procedimiento de selección. Dentro de cada conjunto externo de entrenamiento, un bucle interno repite preprocesamiento, selección de variables, algoritmo e hiperparámetros y elige una configuración sin ver el fold externo. Esa configuración se reajusta con todo el entrenamiento externo y produce predicciones una sola vez sobre su fold externo. Las predicciones externas se agregan para métricas e incertidumbre. Después de evaluar el procedimiento, la configuración final se selecciona usando solo todos los datos de desarrollo, sin tocar la prueba reservada.</p>
+        <p><strong>Razonamiento:</strong> La validación cruzada utilizada para elegir el ganador deja de ser una evaluación independiente. El bucle externo incluye la variación introducida por la propia selección.</p>
+        <p><strong>Error que evita:</strong> Usar folds externos únicamente para ajustar de nuevo la configuración elegida con toda la cohorte.</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Qué es double dipping?</summary>
-        <p><strong>Respuesta:</strong> Usar la misma información para decidir y luego tratarla como evaluación independiente.</p>
+        <summary>5. Tras revisar la evaluación reservada, el equipo observa baja sensibilidad en pacientes mayores, añade una interacción con edad, ajusta el umbral y vuelve a medir en los mismos pacientes. La segunda versión mejora. ¿Cómo debe clasificarse este proceso y qué evidencia puede reportarse?</summary>
+        <p><strong>Respuesta:</strong> La evaluación reservada informó dos cambios, por lo que esos pacientes pasaron a formar parte del desarrollo y la segunda medición incurre en double dipping. El resultado original puede describirse como la primera evaluación de la versión bloqueada, incluyendo el hallazgo por edad con su incertidumbre. La interacción y el nuevo umbral definen una versión nueva que debe volver al desarrollo, quedar documentada y evaluarse en datos independientes adicionales. No puede presentarse la segunda cifra como confirmación independiente.</p>
+        <p><strong>Razonamiento:</strong> Observar un resultado y actuar sobre él transmite información desde la evaluación al modelo. Renombrar el conjunto o ejecutar de nuevo el código no restaura independencia.</p>
+        <p><strong>Error que evita:</strong> Considerar legítimo el cambio porque corrige una inequidad clínicamente importante.</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Por qué una sola partición puede ser mala?</summary>
-        <p><strong>Respuesta:</strong> Desperdicia datos y depende fuertemente del azar.</p>
+        <summary>6. Tres modelos obtienen AUC externas al bucle interno de 0,804, 0,807 y 0,811. El modelo de 0,811 gana solo en 4 de 10 particiones, sus diferencias pareadas incluyen cero y cambia de configuración en casi cada repetición. Interprete el ranking y proponga una regla de selección defendible.</summary>
+        <p><strong>Respuesta:</strong> El orden de medias no demuestra superioridad: las diferencias son pequeñas frente a su incertidumbre y el supuesto ganador es inestable. Deben reportarse diferencias pareadas, intervalos o distribuciones, frecuencia de selección, calibración, recursos y relevancia clínica. Una regla preespecificada puede elegir el modelo más simple, estable y mantenible cuyo desempeño sea compatible con el máximo dentro de una tolerancia clínica. La selección final debe reconocer que la búsqueda entre alternativas introduce sesgo del ganador.</p>
+        <p><strong>Razonamiento:</strong> Optimizar un criterio ruidoso selecciona parcialmente ruido. La variación del procedimiento puede ser tan importante como la diferencia media entre algoritmos.</p>
+        <p><strong>Error que evita:</strong> Declarar ganador al mayor tercer decimal sin cuantificar la diferencia pareada.</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Qué debe incluir un intervalo?</summary>
-        <p><strong>Respuesta:</strong> La estructura de dependencia y el diseño de evaluación.</p>
+        <summary>7. Para desarrollar un modelo con 45 predictores candidatos y 90 eventos, el protocolo justifica suficiencia porque cumple «dos eventos por variable» después de LASSO. Explique por qué la justificación es insuficiente y qué planificación o diagnóstico exigiría.</summary>
+        <p><strong>Respuesta:</strong> Una regla fija de eventos por variable no incorpora prevalencia, señal esperada, número total de parámetros candidatos, precisión del riesgo basal, calibración, sobreajuste admisible ni incertidumbre de la selección. LASSO no crea información y su selección puede ser inestable. Debe calcularse tamaño muestral para el desenlace y modelo previstos con criterios de sobreajuste y precisión, reducir grados de libertad de forma clínica o recopilar datos. Además se requieren curvas de aprendizaje y bootstrap del procedimiento completo para examinar selección, coeficientes, calibración y riesgos individuales.</p>
+        <p><strong>Razonamiento:</strong> La suficiencia depende del objetivo predictivo y la complejidad candidata, no solo del número de variables retenidas en una realización del modelo.</p>
+        <p><strong>Error que evita:</strong> Contar únicamente las variables finalmente seleccionadas para justificar retrospectivamente la muestra.</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿Qué indica inestabilidad de predicciones?</summary>
-        <p><strong>Respuesta:</strong> Que pequeñas variaciones de muestra producen decisiones individuales diferentes.</p>
+        <summary>8. Un modelo presenta AUC bootstrap estable alrededor de 0,80, pero para pacientes cercanos al umbral clínico sus riesgos oscilan entre 0,18 y 0,47 según la muestra bootstrap. El umbral de intervención es 0,30. Decida si debe bloquearse y detalle la evidencia adicional necesaria.</summary>
+        <p><strong>Respuesta:</strong> No debe bloquearse para decisiones en 0,30 solo por estabilidad de AUC: las predicciones individuales cruzan el umbral y pueden cambiar la intervención. Deben presentarse gráficos e índices de inestabilidad individual, estabilidad de calibración y clasificación, sensibilidad a muestras y semillas, curvas de aprendizaje y análisis de los subgrupos afectados. Puede requerirse simplificar, reducir grados de libertad, aumentar la muestra, redefinir el uso o abstenerse cerca del umbral. Cualquier cambio ocurre antes del bloqueo y la evaluación reservada permanece intacta.</p>
+        <p><strong>Razonamiento:</strong> La discriminación resume ordenamiento poblacional y puede parecer estable aunque los valores absolutos de riesgo que activan decisiones sean volátiles.</p>
+        <p><strong>Error que evita:</strong> Considerar suficiente una AUC media estable para decisiones basadas en probabilidades y umbrales.</p>
       </details>
       </div>
     </section>
@@ -305,17 +336,17 @@
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
-        <li><strong>Rendimiento aparente</strong><p>Desempeño calculado en los datos utilizados para ajustar el modelo.</p></li>
-        <li><strong>Optimismo</strong><p>Sobreestimación del desempeño causada por reutilización y adaptación a la muestra.</p></li>
-        <li><strong>Validación interna</strong><p>Estimación del desempeño en nuevas observaciones de una población similar mediante resampling.</p></li>
-        <li><strong>Bootstrap</strong><p>Remuestreo con reemplazo usado para estimar variación y optimismo.</p></li>
-        <li><strong>Validación cruzada</strong><p>Esquema que alterna pliegues de entrenamiento y evaluación.</p></li>
-        <li><strong>Fold</strong><p>Subconjunto utilizado como entrenamiento o evaluación en resampling.</p></li>
-        <li><strong>Validación anidada</strong><p>Resampling con bucles separados para selección y evaluación.</p></li>
-        <li><strong>Double dipping</strong><p>Uso repetido de los mismos datos para tomar decisiones y estimar desempeño.</p></li>
-        <li><strong>Sesgo del ganador</strong><p>Optimismo del modelo elegido como mejor entre muchas alternativas.</p></li>
-        <li><strong>Estabilidad</strong><p>Consistencia de parámetros, predicciones y desempeño ante cambios de muestra o semilla.</p></li>
-        <li><strong>Curva de aprendizaje</strong><p>Relación entre cantidad de datos y desempeño estimado.</p></li>
+        <li><strong>Rendimiento aparente</strong><p>Desempeño calculado en los mismos datos que informaron ajuste, selección o calibración del modelo y que, por ello, suele sobreestimar su rendimiento en nuevas observaciones.</p></li>
+        <li><strong>Optimismo</strong><p>Diferencia favorable entre el desempeño aparente y el desempeño esperado en nuevos datos, inducida por adaptar decisiones a la muestra de desarrollo.</p></li>
+        <li><strong>Validación interna</strong><p>Evaluación mediante remuestreo de cuánto generaliza el procedimiento completo a nuevas observaciones de la población de desarrollo; no establece transportabilidad a otra población.</p></li>
+        <li><strong>Bootstrap</strong><p>Procedimiento que extrae repetidamente muestras con reemplazo de la cohorte de desarrollo y reajusta el modelo para estimar optimismo, incertidumbre o estabilidad.</p></li>
+        <li><strong>Validación cruzada</strong><p>Remuestreo que divide los datos en pliegues y alterna cuál se reserva para producir predicciones fuera de muestra, reajustando en los restantes el procedimiento definido.</p></li>
+        <li><strong>Fold</strong><p>Subconjunto de observaciones o grupos que en una iteración de validación cruzada actúa como evaluación, mientras los demás forman el entrenamiento.</p></li>
+        <li><strong>Validación anidada</strong><p>Validación con un bucle interno que selecciona variables, algoritmo o hiperparámetros y un bucle externo que estima el desempeño del procedimiento de selección.</p></li>
+        <li><strong>Double dipping</strong><p>Reutilización de información de evaluación para elegir o modificar el modelo y posterior presentación de esa misma evaluación como si permaneciera independiente.</p></li>
+        <li><strong>Sesgo del ganador</strong><p>Optimismo adicional del candidato seleccionado por maximizar un criterio ruidoso entre muchas alternativas, incluso si cada estimación individual tiene poco sesgo.</p></li>
+        <li><strong>Estabilidad</strong><p>Grado en que repetir el procedimiento de desarrollo en muestras comparables produce parámetros, selección, métricas y riesgos individuales similares.</p></li>
+        <li><strong>Curva de aprendizaje</strong><p>Gráfico o función que relaciona la cantidad de datos de entrenamiento con el desempeño en entrenamiento y evaluación para diagnosticar limitación por datos, varianza o sesgo.</p></li>
         <li><strong>Modelo bloqueado</strong><p>Versión inmutable y trazable del pipeline, parámetros, hiperparámetros, umbral, entradas y reglas de exclusión preparada para una evaluación reservada.</p></li>
       </ul>
     </section>
@@ -329,8 +360,15 @@
         <li><strong><a class="resource-link" href="https://www.bmj.com/content/385/bmj-2023-078378" rel="noopener noreferrer">TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods</a></strong><span class="course-tag">The BMJ / TRIPOD+AI Group · guía de reporte · 2024</span></li>
         <li><strong><a class="resource-link" href="https://www.bmj.com/content/388/bmj-2024-082505" rel="noopener noreferrer">PROBAST+AI: an updated quality, risk of bias, and applicability assessment tool</a></strong><span class="course-tag">The BMJ / PROBAST+AI Group · herramienta metodológica · 2025</span></li>
         <li><strong><a class="resource-link" href="https://www.imdrf.org/sites/default/files/2025-02/IMDRF_AIML%20WG_GMLP_N88%20Final.pdf" rel="noopener noreferrer">Good Machine Learning Practice for Medical Device Development: Guiding Principles</a></strong><span class="course-tag">International Medical Device Regulators Forum / U.S. FDA · principios regulatorios · 2025</span></li>
-        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/modules/cross_validation.html" rel="noopener noreferrer">scikit-learn Cross-validation Guide</a></strong><span class="course-tag">scikit-learn · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/modules/cross_validation.html" rel="noopener noreferrer">scikit-learn Cross-validation Guide</a></strong><span class="course-tag">scikit-learn · documentación técnica oficial · 2026</span></li>
         <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/model_selection.html" rel="noopener noreferrer">scikit-learn Model Selection</a></strong><span class="course-tag">scikit-learn · documentación técnica oficial · 2026</span></li>
+        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/common_pitfalls.html" rel="noopener noreferrer">Common pitfalls and recommended practices</a></strong><span class="course-tag">scikit-learn · documentación técnica oficial · 2026</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/11470385/" rel="noopener noreferrer">Internal validation of predictive models: efficiency of some procedures for logistic regression analysis</a></strong><span class="course-tag">Journal of Clinical Epidemiology · estudio metodológico de simulación y caso clínico · 2001</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1397873/" rel="noopener noreferrer">Bias in error estimation when using cross-validation for model selection</a></strong><span class="course-tag">BMC Bioinformatics · estudio metodológico de simulación · 2006</span></li>
+        <li><strong><a class="resource-link" href="https://jmlr.org/papers/v11/cawley10a.html" rel="noopener noreferrer">On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation</a></strong><span class="course-tag">Journal of Machine Learning Research · artículo metodológico · 2010</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/28655633/" rel="noopener noreferrer">Cross-validation failure: Small sample sizes lead to large error bars</a></strong><span class="course-tag">NeuroImage · artículo metodológico con experimentos de simulación · 2018</span></li>
+        <li><strong><a class="resource-link" href="https://www.bmj.com/content/368/bmj.m441" rel="noopener noreferrer">Calculating the sample size required for developing a clinical prediction model</a></strong><span class="course-tag">The BMJ · artículo metodológico y guía de cálculo · 2020</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10952221/" rel="noopener noreferrer">Stability of clinical prediction models developed using statistical or machine learning methods</a></strong><span class="course-tag">Biometrical Journal · estudio metodológico de simulación y casos · 2023</span></li>
       </ol>
     </section>
 
