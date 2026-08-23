@@ -19,9 +19,12 @@ class BioinstrumentacionUnit03CuratedTests(unittest.TestCase):
         self.assertEqual(sum(len(t["subtopics"]) for t in self.unit["topics"]),18)
         self.assertEqual(len(self.unit["examples"]),3)
         self.assertEqual(self.unit["status"]["sources"],"traceable")
+        self.assertEqual(self.unit["status"]["internal_review"],"pending")
+        self.assertEqual(self.unit["status"]["external_review"],"pending")
         packet=json.loads((ROOT/"data/review_packets/bioinstrumentacion-unit-03-professional-review.json").read_text(encoding="utf-8"))
         self.assertFalse(packet["current_claims"]["external_professional_review_completed"])
         self.assertFalse(packet["current_claims"]["professional_approval_obtained"])
+        self.assertFalse(packet["current_claims"]["public_release_authorized"])
     def test_activity_contract(self):
         a=self.unit["activities"][0]
         self.assertEqual(a["status"],"curated_pending_expert_review")
@@ -42,7 +45,7 @@ class BioinstrumentacionUnit03CuratedTests(unittest.TestCase):
         for eid in self.unit["glossary_entry_ids"]:
             e=entries[eid]; self.assertNotEqual(e["verification_status"],"unverified"); self.assertTrue(e["source_ids"]); self.assertTrue(e.get("source_locators"))
         u3=[c for c in self.claims["claims"] if c.get("unit_id")=="BIOINST-U03"]
-        self.assertEqual(len(u3),18); self.assertEqual(self.unit["claim_ids"],[c["id"] for c in u3])
+        self.assertEqual(len(u3),18); self.assertEqual(len(self.unit["claim_ids"]),18); self.assertEqual(self.unit["claim_ids"],[c["id"] for c in u3])
         serialized=json.dumps(self.unit,ensure_ascii=False)
         for c in u3: self.assertIn(c["text"],serialized); self.assertEqual(c["review_state"],"ai_review_provisional"); self.assertTrue(c["locator"])
         sids={s["id"] for s in self.sources["sources"]}
