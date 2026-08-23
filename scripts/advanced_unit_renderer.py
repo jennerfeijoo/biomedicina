@@ -92,10 +92,11 @@ def canonical_unit_to_advanced(root: Path, unit: dict[str, Any]) -> dict[str, An
     theory_sections: list[dict[str, Any]] = []
     for topic in as_dict_list(unit.get("topics")):
         paragraphs: list[str] = []
-        key_points: list[str] = []
+        key_points = as_text_list(topic.get("key_points"))
+        has_explicit_key_points = bool(key_points)
         for subtopic in as_dict_list(topic.get("subtopics")):
             title = str(subtopic.get("title") or "").strip()
-            if title:
+            if title and not has_explicit_key_points:
                 key_points.append(title.rstrip(".") + ".")
             for block in as_dict_list(subtopic.get("blocks")):
                 if block.get("type") == "paragraph" and str(block.get("text") or "").strip():

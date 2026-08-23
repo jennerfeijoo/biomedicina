@@ -34,6 +34,8 @@ Cada unidad usa la jerarquía `asignatura → unidad → tema → subtema → bl
 Los bloques tienen tipo explícito; la versión 1.0 incorpora `paragraph` y
 `equation` y puede ampliarse de forma compatible con `definition`, `table`,
 `figure`, `dataset`, `case_study`, `warning`, `code` u otros tipos documentados.
+Cada tema puede conservar además una lista `key_points` para separar la síntesis
+conceptual de los títulos de subtema sin duplicar párrafos.
 
 Las evaluaciones viven fuera de la unidad para que una aplicación futura pueda
 enviar al estudiante solo el enunciado y reservar `answer_key`, explicación,
@@ -96,7 +98,8 @@ brechas explícitas se incluyen:
 - una actividad sin producto o duración estimada;
 - una pregunta sin dificultad, nivel cognitivo, explicación o feedback;
 - una definición sin fuente exacta;
-- una fuente no verificada;
+- una fuente no verificada o sin estado de verificación declarado;
+- un curso sin afirmaciones centrales trazadas;
 - un recurso multimedia todavía planificado.
 
 Estas brechas no deben ocultarse para obtener un control verde. Son la lista de
