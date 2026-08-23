@@ -72,6 +72,7 @@ class BioinstrumentacionUnit02CuratedTests(unittest.TestCase):
     def test_claims_are_exactly_present_and_traceable(self) -> None:
         u2_claims = [claim for claim in self.claims["claims"] if claim.get("unit_id") == "BIOINST-U02"]
         self.assertEqual(len(u2_claims), 18)
+        self.assertEqual(len(self.unit["claim_ids"]), 18)
         self.assertEqual(self.unit["claim_ids"], [claim["id"] for claim in u2_claims])
         serialized = json.dumps(self.unit, ensure_ascii=False)
         for claim in u2_claims:
