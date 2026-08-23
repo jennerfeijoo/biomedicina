@@ -16,7 +16,12 @@
     "publication": "published_provisional"
   },
   "purpose": "Evaluar un modelo bloqueado fuera de su desarrollo, diagnosticar degradación entre entornos y aplicar actualización o recalibración sin confundir adaptación con evaluación independiente.",
-  "prerequisite_unit_ids": [],
+  "prerequisite_unit_ids": [
+    "MLBIO-U01",
+    "MLBIO-U02",
+    "MLBIO-U03",
+    "MLBIO-U04"
+  ],
   "course_learning_outcome_ids": [
     "MLBIO-LO05"
   ],
@@ -54,7 +59,7 @@
         {
           "id": "MLBIO-U05-T01-B01",
           "type": "equation",
-          "latex": "ExternalPerformance = Metric(FrozenModel, NewContextData)",
+          "latex": "\\widehat{\\mathrm{Perf}}_{\\mathrm{ext}} = M\\!\\left(f_{\\mathrm{frozen}}, D_{\\mathrm{target}}\\right)",
           "label": "La evaluación externa aplica una versión congelada del modelo a datos de un contexto no utilizado para su desarrollo."
         }
       ],
@@ -107,7 +112,7 @@
         {
           "id": "MLBIO-U05-T02-B01",
           "type": "equation",
-          "latex": "P_target(X,Y) may differ from P_development(X,Y)",
+          "latex": "P_{\\mathrm{target}}(X,Y) \\neq P_{\\mathrm{development}}(X,Y)",
           "label": "La distribución conjunta de predictores y desenlace puede cambiar entre desarrollo y uso objetivo."
         }
       ],
@@ -160,7 +165,7 @@
         {
           "id": "MLBIO-U05-T03-B01",
           "type": "equation",
-          "latex": "logit(Y) = alpha + beta * logit(PredictedRisk)",
+          "latex": "\\operatorname{logit}(Y)=\\alpha+\\beta\\,\\operatorname{logit}(\\hat p)",
           "label": "Modelo de recalibración diagnóstica: alpha resume desajuste global y beta la extensión de las predicciones."
         }
       ],
@@ -178,7 +183,7 @@
             {
               "id": "MLBIO-U05-T03-ST01-B01",
               "type": "paragraph",
-              "text": "La validación externa debe evaluar discriminación, calibración, error probabilístico, umbrales y utilidad. La calibración intercepta cambios del riesgo promedio y la pendiente detecta predicciones demasiado extremas o débiles. Los análisis por subgrupos y centros requieren intervalos y número de eventos. Una métrica global puede ocultar que el modelo falla sistemáticamente en un entorno con proceso distinto."
+              "text": "La validación externa debe evaluar discriminación, calibración, error probabilístico, umbrales y utilidad. La calibración en el grande detecta desajuste del riesgo promedio y la pendiente de calibración resume si las predicciones son demasiado extremas o demasiado moderadas. Los análisis por subgrupos y centros requieren intervalos y número de eventos. Una métrica global puede ocultar que el modelo falla sistemáticamente en un entorno con proceso distinto."
             }
           ]
         },
@@ -213,7 +218,7 @@
         {
           "id": "MLBIO-U05-T04-B01",
           "type": "equation",
-          "latex": "UpdatedRisk = logistic(alpha_new + beta_new * logit(OriginalRisk))",
+          "latex": "\\hat p_{\\mathrm{updated}}=\\operatorname{logit}^{-1}\\!\\left(\\alpha_{\\mathrm{new}}+\\beta_{\\mathrm{new}}\\operatorname{logit}(\\hat p_{\\mathrm{original}})\\right)",
           "label": "Recalibración de intercepto y pendiente aplicada a las probabilidades originales."
         }
       ],
@@ -298,33 +303,51 @@
     {
       "id": "MLBIO-U05-ACT01",
       "title": "Plan de validación externa",
-      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
-      "prerequisite_unit_ids": [],
+      "purpose": "Diseñar una validación externa de una versión bloqueada, demostrar la compatibilidad del contexto objetivo, cuantificar desempeño e heterogeneidad y definir una ruta de actualización que preserve una evaluación independiente posterior.",
+      "prerequisite_unit_ids": [
+        "MLBIO-U01",
+        "MLBIO-U02",
+        "MLBIO-U03",
+        "MLBIO-U04"
+      ],
       "instructions": [
-        "Elegir contexto externo relevante.",
-        "Bloquear modelo y análisis.",
-        "Auditar diferencias de datos.",
-        "Definir reglas de recalibración y nueva evaluación."
+        "Definir el uso previsto que se quiere transportar y seleccionar un contexto externo relevante por tiempo, centro, región o dominio, explicando qué diferencia aporta respecto del desarrollo.",
+        "Congelar antes de inspeccionar resultados el pipeline, coeficientes o pesos, hiperparámetros, categorías, manejo de faltantes, umbral, exclusiones y plan de análisis; registrar una versión identificable.",
+        "Auditar la compatibilidad entre desarrollo y validación: población, severidad, prevalencia, unidades, dispositivos, tiempos, definiciones, faltantes, codificación y proceso asistencial.",
+        "Aplicar la versión bloqueada sin refitting y estimar desempeño con incertidumbre: calibración, discriminación, error probabilístico y utilidad en los umbrales del uso previsto, incluyendo resultados por centro cuando corresponda.",
+        "Si aparece degradación, formular hipótesis sobre su mecanismo y preespecificar si procede restricción de uso, recalibración o actualización; reservar datos independientes para evaluar cualquier nueva versión."
       ],
       "tasks": [
-        "Distinguir validación temporal y geográfica.",
-        "Definir qué artefactos deben bloquearse.",
-        "Comparar mezcla de casos entre dos centros.",
-        "Auditar una variable con unidades diferentes.",
-        "Interpretar intercepto y pendiente de calibración.",
-        "Diseñar un forest plot conceptual por centro.",
-        "Elegir entre recalibración y reconstrucción.",
-        "Definir una cohorte independiente posterior a la actualización."
+        "Distinguir qué pregunta responden una validación temporal, una geográfica y una de dominio para el mismo modelo clínico.",
+        "Definir un manifiesto de los artefactos y decisiones que deben bloquearse antes de acceder al resultado externo.",
+        "Comparar la mezcla de casos, prevalencia y proceso asistencial entre dos centros y anticipar qué métricas podrían cambiar aunque el algoritmo sea idéntico.",
+        "Auditar una variable de laboratorio con distinto ensayo, unidad o límite de detección y decidir si puede transformarse sin cambiar el uso previsto.",
+        "Interpretar conjuntamente AUC, calibración en el grande, pendiente de calibración y net benefit cuando el ranking permanece estable pero las probabilidades se desplazan.",
+        "Diseñar un forest plot conceptual por centro que muestre estimación, intervalo e información suficiente para no sobreinterpretar centros pequeños.",
+        "Elegir entre no modificar, recalibrar intercepto, recalibrar intercepto y pendiente, revisar coeficientes, restringir el uso o reconstruir el modelo para tres patrones de degradación.",
+        "Definir cómo separar una cohorte usada para actualización de una cohorte independiente posterior que evalúe la nueva versión."
       ],
-      "deliverables": [],
+      "deliverables": [
+        "Protocolo de validación externa con uso previsto, población y entorno objetivo, tipo de validación, fechas, unidad independiente y justificación de relevancia externa.",
+        "Manifiesto de bloqueo con identificador de versión, pipeline, parámetros, dependencias, reglas de faltantes, umbral, exclusiones y análisis preespecificado.",
+        "Matriz de compatibilidad desarrollo-validación que compare definiciones, unidades, dispositivos, prevalencia, severidad, faltantes, flujo y temporalidad, con decisión explícita para cada diferencia.",
+        "Informe de desempeño externo con estimaciones e incertidumbre para calibración, discriminación, error probabilístico y utilidad, más análisis por centro o subgrupo cuando sea informativo.",
+        "Diagnóstico de transportabilidad que separe hallazgos observados de hipótesis sobre dataset shift, mezcla de casos, medición o proceso y delimite dónde la evidencia permite usar el modelo.",
+        "Plan de actualización y reevaluación que indique qué datos se consumirían para adaptar el modelo, qué crea una nueva versión y qué cohorte permanecerá independiente para confirmarla."
+      ],
       "checking_criteria": [
-        "La cohorte responde al uso previsto.",
-        "No se ajusta con la prueba.",
-        "Se comparan datos y desempeño.",
-        "La actualización crea una versión nueva y reevaluable."
+        "La cohorte externa corresponde a una población y un entorno relevantes para el uso previsto y su relación con los datos de desarrollo está documentada.",
+        "La evaluación aplica una versión identificable y bloqueada sin refitting, selección de umbral ni correcciones motivadas por los resultados externos.",
+        "La auditoría compara definiciones, unidades, dispositivos, temporalidad, faltantes, prevalencia, severidad y flujo asistencial antes de interpretar métricas.",
+        "Las métricas incluyen calibración, discriminación, error probabilístico y utilidad cuando hay decisiones clínicas, con intervalos o incertidumbre apropiados.",
+        "Las diferencias de AUC entre centros no se atribuyen automáticamente al algoritmo sin considerar mezcla de casos y precisión de las estimaciones.",
+        "Los resultados multicéntricos muestran heterogeneidad y evitan clasificar centros pequeños como fallidos por una estimación puntual extrema.",
+        "Las explicaciones de degradación distinguen observación de hipótesis y no convierten asociaciones post hoc en causas demostradas.",
+        "La estrategia de recalibración o actualización es proporcional al patrón de degradación, tamaño muestral y uso previsto; también contempla restringir o retirar el modelo.",
+        "Los datos usados para adaptar el modelo no se reutilizan como confirmación independiente y la nueva versión queda versionada con evidencia propia."
       ],
-      "estimated_duration_minutes": null,
-      "status": "migrated_requires_pedagogical_review"
+      "estimated_duration_minutes": 240,
+      "status": "curated_pending_expert_review"
     }
   ],
   "assessment_file": "assessments/unit-05.json",
@@ -347,9 +370,28 @@
     "probast-ai",
     "decide-ai",
     "imdrf-fda-gmlp",
-    "fda-transparency-mlmd"
+    "fda-transparency-mlmd",
+    "riley-external-validation-2024",
+    "riley-external-validation-sample-size-2024",
+    "riley-external-validation-ipd-2016",
+    "moreno-torres-dataset-shift-2012"
   ],
-  "claim_ids": [],
+  "claim_ids": [
+    "MLBIO-U05-C001",
+    "MLBIO-U05-C002",
+    "MLBIO-U05-C003",
+    "MLBIO-U05-C004",
+    "MLBIO-U05-C005",
+    "MLBIO-U05-C006",
+    "MLBIO-U05-C007",
+    "MLBIO-U05-C008",
+    "MLBIO-U05-C009",
+    "MLBIO-U05-C010",
+    "MLBIO-U05-C011",
+    "MLBIO-U05-C012",
+    "MLBIO-U05-C013",
+    "MLBIO-U05-C014"
+  ],
   "media_ids": [
     "MLBIO-U05-MED01"
   ],

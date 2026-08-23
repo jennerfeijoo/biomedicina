@@ -38,12 +38,12 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(report.counts["units"], 8)
         self.assertEqual(report.counts["topics"], 32)
         self.assertEqual(report.counts["assessment_items"], 64)
-        self.assertEqual(report.counts["claims"], 56)
+        self.assertEqual(report.counts["claims"], 70)
         self.assertFalse(any("sin afirmaciones centrales trazadas" in gap for gap in report.gaps))
         self.assertFalse(any("estado de verificación no declarado" in gap for gap in report.gaps))
 
         course_dir = ROOT / "data" / "courses" / "machine-learning-biomedico-validacion-clinica"
-        for unit_number in (1, 2, 3, 4):
+        for unit_number in (1, 2, 3, 4, 5):
             unit = json.loads(
                 (course_dir / "units" / f"unit-{unit_number:02d}.json").read_text(encoding="utf-8")
             )
@@ -70,7 +70,7 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         curated_glossary = [
             entry
             for entry in glossary["entries"]
-            if {"MLBIO-U02", "MLBIO-U03", "MLBIO-U04"}.intersection(entry["unit_ids"])
+            if {"MLBIO-U02", "MLBIO-U03", "MLBIO-U04", "MLBIO-U05"}.intersection(entry["unit_ids"])
         ]
         self.assertTrue(curated_glossary)
         self.assertTrue(
@@ -135,6 +135,18 @@ class AcademicCourseSchemaTests(unittest.TestCase):
         self.assertEqual(unit["schema_version"], "canonical-1.0")
         self.assertEqual(unit["unit"], 4)
         self.assertEqual(unit["title"], "Validación interna, optimismo e incertidumbre")
+        self.assertEqual(len(unit["self_assessment"]), 8)
+        self.assertEqual(len(unit["guided_activities"][0]["deliverables"]), 6)
+
+    def test_renderer_includes_curated_machine_learning_unit_5(self) -> None:
+        unit = RENDERER.load_advanced_unit(
+            ROOT, "machine-learning-biomedico-validacion-clinica", 5
+        )
+        self.assertIsNotNone(unit)
+        assert unit is not None
+        self.assertEqual(unit["schema_version"], "canonical-1.0")
+        self.assertEqual(unit["unit"], 5)
+        self.assertEqual(unit["title"], "Validación externa, transportabilidad y actualización")
         self.assertEqual(len(unit["self_assessment"]), 8)
         self.assertEqual(len(unit["guided_activities"][0]["deliverables"]), 6)
 
