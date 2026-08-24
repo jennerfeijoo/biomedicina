@@ -44,7 +44,7 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         for concept in (
             "requisitos sin fuente",
             "gold plating",
-            "requisito derivado",
+            "requisitos derivados",
             "frontera del sistema",
             "método de verificación previsto",
             "sistema de uso",
@@ -118,6 +118,6 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir requisitos con soluciones prematuras", purpose)
 
 
-# Final gate trigger; the theory uses the explicit phrase "requisitos sin fuente" while the glossary names that defect "requisito huérfano".
+# Final gate trigger after aligning the regression with the plural phrasing used in the curated theory.
 if __name__ == "__main__":
     unittest.main()
