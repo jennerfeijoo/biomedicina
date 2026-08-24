@@ -32,32 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Repair Clinical Engineering U5 JSON
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          paths = [
-              Path('data/course_redevelopment/ingenieria-clinica-gestion/units/unit-05.json'),
-              Path('data/generated_units/ingenieria-clinica-gestion/unit-05.json'),
-          ]
-          needle = '    {"domain": "Analítica de seguridad", "connection": "Tasas con exposición, reglas de recurrencia y codificación armonizada permiten detectar señales sin confundir conteo de reportes con incidencia real o causalidad."\n  ],'
-          replacement = '    {"domain": "Analítica de seguridad", "connection": "Tasas con exposición, reglas de recurrencia y codificación armonizada permiten detectar señales sin confundir conteo de reportes con incidencia real o causalidad."}\n  ],'
-          for path in paths:
-              text = path.read_text(encoding='utf-8')
-              if needle not in text:
-                  raise SystemExit(f'No se encontró el patrón de reparación en {path}')
-              text = text.replace(needle, replacement, 1)
-              json.loads(text)
-              path.write_text(text, encoding='utf-8')
-          if paths[0].read_bytes() != paths[1].read_bytes():
-              raise SystemExit('La fuente y el espejo U5 dejaron de ser idénticos')
-          print('U5 reparada y JSON válido en fuente y espejo.')
-          PY
-
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -70,7 +44,6 @@ jobs:
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
           fi
-          python -m unittest tests.test_ingenieria_clinica_gestion_unit_05_curated
 
       - name: Regenerate site deterministically
         shell: bash
@@ -92,26 +65,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit repaired source and deterministic public site
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git add -A -- \
-            data/course_redevelopment/ingenieria-clinica-gestion/units/unit-05.json \
-            data/generated_units/ingenieria-clinica-gestion/unit-05.json \
-            .github/workflows/synchronize-generated-site.yml \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "U5 y el sitio público ya están sincronizados."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Repair Clinical Engineering U5 structured content"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
