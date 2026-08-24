@@ -42,7 +42,7 @@ class AplicacionesSaludDigitalUnit01CuratedTests(unittest.TestCase):
             "traspasos",
             "determinantes",
             "pobreza de datos",
-            "pertinencia digital",
+            "merece la pena explorar una intervención digital",
             "propuesta de valor",
         ):
             self.assertIn(concept, theory)
