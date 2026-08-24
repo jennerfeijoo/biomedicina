@@ -1,4 +1,4 @@
-# Final user-authored trigger after public synchronization and regression correction.
+# Final user-authored trigger after descriptor synchronization and regression correction.
 from __future__ import annotations
 
 import json
@@ -47,7 +47,7 @@ class IngenieriaTejidosUnit04CuratedTests(unittest.TestCase):
             "condiciones de frontera",
             "consumo",
             "caudal que registra una bomba",
-            "heterogeneidad espacial",
+            "heterogeneidad interna",
             "perfusabilidad",
             "esfuerzo cortante",
             "controles discriminantes",
