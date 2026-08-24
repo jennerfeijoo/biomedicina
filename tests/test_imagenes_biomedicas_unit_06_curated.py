@@ -35,7 +35,7 @@ class ImagenesBiomedicasUnit06CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 5 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "dependiente de la tarea",
+            "respecto de una tarea",
             "tamaño de píxel",
             "fantoma",
             "línea base",
@@ -94,8 +94,7 @@ class ImagenesBiomedicasUnit06CuratedTests(unittest.TestCase):
         notice = self.unit["editorial_notice"].casefold()
         purpose = self.unit["purpose"].casefold()
         self.assertIn("no constituye revisión disciplinar externa", notice)
-        self.assertIn("no constituye", notice)
-        self.assertIn("no autorización para operar equipos", notice)
+        self.assertIn("ni autorización para operar equipos", notice)
         self.assertIn("recomendación clínica", purpose)
 
 
