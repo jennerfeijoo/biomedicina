@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final human-authored validation trigger after publication and citation synchronization.
+# Final user-authored validation trigger after publication and ASME bibliographic identity correction.
 
 import json
 import unittest
