@@ -95,5 +95,6 @@ class ElectronicaUnit03CuratedTests(unittest.TestCase):
         self.assertIn("unidad 4", purpose)
 
 
+# Final stable-head validation trigger after public and catalog synchronization.
 if __name__ == "__main__":
     unittest.main()
