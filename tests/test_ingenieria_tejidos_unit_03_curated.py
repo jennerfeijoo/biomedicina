@@ -1,4 +1,4 @@
-# Final user-authored trigger after rebasing U3 and deterministic public synchronization.
+# Final user-authored trigger after descriptor publication synchronization.
 from __future__ import annotations
 
 import json
