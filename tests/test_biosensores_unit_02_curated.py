@@ -99,6 +99,6 @@ class BiosensoresUnit02CuratedTests(unittest.TestCase):
         self.assertIn("validez clínica", purpose)
 
 
-# Final user-authored trigger after deterministic public-site synchronization.
+# Final user-authored trigger after publication metadata synchronization.
 if __name__ == "__main__":
     unittest.main()
