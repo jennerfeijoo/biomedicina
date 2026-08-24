@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "comunicacion-cientifica"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
+# Final user-authored trigger after canonical migration and public synchronization.
 
 
 def load(path: Path):
