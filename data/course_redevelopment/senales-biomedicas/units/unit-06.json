@@ -6,386 +6,197 @@
   "slug": "interpretacion-y-despliegue",
   "title": "Interpretación y despliegue",
   "status": "review",
-  "purpose": "Integrar incertidumbre, explicabilidad, monitorización para resolver un caso de uso responsable de algoritmos sobre señales con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Interpretar y vigilar de forma reproducible un modelo bloqueado aplicado a señales biomédicas, separando discriminación, calibración e incertidumbre; auditando explicaciones sin convertir atribución en mecanismo causal; monitorizando calidad de señal, dataset shift, desempeño y subgrupos; y definiendo acciones de escalamiento, pausa y revalidación antes de cualquier cambio, sin presentar la validación interna de U5 como utilidad clínica ni autorizar despliegue asistencial.",
   "learning_objectives": [
-    "Definir incertidumbre, explicabilidad y monitorización mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte incertidumbre con explicabilidad y delimite el papel de monitorización.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre uso responsable de algoritmos sobre señales con incertidumbre y límites.",
-    "Transferir el método de Interpretación y despliegue a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir discriminación, calibración e incertidumbre predictiva y evaluar probabilidades mediante curva de calibración, Brier score y análisis por umbral sin interpretar un score como certeza clínica.",
+    "Comparar explicaciones locales y globales y someter atribuciones, importancia por permutación o mapas de saliencia a pruebas de perturbación o sanity checks, evitando inferencias causales o fisiológicas no demostradas.",
+    "Diseñar un conjunto de monitores para calidad de señal, missingness, saturación, distribución de características y salidas del modelo, distinguiendo dataset shift, covariate shift y concept drift.",
+    "Evaluar cambios temporales de discriminación, calibración y error cuando existen etiquetas diferidas, preservando la unidad independiente y examinando subgrupos relevantes para el uso previsto.",
+    "Definir reglas preespecificadas de continuar, investigar, abstenerse, pausar o revalidar ante deterioro técnico, datos fuera de dominio o evidencia insuficiente, sin inventar umbrales universales de deriva.",
+    "Construir un expediente de despliegue simulado con versión del modelo, uso previsto, límites, plan de monitorización, registro de cambios y condiciones de reentrenamiento, manteniendo revisión disciplinar externa y validación clínica explícitamente pendientes."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Interpretación y despliegue",
+      "heading": "1. Probabilidades, calibración e incertidumbre en contexto",
       "paragraphs": [
-        "La unidad «Interpretación y despliegue» sitúa incertidumbre, explicabilidad y monitorización dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Señales Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Interpretación y despliegue» en Señales Biomédicas, «incertidumbre», se entiende así: Conocimiento incompleto sobre el valor de una medición, parámetro, modelo o conclusión, que debe expresarse y propagarse. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Interpretación y despliegue», «explicabilidad», aporta otra dimensión al problema de Señales Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con incertidumbre debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Interpretación y despliegue» en Señales Biomédicas, «monitorización», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en Interpretación y despliegue.",
-        "Relacionar incertidumbre, explicabilidad y monitorización mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Interpretación y despliegue» dentro de Señales Biomédicas, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Señales Biomédicas, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre incertidumbre o explicabilidad debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Interpretación y despliegue», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Señales Biomédicas, la incertidumbre de «Interpretación y despliegue» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: uso responsable de algoritmos sobre señales",
-      "paragraphs": [
-        "En la unidad «Interpretación y despliegue» de Señales Biomédicas, el caso conductor es uso responsable de algoritmos sobre señales. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Interpretación y despliegue» conecta incertidumbre con explicabilidad y utiliza monitorización como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «uso responsable de algoritmos sobre señales» en Señales Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Interpretación y despliegue» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de uso responsable de algoritmos sobre señales y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "La Unidad 5 termina con un procedimiento bloqueado y una estimación de desempeño interno; la Unidad 6 comienza preguntando qué significa la salida cuando el modelo encuentra datos nuevos. Un score de 0,80 no significa por sí mismo que exista un 80 % de certeza clínica ni que el modelo sea seguro. La discriminación describe la capacidad de ordenar casos positivos y negativos, mientras que la calibración compara probabilidades predichas con frecuencias observadas. Un sistema puede discriminar bien y, al mismo tiempo, producir probabilidades demasiado extremas o demasiado conservadoras. Por eso las probabilidades deben evaluarse como una capa propia y siempre en la población, periodo y condiciones donde se pretende interpretarlas.",
+        "Una curva de calibración agrupa o suaviza predicciones y compara la probabilidad media con la frecuencia observada. El Brier score resume el error cuadrático de probabilidades binarias, pero mezcla componentes y depende de la dificultad y prevalencia del problema; no sustituye una inspección de la curva ni la discriminación. Tampoco existe una única pendiente, intercepto o score que certifique calibración en todas las regiones del rango. En señales biomédicas conviene prestar atención a extremos de probabilidad, porque pueden concentrar decisiones y también sufrir mayor escasez de observaciones. La evaluación debe informar tamaño de muestra, incertidumbre y distribución de predicciones, no solo un número agregado.",
+        "La incertidumbre predictiva puede provenir de variabilidad irreducible del fenómeno, error de medición, ruido y artefactos de señal, cantidad limitada de datos, parámetros del modelo o distancia respecto del dominio de entrenamiento. Etiquetas como aleatoria o epistémica son útiles para razonar sobre fuentes diferentes, pero rara vez pueden separarse perfectamente en un sistema real. La entropía de una probabilidad binaria describe ambigüedad de la distribución predictiva, no toda la incertidumbre del modelo. Un clasificador puede emitir una probabilidad extrema fuera de distribución y seguir estando equivocado; por eso un indicador de confianza nunca debe convertirse en garantía de fiabilidad sin evaluación específica.",
+        "El dataset shift cambia la relación entre el entorno de desarrollo y los datos posteriores. Bajo shift pueden deteriorarse exactitud, discriminación, calibración o todas a la vez, y métodos de calibración ajustados en desarrollo pueden dejar de ser adecuados. La consecuencia práctica es que calibración e incertidumbre deben reevaluarse en el tiempo y bajo perturbaciones plausibles. Si un lote nuevo cambia por sensor, población, protocolo, firmware o contexto, el primer paso no es recalibrar automáticamente: se identifica qué cambió, se cuantifica el efecto y se determina si el uso previsto y el modelo siguen siendo válidos. Cualquier actualización posterior constituye un cambio controlado que requiere nueva evidencia."
       ],
       "equations": [
-        {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
-          "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
-          }
-        }
+        {"latex": "\\mathrm{BS}=\\frac{1}{N}\\sum_{i=1}^{N}(p_i-y_i)^2", "meaning": "Brier score para un resultado binario; p_i es la probabilidad predicha y y_i pertenece a {0,1}. Un valor menor indica menor error cuadrático en ese conjunto, pero no certifica por sí solo buena calibración."},
+        {"latex": "g_b=\\bar p_b-\\bar y_b", "meaning": "Diferencia descriptiva de calibración en un grupo b entre probabilidad media predicha y frecuencia observada. El resultado depende de cómo se construyen los grupos y no define un umbral universal."},
+        {"latex": "H(p)=-p\\log p-(1-p)\\log(1-p)", "meaning": "Entropía predictiva binaria. Resume ambigüedad de una distribución probabilística, pero no separa por sí sola incertidumbre epistémica, error de medición o cambio de dominio."}
       ],
       "key_points": [
-        "Delimitar el caso de uso responsable de algoritmos sobre señales antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Discriminación, calibración e incertidumbre responden preguntas distintas y deben reportarse por separado.",
+        "Una probabilidad del modelo no equivale a certeza clínica ni a probabilidad causal.",
+        "Brier score y curva de calibración se interpretan con prevalencia, tamaño muestral y distribución de scores.",
+        "La incertidumbre debe reevaluarse bajo dataset shift; la confianza producida en desarrollo no se presume transportable."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Explicabilidad auditada: atribución no es mecanismo",
       "paragraphs": [
-        "La reproducibilidad de «Interpretación y despliegue» en Señales Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Interpretación y despliegue» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Señales Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Interpretación y despliegue» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de incertidumbre, explicabilidad y monitorización debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Señales Biomédicas.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre uso responsable de algoritmos sobre señales. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Señales Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Interpretabilidad y explicabilidad describen formas de comprender relaciones entre entradas, representación y salida de un modelo. Una explicación global resume patrones del modelo en un conjunto de datos; una explicación local intenta describir por qué una predicción concreta cambió con determinadas variables. En modelos lineales, los coeficientes pueden ser directamente inspeccionables bajo la codificación y escala definidas. En modelos más complejos pueden usarse importancia por permutación, contribuciones locales o saliencia. Ninguna de estas herramientas convierte automáticamente el modelo en válido, justo o clínicamente útil. Una explicación responde a una pregunta sobre el comportamiento del modelo, no sustituye evaluación externa ni evidencia del fenómeno biológico.",
+        "Una atribución grande para potencia alfa, intervalo RR, amplitud PPG o RMS de sEMG significa que esa representación influyó en la salida bajo un método y contexto determinados. No demuestra que el rasgo sea causal, que corresponda a un mecanismo fisiológico único ni que una intervención sobre él cambie el resultado. Variables correlacionadas pueden compartir o intercambiar importancia y pequeñas decisiones de preprocesamiento pueden alterar la explicación. En señales, además, una característica puede reflejar simultáneamente fisiología, contacto del sensor, movimiento, referencia, filtrado y protocolo. Por eso toda explicación debe conservar la cadena de procedencia desde la señal hasta la característica y declarar alternativas plausibles.",
+        "Las explicaciones deben ser sometidas a controles. Una prueba de perturbación modifica deliberadamente una entrada y comprueba si la salida y la explicación responden de manera coherente con el modelo. Los sanity checks por aleatorización preguntan si un mapa de saliencia cambia cuando se alteran parámetros o etiquetas; una visualización que permanece casi igual puede estar capturando estructura de la entrada más que conocimiento aprendido. Estos ensayos no certifican una técnica de explicabilidad, pero ayudan a detectar explicaciones desacopladas del modelo. La apariencia intuitiva o visualmente atractiva no es un criterio suficiente de fidelidad.",
+        "La explicación debe seleccionarse según el usuario y la decisión. Un ingeniero que depura deriva necesita trazabilidad de variables y sensibilidad a perturbaciones; un revisor científico necesita saber qué evidencia sostiene la interpretación; un usuario final necesita información clara sobre uso previsto, desempeño y limitaciones. Añadir explicaciones después del entrenamiento no repara un diseño con fuga, mala calibración o datos no representativos. La regla de esta unidad es explícita: explicación, transparencia, validación y utilidad son capas relacionadas pero distintas, y ninguna se declara completada porque otra produzca un resultado convincente."
+      ],
+      "equations": [
+        {"latex": "\\Delta f_j=f(\\mathbf x+\\delta_j)-f(\\mathbf x)", "meaning": "Cambio de salida ante una perturbación controlada de la entrada o característica j. La elección de delta_j debe ser plausible y no convierte la diferencia en efecto causal."},
+        {"latex": "I_j=M(\\mathbf X,y)-M(\\pi_j(\\mathbf X),y)", "meaning": "Importancia por permutación de la característica j como pérdida de una métrica M al permutar esa columna. Depende del conjunto, la métrica y las correlaciones entre variables."}
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Una explicación describe comportamiento del modelo; no demuestra mecanismo fisiológico, causalidad ni utilidad clínica.",
+        "Importancias y saliencias dependen de representación, correlaciones, preprocesamiento y método de explicación.",
+        "Perturbaciones y sanity checks son controles de fidelidad útiles, no certificados de explicabilidad.",
+        "La explicación se diseña para una pregunta y audiencia concretas y no corrige una validación defectuosa."
+      ]
+    },
+    {
+      "heading": "3. Calidad de señal, dataset shift y monitorización operativa",
+      "paragraphs": [
+        "Antes de vigilar el modelo se vigila la entrada. En ECG, PPG, EEG o sEMG, cambios de contacto, movimiento, saturación, clipping, electrodos, iluminación, firmware, frecuencia de muestreo o filtros pueden modificar las características aunque la fisiología no haya cambiado. Un signal quality index puede resumir criterios definidos para una modalidad y tarea, pero no existe un SQI universal. El plan debe conservar variables elementales auditables: porcentaje de muestras ausentes, episodios saturados, amplitudes fuera de rango, pérdida de canales, distribución de frecuencias o proporción de segmentos rechazados. Si la señal deja de cumplir las condiciones de entrada, la salida del modelo puede dejar de ser interpretable antes de que cambie una métrica predictiva.",
+        "Dataset shift es un término general para diferencias entre distribuciones de desarrollo y uso. Covariate shift describe cambios en la distribución de entradas bajo ciertas suposiciones sobre la relación con la etiqueta; concept drift describe cambios en la relación entre entradas y resultado. En la práctica clínica o wearable esas categorías pueden coexistir y ser difíciles de identificar sin etiquetas. Comparar medias, cuantiles, proporciones de missingness o distancias entre distribuciones puede detectar una señal de cambio, pero ningún test estadístico o umbral tiene validez universal. Con grandes lotes, diferencias pequeñas pueden ser estadísticamente detectables y, con lotes pequeños, cambios importantes pueden pasar inadvertidos.",
+        "La monitorización debe cubrir varias capas: calidad de señal y metadatos de adquisición; distribución de características; frecuencia y distribución de predicciones; abstenciones o fallos; y, cuando llegan etiquetas confiables, discriminación, calibración y error por umbral. También debe revisarse desempeño en subgrupos definidos antes del análisis cuando sean relevantes para el uso previsto. Una media global estable puede ocultar deterioro localizado. Si las etiquetas llegan con retraso, los monitores de entrada son indicadores tempranos, no sustitutos del desempeño real. El plan debe decir qué puede concluirse con datos sin etiqueta y qué queda pendiente hasta disponer de resultado de referencia.",
+        "Cada alerta necesita una respuesta predefinida. Un cambio pequeño y explicable puede requerir observación; un salto de missingness puede motivar investigar la adquisición; un lote claramente fuera de dominio puede activar abstención o pausa; una caída confirmada de calibración o desempeño puede exigir revalidación. La detección de shift no prescribe automáticamente reentrenar. Reentrenar con datos recientes cambia el sistema, puede olvidar subgrupos previos, introducir nuevas fugas o modificar calibración y explicaciones. El procedimiento correcto separa detectar, diagnosticar, decidir y cambiar, dejando trazabilidad de la evidencia utilizada en cada paso."
+      ],
+      "equations": [
+        {"latex": "\\Delta z_j=\\frac{\\mu_{j,current}-\\mu_{j,ref}}{\\sigma_{j,ref}}", "meaning": "Cambio estandarizado descriptivo de una característica j entre lote actual y referencia. Facilita comparación de escala, pero no constituye un umbral universal de drift."},
+        {"latex": "\\Delta M=M_{current}-M_{reference}", "meaning": "Cambio de una métrica de desempeño o calidad entre periodos definidos. Debe acompañarse de incertidumbre, tamaño muestral y explicación del contexto."}
+      ],
+      "key_points": [
+        "Monitorizar calidad de señal y adquisición precede a interpretar cambios del modelo.",
+        "Dataset shift, covariate shift y concept drift no son sinónimos ni siempre son identificables sin etiquetas.",
+        "Los monitores sin etiqueta detectan cambios de entrada, pero no prueban por sí mismos deterioro del desempeño.",
+        "Detectar deriva y decidir reentrenar son pasos distintos; cualquier cambio del modelo requiere control y nueva evidencia."
+      ]
+    },
+    {
+      "heading": "4. Expediente de despliegue, supervisión humana y cambio controlado",
+      "paragraphs": [
+        "Un sistema listo para evaluación operacional necesita una identidad reproducible: versión del modelo, código, conjunto de características, transformaciones, parámetros, umbral, entorno, dependencias y fecha de bloqueo. A esa identidad se añade el contexto de uso: quién recibe la salida, qué decisión puede apoyar, qué entradas acepta, en qué población o dispositivo fue evaluado y qué situaciones quedan excluidas. La transparencia útil no consiste en publicar cada detalle técnico indiscriminadamente; consiste en proporcionar a cada audiencia la información necesaria para comprender desempeño, limitaciones y acciones apropiadas. Un modelo sin versión o sin uso previsto no puede ser monitorizado de forma interpretable.",
+        "La supervisión humana debe describirse como una función concreta, no como una frase de seguridad. El expediente especifica quién revisa una alerta, qué información adicional está disponible, cuándo el sistema puede abstenerse y qué ocurre si la persona discrepa. En un ejercicio educativo se puede simular un modo sombra en el que las predicciones se registran sin influir en decisiones reales. Este tipo de simulación permite estudiar flujos, latencia, fallos y monitorización, pero no demuestra beneficio clínico. La interacción humano-modelo debe evaluarse por separado porque una salida técnicamente correcta puede ser mal interpretada o integrada de manera inadecuada en un flujo de trabajo.",
+        "Los marcos de GMLP, transparencia, TRIPOD+AI y DECIDE-AI aportan principios de ciclo de vida, reporte y evaluación temprana. Son referencias para organizar preguntas sobre representatividad, independencia de test, información al usuario, desempeño humano-IA, monitorización y reporte; no certifican que el sistema cumpla requisitos regulatorios ni que esté autorizado para uso clínico. La unidad emplea estos documentos para construir un checklist académico de evidencia faltante. Las decisiones regulatorias, de conformidad, seguridad o implementación clínica requieren procesos y profesionales competentes fuera del alcance de este curso.",
+        "El cierre del curso es un plan de cambio controlado. Antes de modificar umbral, preprocesamiento, características, arquitectura o entrenamiento se define el motivo, la evidencia que activó la revisión, el conjunto de pruebas que deberá repetirse y la versión resultante. Un modelo adaptativo no debe presentarse como si pudiera aprender silenciosamente sin consecuencias. La monitorización posterior y los riesgos del reentrenamiento forman parte del ciclo de vida. El producto final de U6 es, por tanto, un expediente que conecta señal, modelo bloqueado de U5, calibración, explicación auditada, monitorización, acciones y revalidación, manteniendo explícitas las fronteras entre ejercicio académico, validación científica y uso asistencial."
+      ],
+      "equations": [],
+      "key_points": [
+        "Versión, uso previsto, entradas aceptadas, umbral y entorno forman parte de la identidad del sistema monitorizado.",
+        "Supervisión humana exige roles, información y acciones explícitas; no funciona como garantía genérica de seguridad.",
+        "Guías de reporte y principios regulatorios orientan documentación, pero no equivalen a certificación o autorización.",
+        "Cambiar o reentrenar el modelo crea una nueva versión que debe revalidarse según el alcance del cambio."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "incertidumbre",
-      "definition": "Conocimiento incompleto sobre el valor de una medición, parámetro, modelo o conclusión, que debe expresarse y propagarse."
-    },
-    {
-      "term": "explicabilidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "monitorización",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Interpretación y despliegue",
-      "definition": "Dominio de estudio que integra incertidumbre, explicabilidad, monitorización para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de uso responsable de algoritmos sobre señales usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    },
-    {
-      "term": "Caso límite",
-      "definition": "Condición extrema o frontera del dominio usada para comprobar coherencia, estabilidad y alcance de un método."
-    }
+    {"term": "calibración", "definition": "Correspondencia entre probabilidades predichas y frecuencias observadas en una población y contexto definidos."},
+    {"term": "curva de calibración", "definition": "Representación que compara probabilidades predichas con frecuencias observadas a lo largo del rango de riesgo."},
+    {"term": "Brier score", "definition": "Promedio del error cuadrático entre probabilidades binarias predichas y resultados observados."},
+    {"term": "probabilidad predictiva", "definition": "Salida probabilística condicionada al modelo, datos y supuestos; no equivale por sí sola a certeza clínica."},
+    {"term": "incertidumbre predictiva", "definition": "Conjunto de fuentes que limitan la confianza justificable en una predicción, incluyendo datos, medición, parámetros y dominio."},
+    {"term": "incertidumbre aleatoria", "definition": "Componente conceptual asociado a variabilidad que no desaparece simplemente añadiendo más datos del mismo tipo."},
+    {"term": "incertidumbre epistémica", "definition": "Componente conceptual asociado a conocimiento o datos insuficientes del modelo y del dominio, potencialmente reducible con evidencia adecuada."},
+    {"term": "entropía predictiva", "definition": "Medida de dispersión de una distribución predictiva; en clasificación binaria es máxima cerca de p=0,5."},
+    {"term": "interpretabilidad", "definition": "Grado en que una persona puede comprender relaciones relevantes entre entradas, representación y salida del modelo."},
+    {"term": "explicabilidad", "definition": "Conjunto de métodos y comunicaciones usados para describir por qué o cómo un modelo produce determinadas salidas dentro de un alcance definido."},
+    {"term": "explicación local", "definition": "Descripción del comportamiento del modelo alrededor de una observación o predicción concreta."},
+    {"term": "explicación global", "definition": "Resumen de patrones de comportamiento del modelo sobre una población o región de entrada."},
+    {"term": "atribución", "definition": "Asignación de contribución a entradas o características para una salida; no constituye por sí misma evidencia causal."},
+    {"term": "importancia por permutación", "definition": "Cambio de una métrica al romper mediante permutación la información de una característica manteniendo el resto del procedimiento."},
+    {"term": "saliencia", "definition": "Representación de sensibilidad o relevancia de partes de la entrada para una salida bajo un método específico."},
+    {"term": "sanity check", "definition": "Prueba de control que verifica si una explicación depende realmente de parámetros o datos aprendidos por el modelo."},
+    {"term": "prueba de perturbación", "definition": "Evaluación que modifica de forma controlada una entrada y observa la respuesta del modelo o de la explicación."},
+    {"term": "signal quality index", "definition": "Indicador definido para estimar si una señal satisface criterios de calidad para una tarea concreta; no es universal entre modalidades."},
+    {"term": "dataset shift", "definition": "Cambio entre la distribución de datos de desarrollo y la distribución encontrada posteriormente."},
+    {"term": "covariate shift", "definition": "Caso de shift centrado en cambios de la distribución de entradas bajo supuestos específicos sobre la relación con la etiqueta."},
+    {"term": "concept drift", "definition": "Cambio temporal o contextual en la relación entre entradas y resultado que puede alterar la validez del predictor."},
+    {"term": "monitorización", "definition": "Recogida y evaluación planificada de indicadores de entrada, salida, desempeño y contexto durante el ciclo de vida."},
+    {"term": "monitorización por subgrupos", "definition": "Seguimiento preespecificado de desempeño o calidad en grupos relevantes para detectar deterioro oculto por un promedio global."},
+    {"term": "modelo bloqueado", "definition": "Versión congelada de datos de entrada, transformaciones, parámetros, umbral y código antes de una evaluación definida."},
+    {"term": "abstención", "definition": "Regla por la que el sistema evita emitir o usar una predicción cuando no se cumplen condiciones previamente definidas."},
+    {"term": "escalamiento", "definition": "Ruta predefinida para transferir una alerta o caso fuera de condiciones a revisión adicional."},
+    {"term": "modo sombra", "definition": "Evaluación en la que un sistema genera salidas registradas pero estas no se usan para tomar decisiones reales."},
+    {"term": "reentrenamiento", "definition": "Ajuste de parámetros del modelo con nuevos datos; crea un cambio que requiere trazabilidad y reevaluación."},
+    {"term": "registro de cambios", "definition": "Historial versionado de modificaciones, motivo, evidencia, pruebas repetidas y responsable de cada cambio."},
+    {"term": "supervisión humana", "definition": "Rol explícito de personas en revisión, interpretación y acción; debe definirse operacionalmente y no como garantía genérica."}
   ],
   "worked_examples": [
-    {
-      "title": "Del problema amplio a una evidencia verificable en Interpretación y despliegue",
-      "scenario": "Un equipo propone estudiar uso responsable de algoritmos sobre señales, pero su pregunta mezcla incertidumbre, explicabilidad y monitorización sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de incertidumbre, explicabilidad y monitorización.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-      ]
-    },
-    {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre incertidumbre y explicabilidad en el caso de uso responsable de algoritmos sobre señales; una condición vinculada con monitorización podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar monitorización como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
-    }
+    {"title": "Misma AUROC, distinta calibración", "scenario": "Dos versiones sintéticas ordenan los casos casi igual, pero una transforma probabilidades hacia 0 y 1 y se vuelve sobreconfiada.", "reasoning_steps": ["Mantener las etiquetas y el orden de scores constantes.", "Comparar AUROC de ambas versiones.", "Construir grupos de calibración y calcular probabilidad media frente a frecuencia observada.", "Calcular Brier score para ambas versiones.", "Explicar por qué conservar ranking no conserva calidad probabilística."], "interpretation": "La discriminación puede permanecer estable mientras la calibración empeora; una probabilidad requiere evaluación propia.", "limitations": ["El ejemplo binario simplifica el problema.", "El binning modifica la apariencia de la curva.", "No demuestra transportabilidad clínica."]},
+    {"title": "Entropía alta no identifica la fuente de incertidumbre", "scenario": "Un modelo produce p=0,50 en una ventana ECG sintética con ruido y p=0,50 en una señal limpia cercana a la frontera de decisión.", "reasoning_steps": ["Calcular la misma entropía binaria para ambas predicciones.", "Revisar indicadores de calidad de señal y distancia al dominio de referencia.", "Separar ambigüedad de la distribución de la causa que la produjo.", "Proponer evidencia adicional diferente para cada caso.", "Evitar llamar incertidumbre epistémica a todo score cercano a 0,5."], "interpretation": "Una medida predictiva puede cuantificar ambigüedad sin identificar si proviene de ruido, solapamiento de clases o desconocimiento del dominio.", "limitations": ["No estima incertidumbre bayesiana.", "Las fuentes de incertidumbre pueden coexistir.", "El ejemplo no define una política clínica de abstención."]},
+    {"title": "Una explicación visual que no depende del modelo", "scenario": "Un mapa de saliencia sobre una señal sintética parece resaltar un complejo, pero conserva casi la misma forma después de aleatorizar parámetros.", "reasoning_steps": ["Guardar la explicación del modelo entrenado.", "Aleatorizar parámetros o comparar contra una versión control.", "Generar de nuevo la explicación con el mismo método.", "Cuantificar similitud y revisar si el mapa sigue la estructura de la entrada.", "Concluir qué afirmaciones sobre fidelidad ya no son defendibles."], "interpretation": "Una visualización intuitiva no basta; si no responde al modelo aprendido puede ser inadecuada para explicar su decisión.", "limitations": ["Un sanity check fallido invalida ese uso, no todas las técnicas de explicación.", "Pasar un control tampoco prueba causalidad.", "La métrica de similitud debe predefinirse."]},
+    {"title": "Shift de sensor antes de disponer de etiquetas", "scenario": "Un nuevo lote PPG sintético presenta mayor saturación y cambia la distribución de amplitud, pero los resultados de referencia llegarán semanas después.", "reasoning_steps": ["Comparar missingness, saturación y un SQI definido para la simulación.", "Comparar cuantiles de características con el periodo de referencia.", "Separar evidencia de shift de entrada de evidencia de deterioro de desempeño.", "Aplicar una regla predefinida de investigar o abstenerse si se viola el dominio de entrada.", "Recalcular calibración y discriminación cuando lleguen etiquetas."], "interpretation": "Los monitores sin etiqueta pueden detectar condiciones nuevas, pero no permiten afirmar por sí solos cuánto cambió la exactitud del modelo.", "limitations": ["El SQI del ejercicio no es universal.", "La causa del cambio requiere diagnóstico.", "No se recomienda reentrenar automáticamente."]},
+    {"title": "Reentrenar no es una corrección neutra", "scenario": "Tras observar drift temporal, un equipo propone incorporar el último mes de datos y sustituir silenciosamente el modelo.", "reasoning_steps": ["Registrar qué alerta motivó el cambio y qué evidencia está disponible.", "Definir datos de desarrollo nuevos y mantener un test independiente apropiado.", "Repetir desempeño global, calibración, subgrupos y controles de explicación relevantes.", "Asignar una nueva versión y actualizar el expediente de uso previsto y limitaciones.", "Comparar la nueva versión con la bloqueada antes de decidir cualquier transición."], "interpretation": "Reentrenar cambia el sistema y puede introducir beneficios o regresiones; requiere una evaluación proporcional al alcance del cambio.", "limitations": ["No constituye un procedimiento regulatorio completo.", "El conjunto de pruebas depende del uso previsto.", "El ejercicio no autoriza despliegue clínico."]}
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
-      "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
-      ],
-      "problems": [
-        "Define incertidumbre mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo explicabilidad modifica o complementa a incertidumbre.",
-        "Propón una prueba que distinga el papel de monitorización de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
-      ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
-      ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
+      "title": "Actividad guiada 1: laboratorio de calibración y probabilidad",
+      "instructions": ["Trabaja exclusivamente con probabilidades y etiquetas sintéticas y fija una semilla reproducible.", "Genera una versión base y una versión deliberadamente sobreconfiada sin cambiar el orden de los casos.", "Mantén el mismo conjunto de evaluación para comparar discriminación y calibración.", "No ajustes una recalibración usando el mismo conjunto que se emplea para juzgarla.", "Documenta cada transformación y concluye solo sobre el experimento simulado."],
+      "problems": ["Genera al menos 500 resultados binarios con probabilidades conocidas.", "Construye scores base con ruido controlado.", "Transforma los scores para crear una versión más extrema manteniendo el ranking.", "Calcula AUROC para ambas versiones.", "Calcula Brier score para ambas versiones.", "Construye una tabla de al menos cinco grupos con probabilidad media y frecuencia observada.", "Calcula el gap de calibración por grupo sin convertirlo en umbral universal.", "Elige un umbral predefinido y compara matrices de confusión.", "Identifica regiones de probabilidad con pocos casos y limita su interpretación.", "Redacta por qué una AUROC idéntica no implica probabilidades igualmente útiles."],
+      "deliverables": ["Script o notebook reproducible.", "Tabla de calibración.", "Brier score y AUROC de ambas versiones.", "Matriz de confusión al umbral declarado.", "Conclusión de máximo 200 palabras con límites."],
+      "checking_criteria": ["Discriminación y calibración se reportan por separado.", "El conjunto de evaluación no se reutiliza para ajustar una corrección.", "Los gaps se presentan como descriptores del ejercicio.", "Se informa el tamaño de cada grupo.", "No se interpreta p como certeza clínica.", "La conclusión no afirma validación externa ni utilidad asistencial."]
     },
     {
-      "title": "Taller de evidencia: uso responsable de algoritmos sobre señales",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para incertidumbre, explicabilidad y monitorización.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
+      "title": "Actividad guiada 2: auditoría de una explicación",
+      "instructions": ["Usa un modelo lineal o una función sintética completamente conocida antes de probar un explicador más complejo.", "Genera características inspiradas en señales pero sin datos de personas.", "Compara una explicación global con al menos una explicación local.", "Incluye una perturbación controlada y un sanity check por aleatorización.", "Separa explícitamente fidelidad al modelo de interpretación fisiológica."],
+      "problems": ["Construye cuatro características sintéticas con dos correlacionadas.", "Entrena o define un clasificador simple y congela sus parámetros.", "Calcula coeficientes o una importancia global apropiada.", "Calcula una contribución local para dos observaciones contrastantes.", "Permuta una característica y cuantifica el cambio de una métrica.", "Perturba una característica dentro de un rango plausible y registra el cambio de score.", "Aleatoriza parámetros del modelo y repite la explicación.", "Compara la explicación antes y después del sanity check.", "Explica cómo la correlación entre variables afecta la atribución.", "Redacta dos afirmaciones permitidas y dos afirmaciones causales que deben rechazarse."],
+      "deliverables": ["Modelo o función bloqueada.", "Explicación global y dos locales.", "Tabla de perturbaciones.", "Resultado del sanity check.", "Sección explícita de afirmaciones permitidas/no permitidas."],
+      "checking_criteria": ["La explicación se vincula a una versión concreta del modelo.", "Existe al menos un control que puede hacer fallar la explicación.", "La correlación se reconoce como limitación.", "Atribución no se presenta como mecanismo fisiológico.", "No se usa apariencia visual como única evidencia.", "La actividad permanece sintética y no interpreta registros clínicos."]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de uso responsable de algoritmos sobre señales y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte incertidumbre, explicabilidad y monitorización.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
-      ]
+      "title": "Actividad guiada 3: simulación de monitorización y cambio controlado",
+      "instructions": ["Parte del modelo bloqueado de U5 o de un modelo sintético equivalente y conserva su versión sin modificarla durante la primera fase.", "Genera un periodo de referencia y tres lotes posteriores con cambios conocidos de calidad, distribución y relación con la etiqueta.", "Predefine monitores y acciones antes de inspeccionar los lotes.", "Simula etiquetas diferidas para distinguir monitorización de entrada de evaluación de desempeño.", "No reentrenes hasta completar diagnóstico, decisión y plan de revalidación."],
+      "problems": ["Define versión, uso previsto técnico, variables de entrada y umbral del modelo.", "Define monitores de missingness, saturación o SQI y dos características del modelo.", "Define distribución de probabilidades y tasa de abstención como monitores de salida.", "Establece reglas cualitativas de continuar, investigar y pausar sin inventar un umbral universal de drift.", "Genera un lote con degradación de señal pero etiquetas aún no disponibles.", "Genera un lote con covariate shift y documenta qué puede y qué no puede concluirse.", "Libera etiquetas diferidas y recalcula Brier score, discriminación y error al umbral.", "Compara al menos dos subgrupos predefinidos para detectar deterioro localizado.", "Decide si corresponde continuar, investigar, abstenerse o revalidar y justifica la evidencia.", "Propón un reentrenamiento hipotético y lista todas las pruebas que deben repetirse antes de sustituir la versión bloqueada.", "Construye un registro de cambios con motivo, evidencia, nueva versión y criterios de aceptación.", "Redacta una ficha final que diferencie desempeño técnico, validación externa pendiente y utilidad clínica no demostrada."],
+      "deliverables": ["Plan de monitorización preespecificado.", "Dashboard o tabla de lotes sintéticos.", "Resultados con y sin etiquetas.", "Análisis por subgrupos.", "Matriz de acciones y escalamiento.", "Registro de cambios y plan de revalidación.", "Ficha final del sistema bloqueado."],
+      "checking_criteria": ["Se monitorizan entrada, salida y desempeño cuando hay etiquetas.", "Los indicadores sin etiqueta no se presentan como desempeño real.", "Existe una respuesta explícita para datos fuera de dominio.", "Los subgrupos se definen antes de comparar.", "Reentrenar se trata como un cambio de versión.", "No se usa una guía como certificado regulatorio.", "No se autoriza despliegue clínico ni conexión de sensores a personas.", "La entrega puede reconstruirse con semillas, versiones y parámetros."]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar incertidumbre como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar incertidumbre en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre incertidumbre y explicabilidad demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir monitorización después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Interpretación y despliegue al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    {"error": "Interpretar una probabilidad de 0,9 como 90 % de certeza clínica.", "correction": "Evaluar calibración en el contexto objetivo y describir la salida como probabilidad del modelo condicionada a datos y supuestos."},
+    {"error": "Usar AUROC alta como prueba de buena calibración.", "correction": "Reportar discriminación y calibración por separado mediante curvas, Brier score y análisis contextual."},
+    {"error": "Llamar incertidumbre epistémica a cualquier predicción cercana a 0,5.", "correction": "Separar ambigüedad predictiva de sus posibles causas y buscar evidencia sobre calidad de señal y dominio."},
+    {"error": "Presentar importancia de una característica como mecanismo fisiológico.", "correction": "Describirla como dependencia del modelo y exigir evidencia independiente antes de formular causalidad o mecanismo."},
+    {"error": "Aceptar una explicación porque el gráfico parece intuitivo.", "correction": "Aplicar perturbaciones o sanity checks que verifiquen dependencia respecto del modelo y los datos aprendidos."},
+    {"error": "Usar un único indicador de drift como diagnóstico universal.", "correction": "Combinar calidad, distribución, contexto y desempeño cuando haya etiquetas; interpretar cada monitor según su alcance."},
+    {"error": "Concluir que el desempeño cambió porque cambió una distribución de entrada sin etiquetas.", "correction": "Reportar shift de entrada y esperar evidencia de resultado para cuantificar deterioro predictivo."},
+    {"error": "Reentrenar automáticamente cada vez que aparece una alerta.", "correction": "Separar detección, diagnóstico, decisión, cambio y revalidación; una nueva versión puede introducir regresiones."},
+    {"error": "Declarar supervisión humana sin especificar quién revisa qué y qué acción puede tomar.", "correction": "Definir roles, información, abstención, escalamiento y manejo de desacuerdo en el flujo simulado."},
+    {"error": "Tratar GMLP, TRIPOD+AI, DECIDE-AI o transparencia como certificación.", "correction": "Usarlos como marcos de buenas prácticas y reporte; conformidad, autorización y validación clínica requieren procesos externos específicos."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar uso responsable de algoritmos sobre señales?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan incertidumbre y explicabilidad?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; monitorización puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre monitorización?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre uso responsable de algoritmos sobre señales?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Interpretación y despliegue?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question": "¿Puede un modelo con AUROC alta estar mal calibrado?", "answer": "Sí. Puede ordenar bien los casos y asignar probabilidades demasiado altas o bajas respecto de las frecuencias observadas.", "reasoning": "Discriminación y calibración evalúan propiedades distintas.", "common_error": "Usar una métrica de ranking como evaluación completa de probabilidades."},
+    {"question": "¿Qué mide el Brier score en clasificación binaria?", "answer": "El promedio del error cuadrático entre probabilidad predicha y resultado observado.", "reasoning": "Evalúa calidad probabilística agregada, pero debe complementarse con calibración y contexto.", "common_error": "Interpretarlo como certificado universal de calibración."},
+    {"question": "¿La entropía predictiva identifica por qué el modelo duda?", "answer": "No. Resume dispersión de la predicción, pero no separa ruido, solapamiento, parámetros inciertos o shift.", "reasoning": "Diferentes mecanismos pueden producir el mismo valor probabilístico.", "common_error": "Etiquetar automáticamente una fuente de incertidumbre desde un único score."},
+    {"question": "¿Qué demuestra una atribución alta de una característica?", "answer": "Que, bajo ese método y contexto, la característica está asociada con la salida del modelo; no demuestra causalidad fisiológica.", "reasoning": "La atribución describe comportamiento computacional condicionado a representación y correlaciones.", "common_error": "Convertir importancia predictiva en mecanismo biológico."},
+    {"question": "¿Para qué sirve un sanity check de saliencia?", "answer": "Para comprobar si la explicación depende de parámetros o datos aprendidos y detectar mapas visualmente plausibles pero desacoplados del modelo.", "reasoning": "Una explicación fiel debería responder a cambios sustanciales del modelo cuando la pregunta depende de él.", "common_error": "Creer que pasar un sanity check prueba validez clínica."},
+    {"question": "¿Qué puede concluirse de un cambio de distribución sin etiquetas?", "answer": "Que la entrada o contexto cambió según los monitores; no cuánto cambió exactamente el desempeño predictivo.", "reasoning": "Calibración y error requieren resultados de referencia confiables.", "common_error": "Usar drift de entrada como sustituto de accuracy o seguridad."},
+    {"question": "¿Por qué monitorizar calidad de señal antes del modelo?", "answer": "Porque artefactos, saturación, missingness o cambios de adquisición pueden alterar características y sacar los datos del dominio válido.", "reasoning": "El modelo no puede corregir una entrada cuya validez para la tarea ya falló.", "common_error": "Monitorizar solo probabilidades del clasificador."},
+    {"question": "¿Un umbral de drift sirve para todos los modelos y hospitales?", "answer": "No. La importancia de un cambio depende de variable, tamaño muestral, uso previsto, consecuencias y relación con desempeño.", "reasoning": "Los tests detectan diferencias bajo supuestos; no definen relevancia operacional universal.", "common_error": "Adoptar un número de otro estudio como regla de pausa automática."},
+    {"question": "¿Qué implica reentrenar un modelo monitorizado?", "answer": "Crear una nueva versión con potenciales cambios de desempeño, calibración, subgrupos y explicaciones que deben reevaluarse.", "reasoning": "El reentrenamiento no es mantenimiento neutro; modifica el sistema evaluado.", "common_error": "Actualizar silenciosamente sin nueva evidencia."},
+    {"question": "¿Qué debe conservar un expediente de despliegue simulado?", "answer": "Versión, uso previsto, entradas, transformaciones, umbral, entorno, monitores, acciones, limitaciones, registro de cambios y plan de revalidación.", "reasoning": "Sin identidad y contexto no puede atribuirse un cambio a una versión concreta ni auditar decisiones.", "common_error": "Guardar solo el archivo de pesos o el score final."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Uso responsable de algoritmos sobre señales."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    {"topic": "ECG y PPG en monitorización", "connection": "La calidad de señal, saturación, movimiento y cambio de sensor pueden alterar características y deben vigilarse antes de interpretar una deriva del clasificador."},
+    {"topic": "EEG y explicaciones de alta dimensionalidad", "connection": "Mapas, pesos o importancias pueden depender de referencia, filtrado y correlación espacial; su fidelidad al modelo debe auditarse sin convertirlos en localización causal."},
+    {"topic": "sEMG y cambios de sesión", "connection": "Colocación, impedancia, fatiga y contexto pueden desplazar la distribución de características, por lo que el dominio de adquisición forma parte de la monitorización."},
+    {"topic": "Wearables longitudinales", "connection": "Firmware, hardware, conducta y población cambian con el tiempo; una media global estable puede ocultar deterioro en usuarios o condiciones específicas."},
+    {"topic": "IA clínica basada en señales", "connection": "Calibración, transparencia, desempeño humano-modelo y monitorización son capas necesarias para estudiar el ciclo de vida, pero no demuestran por sí solas utilidad clínica ni autorización regulatoria."}
   ],
   "sources": [
-    {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "CDRH Learn",
-      "organization": "U.S. FDA",
-      "url": "https://www.fda.gov/training-and-continuing-education/cdrh-learn",
-      "type": "formación regulatoria",
-      "description": "Módulos oficiales sobre dispositivos y evidencia.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "GNU Radio documentation",
-      "organization": "GNU Radio project",
-      "url": "https://wiki.gnuradio.org/index.php/Main_Page",
-      "type": "documentación abierta",
-      "description": "Simulación y procesamiento de señales por bloques.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "University Physics Volume 2",
-      "organization": "OpenStax",
-      "url": "https://openstax.org/details/books/university-physics-volume-2",
-      "type": "libro abierto",
-      "description": "Electricidad, magnetismo, circuitos y ondas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Lessons in Electric Circuits",
-      "organization": "All About Circuits",
-      "url": "https://www.allaboutcircuits.com/textbook/",
-      "type": "libro abierto",
-      "description": "Circuitos, dispositivos y análisis con ejercicios.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title": "A tutorial on calibration measurements and calibration models for clinical prediction models", "organization": "Journal of the American Medical Informatics Association", "url": "https://pubmed.ncbi.nlm.nih.gov/32106284/", "type": "tutorial metodológico", "description": "Distingue discriminación y calibración y revisa mediciones y modelos de calibración para predicciones individualizadas.", "verification_status": "verified_directly"},
+    {"title": "Calibration: the Achilles heel of predictive analytics", "organization": "BMC Medical Research Methodology", "url": "https://pubmed.ncbi.nlm.nih.gov/31605731/", "type": "artículo metodológico", "description": "Discute evaluación de calibración y cautela frente a resumirla mediante una única medida como la pendiente.", "verification_status": "verified_directly"},
+    {"title": "Can you trust your model's uncertainty? Evaluating predictive uncertainty under dataset shift", "organization": "NeurIPS 2019", "url": "https://proceedings.neurips.cc/paper_files/paper/2019/hash/8558cb408c1d76621371888657d2eb1d-Abstract.html", "type": "estudio metodológico", "description": "Evalúa incertidumbre y calibración bajo dataset shift y muestra que métodos ajustados en desarrollo pueden degradarse fuera de distribución.", "verification_status": "verified_directly"},
+    {"title": "The false hope of current approaches to explainable artificial intelligence in health care", "organization": "The Lancet Digital Health", "url": "https://pubmed.ncbi.nlm.nih.gov/34711379/", "type": "artículo de perspectiva", "description": "Advierte que explicabilidad no sustituye validación rigurosa ni garantiza confianza, transparencia o utilidad en decisiones sanitarias.", "verification_status": "verified_directly"},
+    {"title": "Sanity Checks for Saliency Maps", "organization": "NeurIPS 2018", "url": "https://papers.nips.cc/paper/2018/hash/294a8ed24b1ad22ec2e7efea049b8737-Abstract.html", "type": "estudio metodológico", "description": "Propone controles por aleatorización para comprobar si métodos de saliencia dependen del modelo y de los datos aprendidos.", "verification_status": "verified_directly"},
+    {"title": "Signal-quality indices for the electrocardiogram and photoplethysmogram: derivation and applications to wireless monitoring", "organization": "IEEE Journal of Biomedical and Health Informatics", "url": "https://pubmed.ncbi.nlm.nih.gov/25069129/", "type": "estudio de señal", "description": "Desarrolla y valida índices de calidad para ECG y PPG y muestra aplicaciones de monitorización de validez de entrada.", "verification_status": "verified_directly"},
+    {"title": "Systematic Review of Approaches to Preserve Machine Learning Performance in the Presence of Temporal Dataset Shift in Clinical Medicine", "organization": "Applied Clinical Informatics", "url": "https://pubmed.ncbi.nlm.nih.gov/34470057/", "type": "revisión sistemática", "description": "Resume deterioro temporal de calibración y discriminación y estrategias de actualización, mostrando heterogeneidad y evidencia limitada.", "verification_status": "verified_directly"},
+    {"title": "Strategies for detecting and mitigating dataset shift in machine learning for health predictions: A systematic review", "organization": "Journal of Biomedical Informatics", "url": "https://pubmed.ncbi.nlm.nih.gov/40876698/", "type": "revisión sistemática", "description": "Revisa métodos de detección y mitigación de dataset shift en salud y señala ausencia de una estrategia universalmente generalizable.", "verification_status": "verified_directly"},
+    {"title": "TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods", "organization": "The BMJ", "url": "https://pubmed.ncbi.nlm.nih.gov/38626948/", "type": "guía de reporte", "description": "Marco actualizado para reporte transparente de estudios de modelos predictivos; se usa como guía de documentación, no como validación del modelo.", "verification_status": "verified_directly"},
+    {"title": "Reporting guideline for the early stage clinical evaluation of decision support systems driven by artificial intelligence: DECIDE-AI", "organization": "The BMJ", "url": "https://pubmed.ncbi.nlm.nih.gov/35584845/", "type": "guía de reporte", "description": "Orienta el reporte de evaluación clínica temprana de sistemas de decisión con IA, incluyendo interacción humana y flujo de trabajo.", "verification_status": "verified_directly"},
+    {"title": "Good Machine Learning Practice for Medical Device Development: Guiding Principles", "organization": "FDA / IMDRF", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd/good-machine-learning-practice-medical-device-development-guiding-principles", "type": "principios de ciclo de vida", "description": "Presenta principios de GMLP, incluido monitorizar modelos desplegados y gestionar riesgos de reentrenamiento; no se usa como certificación.", "verification_status": "verified_directly"},
+    {"title": "Transparency for Machine Learning-Enabled Medical Devices: Guiding Principles", "organization": "FDA, Health Canada y MHRA", "url": "https://www.fda.gov/medical-devices/software-medical-device-samd/transparency-machine-learning-enabled-medical-devices-guiding-principles", "type": "principios de transparencia", "description": "Describe información relevante sobre uso previsto, desempeño, limitaciones, lógica y comunicación a audiencias a lo largo del ciclo de vida.", "verification_status": "verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad en estado review. La curación interna y los controles automatizados no constituyen revisión disciplinar externa, validación clínica, validación prospectiva, evaluación de factores humanos, certificación regulatoria ni autorización para desplegar un algoritmo en atención sanitaria. U5 cubre construcción del modelo, prevención de fuga, selección, tuning y validación interna; U6 parte de un modelo bloqueado y aborda calibración, explicación auditada, calidad de señal, dataset shift, monitorización y cambio controlado. Las actividades usan exclusivamente datos sintéticos o abiertos no identificables, no autorizan conectar sensores o circuitos a personas ni interpretar registros de pacientes, y cualquier reentrenamiento o cambio se trata como una nueva versión que requiere evidencia proporcional antes de sustituir el sistema evaluado."
 }
