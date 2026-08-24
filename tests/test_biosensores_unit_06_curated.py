@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final user-authored gate trigger after public-site synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "biosensores" / "units" / "unit-06.json"
 MIRROR = ROOT / "data" / "generated_units" / "biosensores" / "unit-06.json"
