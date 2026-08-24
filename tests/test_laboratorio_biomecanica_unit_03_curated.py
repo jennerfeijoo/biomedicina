@@ -50,7 +50,7 @@ class LaboratorioBiomecanicaUnit03CuratedTests(unittest.TestCase):
             "wrench",
             "offset",
             "centro de masa",
-            "umbral de contacto",
+            "regla de contacto",
             "regla trapezoidal",
             "transformación espacial",
             "rmse",
