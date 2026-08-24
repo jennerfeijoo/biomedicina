@@ -11,6 +11,8 @@ UNITS_DIR = ROOT / "data" / "course_redevelopment" / "biomecanica" / "units"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 OUTCOMES = {f"LO{i:02d}" for i in range(1, 8)}
 
+# Final user-authored trigger after publication synchronization.
+
 
 def weight(value: str) -> float:
     match = re.search(r"\d+(?:[.,]\d+)?", value)
