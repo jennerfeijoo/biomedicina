@@ -48,7 +48,11 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
         self.assertEqual(len(sections), 4)
         self.assertTrue(all(len(section["paragraphs"]) >= 4 for section in sections))
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
-        theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
+        theory = " ".join(
+            text
+            for section in sections
+            for text in [section["heading"], *section["paragraphs"]]
+        ).casefold()
         for concept in (
             "discriminación",
             "gráfica de calibración",
