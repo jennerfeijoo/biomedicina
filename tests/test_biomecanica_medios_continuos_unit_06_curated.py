@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final human-authored validation trigger after public and editorial synchronization.
+# Final human-authored validation trigger after publication and citation synchronization.
 
 import json
 import unittest
