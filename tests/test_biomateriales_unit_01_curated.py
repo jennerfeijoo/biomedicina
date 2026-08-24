@@ -42,19 +42,25 @@ class BiomaterialesUnit01CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         self.assertGreaterEqual(len(self.unit["learning_objectives"]), 6)
 
-    def test_worked_examples_and_guided_activity_are_scaffolded(self) -> None:
+    def test_worked_examples_and_guided_activities_are_progressive(self) -> None:
         self.assertGreaterEqual(len(self.unit["worked_examples"]), 3)
         activities = self.unit["guided_activities"]
-        self.assertEqual(len(activities), 1)
-        activity = activities[0]
-        self.assertGreaterEqual(len(activity["instructions"]), 6)
-        self.assertGreaterEqual(len(activity["problems"]), 12)
-        self.assertGreaterEqual(len(activity["deliverables"]), 7)
-        self.assertGreaterEqual(len(activity["checking_criteria"]), 10)
-        activity_text = json.dumps(activity, ensure_ascii=False).casefold()
+        self.assertGreaterEqual(len(activities), 3)
+        titles = {activity["title"] for activity in activities}
+        self.assertIn("Actividad guiada: preselección reproducible de un biomaterial", titles)
+        self.assertIn("Actividad guiada: auditoría de datos de propiedades antes de comparar materiales", titles)
+        self.assertIn("Actividad guiada: auditoría de una afirmación de biocompatibilidad", titles)
+        primary = activities[0]
+        self.assertGreaterEqual(len(primary["instructions"]), 6)
+        self.assertGreaterEqual(len(primary["problems"]), 12)
+        self.assertGreaterEqual(len(primary["deliverables"]), 7)
+        self.assertGreaterEqual(len(primary["checking_criteria"]), 10)
+        activity_text = json.dumps(activities, ensure_ascii=False).casefold()
         self.assertIn("escenario sintético", activity_text)
         self.assertIn("análisis de sensibilidad", activity_text)
         self.assertIn("preselección", activity_text)
+        self.assertIn("datos de propiedades", activity_text)
+        self.assertIn("afirmación de biocompatibilidad", activity_text)
 
     def test_assessment_glossary_errors_and_sources_are_substantive(self) -> None:
         self.assertGreaterEqual(len(self.unit["common_errors"]), 8)
@@ -75,6 +81,5 @@ class BiomaterialesUnit01CuratedTests(unittest.TestCase):
         self.assertIn("no uses datos de pacientes", text)
 
 
-# Final user-authored trigger on the synchronized Biomateriales U1 head.
 if __name__ == "__main__":
     unittest.main()
