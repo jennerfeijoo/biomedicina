@@ -7,6 +7,7 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
+      - 'tests/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -32,11 +33,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Validate structured academic sources
+      - name: Complete Bioestadistica course metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/complete_bioestadistica_course_temp.py
+
+      - name: Validate strict Bioestadistica completion
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
+          python scripts/validate_academic_courses.py
+          python scripts/validate_academic_courses.py --course bioestadistica --strict-content
+          python -m unittest discover -s tests -v
           python scripts/validate_generated_units.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
@@ -54,6 +64,7 @@ jobs:
       - name: Validate regenerated site
         shell: bash
         run: |
+          set -euo pipefail
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
 
@@ -65,20 +76,26 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Restore trusted workflow and remove temporary curator
+        if: success()
         shell: bash
         run: |
+          set -euo pipefail
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f scripts/complete_bioestadistica_course_temp.py
+          rm -f global-generation.txt
+
+      - name: Commit validated Bioestadistica completion
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Complete Bioestadistica academic corpus"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
