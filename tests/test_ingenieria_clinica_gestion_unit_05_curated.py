@@ -41,7 +41,6 @@ class IngenieriaClinicaGestionUnit05CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 5 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "preservación de evidencia",
             "reporte interno",
             "reportabilidad",
             "jurisdicción",
@@ -51,6 +50,8 @@ class IngenieriaClinicaGestionUnit05CuratedTests(unittest.TestCase):
             "recurrencia",
         ):
             self.assertIn(concept, theory)
+        self.assertIn("preservar", theory)
+        self.assertIn("evidencia técnica", theory)
         self.assertIn("u2", theory)
         self.assertIn("u3", theory)
         self.assertIn("u4", theory)
