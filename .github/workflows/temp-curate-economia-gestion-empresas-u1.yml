@@ -1,0 +1,60 @@
+name: Temporary Economics U1 academic curation
+
+on:
+  push:
+    branches:
+      - codex/economia-gestion-empresas-unit-01-academic-quality
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/economia-gestion-empresas-unit-01-academic-quality
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Curate Economics U1
+        run: python scripts/curate_economia_gestion_empresas_u1_temp.py
+
+      - name: Validate structured content
+        run: |
+          set -euo pipefail
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python scripts/audit_generic_content.py
+          python scripts/audit_curriculum_completeness.py
+          python scripts/audit_course_readiness.py --strict
+          python -m unittest discover -s tests -p 'test_economia_gestion_empresas_unit_01_curated.py' -v
+
+      - name: Regenerate public Economics course
+        run: |
+          set -euo pipefail
+          python scripts/generate_site.py --force --subject economia-gestion-empresas --with-units --force-authored-units
+          python scripts/sync_catalog_statuses.py
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Remove temporary automation
+        run: |
+          rm scripts/curate_economia_gestion_empresas_u1_temp.py
+          rm .github/workflows/temp-curate-economia-gestion-empresas-u1.yml
+
+      - name: Commit curated unit and public output
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Curate Economics and Management U1"
+          git push origin HEAD:codex/economia-gestion-empresas-unit-01-academic-quality
