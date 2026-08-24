@@ -1,0 +1,65 @@
+name: Temporary continuum biomechanics canonical closure
+
+on:
+  push:
+    branches:
+      - codex/biomecanica-medios-continuos-canonical-closure
+
+permissions:
+  contents: write
+
+jobs:
+  canonicalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: codex/biomecanica-medios-continuos-canonical-closure
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Build canonical corpus
+        run: python scripts/curate_biomecanica_medios_continuos_canonical_temp.py
+
+      - name: Validate canonical corpus strictly
+        run: |
+          python scripts/validate_academic_courses.py --course biomecanica-medios-continuos --strict-content
+          python -m unittest tests.test_biomecanica_medios_continuos_canonical
+
+      - name: Validate repository structures
+        run: |
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python scripts/audit_curriculum_completeness.py
+          python scripts/audit_course_readiness.py
+
+      - name: Regenerate public site
+        run: |
+          python scripts/generate_site.py --force --with-units
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Remove temporary closure machinery
+        run: |
+          rm -f scripts/curate_biomecanica_medios_continuos_canonical_temp.py
+          rm -f .github/workflows/temp-bmc-continuum-canonical-closure.yml
+
+      - name: Commit canonical closure
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Close Biomecánica de Medios Continuos canonically"
+          git fetch origin codex/biomecanica-medios-continuos-canonical-closure
+          git rebase origin/codex/biomecanica-medios-continuos-canonical-closure
+          git push origin HEAD:codex/biomecanica-medios-continuos-canonical-closure
