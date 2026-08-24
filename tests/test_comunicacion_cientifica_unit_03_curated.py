@@ -43,7 +43,7 @@ class ComunicacionCientificaUnit03CuratedTests(unittest.TestCase):
             "resúmenes estructurados",
             "guías de reporte",
             "referencias",
-            "trazabilidad",
+            "rastrear",
         ):
             self.assertIn(concept, theory)
         self.assertIn("no certifica validez interna", theory)
