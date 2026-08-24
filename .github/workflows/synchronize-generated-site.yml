@@ -32,6 +32,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Run temporary canonical Device Development curator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/curate_desarrollo_dispositivos_medicos_course_temp.py
+          python scripts/validate_academic_courses.py
+          python scripts/validate_scientific_traceability.py
+
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -65,20 +73,27 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Commit canonical corpus and deterministic public site
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          git rm scripts/curate_desarrollo_dispositivos_medicos_course_temp.py
           git add -A -- \
+            .github/workflows/synchronize-generated-site.yml \
+            scripts/curate_desarrollo_dispositivos_medicos_course_temp.py \
+            data/courses/desarrollo-dispositivos-medicos \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "El corpus canónico y el sitio público ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Build canonical Desarrollo de Dispositivos Médicos course"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
