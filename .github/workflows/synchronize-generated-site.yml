@@ -39,15 +39,17 @@ jobs:
           if [[ ! -d data/courses/biomecanica ]]; then
             python scripts/migrate_course_to_canonical.py --subject biomecanica --course-code BIOMEC
           fi
-          python scripts/validate_academic_courses.py
 
-      - name: Report strict content gaps
+      - name: Audit canonical structure and strict content
         shell: bash
         run: |
           set +e
+          python scripts/validate_academic_courses.py 2>&1 | tee biomecanica-structure.txt
+          structure_code=${PIPESTATUS[0]}
           python scripts/validate_academic_courses.py --strict-content 2>&1 | tee biomecanica-strict-content.txt
-          code=${PIPESTATUS[0]}
-          echo "strict_content_exit=${code}"
+          strict_code=${PIPESTATUS[0]}
+          echo "structure_exit=${structure_code}"
+          echo "strict_content_exit=${strict_code}"
           exit 0
 
       - name: Commit bootstrap and restore workflow
@@ -57,7 +59,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git rm --ignore-unmatch .github/workflows/temp-biomecanica-canonical-bootstrap.yml
-          rm -f biomecanica-strict-content.txt
+          rm -f biomecanica-structure.txt biomecanica-strict-content.txt
           git add -A data/courses/biomecanica .github/workflows/synchronize-generated-site.yml .github/workflows/temp-biomecanica-canonical-bootstrap.yml
           if git diff --cached --quiet; then
             echo "No canonical bootstrap changes to commit."
