@@ -6,386 +6,616 @@
   "slug": "analisis-temporal",
   "title": "Análisis temporal",
   "status": "review",
-  "purpose": "Integrar eventos, intervalos, morfología y variabilidad para resolver un caso de cuantificación de ritmos y respuestas con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Construir un análisis temporal reproducible de señales biomédicas mediante detección de eventos y puntos fiduciales, medición de intervalos, caracterización morfológica y cuantificación de variabilidad, haciendo explícitos los errores de detección, la resolución temporal, la incertidumbre de localización y las diferencias entre modalidades antes de interpretar ritmos o respuestas fisiológicas.",
   "learning_objectives": [
-    "Definir eventos, intervalos y morfología y variabilidad mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte eventos con intervalos y delimite el papel de morfología y variabilidad.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre cuantificación de ritmos y respuestas con incertidumbre y límites.",
-    "Transferir el método de Análisis temporal a un escenario nuevo y justificar qué debe revalidarse."
+    "Definir eventos y puntos fiduciales en ECG, PPG, sEMG y respuestas evocadas, y evaluar detectores con verdad conocida mediante sensibilidad, valor predictivo positivo, falsos positivos, falsos negativos y error temporal.",
+    "Calcular intervalos entre eventos y explicar cómo frecuencia de muestreo, interpolación, detecciones perdidas o espurias y error de localización se propagan a las series temporales derivadas.",
+    "Extraer rasgos morfológicos temporales como amplitud, anchura, área, pendiente, tiempo de subida, latencia y relaciones entre puntos fiduciales sin confundir normalización o alineamiento con propiedades del fenómeno original.",
+    "Calcular e interpretar métricas temporales de variabilidad como media de intervalos, SDNN y RMSSD, declarando selección de latidos, duración analizada, tratamiento de artefactos y límites de comparabilidad.",
+    "Distinguir HRV derivada de intervalos NN/RR de PRV derivada de pulsos PPG y justificar por qué no son intercambiables de forma universal, especialmente cuando cambian sitio de medida, movimiento o condiciones fisiológicas.",
+    "Construir un expediente reproducible de análisis temporal con señal cruda preservada, definición de eventos, parámetros del detector, tolerancias, anotaciones, métricas, análisis de sensibilidad y límites de inferencia."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Análisis temporal",
+      "heading": "1. Eventos, puntos fiduciales y desempeño de detectores",
       "paragraphs": [
-        "La unidad «Análisis temporal» sitúa eventos, intervalos y morfología y variabilidad dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Señales Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Análisis temporal» en Señales Biomédicas, «eventos», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Análisis temporal», «intervalos», aporta otra dimensión al problema de Señales Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con eventos debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Análisis temporal» en Señales Biomédicas, «morfología y variabilidad», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en Análisis temporal.",
-        "Relacionar eventos, intervalos y morfología y variabilidad mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Análisis temporal» dentro de Señales Biomédicas, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Señales Biomédicas, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre eventos o intervalos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Análisis temporal», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Señales Biomédicas, la incertidumbre de «Análisis temporal» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: cuantificación de ritmos y respuestas",
-      "paragraphs": [
-        "En la unidad «Análisis temporal» de Señales Biomédicas, el caso conductor es cuantificación de ritmos y respuestas. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Análisis temporal» conecta eventos con intervalos y utiliza morfología y variabilidad como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «cuantificación de ritmos y respuestas» en Señales Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Análisis temporal» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de cuantificación de ritmos y respuestas y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Un evento temporal es una ocurrencia operacionalmente definida dentro de una señal: por ejemplo, un complejo QRS, el inicio de una contracción sEMG, el comienzo de un pulso PPG o un estímulo asociado a una respuesta evocada. Un punto fiducial es una localización concreta usada como referencia dentro de ese evento, como el pico R, el pie o máximo de una onda PPG, o una latencia definida en un ERP. La definición debe preceder al algoritmo porque detectores diferentes pueden localizar aspectos distintos de la misma forma de onda.",
+        "La detección automática no se evalúa contando solamente cuántos eventos produce. Cuando existe una anotación de referencia se define una ventana de tolerancia temporal para emparejar detecciones y eventos verdaderos. Una detección dentro de esa ventana puede contarse como verdadero positivo; un evento sin detección es falso negativo y una detección sin evento correspondiente es falso positivo. La sensibilidad y el valor predictivo positivo resumen errores distintos y deben acompañarse de la regla de emparejamiento utilizada.",
+        "El algoritmo de Pan y Tompkins es un ejemplo histórico de detector QRS que combina filtrado, derivación, transformación no lineal, integración y umbrales adaptativos. Su valor pedagógico no está en copiar parámetros de 1985, sino en observar que una cadena de detección codifica supuestos sobre pendiente, energía, anchura y ritmo. Un algoritmo validado en una base concreta no garantiza el mismo desempeño ante otra frecuencia de muestreo, morfología, ruido o población.",
+        "Detectar un evento y delinear sus límites son problemas distintos. El delineador de Martínez y colaboradores utiliza transformada wavelet para identificar ondas y límites de ECG, ilustrando que inicio, pico y final tienen incertidumbres diferentes. Para intervalos como PR, QRS o QT, desplazar algunos milisegundos un límite puede alterar la medida incluso si el latido fue correctamente detectado. Por ello conviene reportar error de localización además de sensibilidad del evento.",
+        "La verdad de referencia también tiene incertidumbre. Anotadores humanos pueden discrepar, una marca de estímulo puede tener latencia de hardware y un onset sEMG puede depender del criterio visual o estadístico. Una evaluación responsable registra quién o qué generó la referencia, su resolución, la tolerancia de emparejamiento y, cuando es posible, concordancia entre anotadores. El resultado final no es 'el detector funciona', sino un perfil de errores bajo condiciones delimitadas."
       ],
       "equations": [
         {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
-          "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
-          }
+          "latex": "\\mathrm{Se}=\\frac{TP}{TP+FN}",
+          "meaning": "Sensibilidad del detector: proporción de eventos de referencia que fueron detectados bajo la regla de emparejamiento definida."
+        },
+        {
+          "latex": "\\mathrm{PPV}=\\frac{TP}{TP+FP}",
+          "meaning": "Valor predictivo positivo del detector: proporción de detecciones que corresponden a eventos de referencia."
+        },
+        {
+          "latex": "e_i=\\hat{t}_i-t_i",
+          "meaning": "Error temporal de localización del evento i entre el tiempo estimado y la referencia."
         }
       ],
       "key_points": [
-        "Delimitar el caso de cuantificación de ritmos y respuestas antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Evento y punto fiducial no son sinónimos: primero se define qué se detecta y dónde se localiza.",
+        "Sensibilidad y PPV necesitan una ventana de tolerancia y una referencia explícitas.",
+        "Detección de evento y delineación de inicio/fin deben evaluarse por separado.",
+        "Una referencia humana o instrumental también posee incertidumbre y resolución finitas."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Intervalos, resolución temporal y morfología",
       "paragraphs": [
-        "La reproducibilidad de «Análisis temporal» en Señales Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Análisis temporal» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Señales Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Análisis temporal» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de eventos, intervalos y morfología y variabilidad debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Señales Biomédicas.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre cuantificación de ritmos y respuestas. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Señales Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Una serie de intervalos se construye restando tiempos de puntos fiduciales consecutivos o relacionados. En ECG, los intervalos RR describen separación entre referencias ventriculares; en PPG, los intervalos pulso-a-pulso dependen del fiducial escogido; en sEMG puede interesar la diferencia entre onset muscular y un evento mecánico; en ERP se cuantifica latencia respecto de un estímulo. La semántica del intervalo debe conservarse junto con sus unidades y eventos de origen.",
+        "La frecuencia de muestreo impone una rejilla temporal de paso 1/fs. Sin interpolación, un punto solo puede localizarse sobre esa rejilla; con interpolación se obtiene una estimación submuestra, pero no se crea información ilimitada. La incertidumbre incluye resolución de muestreo, ruido, preprocesamiento, forma de onda y algoritmo. Una serie de intervalos puede parecer más variable simplemente porque sus fiduciales tienen mayor jitter.",
+        "La morfología temporal describe propiedades de la forma de onda en una ventana: amplitud pico a base, anchura, área, pendientes, tiempo de subida, latencia de máximos o centroides y relaciones entre puntos. Esas características requieren una referencia de línea base, una ventana y una convención de signo. Comparar morfología sin declarar si las ondas fueron normalizadas en amplitud o tiempo puede borrar diferencias reales o fabricar similitudes.",
+        "Alinear latidos o pulsos alrededor de un fiducial permite construir plantillas promedio y estudiar dispersión morfológica. Sin embargo, el alineamiento condiciona el resultado: alinear por el pico R preserva esa referencia y distribuye el error sobre otras ondas; alinear PPG por el máximo sistólico no equivale a alinear por el pie. La plantilla media reduce componentes no sincronizadas, pero también puede suavizar variantes fisiológicas o eventos raros.",
+        "En potenciales relacionados con eventos, la medida temporal y morfológica es especialmente sensible al ruido y a la definición de la métrica. Simulaciones metodológicas han mostrado que amplitud media, amplitud pico y distintas medidas de latencia tienen propiedades de sesgo y varianza diferentes. El estudiante debe elegir la métrica de acuerdo con la pregunta y probar su sensibilidad al ruido, en lugar de seleccionar retrospectivamente la característica que produce el resultado más llamativo."
+      ],
+      "equations": [
+        {
+          "latex": "I_i=t_{i+1}-t_i",
+          "meaning": "Intervalo entre dos eventos consecutivos definidos por la misma convención fiducial."
+        },
+        {
+          "latex": "\\Delta t=\\frac{1}{f_s}",
+          "meaning": "Separación entre muestras; establece la rejilla temporal básica antes de cualquier estimación submuestra."
+        },
+        {
+          "latex": "A\\approx\\sum_{n=n_1}^{n_2}(x[n]-b[n])\\,\\Delta t",
+          "meaning": "Área temporal aproximada respecto de una línea base b[n] dentro de una ventana definida."
+        },
+        {
+          "latex": "\\bar{x}[k]=\\frac{1}{M}\\sum_{m=1}^{M}x_m[k]",
+          "meaning": "Plantilla promedio de M eventos alineados; su interpretación depende del fiducial y de los criterios de inclusión."
+        }
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Todo intervalo hereda errores de los dos puntos temporales que lo delimitan.",
+        "Interpolar puede reducir cuantización aparente, pero no elimina incertidumbre de adquisición y detección.",
+        "Amplitud, anchura, área y latencia requieren línea base, ventana y convención explícitas.",
+        "Alineamiento y promedio son transformaciones que deben declararse porque cambian la morfología observada."
+      ]
+    },
+    {
+      "heading": "3. Variabilidad en el dominio temporal y diferencias entre HRV y PRV",
+      "paragraphs": [
+        "La variabilidad temporal se calcula sobre una serie de intervalos previamente validada, no directamente sobre una señal cruda. En HRV, las recomendaciones históricas distinguen intervalos NN —intervalos entre latidos normales seleccionados según el protocolo— de una secuencia RR que puede contener ectopia, detecciones erróneas o segmentos no válidos. El procedimiento de selección y corrección forma parte de la definición de la métrica y debe registrarse.",
+        "SDNN resume la dispersión de los intervalos seleccionados durante el periodo analizado, mientras que RMSSD enfatiza cambios entre intervalos consecutivos. Estas métricas responden a propiedades distintas y dependen de duración, condiciones de registro, calidad y tratamiento de eventos. Comparar valores calculados con ventanas o procedimientos diferentes puede ser metodológicamente inválido aunque las fórmulas sean idénticas.",
+        "Los errores de detección pueden dominar las métricas de variabilidad. Un latido omitido produce un intervalo aproximadamente doble y una detección espuria puede dividir un intervalo; ambos generan diferencias sucesivas grandes que inflan RMSSD. Antes de interpretar una cifra se debe inspeccionar la serie de intervalos, marcar correcciones y ejecutar análisis de sensibilidad con y sin los segmentos dudosos. Automatizar la limpieza no elimina la obligación de documentar sus reglas.",
+        "La variabilidad del pulso obtenida de PPG no debe presentarse como sustituto universal de HRV. Entre la actividad eléctrica cardiaca y el fiducial PPG intervienen acoplamiento electromecánico, propagación de la onda de pulso, sitio del sensor, perfusión, movimiento y algoritmo de detección. Revisiones comparativas concluyen que HRV y PRV pueden aproximarse en determinadas condiciones, pero divergen en otras; la equivalencia debe demostrarse para el escenario concreto.",
+        "Las guías modernas de HR y HRV refuerzan la necesidad de reportar condiciones de medida, calidad y procesamiento y de limitar las inferencias autonómicas. En esta unidad las métricas temporales se usan como características cuantitativas, no como diagnósticos ni como lectura directa de una rama del sistema nervioso autónomo. La interpretación fisiológica profunda y cualquier uso clínico requieren diseño, control y evidencia adicionales."
+      ],
+      "equations": [
+        {
+          "latex": "\\overline{NN}=\\frac{1}{N}\\sum_{i=1}^{N}NN_i",
+          "meaning": "Media de los intervalos NN incluidos en el análisis."
+        },
+        {
+          "latex": "SDNN=\\sqrt{\\frac{1}{N-1}\\sum_{i=1}^{N}(NN_i-\\overline{NN})^2}",
+          "meaning": "Desviación estándar muestral de los intervalos NN seleccionados."
+        },
+        {
+          "latex": "RMSSD=\\sqrt{\\frac{1}{N-1}\\sum_{i=1}^{N-1}(NN_{i+1}-NN_i)^2}",
+          "meaning": "Raíz del promedio de las diferencias sucesivas al cuadrado; muy sensible a errores de detección y correcciones."
+        }
+      ],
+      "key_points": [
+        "Las métricas de variabilidad se calculan después de validar la serie de intervalos.",
+        "SDNN y RMSSD no son intercambiables y dependen de duración, protocolo y tratamiento de artefactos.",
+        "Eventos perdidos o espurios pueden inflar fuertemente la variabilidad temporal.",
+        "PRV y HRV no se consideran equivalentes sin validación específica del escenario y del fiducial."
+      ]
+    },
+    {
+      "heading": "4. Análisis temporal multimodal, reproducibilidad y límites",
+      "paragraphs": [
+        "El mismo concepto de evento adopta implementaciones distintas según la modalidad. En sEMG, el onset puede definirse por umbral sobre una envolvente, cambio estadístico, energía u otros métodos, y la literatura muestra que el tiempo estimado depende del algoritmo y de la dinámica de la contracción. Para estudiar retrasos cortos, un sesgo de decenas de milisegundos puede ser relevante, por lo que la comparación debe incluir señales simuladas con onset conocido.",
+        "En PPG, escoger el pico sistólico, el pie, un punto de amplitud media o un fiducial derivado cambia la localización temporal de cada pulso y por tanto la serie de intervalos. Estudios metodológicos muestran que el error depende de morfología, sitio y frecuencia de muestreo. Esta dependencia es un ejemplo general: una característica temporal debe definirse por el mecanismo de extracción, no solo por una etiqueta como 'pulso' o 'latido'.",
+        "En ERP, la latencia se refiere a una característica relativa a un evento externo, mientras que la amplitud puede medirse como pico, promedio en ventana u otra estimación. La sincronización entre marca de estímulo y señal, el número de ensayos, el ruido y el procedimiento de promedio condicionan la precisión. Si la marca de estímulo tiene una latencia desconocida, aumentar la frecuencia de muestreo del EEG no corrige ese error de referencia.",
+        "Un expediente reproducible de análisis temporal conserva señal cruda, anotaciones, frecuencia de muestreo, preprocesamiento heredado de U2, definición de eventos, algoritmo y versión, parámetros, periodo refractario o distancia mínima, ventanas de búsqueda, tolerancia de emparejamiento, método de interpolación, reglas de exclusión y cálculo de métricas. También registra cuántos eventos se excluyeron y por qué.",
+        "La unidad concluye separando tres capas: detección y medida técnica, inferencia fisiológica y decisión clínica. Un detector con alta sensibilidad y bajo jitter en datos abiertos demuestra desempeño técnico bajo esas condiciones; no demuestra que una métrica temporal identifique enfermedad, que un wearable sea intercambiable con un ECG o que una intervención sea segura. El producto académico debe declarar explícitamente ese límite."
+      ],
+      "key_points": [
+        "La definición del evento debe adaptarse a la física y al objetivo de cada modalidad.",
+        "sEMG onset, PPG fiducials y ERP latencies son ejemplos de problemas temporales con referencias diferentes.",
+        "Sincronización y anotación pueden limitar la precisión aunque el muestreo sea elevado.",
+        "Desempeño técnico de detección no equivale a utilidad fisiológica o validación clínica."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "eventos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "evento",
+      "definition": "Ocurrencia temporal definida operacionalmente que se desea localizar o contar en una señal."
     },
     {
-      "term": "intervalos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "punto fiducial",
+      "definition": "Referencia temporal concreta dentro de una forma de onda, como un pico, pie, cruce o límite definido."
     },
     {
-      "term": "morfología y variabilidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "anotación de referencia",
+      "definition": "Marca temporal usada como comparación y cuya procedencia, resolución e incertidumbre deben documentarse."
     },
     {
-      "term": "Análisis temporal",
-      "definition": "Dominio de estudio que integra eventos, intervalos, morfología y variabilidad para resolver un problema delimitado y verificable."
+      "term": "ventana de tolerancia",
+      "definition": "Margen temporal usado para decidir si una detección corresponde a un evento de referencia."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de cuantificación de ritmos y respuestas usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "verdadero positivo",
+      "definition": "Detección correctamente emparejada con un evento de referencia según la regla definida."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "falso positivo",
+      "definition": "Detección que no puede emparejarse con un evento de referencia."
     },
     {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "falso negativo",
+      "definition": "Evento de referencia que no fue detectado."
     },
     {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "sensibilidad de detección",
+      "definition": "Fracción de eventos de referencia recuperados por el detector bajo una regla de emparejamiento explícita."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "valor predictivo positivo",
+      "definition": "Fracción de detecciones que corresponden a eventos de referencia."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "jitter temporal",
+      "definition": "Variación del error de localización temporal entre eventos repetidos o estimaciones."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "delineación",
+      "definition": "Estimación de puntos internos, inicios y finales de componentes de una forma de onda."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "intervalo RR",
+      "definition": "Diferencia temporal entre referencias R consecutivas de ECG bajo una convención de detección definida."
+    },
+    {
+      "term": "intervalo NN",
+      "definition": "Intervalo entre latidos seleccionados como normales según las reglas del protocolo de HRV."
+    },
+    {
+      "term": "HRV",
+      "definition": "Variabilidad de intervalos cardiacos obtenida habitualmente a partir de referencias ECG y analizada bajo condiciones definidas."
+    },
+    {
+      "term": "PRV",
+      "definition": "Variabilidad de intervalos pulso-a-pulso derivada de una onda periférica, frecuentemente PPG; no es sustituto universal de HRV."
+    },
+    {
+      "term": "SDNN",
+      "definition": "Desviación estándar de los intervalos NN incluidos en un periodo analizado."
+    },
+    {
+      "term": "RMSSD",
+      "definition": "Raíz cuadrática media de las diferencias entre intervalos NN consecutivos."
+    },
+    {
+      "term": "latencia",
+      "definition": "Tiempo entre una referencia externa o interna y una característica definida de la respuesta."
+    },
+    {
+      "term": "anchura temporal",
+      "definition": "Duración de una forma o componente entre dos límites definidos por una regla reproducible."
+    },
+    {
+      "term": "plantilla promedio",
+      "definition": "Promedio punto a punto de eventos alineados respecto de un fiducial común."
+    },
+    {
+      "term": "normalización temporal",
+      "definition": "Transformación que reescala la duración de eventos antes de compararlos y que modifica la representación temporal original."
+    },
+    {
+      "term": "onset sEMG",
+      "definition": "Instante estimado en que la actividad electromiográfica aumenta respecto de un estado basal bajo un criterio explícito."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Análisis temporal",
-      "scenario": "Un equipo propone estudiar cuantificación de ritmos y respuestas, pero su pregunta mezcla eventos, intervalos y morfología y variabilidad sin definir unidades, referencias ni resultado admisible.",
+      "title": "Evaluación de un detector QRS con tolerancia temporal",
+      "scenario": "Una señal sintética contiene 100 eventos QRS de referencia. El detector produce 99 marcas: 96 se emparejan dentro de ±50 ms, 3 son falsas detecciones y 4 eventos quedan sin detectar.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de eventos, intervalos y morfología y variabilidad.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Verificar que cada detección se empareje como máximo con un evento de referencia.",
+        "Identificar TP=96, FP=3 y FN=4.",
+        "Calcular sensibilidad como 96/(96+4)=0.96.",
+        "Calcular PPV como 96/(96+3)≈0.970.",
+        "Calcular además media, mediana y dispersión de los errores temporales de los 96 emparejamientos."
       ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "El detector recupera la mayoría de los eventos y la mayoría de sus detecciones son correctas, pero estas métricas no informan por sí solas de la precisión temporal; el jitter debe evaluarse aparte.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+        "Cambiar la tolerancia puede cambiar TP, FP y FN.",
+        "La señal sintética no cubre todas las morfologías ECG.",
+        "El ejemplo no establece desempeño clínico."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre eventos y intervalos en el caso de cuantificación de ritmos y respuestas; una condición vinculada con morfología y variabilidad podría producir el mismo patrón.",
+      "title": "Error fiducial y variabilidad artificial",
+      "scenario": "Una secuencia ideal tiene intervalos constantes de 1000 ms. Cada punto R recibe un error independiente de localización de hasta ±8 ms.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar morfología y variabilidad como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Generar tiempos ideales t_i=i·1 s.",
+        "Añadir errores temporales conocidos a cada fiducial.",
+        "Calcular los intervalos estimados como diferencia entre tiempos perturbados.",
+        "Observar que el error de un intervalo depende de dos errores fiduciales consecutivos.",
+        "Calcular SDNN y RMSSD antes y después de la perturbación."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "Aunque el ritmo verdadero sea constante, el jitter de detección crea variabilidad aparente. Por eso la precisión temporal del detector importa especialmente en métricas de diferencias sucesivas.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "El modelo de error uniforme e independiente es simplificado.",
+        "En datos reales el error puede depender de morfología y ruido.",
+        "No representa ectopia ni cambios fisiológicos."
+      ]
+    },
+    {
+      "title": "Fiducial PPG y serie pulso-a-pulso",
+      "scenario": "Se comparan tres referencias en pulsos PPG sintéticos cuya anchura y pendiente cambian: máximo sistólico, punto medio de subida y pie estimado por tangente.",
+      "reasoning_steps": [
+        "Generar pulsos con tiempos cardiacos iguales pero morfologías variables.",
+        "Detectar los tres fiduciales bajo reglas fijas.",
+        "Construir tres series de intervalos pulso-a-pulso.",
+        "Comparar error temporal contra el tiempo de generación conocido.",
+        "Relacionar el error con pendiente y morfología de cada pulso."
+      ],
+      "interpretation": "El fiducial que parece más intuitivo no tiene por qué ser el más estable para variabilidad; la elección debe validarse para morfología, sitio y muestreo.",
+      "limitations": [
+        "La simulación simplifica propagación vascular y óptica.",
+        "Una buena PRV técnica no demuestra equivalencia fisiológica con HRV.",
+        "Los resultados dependen de la definición matemática del fiducial."
+      ]
+    },
+    {
+      "title": "Onset sEMG y sensibilidad al umbral",
+      "scenario": "Una envolvente sEMG sintética pasa de ruido basal a actividad creciente en t=2 s. Se comparan tres umbrales relativos al nivel basal.",
+      "reasoning_steps": [
+        "Definir el onset verdadero antes de generar ruido.",
+        "Aplicar cada umbral con una duración mínima sobre el umbral.",
+        "Medir error de onset en 100 realizaciones de ruido.",
+        "Comparar sesgo, dispersión y fallos de detección.",
+        "Repetir con subida abrupta y subida gradual."
+      ],
+      "interpretation": "Un umbral puede funcionar bien en contracciones abruptas y retrasar el onset en rampas lentas. El parámetro debe formar parte del método y no ocultarse tras la palabra 'automático'.",
+      "limitations": [
+        "El sEMG simulado no reproduce todas las propiedades de unidades motoras.",
+        "No se define un umbral universal.",
+        "La referencia visual humana también puede ser variable."
+      ]
+    },
+    {
+      "title": "Amplitud y latencia ERP bajo ruido",
+      "scenario": "Se genera una componente positiva sintética a 300 ms y se añade ruido de amplitud creciente. Se comparan amplitud pico, amplitud media en ventana y latencia de pico.",
+      "reasoning_steps": [
+        "Mantener fija la componente verdadera y variar solo el ruido.",
+        "Calcular las tres métricas en múltiples realizaciones.",
+        "Cuantificar sesgo y dispersión respecto de la verdad conocida.",
+        "Aumentar el número de ensayos promediados y repetir.",
+        "Elegir la métrica según estabilidad y pregunta, no según el valor más extremo."
+      ],
+      "interpretation": "Las métricas temporales y morfológicas responden de manera diferente al ruido; una medida de pico puede ser más variable que una medida promedio aun cuando ambas describan la misma componente.",
+      "limitations": [
+        "La componente simulada es más simple que un ERP real.",
+        "La sincronización del estímulo se considera perfecta en el ejemplo.",
+        "No se deriva ninguna conclusión neuroclínica."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Actividad guiada 1: detector temporal con verdad conocida",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja exclusivamente con una señal sintética para conocer la posición verdadera de cada evento.",
+        "Define por escrito evento, fiducial, tolerancia y criterios antes de ejecutar el detector.",
+        "Implementa primero un detector sencillo basado en umbral y distancia mínima.",
+        "Perturba de forma controlada amplitud, anchura, ruido y ritmo.",
+        "Conserva todas las detecciones y fallos; no borres casos difíciles para mejorar métricas."
       ],
       "problems": [
-        "Define eventos mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo intervalos modifica o complementa a eventos.",
-        "Propón una prueba que distinga el papel de morfología y variabilidad de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Genera al menos 200 eventos con tiempos de referencia conocidos.",
+        "Define una ventana de tolerancia de emparejamiento y justifícala en función de la señal simulada.",
+        "Calcula TP, FP y FN sin permitir emparejamientos duplicados.",
+        "Calcula sensibilidad y PPV.",
+        "Calcula error temporal medio, mediano y percentiles de error absoluto.",
+        "Reduce la relación señal-ruido y repite las métricas.",
+        "Cambia la anchura de una fracción de eventos y observa la tasa de fallos.",
+        "Introduce eventos cercanos para comprobar el efecto de la distancia mínima.",
+        "Compara al menos dos configuraciones del detector.",
+        "Redacta una regla de aceptación y una condición en la que el detector debería rechazarse."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Script o notebook reproducible.",
+        "Tabla TP/FP/FN, sensibilidad, PPV y error temporal.",
+        "Figura con eventos verdaderos y detectados en casos normales y límite.",
+        "Tabla de sensibilidad a parámetros.",
+        "Conclusión de máximo 200 palabras con una limitación explícita."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "Evento y fiducial se definen antes del algoritmo.",
+        "La regla de emparejamiento impide contar dos veces el mismo evento.",
+        "Se reportan métricas de detección y localización temporal.",
+        "Los fallos bajo perturbación permanecen visibles.",
+        "La conclusión se limita al modelo sintético.",
+        "No se usa la métrica como evidencia de validez clínica."
       ]
     },
     {
-      "title": "Taller de evidencia: cuantificación de ritmos y respuestas",
+      "title": "Actividad guiada 2: intervalos y morfología en ECG o PPG abierto",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Usa un registro abierto de PhysioNet o una señal sintética y conserva una copia inmutable de la señal original.",
+        "Documenta frecuencia de muestreo, unidades, canal y cualquier anotación disponible.",
+        "Aplica solo el preprocesamiento necesario y remite sus parámetros a los principios de U2.",
+        "Define un fiducial principal y al menos tres rasgos temporales o morfológicos.",
+        "Incluye una inspección manual acotada para entender errores del algoritmo, sin presentarla como verdad clínica."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para eventos, intervalos y morfología y variabilidad.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Detecta eventos y muestra una ventana con al menos diez eventos consecutivos.",
+        "Construye la serie de intervalos correspondiente.",
+        "Identifica intervalos extremos y revisa si proceden de señal o error de detección.",
+        "Mide amplitud respecto de una línea base definida.",
+        "Mide anchura o tiempo de subida con una regla reproducible.",
+        "Calcula área de una ventana morfológica y registra la convención de signo.",
+        "Construye una plantilla promedio alineada por el fiducial principal.",
+        "Repite la plantilla con un fiducial alternativo y compara el resultado.",
+        "Reduce artificialmente la frecuencia de muestreo y cuantifica el cambio de tiempos.",
+        "Resume qué rasgo es más sensible a detección, muestreo o alineamiento."
       ],
       "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Tabla de metadatos y definiciones de rasgos.",
+        "Serie de intervalos con eventos dudosos marcados.",
+        "Plantillas comparativas por dos alineamientos.",
+        "Análisis de sensibilidad a frecuencia de muestreo.",
+        "Registro de decisiones y limitaciones."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
+        "El archivo crudo no se sobrescribe.",
+        "Cada rasgo tiene definición, unidad, ventana y fiducial.",
+        "Los eventos dudosos no se eliminan sin registro.",
+        "Se demuestra que el alineamiento puede cambiar la plantilla.",
+        "Se cuantifica el efecto del muestreo sobre tiempos.",
+        "La conclusión no extrapola a diagnóstico."
       ]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
+      "title": "Actividad guiada 3: auditoría de variabilidad RR frente a pulso-a-pulso",
       "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
+        "Trabaja con pares ECG–PPG abiertos si están disponibles o genera ambas señales desde una secuencia temporal conocida.",
+        "Define por separado el fiducial ECG y el fiducial PPG; no los llames equivalentes por defecto.",
+        "Construye las series de intervalos antes de calcular métricas agregadas.",
+        "Introduce o identifica eventos perdidos, espurios y ventanas de baja calidad.",
+        "Compara resultados originales y corregidos mediante reglas documentadas."
       ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de cuantificación de ritmos y respuestas y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte eventos, intervalos y morfología y variabilidad.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
+      "problems": [
+        "Calcula media de intervalos, SDNN y RMSSD para la serie ECG.",
+        "Calcula las mismas métricas para la serie PPG.",
+        "Grafica diferencia pulso-a-pulso entre ambas series alineadas.",
+        "Cuantifica error de localización de los fiduciales cuando exista referencia.",
+        "Inserta una detección espuria y mide cuánto cambia RMSSD.",
+        "Elimina un evento y mide cuánto cambian SDNN y RMSSD.",
+        "Aplica una regla explícita de corrección y registra qué puntos modificó.",
+        "Repite el análisis con un segundo fiducial PPG si es posible.",
+        "Discute si la discrepancia puede ser técnica, fisiológica o ambas.",
+        "Redacta una conclusión que indique en qué condiciones los datos evaluados apoyan o no la intercambiabilidad."
       ],
       "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
+        "Series de intervalos ECG y PPG trazables a eventos.",
+        "Tabla de métricas antes/después de perturbaciones y correcciones.",
+        "Figura de diferencias temporales.",
+        "Registro de reglas de selección/corrección.",
+        "Conclusión limitada al conjunto y condiciones evaluadas."
       ],
       "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "HRV y PRV se nombran y calculan como series distintas.",
+        "Las métricas se calculan después de revisar detecciones.",
+        "Se demuestra cuantitativamente el efecto de al menos un error de evento.",
+        "Las correcciones quedan auditables.",
+        "Se diferencia discrepancia técnica de equivalencia fisiológica.",
+        "No se presenta PRV como sustituto universal de HRV."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar eventos como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar eventos en una explicación."
+      "error": "Evaluar un detector solo con la cantidad total de eventos.",
+      "correction": "Emparejar contra referencias con una tolerancia definida y reportar TP, FP, FN y error temporal."
     },
     {
-      "error": "Afirmar que una relación entre eventos y intervalos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Confundir detectar un QRS con delinear correctamente inicio y final de sus ondas.",
+      "correction": "Evaluar detección de eventos y localización de fiduciales/límites como tareas diferentes."
     },
     {
-      "error": "Añadir morfología y variabilidad después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Asumir que una frecuencia de muestreo alta elimina toda incertidumbre temporal.",
+      "correction": "Separar resolución de muestreo de jitter por ruido, referencia, morfología, sincronización y algoritmo."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Calcular HRV directamente sobre RR con falsos positivos o latidos perdidos.",
+      "correction": "Auditar la serie de intervalos y documentar selección/corrección antes de calcular variabilidad."
     },
     {
-      "error": "Generalizar la conclusión de Análisis temporal al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+      "error": "Interpretar RMSSD alto sin revisar eventos espurios.",
+      "correction": "Inspeccionar diferencias sucesivas y ejecutar sensibilidad a detecciones dudosas."
+    },
+    {
+      "error": "Tratar PRV de PPG como HRV de ECG en cualquier contexto.",
+      "correction": "Mantener nombres y mecanismos separados y validar concordancia bajo las condiciones concretas."
+    },
+    {
+      "error": "Comparar morfología después de normalizar sin reportarlo.",
+      "correction": "Registrar toda normalización y conservar análisis en unidades originales cuando la amplitud o duración importen."
+    },
+    {
+      "error": "Alinear ondas por un fiducial y asumir que todos los demás puntos quedan correctamente alineados.",
+      "correction": "Evaluar dispersión de otros fiduciales y comparar alineamientos alternativos."
+    },
+    {
+      "error": "Elegir el umbral sEMG que mejor coincide visualmente después de ver el resultado.",
+      "correction": "Predefinir criterio o usar datos de calibración separados y evaluar con onset sintético o referencia independiente."
+    },
+    {
+      "error": "Presentar buena sensibilidad de detección como evidencia diagnóstica.",
+      "correction": "Limitar la conclusión a desempeño técnico; utilidad fisiológica y clínica requieren validación adicional."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar cuantificación de ritmos y respuestas?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué diferencia existe entre evento y punto fiducial?",
+      "answer": "El evento es la ocurrencia que se desea identificar; el fiducial es una referencia temporal específica dentro de ese evento.",
+      "reasoning": "Un QRS puede ser el evento y el pico R uno de sus fiduciales.",
+      "common_error": "Usar evento y pico como términos equivalentes."
     },
     {
-      "question": "¿Cómo se relacionan eventos y intervalos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; morfología y variabilidad puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Por qué sensibilidad y PPV requieren una ventana de tolerancia?",
+      "answer": "Porque hay que decidir cuándo una detección temporalmente próxima se considera correspondencia con una referencia.",
+      "reasoning": "Cambiar la tolerancia puede cambiar la clasificación TP/FP/FN.",
+      "common_error": "Reportar métricas sin regla de emparejamiento."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre morfología y variabilidad?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Qué ocurre con un intervalo si ambos fiduciales tienen error temporal?",
+      "answer": "El error del intervalo es la diferencia entre los errores de sus dos extremos y puede aumentar o cancelarse.",
+      "reasoning": "I estimado depende de dos tiempos estimados, no de uno solo.",
+      "common_error": "Asignar al intervalo el error de un único fiducial."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Interpolar permite ignorar la frecuencia de muestreo?",
+      "answer": "No. Puede estimar posiciones submuestra, pero la información sigue limitada por adquisición, ruido, forma de onda y modelo de interpolación.",
+      "reasoning": "Interpolación no crea resolución física ilimitada.",
+      "common_error": "Reportar precisión temporal arbitrariamente pequeña tras interpolar."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Por qué RMSSD es vulnerable a detecciones espurias?",
+      "answer": "Porque usa diferencias entre intervalos consecutivos y un evento falso puede crear cambios sucesivos muy grandes.",
+      "reasoning": "Un único error afecta más de una diferencia adyacente.",
+      "common_error": "Interpretar RMSSD antes de inspeccionar la serie de intervalos."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿SDNN calculado en dos duraciones diferentes es directamente comparable?",
+      "answer": "No necesariamente; la duración, condiciones y reglas de selección forman parte del contexto de la métrica.",
+      "reasoning": "La dispersión observada depende del periodo muestreado y de su composición.",
+      "common_error": "Comparar cifras sin protocolo común."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre cuantificación de ritmos y respuestas?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Por qué PRV no es un sustituto universal de HRV?",
+      "answer": "Porque el pulso periférico incorpora propagación vascular, sitio de medición, perfusión, movimiento y elección de fiducial además del ritmo cardiaco.",
+      "reasoning": "Los mecanismos entre R ECG y pulso PPG introducen variación adicional.",
+      "common_error": "Renombrar intervalos PPG como RR."
     },
     {
-      "question": "¿Qué demuestra dominio de Análisis temporal?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué cambia al alinear pulsos por el máximo en vez del pie?",
+      "answer": "Se fuerza coincidencia en un punto distinto y la dispersión de otras partes de la morfología cambia.",
+      "reasoning": "El alineamiento es una transformación condicionada por un fiducial.",
+      "common_error": "Considerar la plantilla independiente del alineamiento."
+    },
+    {
+      "question": "¿Por qué un onset sEMG necesita análisis de sensibilidad?",
+      "answer": "Porque umbral, envolvente, ruido y velocidad de subida pueden desplazar el tiempo detectado.",
+      "reasoning": "El onset es una estimación dependiente del método, no un marcador siempre visible de forma inequívoca.",
+      "common_error": "Presentar un umbral como universal."
+    },
+    {
+      "question": "¿Qué demuestra un detector con buen desempeño en datos abiertos?",
+      "answer": "Demuestra desempeño técnico bajo esos datos, anotaciones, reglas y condiciones; no demuestra utilidad diagnóstica ni generalización universal.",
+      "reasoning": "La validez externa y clínica requiere evidencia adicional.",
+      "common_error": "Convertir métricas técnicas en afirmaciones clínicas."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Cuantificación de ritmos y respuestas."
+      "topic": "Electrocardiografía y delineación",
+      "connection": "La detección QRS y la delineación de ondas permiten construir intervalos y rasgos temporales, pero cada fiducial tiene error y criterio propios."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
+      "topic": "HRV y PRV",
+      "connection": "Las series RR/NN y pulso-a-pulso requieren control de detección y no deben considerarse equivalentes sin validación específica."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "topic": "Fotopletismografía",
+      "connection": "La elección de fiducial, morfología, sitio y muestreo modifica la precisión de intervalos y rasgos de pulso."
     },
     {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+      "topic": "Electromiografía de superficie",
+      "connection": "El onset muscular es una estimación temporal cuyo sesgo depende de umbral, acondicionamiento y dinámica de contracción."
+    },
+    {
+      "topic": "EEG y potenciales evocados",
+      "connection": "Latencia y amplitud dependen de sincronización, ruido, promedio y definición de la métrica temporal/morfológica."
     }
   ],
   "sources": [
     {
-      "title": "NIST Measurement Services",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/calibrations",
-      "type": "metrología",
-      "description": "Trazabilidad, calibración y servicios de medición.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "A real-time QRS detection algorithm",
+      "organization": "IEEE Transactions on Biomedical Engineering",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/3997178/",
+      "type": "artículo metodológico clásico",
+      "description": "Referencia primaria para comprender una cadena de detección QRS basada en pendiente, amplitud, anchura y umbrales adaptativos.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "PhysioNet",
+      "title": "A wavelet-based ECG delineator: evaluation on standard databases",
+      "organization": "IEEE Transactions on Biomedical Engineering",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/15072211/",
+      "type": "estudio de validación metodológica",
+      "description": "Delineación de ondas y límites ECG con wavelets y evaluación sobre bases estándar; útil para separar detección de delineación.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Heart rate variability. Standards of measurement, physiological interpretation, and clinical use",
+      "organization": "Task Force of the ESC and NASPE",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/8737210/",
+      "type": "guía de referencia",
+      "description": "Marco clásico de nomenclatura y métricas HRV, incluidos intervalos NN y medidas temporales como SDNN y RMSSD.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Publication guidelines for human heart rate and heart rate variability studies in psychophysiology-Part 1",
+      "organization": "Psychophysiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38873876/",
+      "type": "guía metodológica",
+      "description": "Actualiza fundamentos de medición y reporte de HR/HRV y refuerza cautelas sobre adquisición e interpretación fisiológica.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Photoplethysmogram Analysis and Applications: An Integrative Review",
+      "organization": "Frontiers in Physiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/35300400/",
+      "type": "revisión integradora",
+      "description": "Resume forma de onda PPG, puntos y rasgos, detección de picos, calidad y procesamiento desde una perspectiva de ingeniería.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Pulse rate variability in cardiovascular health: a review on its applications and relationship with heart rate variability",
+      "organization": "Physiological Measurement",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/32498055/",
+      "type": "revisión metodológica",
+      "description": "Revisa relación PRV-HRV y explica por qué la variabilidad de pulso no es intercambiable con HRV en todos los escenarios.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Review of electromyography onset detection methods for real-time control of robotic exoskeletons",
+      "organization": "Journal of NeuroEngineering and Rehabilitation",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37872633/",
+      "type": "revisión metodológica",
+      "description": "Clasifica y compara métodos de onset EMG y sus compromisos temporales y de reproducibilidad.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "How does noise affect amplitude and latency measurement of event-related potentials (ERPs)? A methodological critique and simulation study",
+      "organization": "Psychophysiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/23216521/",
+      "type": "estudio metodológico con simulación",
+      "description": "Compara sesgo y variabilidad de medidas de amplitud y latencia ERP bajo niveles crecientes de ruido.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "PhysioNet databases",
       "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
+      "url": "https://physionet.org/about/database/",
       "type": "datos abiertos",
-      "description": "Señales fisiológicas y anotaciones para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "SciPy Signal",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
-      "type": "documentación",
-      "description": "Procesamiento digital, filtrado y análisis espectral.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "CDRH Learn",
-      "organization": "U.S. FDA",
-      "url": "https://www.fda.gov/training-and-continuing-education/cdrh-learn",
-      "type": "formación regulatoria",
-      "description": "Módulos oficiales sobre dispositivos y evidencia.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "description": "Colecciones abiertas de señales y anotaciones útiles para prácticas reproducibles de detección, intervalos y validación temporal.",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo en estado review. Esta curación interna no constituye revisión disciplinar externa, validación clínica, diagnóstico, recomendación terapéutica ni certificación de un algoritmo o dispositivo. Las actividades se realizan con señales sintéticas o datos abiertos; no requieren ni autorizan conectar sensores a personas ni interpretar registros de pacientes con fines asistenciales."
 }
