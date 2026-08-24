@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# User-authored validation trigger after public-site synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "comunicacion-cientifica" / "units" / "unit-03.json"
 MIRROR = ROOT / "data" / "generated_units" / "comunicacion-cientifica" / "unit-03.json"
