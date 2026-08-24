@@ -6,7 +6,6 @@ on:
       - 'data/**'
       - 'docs/**'
       - 'scripts/**'
-      - 'tests/**'
       - 'templates/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
@@ -33,91 +32,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Build canonical Communication Science corpus
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/migrate_course_to_canonical.py --subject comunicacion-cientifica --course-code COMCI
-          python scripts/curate_comunicacion_cientifica_course_closure_temp.py
-
-      - name: Complete U1 progressive activity sequence
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          path = Path('data/courses/comunicacion-cientifica/units/unit-01.json')
-          unit = json.loads(path.read_text(encoding='utf-8'))
-          if len(unit.get('activities', [])) < 3:
-              unit.setdefault('activities', []).extend([
-                  {
-                      'id': 'COMCI-U01-ACT02',
-                      'title': 'Práctica con apoyo reducido: reescritura para una audiencia definida',
-                      'purpose': 'Transferir propósito, audiencia, numeraria y lenguaje claro con menos andamiaje que en la actividad guiada.',
-                      'prerequisite_unit_ids': [],
-                      'instructions': [
-                          'Usa un resultado biomédico sintético; no uses datos personales ni consejo médico real.',
-                          'Define audiencia y objetivo comunicativo antes de redactar.',
-                          'Conserva magnitud, denominadores, incertidumbre y limitaciones relevantes.',
-                          'Produce una versión breve y una pregunta de comprensión que pueda detectar una interpretación equivocada.'
-                      ],
-                      'tasks': [
-                          'Separar objetivo científico de objetivo comunicativo.',
-                          'Identificar conocimientos previos o barreras plausibles sin convertirlos en estereotipos.',
-                          'Seleccionar un mensaje principal y dos detalles subordinados.',
-                          'Reescribir el resultado en lenguaje claro sin perder precisión.',
-                          'Presentar riesgos o proporciones con denominador explícito.',
-                          'Diseñar una pregunta de comprensión y explicar qué respuesta revelaría un malentendido.',
-                          'Comparar la nueva versión con el texto fuente y registrar qué se preservó, simplificó u omitió.'
-                      ],
-                      'deliverables': ['Ficha de audiencia y propósito.', 'Versión breve de 120–180 palabras.', 'Tabla de invariantes científicos.', 'Pregunta de comprensión con criterio de interpretación.'],
-                      'checking_criteria': [
-                          'Audiencia y propósito explícitos.', 'El significado científico se conserva.', 'Magnitud, denominador e incertidumbre relevantes se preservan.',
-                          'Lenguaje claro sin pérdida de precisión.', 'La pregunta evalúa comprensión y no memoria literal.', 'No hay consejo clínico ni extrapolación a personas reales.'
-                      ],
-                      'estimated_duration_minutes': 120,
-                      'status': 'complete'
-                  },
-                  {
-                      'id': 'COMCI-U01-ACT03',
-                      'title': 'Reto autónomo: paquete de audiencia dual',
-                      'purpose': 'Construir dos comunicaciones del mismo resultado para audiencias distintas sin modificar el significado científico.',
-                      'prerequisite_unit_ids': [],
-                      'instructions': [
-                          'Trabaja con un caso sintético o datos abiertos ya resumidos; no recolectes información de participantes.',
-                          'Elige dos audiencias con necesidades informativas distintas y define un objetivo verificable para cada una.',
-                          'Produce dos versiones independientes sin plantilla de solución.',
-                          'Cierra con una auditoría cruzada de hechos, incertidumbre y límites.'
-                      ],
-                      'tasks': [
-                          'Definir audiencias, preguntas y conocimiento mínimo necesario.', 'Construir una matriz de claims obligatorios, opcionales y fuera de alcance.',
-                          'Redactar una versión académica breve y otra para audiencia general.', 'Justificar orden, términos, cifras y omisiones.',
-                          'Diseñar un criterio de éxito basado en comprensión y no persuasión.', 'Ejecutar una auditoría claim→evidencia→versión.',
-                          'Corregir una versión después de detectar un riesgo de mala interpretación.'
-                      ],
-                      'deliverables': ['Matriz comparativa de audiencias y objetivos.', 'Dos productos comunicativos.', 'Matriz claim→evidencia→versión.', 'Registro de autoauditoría y corrección.'],
-                      'checking_criteria': [
-                          'Las audiencias son realmente distintas.', 'Los hechos nucleares son consistentes.', 'Las diferencias de detalle están justificadas por propósito.',
-                          'No desaparecen incertidumbre ni limitaciones.', 'Los criterios de éxito son observables.', 'Existe trazabilidad de cambios.',
-                          'El trabajo mantiene el límite educativo y no ofrece consejo médico individual.'
-                      ],
-                      'estimated_duration_minutes': 90,
-                      'status': 'complete'
-                  }
-              ])
-          path.write_text(json.dumps(unit, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          PY
-
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
-          python scripts/validate_academic_courses.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
-          python -m unittest tests.test_comunicacion_cientifica_canonical_course
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
@@ -135,22 +57,28 @@ jobs:
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
 
-      - name: Restore one-shot workflow and remove temporary curator
-        shell: bash
-        run: |
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          rm -f scripts/curate_comunicacion_cientifica_course_closure_temp.py
-          rm -f global-generation.txt
+      - name: Upload synchronization diagnostic
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: generated-site-synchronization
+          path: global-generation.txt
+          if-no-files-found: warn
 
-      - name: Commit canonical course and synchronized site
+      - name: Commit deterministic public site
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A -- \
+            ciencias-basicas \
+            biologicas-medicas \
+            ingenieria-biomedica \
+            gestion-etica-comunicacion \
+            catalogo
           if git diff --cached --quiet; then
-            echo "No hay cambios pendientes."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Close Communication Science canonical course"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
