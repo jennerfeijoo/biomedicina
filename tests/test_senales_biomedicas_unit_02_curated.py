@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final user-authored trigger after public and curriculum-metadata synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "senales-biomedicas" / "units" / "unit-02.json"
 MIRROR = ROOT / "data" / "generated_units" / "senales-biomedicas" / "unit-02.json"
@@ -40,7 +41,7 @@ class SenalesBiomedicasUnit02CuratedTests(unittest.TestCase):
             "banda de transición",
             "causalidad",
             "señal cruda",
-            "validación clínica",
+            "interpretación clínica",
         ):
             self.assertIn(concept, theory)
         self.assertIn("no existe un 'pipeline de limpieza' universal", theory)
