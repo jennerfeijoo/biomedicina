@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "biomecanica"
 
+# Final user-authored trigger after generated-site synchronization.
+
 
 class BiomecanicaCourseCompletionTests(unittest.TestCase):
     @classmethod
