@@ -115,7 +115,7 @@ class ComunicacionCientificaUnit06CuratedTests(unittest.TestCase):
         self.assertIn("asesoría jurídica", notice)
         self.assertIn("no uses esta unidad para acusar", notice)
         self.assertIn("no certifican validez científica", notice)
-        self.assertIn("no asumir", purpose)
+        self.assertIn("sin asumir", purpose)
         self.assertIn("utilidad clínica", purpose)
 
 
