@@ -6,386 +6,265 @@
   "slug": "fluidos-biologicos",
   "title": "Fluidos biológicos",
   "status": "review",
-  "purpose": "Integrar Navier-Stokes, no newtonianos, interacción fluido-estructura para resolver un caso de hemodinámica y flujo respiratorio con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Modelar flujo libre de sangre y aire mediante conservación de masa y cantidad de movimiento, Navier–Stokes, escalamiento adimensional, reología, esfuerzo cortante de pared y condiciones de frontera. La unidad usa Poiseuille y Womersley como baselines para interpretar flujo estacionario y pulsátil, compara sangre newtoniana y no newtoniana, introduce flujo respiratorio e interacción fluido-estructura y exige sensibilidad/validación antes de interpretar métricas hemodinámicas. El transporte intersticial tipo Darcy pertenece a U4 y la discretización numérica detallada a U6.",
   "learning_objectives": [
-    "Definir Navier-Stokes, no newtonianos y interacción fluido-estructura mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte Navier-Stokes con no newtonianos y delimite el papel de interacción fluido-estructura.",
-    "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-    "Resolver y comunicar un caso sobre hemodinámica y flujo respiratorio con incertidumbre y límites.",
-    "Transferir el método de Fluidos biológicos a un escenario nuevo y justificar qué debe revalidarse."
+    "Formular conservación de masa y Navier–Stokes para un fluido incompresible, declarando dominio, propiedades, sistema de referencia y condiciones de frontera.",
+    "Usar Poiseuille, número de Reynolds y número de Womersley como modelos y escalas de referencia, explicando cuándo sus supuestos dejan de ser adecuados.",
+    "Comparar representaciones newtonianas y shear-thinning de la sangre y relacionar viscosidad aparente con hematocrito, agregación y deformabilidad eritrocitaria sin confundir modelo continuo con microestructura resuelta.",
+    "Calcular e interpretar velocidad, presión, caudal, esfuerzo cortante de pared, TAWSS y OSI distinguiendo magnitud mecánica de asociación biológica o conclusión clínica.",
+    "Analizar flujo en vías aéreas mediante presión, resistencia, Reynolds, geometría y condiciones respiratorias, reconociendo regímenes laminares, transicionales o complejos.",
+    "Evaluar cuándo la deformación de paredes requiere interacción fluido-estructura y cuantificar sensibilidad a geometría, fronteras, reología y resolución antes de aceptar una predicción."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Fluidos biológicos",
+      "heading": "1. Conservación, Navier–Stokes y baselines de flujo interno",
       "paragraphs": [
-        "La unidad «Fluidos biológicos» sitúa Navier-Stokes, no newtonianos y interacción fluido-estructura dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Biomecánica de Medios Continuos, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Fluidos biológicos» en Biomecánica de Medios Continuos, «Navier-Stokes», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Fluidos biológicos», «no newtonianos», aporta otra dimensión al problema de Biomecánica de Medios Continuos: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con Navier-Stokes debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Fluidos biológicos» en Biomecánica de Medios Continuos, «interacción fluido-estructura», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en Fluidos biológicos.",
-        "Relacionar Navier-Stokes, no newtonianos y interacción fluido-estructura mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Fluidos biológicos» dentro de Biomecánica de Medios Continuos, el flujo recomendado es idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Biomecánica de Medios Continuos, la evidencia pertinente incluye cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre Navier-Stokes o no newtonianos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Fluidos biológicos», los controles mínimos son equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Biomecánica de Medios Continuos, la incertidumbre de «Fluidos biológicos» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: hemodinámica y flujo respiratorio",
-      "paragraphs": [
-        "En la unidad «Fluidos biológicos» de Biomecánica de Medios Continuos, el caso conductor es hemodinámica y flujo respiratorio. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Fluidos biológicos» conecta Navier-Stokes con no newtonianos y utiliza interacción fluido-estructura como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «hemodinámica y flujo respiratorio» en Biomecánica de Medios Continuos, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Fluidos biológicos» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de hemodinámica y flujo respiratorio y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "U4 estudió transporte de fluido a través de una matriz porosa. U5 cambia de escala y dominio: ahora el fluido ocupa una luz vascular o aérea y su velocidad es una variable de campo. Para un fluido incompresible con densidad constante, la conservación de masa exige ∇·u=0. La ecuación de cantidad de movimiento equilibra aceleración local y convectiva con gradiente de presión, viscosidad y fuerzas de volumen. Especificar las ecuaciones no cierra el problema: también se requieren geometría, propiedades y condiciones iniciales/de frontera compatibles.",
+        "Navier–Stokes no implica automáticamente turbulencia ni CFD tridimensional. Antes de resolver un dominio complejo conviene construir un baseline analítico. Para flujo newtoniano, estacionario, completamente desarrollado y laminar en un tubo circular rígido, Hagen–Poiseuille relaciona caída de presión y caudal con una dependencia R^4. Esta fuerte sensibilidad al radio es útil para comprobar unidades y órdenes de magnitud, pero no debe extrapolarse sin cautela a geometrías ramificadas, paredes deformables o flujo pulsátil.",
+        "El número de Reynolds Re=ρUD/μ compara inercia con viscosidad. Es una herramienta de escalamiento, no un interruptor universal que etiqueta cualquier flujo biológico como laminar o turbulento usando un único umbral de tubería recta. Curvaturas, bifurcaciones, pulsación, entradas cortas y perturbaciones modifican la transición y pueden generar separación o estructuras complejas incluso cuando un criterio simplificado sugeriría otra cosa.",
+        "Las condiciones de frontera suelen dominar la solución. Un perfil de velocidad uniforme, parabólico o medido puede producir campos distintos cerca de una bifurcación; los modelos de salida pueden fijar presión, caudal, resistencia o impedancia. La primera verificación de una simulación de flujo es que conserve masa y reproduzca casos simples conocidos. Solo después tiene sentido interpretar gradientes locales, recirculación o esfuerzos de pared."
       ],
       "equations": [
-        {
-          "latex": "\\sum \\mathbf{F}=m\\mathbf{a}",
-          "meaning": "Balance de fuerzas para el sistema definido; requiere declarar marco de referencia, cuerpo libre y fuerzas externas.",
-          "variables": {
-            "m": "masa",
-            "\\mathbf{a}": "aceleración"
-          }
-        }
+        {"latex": "\\nabla\\cdot\\mathbf u=0", "meaning": "Conservación local de masa para un fluido incompresible de densidad constante."},
+        {"latex": "\\rho\\left(\\frac{\\partial\\mathbf u}{\\partial t}+\\mathbf u\\cdot\\nabla\\mathbf u\\right)=-\\nabla p+\\mu\\nabla^2\\mathbf u+\\rho\\mathbf b", "meaning": "Navier–Stokes newtoniano incompresible con viscosidad constante y fuerza de volumen b."},
+        {"latex": "Q=\\frac{\\pi R^4}{8\\mu L}\\Delta p", "meaning": "Ley de Hagen–Poiseuille para tubo circular rígido, flujo newtoniano, laminar, estacionario y completamente desarrollado."},
+        {"latex": "Re=\\frac{\\rho U D}{\\mu}", "meaning": "Número de Reynolds basado en velocidad y longitud características declaradas."}
       ],
       "key_points": [
-        "Delimitar el caso de hemodinámica y flujo respiratorio antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
-      ]
+        "Las ecuaciones de conservación requieren geometría y condiciones de frontera para producir una solución.",
+        "Poiseuille es un baseline con supuestos fuertes, no una ley universal de toda circulación o vía aérea.",
+        "Re compara escalas de inercia y viscosidad; no reemplaza el análisis del régimen real.",
+        "Conservación de masa y casos analíticos simples son controles antes de interpretar CFD."
+      ],
+      "source_ids": ["hemodynamics-review", "womersley-velocity-1955", "re-womersley-survey", "respiratory-fluid-mechanics"]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Flujo pulsátil, Womersley y métricas de esfuerzo cortante de pared",
       "paragraphs": [
-        "La reproducibilidad de «Fluidos biológicos» en Biomecánica de Medios Continuos requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Fluidos biológicos» es esta: una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica. Por ello, la entrega de Biomecánica de Medios Continuos separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Fluidos biológicos» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de Navier-Stokes, no newtonianos y interacción fluido-estructura debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Biomecánica de Medios Continuos.",
-        "El producto de dominio será un modelo mecánico documentado con verificación y límites sobre hemodinámica y flujo respiratorio. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Biomecánica de Medios Continuos como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "El flujo arterial cambia durante el ciclo cardiaco. El número de Womersley α=R√(ωρ/μ) compara la escala temporal de la oscilación con la difusión viscosa. Cuando α es pequeño, el perfil puede seguir de cerca el gradiente de presión y parecer cuasi-parabólico; cuando aumenta, la inercia no estacionaria modifica fase y forma del perfil. Por eso estimar caudal a partir de una única velocidad máxima con un perfil parabólico puede introducir error en arterias pulsátiles.",
+        "El esfuerzo cortante de pared es la tracción tangencial que el fluido ejerce sobre la pared. Para un fluido newtoniano junto a una pared no deslizante, depende del gradiente normal de velocidad y de la viscosidad. En un tubo de Poiseuille puede escribirse τw=4μQ/(πR³), lo que muestra una fuerte dependencia geométrica. En geometrías reales, WSS es un vector local que cambia en espacio y tiempo y exige una malla/resolución adecuada cerca de la pared.",
+        "TAWSS resume la magnitud media del WSS a lo largo de un ciclo. OSI cuantifica cuánto se cancela el vector de WSS por cambios de dirección y varía entre 0 y 0.5 en su definición habitual. Estas métricas se han asociado con estados endoteliales y procesos vasculares en literatura cardiovascular, pero una asociación poblacional o mecanobiológica no convierte un valor de CFD en diagnóstico individual ni establece causalidad en un caso nuevo.",
+        "La interpretación de WSS depende de geometría reconstruida, caudal de entrada, reparto de salidas, movimiento de pared, reología y procesamiento. Pequeños cambios en una segmentación pueden modificar derivadas cerca de la pared. Por ello, la entrega debe reportar no solo un mapa coloreado, sino definición matemática, unidades, ciclo analizado, sensibilidad y procedencia de las fronteras."
+      ],
+      "equations": [
+        {"latex": "\\alpha=R\\sqrt{\\frac{\\omega\\rho}{\\mu}}", "meaning": "Número de Womersley para flujo oscilatorio con radio R y frecuencia angular ω."},
+        {"latex": "\\boldsymbol\\tau_w=\\mu\\left.\\frac{\\partial\\mathbf u_t}{\\partial n}\\right|_{pared}", "meaning": "Forma newtoniana simplificada del esfuerzo cortante tangencial en una pared no deslizante."},
+        {"latex": "TAWSS=\\frac{1}{T}\\int_0^T|\\boldsymbol\\tau_w(t)|\\,dt", "meaning": "Magnitud temporal media del esfuerzo cortante de pared durante un ciclo T."},
+        {"latex": "OSI=\\frac12\\left(1-\\frac{|\\int_0^T\\boldsymbol\\tau_w(t)dt|}{\\int_0^T|\\boldsymbol\\tau_w(t)|dt}\\right)", "meaning": "Índice de oscilación direccional del vector WSS; 0 indica dirección persistente y 0.5 cancelación completa del vector medio."}
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un modelo mecánico documentado con verificación y límites que pueda ser auditado y corregido."
-      ]
+        "Womersley incorpora la escala de pulsación que Reynolds no describe por sí solo.",
+        "WSS es una magnitud mecánica derivada del gradiente de velocidad junto a la pared.",
+        "TAWSS y OSI resumen aspectos distintos de una señal vectorial temporal.",
+        "Una métrica hemodinámica asociada con enfermedad no es por sí misma una predicción clínica validada."
+      ],
+      "source_ids": ["womersley-theory-1955", "womersley-velocity-1955", "wss-contemporary-review", "hemodynamic-framework"]
+    },
+    {
+      "heading": "3. Reología sanguínea y flujo respiratorio: cuándo el fluido idealizado no basta",
+      "paragraphs": [
+        "La sangre es una suspensión celular. Su viscosidad aparente depende de la tasa de corte y de factores como hematocrito, viscosidad plasmática, agregación y deformabilidad eritrocitaria. A tasas de corte bajas, la agregación de eritrocitos contribuye al aumento de viscosidad; al aumentar el corte, los agregados se dispersan y la viscosidad aparente disminuye. Un modelo newtoniano puede ser una aproximación útil en ciertos vasos y preguntas, pero esa decisión debe comprobarse respecto de las magnitudes de interés.",
+        "Los modelos continuos shear-thinning, como Carreau–Yasuda, representan una viscosidad efectiva dependiente de la tasa de corte. No resuelven cada eritrocito ni reproducen automáticamente migración celular, capa libre de células o efectos de microcirculación. Estudios comparativos muestran que la elección reológica puede alterar métricas hemodinámicas, en particular regiones de baja tasa de corte; por ello, la comparación Newtoniano versus no newtoniano debe formar parte del análisis de sensibilidad cuando pueda cambiar la conclusión.",
+        "El aire respiratorio puede tratarse como newtoniano en muchas aplicaciones, pero el régimen depende de anatomía y patrón respiratorio. La vía aérea tiene cambios abruptos de sección, curvaturas y bifurcaciones; el flujo puede ser laminar en regiones distales y más complejo, transicional o turbulento en vías mayores, especialmente con caudales elevados. La resistencia de Poiseuille ilustra la sensibilidad a radio bajo condiciones laminares ideales, mientras que pérdidas inerciales y separación requieren modelos más generales.",
+        "Los modelos respiratorios basados en imágenes dependen de qué generaciones de vía aérea se incluyan, cómo se recorten entradas/salidas y qué condiciones de caudal o presión se impongan. Una reducción de presión calculada en una geometría de vía aérea no demuestra por sí sola beneficio quirúrgico ni gravedad clínica. En inhalación, además, transporte de partículas añade otra capa multipásica que queda fuera del núcleo de U5 salvo como conexión; primero debe estar validado el campo de flujo portador."
+      ],
+      "equations": [
+        {"latex": "\\mu(\\dot\\gamma)=\\mu_\\infty+(\\mu_0-\\mu_\\infty)\\left[1+(\\lambda\\dot\\gamma)^a\\right]^{(n-1)/a}", "meaning": "Modelo Carreau–Yasuda de viscosidad aparente shear-thinning; sus parámetros son dependientes del ajuste y la convención."},
+        {"latex": "R_{Pois}=\\frac{8\\mu L}{\\pi R^4},\\qquad Q=\\frac{\\Delta p}{R_{Pois}}", "meaning": "Resistencia hidráulica laminar ideal de un tubo circular rígido; útil como baseline para vasos o vías aéreas simples."}
+      ],
+      "key_points": [
+        "La sangre no tiene una única viscosidad newtoniana universal en todos los regímenes y escalas.",
+        "Un modelo shear-thinning continuo no resuelve explícitamente células sanguíneas.",
+        "En vía aérea, geometría y caudal pueden cambiar el régimen y limitar Poiseuille.",
+        "La salida de CFD respiratoria sigue siendo una predicción mecánica condicionada por geometría y fronteras."
+      ],
+      "source_ids": ["blood-rheology-2019", "blood-rheology-recent", "coronary-rheology-2023", "upper-airway-cfd", "respiratory-cfd-2026"]
+    },
+    {
+      "heading": "4. Pared móvil, FSI, incertidumbre, verificación y validación",
+      "paragraphs": [
+        "Suponer una pared rígida desacopla el flujo de la mecánica estructural. Esto puede ser suficiente para algunas preguntas, pero arterias, válvulas y vías aéreas deformables pueden cambiar área, velocidad, presión y esfuerzos al interactuar con el fluido. En interacción fluido-estructura se imponen compatibilidad cinemática y equilibrio de tracciones en la interfaz. Un acoplamiento one-way transmite cargas en una dirección; un acoplamiento two-way actualiza mutuamente fluido y estructura.",
+        "FSI no debe añadirse solo por realismo aparente. Exige propiedades de pared, espesor, preestrés, condiciones estructurales y mayor coste computacional, todos con incertidumbre. Si la pared se mueve poco y la métrica objetivo cambia menos que otras incertidumbres, un modelo rígido puede ser una aproximación defendible. Si la deformación altera de manera material el área o la onda de presión, la hipótesis rígida debe probarse explícitamente.",
+        "En hemodinámica específica de anatomía, la incertidumbre procede de segmentación, resolución de imagen, caudales, presión, reparto periférico, propiedades de sangre y pared. Revisiones de UQ muestran que geometría y condiciones de frontera pueden propagarse de forma importante a las salidas. Por ello, una única simulación determinista con muchos decimales no comunica precisión real. Se deben perturbar entradas plausibles y reportar qué salidas son robustas y cuáles cambian de signo, ranking o umbral.",
+        "Verificación pregunta si las ecuaciones/modelo numérico se resolvieron correctamente; validación pregunta si el modelo representa suficientemente el sistema físico para el uso previsto. U6 profundizará discretización, convergencia y elementos finitos, pero U5 ya exige balances de masa, independencia suficiente de resolución, comparación con soluciones analíticas o datos experimentales cuando existan y separación entre predicción mecánica y conclusión clínica."
+      ],
+      "equations": [
+        {"latex": "\\mathbf u_f=\\dot{\\mathbf d}_s,\\qquad \\boldsymbol\\sigma_f\\mathbf n=\\boldsymbol\\sigma_s\\mathbf n", "meaning": "Condiciones conceptuales de continuidad de velocidad y tracción en una interfaz fluido-estructura idealmente adherida."},
+        {"latex": "\\epsilon_Q=\\frac{|Q_{in}-\\sum_j Q_{out,j}|}{|Q_{in}|}", "meaning": "Ejemplo de error relativo de balance de caudal para auditar conservación global en un modelo estacionario o promediado de forma compatible."}
+      ],
+      "key_points": [
+        "FSI está justificada cuando la deformación de pared cambia materialmente la física relevante.",
+        "Más realismo introduce también más parámetros e incertidumbre.",
+        "Geometría y condiciones de frontera deben entrar al análisis de sensibilidad.",
+        "Verificación, validación y utilidad clínica son preguntas distintas."
+      ],
+      "source_ids": ["fsi-systematic-review", "fsi-artery-validation", "hemodynamic-uq", "coronary-uq", "verified-moving-domain-cfd"]
     }
   ],
   "glossary": [
-    {
-      "term": "Navier-Stokes",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "no newtonianos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "interacción fluido-estructura",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Fluidos biológicos",
-      "definition": "Dominio de estudio que integra Navier-Stokes, no newtonianos, interacción fluido-estructura para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de hemodinámica y flujo respiratorio usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term": "Fluido incompresible", "definition": "Aproximación en la que la densidad material se mantiene constante y la velocidad satisface ∇·u=0."},
+    {"term": "Navier–Stokes", "definition": "Ecuaciones de conservación de cantidad de movimiento para un fluido continuo; requieren una ley constitutiva de esfuerzo y condiciones de frontera."},
+    {"term": "Caudal volumétrico", "definition": "Volumen de fluido que atraviesa una sección por unidad de tiempo, Q=∫A u·n dA."},
+    {"term": "Hagen–Poiseuille", "definition": "Solución analítica para flujo newtoniano estacionario, laminar y completamente desarrollado en un tubo circular rígido."},
+    {"term": "Número de Reynolds", "definition": "Razón adimensional entre escalas inerciales y viscosas basada en velocidad, longitud, densidad y viscosidad características."},
+    {"term": "Número de Womersley", "definition": "Parámetro adimensional que compara la escala temporal de oscilación con la difusión viscosa en flujo pulsátil."},
+    {"term": "Flujo pulsátil", "definition": "Flujo cuyas variables cambian de forma periódica o cuasiperiódica con el tiempo, como el flujo arterial."},
+    {"term": "Condición de no deslizamiento", "definition": "Condición en la que la velocidad del fluido coincide con la velocidad de una pared viscosa adherida."},
+    {"term": "Condición de entrada", "definition": "Información prescrita en una frontera de entrada, por ejemplo caudal, velocidad o perfil temporal."},
+    {"term": "Condición de salida", "definition": "Relación impuesta en una frontera de salida, como presión, caudal, resistencia o impedancia."},
+    {"term": "Esfuerzo cortante de pared", "definition": "Componente tangencial de la tracción fluida sobre una pared, derivada del campo de velocidades y de la reología."},
+    {"term": "TAWSS", "definition": "Promedio temporal de la magnitud del vector de esfuerzo cortante de pared durante un ciclo."},
+    {"term": "OSI", "definition": "Índice entre 0 y 0.5 que cuantifica cancelación direccional del WSS durante un ciclo bajo su definición estándar."},
+    {"term": "Viscosidad aparente", "definition": "Viscosidad efectiva inferida para una condición de corte; puede variar con tasa de corte en un fluido no newtoniano."},
+    {"term": "Shear thinning", "definition": "Comportamiento en el que la viscosidad aparente disminuye al aumentar la tasa de corte."},
+    {"term": "Hematocrito", "definition": "Fracción volumétrica de eritrocitos, uno de los determinantes de la reología sanguínea."},
+    {"term": "Carreau–Yasuda", "definition": "Modelo continuo que interpola viscosidad entre límites de bajo y alto corte mediante parámetros ajustables."},
+    {"term": "Recirculación", "definition": "Región donde las trayectorias o velocidades locales forman movimiento de retorno respecto del flujo principal."},
+    {"term": "Separación de flujo", "definition": "Desprendimiento de la capa cercana a una pared debido a geometría y gradientes adversos, generando flujo complejo aguas abajo."},
+    {"term": "Interacción fluido-estructura", "definition": "Acoplamiento en el que el flujo carga y deforma una estructura y la nueva geometría modifica a su vez el flujo."},
+    {"term": "Pared rígida", "definition": "Simplificación en la que el dominio sólido no se deforma por la presión o tracción del fluido."},
+    {"term": "Verificación", "definition": "Evaluación de si las ecuaciones y el método numérico se han implementado y resuelto correctamente."},
+    {"term": "Validación", "definition": "Evaluación de si el modelo representa suficientemente el sistema físico para un uso definido mediante comparación con evidencia apropiada."},
+    {"term": "Cuantificación de incertidumbre", "definition": "Propagación sistemática de incertidumbres de entrada o modelo hacia las salidas y conclusiones."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Fluidos biológicos",
-      "scenario": "Un equipo propone estudiar hemodinámica y flujo respiratorio, pero su pregunta mezcla Navier-Stokes, no newtonianos y interacción fluido-estructura sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de Navier-Stokes, no newtonianos y interacción fluido-estructura.",
-        "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y registrar procedencia y condiciones.",
-        "Predefinir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un modelo mecánico documentado con verificación y límites trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
-      ]
+      "title": "Reynolds en una arteria sintética",
+      "scenario": "Sangre aproximada como newtoniana con ρ=1060 kg/m³, μ=3.5 mPa·s, diámetro D=6 mm y velocidad media U=0.25 m/s.",
+      "reasoning_steps": ["Convertir μ=0.0035 Pa·s y D=0.006 m.", "Calcular ρUD=1060·0.25·0.006=1.59.", "Dividir Re=1.59/0.0035≈454.", "Usar Re como escala de inercia/viscosidad, no como diagnóstico universal del régimen en una arteria pulsátil."],
+      "result": "Re≈454. El valor ayuda a escalar el problema, pero pulsación, curvatura y entrada impiden clasificar toda la hemodinámica con un umbral de tubería recta.",
+      "source_ids": ["hemodynamics-review", "re-womersley-survey"]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre Navier-Stokes y no newtonianos en el caso de hemodinámica y flujo respiratorio; una condición vinculada con interacción fluido-estructura podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar interacción fluido-estructura como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title": "Número de Womersley",
+      "scenario": "Misma arteria con R=3 mm, frecuencia cardiaca 1.2 Hz, ρ=1060 kg/m³ y μ=0.0035 Pa·s.",
+      "reasoning_steps": ["Calcular ω=2π·1.2=7.54 rad/s.", "Calcular ωρ/μ≈7.54·1060/0.0035≈2.284×10^6 m^-2.", "Tomar la raíz ≈1511 m^-1.", "Multiplicar por R=0.003 m para obtener α≈4.53."],
+      "result": "α≈4.5 indica que la no estacionariedad viscosa/inercial es relevante; asumir un perfil parabólico instantáneo requiere justificación.",
+      "source_ids": ["womersley-theory-1955", "womersley-velocity-1955"]
+    },
+    {
+      "title": "Sensibilidad de resistencia al radio",
+      "scenario": "Dos tubos ideales tienen igual μ y L; el segundo reduce su radio de 2.0 a 1.5 mm.",
+      "reasoning_steps": ["Usar R_hid∝1/R^4.", "Calcular el cociente de resistencias=(2.0/1.5)^4.", "Obtener 3.16.", "Explicar que el resultado vale para el baseline Poiseuille y no incorpora separación, pulsación ni deformación de pared."],
+      "result": "La resistencia ideal aumenta ≈3.16 veces. La fuerte potencia cuarta explica sensibilidad geométrica, pero no constituye predicción clínica de una estenosis real.",
+      "source_ids": ["hemodynamics-review", "respiratory-fluid-mechanics"]
+    },
+    {
+      "title": "WSS de Poiseuille y error de radio",
+      "scenario": "Flujo newtoniano ideal con μ=0.0035 Pa·s, Q=6 mL/s y R=2.5 mm.",
+      "reasoning_steps": ["Convertir Q=6×10^-6 m³/s y R=0.0025 m.", "Aplicar τw=4μQ/(πR³).", "Obtener numerador 8.4×10^-8 y denominador ≈4.91×10^-8.", "Calcular τw≈1.71 Pa y observar que τw∝R^-3."],
+      "result": "τw≈1.7 Pa en el tubo ideal. Un error geométrico de radio se amplifica en WSS; por eso segmentación y malla cercana a pared deben auditarse.",
+      "source_ids": ["wss-contemporary-review", "hemodynamic-framework"]
+    },
+    {
+      "title": "Reynolds de flujo inspiratorio en vía aérea",
+      "scenario": "Aire con ρ=1.2 kg/m³, μ=1.8×10^-5 Pa·s, velocidad U=3 m/s y diámetro característico D=15 mm.",
+      "reasoning_steps": ["Convertir D=0.015 m.", "Calcular ρUD=1.2·3·0.015=0.054.", "Dividir Re=0.054/(1.8×10^-5)=3000.", "Interpretar el valor junto con curvaturas, glotis, bifurcaciones y naturaleza no plenamente desarrollada del flujo."],
+      "result": "Re≈3000 sugiere que efectos inerciales y transición pueden importar; no basta para declarar toda la vía aérea turbulenta.",
+      "source_ids": ["upper-airway-cfd", "respiratory-cfd-2026"]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Actividad guiada: auditoría de un modelo de flujo cardiovascular y respiratorio sintético",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Usa exclusivamente geometrías y series sintéticas; no uses imágenes, datos ni decisiones de pacientes reales.",
+        "Declara dominio, propiedades, unidades, coordenadas, entrada, salida y pared antes de calcular cualquier métrica.",
+        "Construye primero un baseline Poiseuille o Womersley simplificado y compáralo con el caso más complejo.",
+        "Evalúa por separado hipótesis de pared rígida, reología newtoniana y condiciones de frontera; no las cambies todas a la vez.",
+        "Conserva balances, parámetros, versiones y análisis de sensibilidad para que otra persona pueda reconstruir el resultado.",
+        "Trata WSS, OSI, caída de presión y resistencia como magnitudes mecánicas; no las conviertas en diagnóstico o recomendación clínica."
       ],
       "problems": [
-        "Define Navier-Stokes mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo no newtonianos modifica o complementa a Navier-Stokes.",
-        "Propón una prueba que distinga el papel de interacción fluido-estructura de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Calcula Re para tres casos sintéticos de vaso o vía aérea y explica qué información aporta y cuál no.",
+        "Calcula α para dos frecuencias y radios arteriales y predice cuál se apartará más del perfil cuasi-Poiseuille.",
+        "Calcula Q mediante Poiseuille para un tubo baseline y verifica dimensiones/unidades.",
+        "Perturba el radio ±5 % y cuantifica el cambio en Q o resistencia bajo el baseline.",
+        "Compara perfiles de entrada uniforme y parabólico en términos conceptuales y define dónde esperarías mayor sensibilidad.",
+        "Con una señal sintética de WSS vectorial en cuatro instantes, calcula TAWSS y una aproximación discreta de OSI.",
+        "Compara un caso newtoniano con dos viscosidades aparentes representativas de alto y bajo corte y cuantifica el cambio de Re y WSS del baseline.",
+        "Usa un conjunto sintético shear-rate/viscosidad para verificar cualitativamente el comportamiento Carreau–Yasuda y comprobar límites μ0 y μ∞.",
+        "Calcula el balance relativo de caudal de una bifurcación y establece un criterio de aceptación antes de ver el resultado.",
+        "Perturba el reparto de caudales de salida y registra qué métricas locales cambian más.",
+        "Compara pared rígida con una variación sintética de área ±10 % y decide si FSI podría cambiar materialmente la métrica objetivo.",
+        "Redacta una ficha final con ecuaciones, supuestos, fronteras, controles, sensibilidades, datos reservados para validación y límites de inferencia."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Tabla de parámetros, unidades y condiciones de frontera.",
+        "Baselines Poiseuille/Reynolds/Womersley con comprobación dimensional.",
+        "Cálculo de WSS/TAWSS/OSI sintético.",
+        "Comparación reológica newtoniana/no newtoniana.",
+        "Auditoría de conservación de caudal y sensibilidad de salidas.",
+        "Análisis de hipótesis de pared rígida frente a necesidad de FSI.",
+        "Ficha reproducible de modelo y conclusión mecánica acotada."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: hemodinámica y flujo respiratorio",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para Navier-Stokes, no newtonianos y interacción fluido-estructura.",
-        "Selecciona entre cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Modelo mecánico documentado con verificación y límites.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de hemodinámica y flujo respiratorio y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte Navier-Stokes, no newtonianos y interacción fluido-estructura.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Todas las magnitudes llevan unidades y escalas características declaradas.",
+        "Poiseuille se usa solo cuando se enumeran sus supuestos.",
+        "Re y Womersley no se interpretan como umbrales clínicos.",
+        "El balance de masa cumple el criterio predefinido o se documenta el fallo.",
+        "WSS y OSI se calculan con definiciones explícitas y vectoriales cuando corresponde.",
+        "La sensibilidad al radio reconoce dependencias de alta potencia del baseline.",
+        "La reología se trata como hipótesis de modelo y no como una viscosidad universal.",
+        "Las condiciones de salida se incluyen en el análisis de sensibilidad.",
+        "La necesidad de FSI se decide respecto de la métrica y deformación relevantes.",
+        "Verificación y validación se describen como pasos distintos.",
+        "Se reserva evidencia independiente para comprobar predicción.",
+        "No se transforma una salida mecánica sintética en diagnóstico o recomendación."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar Navier-Stokes como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar Navier-Stokes en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre Navier-Stokes y no newtonianos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir interacción fluido-estructura después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Fluidos biológicos al uso clínico o real.",
-      "correction": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
-    }
+    {"error": "Usar ΣF=ma como ecuación central del campo de flujo.", "correction": "Formular conservación local de masa y cantidad de movimiento; Navier–Stokes es la forma continua correspondiente bajo los supuestos declarados."},
+    {"error": "Aplicar Poiseuille a cualquier vaso o vía aérea.", "correction": "Comprobar tubo circular rígido, flujo laminar, estacionario y completamente desarrollado antes de usarlo como algo más que baseline."},
+    {"error": "Tomar Re=2300 como frontera universal de todos los flujos biológicos.", "correction": "Tratar Re como escala y considerar pulsación, geometría, perturbaciones y longitud de entrada."},
+    {"error": "Ignorar Womersley en flujo arterial pulsátil.", "correction": "Comparar la escala de pulsación con difusión viscosa y revisar el perfil supuesto."},
+    {"error": "Usar una única viscosidad sanguínea como propiedad universal.", "correction": "Declarar hematocrito/régimen y comprobar sensibilidad newtoniana frente a shear-thinning cuando sea relevante."},
+    {"error": "Creer que Carreau–Yasuda resuelve eritrocitos.", "correction": "Reconocer que es un modelo continuo de viscosidad aparente y no una simulación celular."},
+    {"error": "Interpretar WSS como una fuerza muscular o presión normal.", "correction": "WSS es la componente tangencial de la tracción del fluido sobre la pared."},
+    {"error": "Llamar OSI alto a cualquier WSS de magnitud variable.", "correction": "OSI cuantifica cancelación direccional, no solo amplitud temporal."},
+    {"error": "Fijar condiciones de salida arbitrarias y analizar solo la malla.", "correction": "Tratar fronteras como fuente principal de incertidumbre y evaluar su sensibilidad."},
+    {"error": "Añadir FSI siempre porque parece más realista.", "correction": "Justificar el acoplamiento por el efecto de deformación de pared en la métrica y el uso previsto."},
+    {"error": "Considerar una imagen CFD visualmente suave como validación.", "correction": "Exigir conservación, verificación numérica y comparación física independiente."},
+    {"error": "Convertir WSS, caída de presión o resistencia simulada en conclusión clínica directa.", "correction": "Separar predicción mecánica, evidencia biológica, desempeño diagnóstico y decisión clínica."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar hemodinámica y flujo respiratorio?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan Navier-Stokes y no newtonianos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; interacción fluido-estructura puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre interacción fluido-estructura?",
-      "answer": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre hemodinámica y flujo respiratorio?",
-      "answer": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Fluidos biológicos?",
-      "answer": "Producir un modelo mecánico documentado con verificación y límites auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question": "¿Qué expresa ∇·u=0 en U5?", "answer": "Conservación local de masa para un fluido incompresible de densidad constante.", "reasoning": "Impide creación o desaparición artificial de volumen en el campo de velocidad.", "common_error": "Interpretarlo como velocidad cero."},
+    {"question": "¿Cuándo es exacta la relación de Poiseuille usada aquí?", "answer": "En flujo newtoniano, estacionario, laminar, completamente desarrollado en un tubo circular rígido.", "reasoning": "Cada supuesto participa en la derivación del perfil parabólico y Q∝R⁴.", "common_error": "Aplicarla sin revisar pulsación o geometría."},
+    {"question": "¿Qué compara el número de Reynolds?", "answer": "Escalas inerciales y viscosas.", "reasoning": "Re=ρUD/μ normaliza los términos relevantes de cantidad de movimiento.", "common_error": "Tratarlo como probabilidad de enfermedad."},
+    {"question": "¿Qué añade Womersley?", "answer": "La escala de no estacionariedad de un flujo oscilatorio respecto de difusión viscosa.", "reasoning": "Depende de frecuencia, radio, densidad y viscosidad.", "common_error": "Confundirlo con Reynolds."},
+    {"question": "¿Qué representa WSS?", "answer": "La tracción tangencial ejercida por el fluido sobre la pared.", "reasoning": "Se deriva de tensiones viscosas y gradientes de velocidad cerca de la pared.", "common_error": "Confundirlo con presión."},
+    {"question": "¿Qué mide OSI?", "answer": "La cancelación o reversión direccional del vector WSS durante un ciclo.", "reasoning": "Su definición compara el vector integrado con la integral de su magnitud.", "common_error": "Usarlo como sinónimo de WSS bajo."},
+    {"question": "¿Por qué sangre puede ser shear-thinning?", "answer": "Porque agregación y deformabilidad eritrocitaria hacen que la viscosidad aparente dependa de la tasa de corte.", "reasoning": "La sangre es una suspensión celular, no un fluido molecular simple.", "common_error": "Atribuirlo solo a la viscosidad del plasma."},
+    {"question": "¿Qué controla la necesidad de FSI?", "answer": "Si el movimiento de pared y el acoplamiento cambian materialmente la física o métrica relevante respecto del uso previsto.", "reasoning": "FSI añade física y también parámetros/incertidumbre.", "common_error": "Asumir que FSI siempre es superior."},
+    {"question": "¿Qué diferencia verificación de validación?", "answer": "Verificación evalúa si resolvemos correctamente el modelo; validación evalúa si el modelo representa suficientemente el sistema físico para el uso previsto.", "reasoning": "Un solver puede ser correcto para ecuaciones que siguen siendo inadecuadas al problema real.", "common_error": "Usar ambos términos como sinónimos."},
+    {"question": "¿Un mapa de WSS puede diagnosticar una lesión?", "answer": "No por sí solo.", "reasoning": "Es una salida mecánica dependiente de modelo y sus asociaciones clínicas requieren validación separada.", "common_error": "Convertir asociaciones de literatura en decisión individual."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Hemodinámica y flujo respiratorio."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
-    }
+    {"context": "Hemodinámica arterial", "connection": "Reynolds, Womersley, presión, WSS y OSI ayudan a describir flujo pulsátil y fuerzas sobre la pared bajo fronteras y geometría declaradas."},
+    {"context": "Microcirculación y hemorreología", "connection": "Agregación y deformabilidad eritrocitaria explican por qué la viscosidad aparente cambia con corte y escala, limitando modelos newtonianos simples."},
+    {"context": "Vías aéreas", "connection": "Geometría, resistencia y régimen de flujo condicionan velocidad y caída de presión; CFD puede explorar mecanismos sin equivaler a una decisión clínica."},
+    {"context": "Vasos y válvulas deformables", "connection": "FSI acopla flujo con mecánica de pared cuando deformación, compliance o movimiento valvular modifican la solución."},
+    {"context": "Modelos basados en imagen", "connection": "Segmentación, fronteras y propiedades introducen incertidumbre que debe propagarse antes de interpretar resultados específicos de una anatomía."}
   ],
   "sources": [
-    {
-      "title": "SOFA Framework",
-      "organization": "SOFA Consortium",
-      "url": "https://www.sofa-framework.org/",
-      "type": "software abierto",
-      "description": "Simulación interactiva de sistemas deformables.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "IT'IS Virtual Population",
-      "organization": "IT'IS Foundation",
-      "url": "https://itis.swiss/virtual-population/virtual-population/overview/",
-      "type": "modelos anatómicos",
-      "description": "Modelos humanos computacionales con documentación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "3D Print Exchange",
-      "organization": "National Institutes of Health",
-      "url": "https://3d.nih.gov/",
-      "type": "repositorio abierto",
-      "description": "Modelos tridimensionales biomédicos y educativos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "The Turing Way",
-      "organization": "The Turing Way community",
-      "url": "https://book.the-turing-way.org/",
-      "type": "guía abierta",
-      "description": "Reproducibilidad, pruebas y procedencia de modelos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "OpenSim documentation",
-      "organization": "OpenSim",
-      "url": "https://opensimconfluence.atlassian.net/wiki/spaces/OpenSim/overview",
-      "type": "documentación",
-      "description": "Modelado musculoesquelético, simulación y análisis.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"id": "hemodynamics-review", "citation": "Ku DN. Hemodynamics. In: Comprehensive Physiology. Review of pressure-flow relations, continuum mechanics, rheology, pulsatile arterial flow and microcirculation.", "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4958049/", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "womersley-theory-1955", "citation": "Womersley JR. Mathematical theory of oscillating flow in an elastic tube. J Physiol. 1955;127(2):37-38P.", "url": "https://pubmed.ncbi.nlm.nih.gov/14354700/", "pmid": "14354700", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "womersley-velocity-1955", "citation": "Hale JF, McDonald DA, Womersley JR. Velocity profiles of oscillating arterial flow, with some calculations of viscous drag and the Reynolds numbers. J Physiol. 1955;128(3):629-640.", "url": "https://pubmed.ncbi.nlm.nih.gov/13243354/", "doi": "10.1113/jphysiol.1955.sp005330", "pmid": "13243354", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "re-womersley-survey", "citation": "Literature Survey for In-Vivo Reynolds and Womersley Numbers of Various Arteries and Implications for Compliant In-Vitro Modelling. 2024.", "url": "https://pubmed.ncbi.nlm.nih.gov/38499933/", "pmid": "38499933", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "blood-rheology-2019", "citation": "Connes P, Alexy T, Detterich J, Romana M, Hardy-Dessources MD, Ballas SK. Blood Rheology: Key Parameters, Impact on Blood Flow, Role in Sickle Cell Disease and Effects of Exercise. Front Physiol. 2019.", "url": "https://pubmed.ncbi.nlm.nih.gov/31749708/", "pmid": "31749708", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "blood-rheology-recent", "citation": "Recent advances in blood rheology: a review. 2021.", "url": "https://pubmed.ncbi.nlm.nih.gov/34787149/", "pmid": "34787149", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "coronary-rheology-2023", "citation": "De Nisco G, et al. Modelling blood flow in coronary arteries: Newtonian or shear-thinning non-Newtonian rheology? Comput Methods Programs Biomed. 2023;242:107823.", "url": "https://pubmed.ncbi.nlm.nih.gov/37757568/", "doi": "10.1016/j.cmpb.2023.107823", "pmid": "37757568", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "wss-contemporary-review", "citation": "Advances in the Computational Assessment of Disturbed Coronary Flow and Wall Shear Stress: A Contemporary Review.", "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11681461/", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "hemodynamic-framework", "citation": "Computational medical imaging and hemodynamics framework for functional analysis and assessment of cardiovascular structures.", "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5359907/", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "upper-airway-cfd", "citation": "Faizal WM, et al. Computational fluid dynamics modelling of human upper airway: A review. Comput Methods Programs Biomed. 2020;196:105627.", "url": "https://pubmed.ncbi.nlm.nih.gov/32629222/", "doi": "10.1016/j.cmpb.2020.105627", "pmid": "32629222", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "respiratory-cfd-2026", "citation": "Ciloglu D, Ucuncu H. CFD Modeling of Airflow and Aerosol Transport in the Human Respiratory System: A Comprehensive Review. Pharm Res. 2026;43(5):1397-1423.", "url": "https://pubmed.ncbi.nlm.nih.gov/42082857/", "doi": "10.1007/s11095-026-04080-w", "pmid": "42082857", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "respiratory-fluid-mechanics", "citation": "Respiratory fluid mechanics and transport processes. Review.", "url": "https://pubmed.ncbi.nlm.nih.gov/11447070/", "pmid": "11447070", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "fsi-systematic-review", "citation": "Hirschhorn M, et al. Fluid-structure interaction modeling in cardiovascular medicine - A systematic review 2017-2019. Med Eng Phys. 2020;78:1-13.", "url": "https://pubmed.ncbi.nlm.nih.gov/32081559/", "doi": "10.1016/j.medengphy.2020.01.008", "pmid": "32081559", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "fsi-artery-validation", "citation": "Schoenborn S, Pirola S, Woodruff MA, Allenby MC. Fluid-Structure Interaction Within Models of Patient-Specific Arteries: Computational Simulations and Experimental Validations. IEEE Rev Biomed Eng. 2024;17:280-296.", "url": "https://pubmed.ncbi.nlm.nih.gov/36260570/", "doi": "10.1109/RBME.2022.3215678", "pmid": "36260570", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "hemodynamic-uq", "citation": "Uncertainty quantification implementations in human hemodynamic flows. Comput Methods Programs Biomed. 2021.", "url": "https://pubmed.ncbi.nlm.nih.gov/33721602/", "doi": "10.1016/j.cmpb.2021.106021", "pmid": "33721602", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "coronary-uq", "citation": "Uncertainty quantification in coronary blood flow simulations: Impact of geometry, boundary conditions and blood viscosity. J Biomech. 2016.", "url": "https://pubmed.ncbi.nlm.nih.gov/26803339/", "doi": "10.1016/j.jbiomech.2016.01.002", "pmid": "26803339", "verification_status": "verified_directly_2026-08-24"},
+    {"id": "verified-moving-domain-cfd", "citation": "Kjeldsberg HA, Sundnes J, Valen-Sendstad K. A verified and validated moving domain computational fluid dynamics solver with applications to cardiovascular flows. Int J Numer Method Biomed Eng. 2023.", "url": "https://pubmed.ncbi.nlm.nih.gov/37020156/", "doi": "10.1002/cnm.3703", "pmid": "37020156", "verification_status": "verified_directly_2026-08-24"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad educativa en revisión. La curación interna no constituye revisión disciplinar externa, validación de un modelo cardiovascular o respiratorio real, validación clínica ni certificación de software. Todos los ejercicios usan geometrías y datos sintéticos. U5 trata flujo libre y mecánica de fluidos: el transporte intersticial Darcy/poroelasticidad corresponde a U4 y la discretización/elementos finitos y validación numérica detallada a U6. Reynolds, Womersley, WSS, OSI, presión, resistencia, viscosidad aparente y resultados FSI son magnitudes o parámetros dependientes del modelo y no se presentan como diagnóstico, pronóstico ni recomendación terapéutica o quirúrgica."
 }
