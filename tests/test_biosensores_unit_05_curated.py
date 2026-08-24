@@ -9,7 +9,7 @@ SOURCE = ROOT / "data" / "course_redevelopment" / "biosensores" / "units" / "uni
 MIRROR = ROOT / "data" / "generated_units" / "biosensores" / "unit-05.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
-# Final user-authored trigger after publication and repair self-cleanup.
+# Final normal trigger after publication metadata synchronization.
 
 
 class BiosensoresUnit05CuratedTests(unittest.TestCase):
