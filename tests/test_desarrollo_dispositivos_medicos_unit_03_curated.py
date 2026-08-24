@@ -126,6 +126,6 @@ class DesarrolloDispositivosMedicosUnit03CuratedTests(unittest.TestCase):
         self.assertIn("sin reducir el riesgo a una multiplicación de escalas ordinales", purpose)
 
 
-# Final user-authored gate trigger after publication metadata synchronization.
+# Final normal trigger on the published U3 head; academic and regulatory review remain explicitly pending.
 if __name__ == "__main__":
     unittest.main()
