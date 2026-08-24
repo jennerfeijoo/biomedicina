@@ -22,3 +22,8 @@ for n in range(1, 7):
         if not answer.get("common_misconceptions"):
             answer["common_misconceptions"] = ["Responder con una definición aislada sin justificar condiciones ni límites."]
     write(path, data)
+
+course_assessment_path = COURSE / "assessments" / "course-assessment.json"
+course_assessment = load(course_assessment_path)
+course_assessment["status"] = "complete"
+write(course_assessment_path, course_assessment)
