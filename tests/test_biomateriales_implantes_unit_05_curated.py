@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "biomateriales-implantes" / "units" / "unit-05.json"
 MIRROR = ROOT / "data" / "generated_units" / "biomateriales-implantes" / "unit-05.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
+# Final gate trigger after public synchronization on the current main-based branch.
 
 
 class BiomaterialesImplantesUnit05CuratedTests(unittest.TestCase):
