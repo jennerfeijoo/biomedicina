@@ -110,9 +110,8 @@ class IngenieriaTejidosUnit03CuratedTests(unittest.TestCase):
     def test_curricular_and_safety_boundaries_are_explicit(self) -> None:
         notice = self.unit["editorial_notice"].casefold()
         purpose = self.unit["purpose"].casefold()
-        for boundary in ("u4", "u5", "u6", "no constituye revisión disciplinar externa", "no constituye", "no recomendación"):
+        for boundary in ("u4", "u5", "u6", "no constituye revisión disciplinar externa", "ni recomendación de un producto"):
             self.assertIn(boundary, notice)
-        self.assertIn("no constituye revisión disciplinar externa", notice)
         self.assertIn("beneficio clínico", purpose)
         self.assertIn("biocompatible", purpose)
 
