@@ -30,15 +30,24 @@ jobs:
               Path('data/course_redevelopment/biofotonica/units/unit-04.json'),
               Path('data/generated_units/biofotonica/unit-04.json'),
           ]
-          old = '"correction": "Seleccionar según mensurando, mecanismo de contraste, resolución, profundidad, velocidad, calibración y límites del escenario."\n  ],'
-          new = '"correction": "Seleccionar según mensurando, mecanismo de contraste, resolución, profundidad, velocidad, calibración y límites del escenario."}\n  ],'
+          replacements = [
+              (
+                  '"correction": "Seleccionar según mensurando, mecanismo de contraste, resolución, profundidad, velocidad, calibración y límites del escenario."\n  ],',
+                  '"correction": "Seleccionar según mensurando, mecanismo de contraste, resolución, profundidad, velocidad, calibración y límites del escenario."}\n  ],',
+              ),
+              (
+                  '"common_error": "Elegir solo la técnica con mayor resolución nominal."\n  ],',
+                  '"common_error": "Elegir solo la técnica con mayor resolución nominal."}\n  ],',
+              ),
+          ]
           for path in paths:
               text = path.read_text(encoding='utf-8')
-              if old not in text:
-                  raise SystemExit(f'Patrón de reparación no encontrado en {path}')
-              text = text.replace(old, new, 1)
-              path.write_text(text, encoding='utf-8')
+              for old, new in replacements:
+                  if old not in text:
+                      raise SystemExit(f'Patrón de reparación no encontrado en {path}: {old[:80]}')
+                  text = text.replace(old, new, 1)
               json.loads(text)
+              path.write_text(text, encoding='utf-8')
           if paths[0].read_bytes() != paths[1].read_bytes():
               raise SystemExit('Fuente y espejo no son idénticos')
           PY
