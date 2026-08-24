@@ -128,4 +128,4 @@ class FundamentosBiomecanicaUnit05CuratedTests(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-# Permanent regression for Fundamentos de Biomecánica U5 academic curation.
+# Final user-authored verification trigger after publication metadata synchronization.
