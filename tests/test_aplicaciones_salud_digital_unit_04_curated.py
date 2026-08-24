@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final user-authored CI trigger after curriculum metadata synchronization.
+# Final user-authored CI trigger after publication metadata synchronization.
 
 import json
 import unittest
