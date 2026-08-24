@@ -6,387 +6,314 @@
   "slug": "datos-e-interoperabilidad",
   "title": "Datos e interoperabilidad",
   "status": "review",
-  "purpose": "Integrar historias clínicas, APIs, estándares y calidad para resolver un caso de integración con sistemas sanitarios con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar y auditar una integración clínica sintética distinguiendo interoperabilidad sintáctica, estructural, semántica y organizativa; representar información con FHIR y terminologías clínicas, validar perfiles y referencias, conservar procedencia y evaluar calidad de datos para un uso declarado, sin confundir intercambio técnico con equivalencia semántica, utilidad clínica, seguridad o conformidad regulatoria.",
   "learning_objectives": [
-    "Definir historias clínicas, APIs y estándares y calidad mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte historias clínicas con APIs y delimite el papel de estándares y calidad.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre integración con sistemas sanitarios con incertidumbre y límites.",
-    "Transferir el método de Datos e interoperabilidad a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir interoperabilidad sintáctica, estructural, semántica y organizativa e identificar qué problema resuelve cada nivel en un flujo de salud digital.",
+    "Modelar un intercambio clínico sintético con recursos, identificadores, referencias, perfiles y versiones FHIR, justificando qué información debe preservarse entre sistemas.",
+    "Relacionar CodeSystem, ValueSet, bindings y terminologías como SNOMED CT y LOINC, evitando asumir que transportar un código garantiza equivalencia de significado.",
+    "Diseñar un contrato de API y un conjunto de pruebas de interoperabilidad que incluyan casos válidos, errores de estructura, referencias rotas, códigos fuera de conjunto y cambios de versión.",
+    "Evaluar calidad de datos como propiedad dependiente del uso mediante conformance, completeness y plausibility, documentando procedencia, transformaciones y limitaciones.",
+    "Comunicar qué demuestra una prueba técnica de interoperabilidad y qué permanece pendiente respecto de flujo clínico real, seguridad, privacidad, beneficio clínico y regulación."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Datos e interoperabilidad",
+      "heading": "1. Del intercambio de bytes a la interoperabilidad clínica",
       "paragraphs": [
-        "La unidad «Datos e interoperabilidad» sitúa historias clínicas, APIs y estándares y calidad dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Aplicaciones de Salud Digital, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Datos e interoperabilidad» en Aplicaciones de Salud Digital, «historias clínicas», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Datos e interoperabilidad», «APIs», aporta otra dimensión al problema de Aplicaciones de Salud Digital: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con historias clínicas debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Datos e interoperabilidad» en Aplicaciones de Salud Digital, «estándares y calidad», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Interoperar no significa únicamente que dos programas puedan enviarse JSON, XML o mensajes. Una integración útil necesita distinguir capas. La conectividad permite transportar información; la interoperabilidad sintáctica acuerda una representación; la interoperabilidad estructural conserva la organización de los elementos; la interoperabilidad semántica pretende que emisor y receptor interpreten los conceptos de forma compatible. A estas capas se añade el contexto organizativo: quién produce el dato, con qué finalidad, en qué momento del flujo y qué responsabilidad conserva cada sistema. Esta unidad se concentra en esas capas técnicas y semánticas; la evaluación clínica y económica corresponde a U5, mientras que privacidad, regulación e implementación organizativa se profundizan en U6.",
+        "Una historia clínica electrónica no es una base de datos universal con significado implícito. El mismo concepto puede almacenarse con identificadores locales, unidades diferentes, campos opcionales, fechas con semántica distinta o estados de ciclo de vida incompatibles. Antes de transformar datos debe escribirse un contrato de significado: qué entidad representa cada campo, qué identificador es estable, qué unidad se espera, qué valores faltantes son admisibles y qué temporalidad expresa cada fecha. Si el contrato no existe, una integración puede ser técnicamente exitosa y producir información clínicamente ambigua.",
+        "FHIR organiza la información sanitaria en recursos con identidades, elementos tipados y referencias. Ese diseño favorece composición y reutilización, pero no hace que todas las implementaciones sean intercambiables automáticamente. Los perfiles restringen o especializan recursos para un contexto concreto; pueden fijar cardinalidades, terminologías, extensiones y otras reglas. Por tanto, afirmar que dos sistemas 'usan FHIR' es insuficiente: deben declararse versión, perfiles, extensiones, terminologías, operaciones y convenciones de identidad relevantes para el caso de uso.",
+        "Las referencias forman una red entre recursos y dependen de identidad y ciclo de vida. Copiar un recurso a otro sistema puede requerir una identidad local nueva, mientras que identificadores de negocio pueden conservarse como atributos separados. Confundir Resource.id con un identificador clínico persistente genera duplicados, referencias rotas o asociaciones incorrectas. La prueba de integración debe incluir recursos relacionados y no solo objetos aislados, porque muchos fallos aparecen cuando una Observation deja de apuntar al Patient, Encounter, Specimen u otro contexto correcto.",
+        "La conclusión técnica debe indicar exactamente qué nivel se verificó. Que un recurso pase validación estructural no demuestra que el dato sea verdadero; que un código pertenezca a un ValueSet no demuestra que sea el concepto clínico correcto; que una API responda HTTP 200 no demuestra que el receptor interpretó bien el contenido. Esta separación entre transporte, conformidad, semántica y aptitud para el uso evita convertir interoperabilidad en una etiqueta binaria y prepara una validación reproducible del flujo."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Datos e interoperabilidad.",
-        "Relacionar historias clínicas, APIs y estándares y calidad mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Interoperabilidad es multicapa; transporte, estructura, semántica y contexto organizativo deben evaluarse por separado.",
+        "Usar FHIR no garantiza interoperabilidad sin versión, perfiles, extensiones, terminologías y operaciones explícitas.",
+        "Resource.id e identificadores de negocio cumplen funciones diferentes y requieren una política de identidad documentada.",
+        "Una prueba técnica positiva no demuestra veracidad del dato, utilidad clínica ni seguridad del sistema completo."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. FHIR, perfiles, APIs y contratos verificables",
       "paragraphs": [
-        "Para «Datos e interoperabilidad» dentro de Aplicaciones de Salud Digital, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Aplicaciones de Salud Digital, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre historias clínicas o APIs debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Datos e interoperabilidad», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Aplicaciones de Salud Digital, la incertidumbre de «Datos e interoperabilidad» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: integración con sistemas sanitarios",
-      "paragraphs": [
-        "En la unidad «Datos e interoperabilidad» de Aplicaciones de Salud Digital, el caso conductor es integración con sistemas sanitarios. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Datos e interoperabilidad» conecta historias clínicas con APIs y utiliza estándares y calidad como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «integración con sistemas sanitarios» en Aplicaciones de Salud Digital, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Datos e interoperabilidad» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de integración con sistemas sanitarios y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "FHIR define recursos y una API RESTful, pero una integración reproducible necesita un contrato más específico que el estándar base. El contrato debe enumerar recursos admitidos, perfiles, operaciones, parámetros de búsqueda, formatos, cardinalidades relevantes, campos obligatorios para el caso, estrategia de paginación, tratamiento de errores y versiones. Un CapabilityStatement puede describir capacidades del servidor, pero la implementación debe comprobar empíricamente las operaciones que realmente necesita. La compatibilidad se evalúa contra el contrato del caso de uso, no contra una afirmación general de compatibilidad con FHIR.",
+        "La validación FHIR examina estructura, cardinalidad, tipos, dominios de valores, invariantes, bindings y perfiles. Esa validación es necesaria para detectar mensajes malformados o incompatibles, pero es solo una capa de calidad. Por ejemplo, una Observation puede ser válida frente a un perfil y contener un valor fisiológicamente imposible, una unidad incorrecta para la intención del flujo o una asociación con el paciente equivocado. Por eso el conjunto de pruebas debe separar conformidad estructural, reglas semánticas y plausibilidad del contenido.",
+        "Los perfiles reducen variabilidad al expresar restricciones mediante StructureDefinition. Sin embargo, dos perfiles diferentes pueden imponer requisitos incompatibles y un cambio de versión puede alterar elementos, bindings o extensiones. La integración debe fijar versiones de artefactos canónicos y probar migraciones de forma deliberada. Las referencias canónicas pueden incluir una versión; registrar únicamente una URL sin la versión cuando el significado depende de ella dificulta reconstruir qué reglas se aplicaron en una ejecución histórica.",
+        "SMART App Launch complementa FHIR con patrones basados en OAuth 2.0 para que aplicaciones descubran capacidades y soliciten acceso limitado mediante scopes. En U4 se estudia como ejemplo de contrato de acceso a una API, no como sustituto de la arquitectura de privacidad o seguridad de U6. Una prueba sintética puede verificar descubrimiento, scopes solicitados y respuestas esperadas sin usar credenciales reales ni datos personales. El hecho de obtener un token no demuestra que la política de acceso sea adecuada para un despliegue sanitario real.",
+        "Un buen banco de pruebas contiene casos positivos y negativos predefinidos. Debe incluir al menos un recurso válido conocido, una cardinalidad incumplida, una referencia inexistente, un código fuera del ValueSet exigido, una unidad no prevista, un identificador duplicado y una incompatibilidad de versión. Para cada caso se anticipa el resultado esperado antes de ejecutar la prueba. Esta disciplina convierte la interoperabilidad en una propiedad auditable y reduce el riesgo de declarar éxito porque un único ejemplo favorable atravesó la interfaz."
       ],
       "equations": [
         {
-          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
+          "latex": "C_{conf}=\\frac{N_{validos}}{N_{evaluados}}",
+          "meaning": "Proporción de artefactos evaluados que cumplen el contrato de conformidad definido; solo resume ese conjunto de reglas y no mide verdad clínica.",
           "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
+            "N_{validos}": "número de recursos o mensajes que satisfacen las reglas predefinidas",
+            "N_{evaluados}": "número total de recursos o mensajes sometidos a esas reglas"
           }
         }
       ],
       "key_points": [
-        "Delimitar el caso de integración con sistemas sanitarios antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "El estándar base debe concretarse en un contrato versionado de recursos, perfiles, operaciones y reglas del caso de uso.",
+        "Validación FHIR comprueba conformidad; plausibilidad, identidad correcta y aptitud clínica necesitan controles adicionales.",
+        "Los perfiles y artefactos canónicos deben versionarse cuando una versión diferente puede cambiar la interpretación.",
+        "Las pruebas negativas predefinidas son indispensables para demostrar que el sistema detecta entradas incompatibles."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "3. Interoperabilidad semántica: terminologías, códigos y unidades",
       "paragraphs": [
-        "La reproducibilidad de «Datos e interoperabilidad» en Aplicaciones de Salud Digital requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Datos e interoperabilidad» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Aplicaciones de Salud Digital separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Datos e interoperabilidad» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de historias clínicas, APIs y estándares y calidad debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Aplicaciones de Salud Digital.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre integración con sistemas sanitarios. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Aplicaciones de Salud Digital como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "La interoperabilidad semántica intenta conservar significado, no solo texto. En FHIR, CodeSystem identifica un sistema de conceptos y códigos, mientras que ValueSet define un conjunto de conceptos permitidos o relevantes para un contexto. Un binding enlaza un elemento de un perfil con un ValueSet con una fuerza determinada. Estas piezas son distintas: transmitir el código correcto con el sistema equivocado, omitir la versión cuando es necesaria o usar un concepto fuera del conjunto esperado puede mantener una sintaxis válida y perder significado.",
+        "SNOMED CT proporciona una terminología clínica conceptualmente rica para representar hallazgos, trastornos, procedimientos y otros conceptos. Sus jerarquías, descripciones, relaciones y reference sets permiten usos que van más allá de mostrar una etiqueta. Mapear un código local a SNOMED CT requiere revisar equivalencia semántica y contexto; una correspondencia aproximada no debe presentarse como identidad. Los mappings también tienen ciclo de vida y gobierno, por lo que la transformación debe conservar versión, regla aplicada y cualquier pérdida de información conocida.",
+        "LOINC identifica observaciones, mediciones y documentos mediante códigos universales. Un término LOINC caracteriza dimensiones como componente, propiedad, tiempo, sistema o muestra, escala y, cuando corresponde, método. Por ello dos pruebas llamadas informalmente 'glucosa' no son necesariamente intercambiables: pueden diferir en espécimen, propiedad, tiempo o método. La interoperabilidad necesita preservar además el valor, unidad y contexto pertinentes; sustituir únicamente una etiqueta local por un código estándar puede ser insuficiente.",
+        "DICOM estandariza información y servicios para imagen médica y su ecosistema incluye objetos, codificación, servicios y DICOMweb. En un flujo multimodal, FHIR puede representar orden, informe o referencias clínicas mientras DICOM gestiona objetos de imagen y sus metadatos. No se debe convertir una imagen en un recurso FHIR genérico perdiendo el modelo especializado. La interoperabilidad consiste también en decidir qué estándar conserva mejor cada tipo de información y cómo se enlazan sus identificadores sin crear ambigüedad.",
+        "La normalización semántica debe probarse con pares difíciles, no solo ejemplos obvios. Conviene incluir un código local sin mapping, dos conceptos cercanos pero no equivalentes, una unidad incompatible, una versión terminológica distinta y un concepto retirado. El resultado debe distinguir transformación sin pérdida, transformación con pérdida documentada y caso no transformable. Forzar siempre un código de destino puede mejorar artificialmente la completitud mientras empeora la fidelidad semántica."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "CodeSystem, ValueSet y binding son artefactos diferentes y deben conservar sistema, versión y contexto cuando sean relevantes.",
+        "Un mapping terminológico puede ser exacto, aproximado o inexistente; no debe forzarse equivalencia para evitar valores faltantes.",
+        "LOINC identifica observaciones con dimensiones que van más allá del nombre coloquial de una prueba.",
+        "FHIR y DICOM pueden coexistir en un flujo; interoperar no exige reemplazar un estándar especializado por otro."
+      ]
+    },
+    {
+      "heading": "4. Calidad de datos, procedencia y evidencia de interoperabilidad",
+      "paragraphs": [
+        "La calidad de datos no es una propiedad absoluta. Un conjunto puede ser suficiente para facturación y no para vigilancia temporal, o servir para una interfaz y no para investigación. El marco armonizado de Kahn y colaboradores organiza evaluación de datos EHR en conformance, completeness y plausibility, distinguiendo verificación frente a reglas internas y validación frente a una referencia aceptada. Esta perspectiva obliga a declarar el uso antes de elegir métricas y evita resumir toda la calidad con un único porcentaje.",
+        "Completeness pregunta si los elementos necesarios para el uso están presentes; conformance comprueba si representación y valores respetan reglas acordadas; plausibility evalúa si los valores y relaciones resultan creíbles según conocimiento o distribuciones esperadas. Trabajos previos también han descrito dimensiones como correctness, concordance y currency. Ninguna métrica sustituye a las demás. Un recurso completo puede ser incorrecto, uno plausible puede estar desactualizado y un conjunto conformante puede contener datos clínicamente falsos.",
+        "La procedencia es necesaria para investigar discrepancias y reproducir transformaciones. FHIR Provenance permite representar entidades, agentes y actividades que influyeron en la creación o modificación de recursos. En una práctica sintética se debe registrar al menos fuente, versión del dato, transformación aplicada, versión del mapping o perfil y momento del proceso. La procedencia no certifica por sí misma autenticidad o calidad: aporta evidencia contextual para evaluarlas y facilita localizar dónde pudo introducirse una diferencia.",
+        "Una prueba de extremo a extremo debe verificar más que una respuesta de API. El equipo prepara una entrada sintética conocida, la envía por el flujo, recupera la salida y compara estructura, identidad, referencias, códigos, unidades, valores y procedencia con el resultado esperado. Después introduce perturbaciones deliberadas: campo obligatorio ausente, código inválido, mapping no equivalente, referencia rota o dato plausible pero semánticamente incorrecto. Cada discrepancia debe clasificarse por capa y asociarse a una acción correctiva verificable.",
+        "El informe final separa cuatro afirmaciones: qué se transportó, qué conformó al contrato, qué significado se preservó y qué calidad fue evaluada para el uso sintético. Debe declarar versiones, cobertura de pruebas, fallos encontrados y casos no evaluados. No puede concluir que un sistema es clínicamente seguro, eficaz, equitativo o conforme por haber superado estas pruebas. U4 entrega evidencia técnica y semántica; U5 y U6 amplían la evaluación hacia consecuencias clínicas, económicas, de privacidad, regulatorias y de implementación."
+      ],
+      "equations": [
+        {
+          "latex": "C_{comp}=\\frac{N_{presentes}}{N_{requeridos}}",
+          "meaning": "Completitud relativa al conjunto de elementos requerido por un uso declarado; no equivale a exactitud ni calidad global.",
+          "variables": {
+            "N_{presentes}": "elementos requeridos que están disponibles",
+            "N_{requeridos}": "elementos definidos como necesarios para el uso evaluado"
+          }
+        }
+      ],
+      "key_points": [
+        "La calidad es dependiente del uso y no se reduce a una única métrica de datos.",
+        "Conformance, completeness y plausibility responden preguntas diferentes y deben reportarse de manera separada.",
+        "Provenance documenta origen y transformaciones, pero no convierte automáticamente un dato en verdadero o confiable.",
+        "La evidencia de U4 es técnica y semántica; no autoriza conclusiones clínicas, de seguridad o regulatorias."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "historias clínicas",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "APIs",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "estándares y calidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Datos e interoperabilidad",
-      "definition": "Dominio de estudio que integra historias clínicas, APIs, estándares y calidad para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de integración con sistemas sanitarios usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term": "Interoperabilidad", "definition": "Capacidad de sistemas para intercambiar información y utilizarla conservando las reglas y el significado necesarios para un uso definido."},
+    {"term": "Interoperabilidad sintáctica", "definition": "Compatibilidad de formato y gramática que permite a un receptor analizar una representación intercambiada."},
+    {"term": "Interoperabilidad semántica", "definition": "Conservación suficientemente explícita del significado para que sistemas diferentes interpreten de forma compatible los conceptos intercambiados."},
+    {"term": "FHIR", "definition": "Estándar HL7 basado en recursos para representar e intercambiar información sanitaria mediante artefactos, perfiles y patrones de API versionados."},
+    {"term": "Recurso FHIR", "definition": "Unidad modular de información definida por FHIR, con identidad, elementos tipados y posibles referencias a otros recursos."},
+    {"term": "Perfil FHIR", "definition": "Conjunto de restricciones y extensiones expresado mediante StructureDefinition para adaptar recursos a un contexto de implementación."},
+    {"term": "CapabilityStatement", "definition": "Recurso FHIR que declara capacidades de una implementación, como recursos y operaciones soportadas, que deben contrastarse con el caso de uso."},
+    {"term": "API", "definition": "Contrato de interacción entre software que define operaciones, entradas, salidas y comportamientos observables; no garantiza por sí mismo significado clínico."},
+    {"term": "SMART App Launch", "definition": "Guía HL7 que define patrones de autorización y autenticación basados en OAuth 2.0 para aplicaciones que acceden a sistemas FHIR."},
+    {"term": "Identidad de recurso", "definition": "Identidad lógica con la que un recurso FHIR es direccionado; debe distinguirse de identificadores de negocio clínicos."},
+    {"term": "Referencia FHIR", "definition": "Relación dirigida desde un recurso hacia otro mediante identidad o identificador según las reglas del tipo Reference."},
+    {"term": "CodeSystem", "definition": "Artefacto que declara un sistema de conceptos y códigos junto con propiedades relevantes de ese sistema."},
+    {"term": "ValueSet", "definition": "Conjunto definido de conceptos procedentes de uno o más sistemas de códigos para un contexto o propósito concreto."},
+    {"term": "Binding terminológico", "definition": "Vínculo entre un elemento de un modelo o perfil y un ValueSet, con reglas sobre la fuerza de uso de ese conjunto."},
+    {"term": "SNOMED CT", "definition": "Terminología clínica estructurada mantenida por SNOMED International para representar conceptos clínicos y sus relaciones."},
+    {"term": "LOINC", "definition": "Estándar internacional de identificadores y nombres para observaciones, mediciones y documentos clínicos y de laboratorio."},
+    {"term": "DICOM", "definition": "Estándar para información, objetos y servicios de imagen médica, incluido intercambio mediante tecnologías DICOMweb."},
+    {"term": "Mapping terminológico", "definition": "Correspondencia explícita entre conceptos de sistemas distintos que debe documentar equivalencia, versión y posibles pérdidas semánticas."},
+    {"term": "Conformance", "definition": "Grado en que datos o artefactos cumplen reglas estructurales, de formato o de valores definidas para el uso evaluado."},
+    {"term": "Completeness", "definition": "Disponibilidad de los elementos requeridos para una finalidad declarada; depende de qué información se considere necesaria."},
+    {"term": "Plausibility", "definition": "Grado en que valores, distribuciones o relaciones son creíbles según reglas, conocimiento o referencias apropiadas."},
+    {"term": "Procedencia", "definition": "Información sobre fuentes, agentes, actividades y transformaciones que influyeron en la creación o modificación de un dato."},
+    {"term": "FHIR Provenance", "definition": "Recurso FHIR destinado a registrar contexto de procedencia sobre recursos y actividades que los generaron o modificaron."},
+    {"term": "Contrato de datos", "definition": "Especificación versionada de estructura, significado, identidad, reglas, terminologías y criterios de aceptación entre productor y consumidor."},
+    {"term": "Prueba de conformidad", "definition": "Comprobación reproducible de que un artefacto satisface reglas predefinidas de estructura, cardinalidad, terminología, invariantes o perfil."},
+    {"term": "Prueba extremo a extremo", "definition": "Ensayo controlado que compara entrada y salida conocidas a través de todas las transformaciones relevantes del flujo de integración."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Datos e interoperabilidad",
-      "scenario": "Un equipo propone estudiar integración con sistemas sanitarios, pero su pregunta mezcla historias clínicas, APIs y estándares y calidad sin definir unidades, referencias ni resultado admisible.",
+      "title": "Un recurso FHIR válido que todavía puede estar equivocado",
+      "scenario": "Una Observation sintética cumple el perfil, contiene un código LOINC válido y expresa un valor numérico, pero la unidad enviada no corresponde a la magnitud esperada por el caso.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de historias clínicas, APIs y estándares y calidad.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Validar estructura, cardinalidad y binding frente al perfil declarado.",
+        "Separar ese resultado de la regla semántica sobre unidad y magnitud.",
+        "Comparar código, valor, unidad y contexto con el contrato del flujo.",
+        "Clasificar el fallo como semántico aunque la estructura sea conforme.",
+        "Añadir un caso negativo permanente que impida aceptar la misma discrepancia."
       ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-      ]
+      "interpretation": "La conformidad estructural es necesaria pero no suficiente para demostrar preservación semántica.",
+      "limitations": ["El ejemplo no demuestra que el valor clínico sea verdadero.", "No evalúa seguridad ni utilidad clínica de una interfaz real."]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre historias clínicas y APIs en el caso de integración con sistemas sanitarios; una condición vinculada con estándares y calidad podría producir el mismo patrón.",
+      "title": "Resource.id frente a identificador de negocio",
+      "scenario": "Dos servidores sintéticos almacenan la misma entidad clínica con Resource.id distintos y un identificador de negocio compartido.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar estándares y calidad como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Distinguir identidad lógica local del recurso e identifier del dominio.",
+        "Definir cómo se reconocerá la misma entidad al mover datos entre servidores.",
+        "Actualizar referencias internas si se crea una copia con identidad local nueva.",
+        "Comprobar que no se generen duplicados al repetir la importación.",
+        "Registrar la regla de identidad en el contrato y probarla con un caso repetido."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "interpretation": "La identidad interoperable requiere una política explícita; copiar literalmente un id local puede ser incorrecto.",
+      "limitations": ["La estrategia concreta depende del contexto y arquitectura.", "No resuelve por sí sola reconciliación de pacientes en sistemas reales."]
+    },
+    {
+      "title": "Mapping local a LOINC sin equivalencia suficiente",
+      "scenario": "Un laboratorio sintético usa el código local GLUCOSE para dos observaciones que difieren en el tipo de muestra; un mapping único pretende asignarlas al mismo LOINC.",
+      "reasoning_steps": [
+        "Revisar componente, propiedad, tiempo, sistema, escala y método pertinentes.",
+        "Identificar qué detalle del código local se pierde con el mapping único.",
+        "Separar casos equivalentes, aproximados y no mapeables.",
+        "Conservar el código fuente y registrar versión y regla de mapping.",
+        "Crear un test que falle si dos conceptos semánticamente distintos colapsan sin advertencia."
+      ],
+      "interpretation": "Completar todos los mappings puede ser peor que conservar un caso no mapeado cuando no existe equivalencia defendible.",
+      "limitations": ["El ejemplo no sustituye gobierno terminológico experto.", "No determina qué código usar en atención clínica real."]
+    },
+    {
+      "title": "FHIR y DICOM en un mismo flujo",
+      "scenario": "Un caso sintético necesita intercambiar una orden y un informe asociados con un estudio de imagen, además de conservar los objetos de imagen y sus metadatos especializados.",
+      "reasoning_steps": [
+        "Asignar a cada estándar el tipo de información que modela adecuadamente.",
+        "Definir identificadores y referencias que enlacen contexto clínico con el estudio de imagen.",
+        "Verificar que la transformación no elimine metadatos necesarios del dominio DICOM.",
+        "Comprobar enlaces con un estudio válido y otro deliberadamente inexistente.",
+        "Documentar qué parte del flujo fue validada y qué componentes externos quedan fuera."
+      ],
+      "interpretation": "La interoperabilidad multimodal puede combinar estándares en lugar de forzar toda la información a una sola representación.",
+      "limitations": ["No autoriza operación de equipos de imagen.", "No evalúa exactitud diagnóstica ni interpretación clínica."]
+    },
+    {
+      "title": "Panel de calidad dependiente del uso",
+      "scenario": "Un conjunto sintético contiene 100 registros; 94 cumplen el perfil, 90 tienen todos los campos requeridos para el uso y 4 presentan valores implausibles según reglas predefinidas.",
+      "reasoning_steps": [
+        "Calcular conformance como 94/100 y completeness como 90/100 bajo reglas explícitas.",
+        "Reportar plausibility por separado en lugar de promediar dimensiones heterogéneas.",
+        "Identificar si los cuatro casos implausibles se solapan con los no conformantes o incompletos.",
+        "Rastrear cada discrepancia a su fuente o transformación mediante procedencia.",
+        "Redactar la conclusión limitada al uso evaluado y proponer la siguiente prueba."
+      ],
+      "interpretation": "No existe un porcentaje único de 'calidad'; cada dimensión responde una pregunta diferente y debe conservar su denominador y criterio.",
+      "limitations": ["Las reglas sintéticas no establecen umbrales clínicos.", "Un dato plausible puede seguir siendo incorrecto."]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Actividad guiada: contrato FHIR y pruebas básicas",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja solo con recursos y valores sintéticos; no uses historias clínicas reales, tokens, credenciales ni identificadores de personas.",
+        "Define primero el caso de uso y qué información debe preservarse antes de elegir recursos FHIR.",
+        "Declara versión FHIR, perfiles, terminologías, identificadores y reglas mínimas del contrato.",
+        "Predice el resultado esperado de cada prueba positiva y negativa antes de evaluarla.",
+        "Mantén separados conformidad estructural, semántica y calidad del contenido en la tabla de resultados."
       ],
       "problems": [
-        "Define historias clínicas mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo APIs modifica o complementa a historias clínicas.",
-        "Propón una prueba que distinga el papel de estándares y calidad de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Modela un flujo sintético Patient–Encounter–Observation e identifica las referencias dirigidas.",
+        "Distingue Resource.id de al menos un identifier de negocio y explica el ciclo de vida de cada uno.",
+        "Escribe cinco reglas verificables del contrato de datos.",
+        "Diseña un recurso conforme y uno con cardinalidad incumplida.",
+        "Diseña un caso con referencia rota y anticipa cómo debería detectarse.",
+        "Diseña un caso con código fuera del ValueSet exigido.",
+        "Diseña un caso estructuralmente válido pero semánticamente incorrecto por unidad o contexto.",
+        "Explica qué información aportaría un CapabilityStatement y qué todavía debe probarse.",
+        "Registra una versión de perfil y describe qué ocurriría si el consumidor usa otra versión.",
+        "Redacta una conclusión de máximo 120 palabras indicando exactamente qué se verificó y qué no."
       ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
-      ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
+      "deliverables": ["Diagrama del flujo y referencias.", "Contrato de datos versionado.", "Matriz de diez pruebas con resultado esperado.", "Registro de discrepancias por capa.", "Tabla de identidad y versionado.", "Conclusión técnica con límites.", "Lista de pruebas que quedarían para U5 y U6."],
+      "checking_criteria": ["No hay datos personales reales.", "La versión FHIR y los perfiles están declarados.", "Identidad de recurso e identificadores de negocio no se confunden.", "Existen casos positivos y negativos predefinidos.", "Conformidad y semántica se evalúan por separado.", "Las referencias entre recursos se prueban explícitamente.", "La conclusión no reclama utilidad clínica ni conformidad regulatoria.", "Otra persona puede reconstruir las reglas y resultados."]
     },
     {
-      "title": "Taller de evidencia: integración con sistemas sanitarios",
+      "title": "Actividad con apoyo reducido: terminología y calidad",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Parte del contrato de la actividad anterior, pero diseña tú las reglas de terminología y calidad.",
+        "Usa un conjunto sintético de observaciones con códigos locales, LOINC o SNOMED CT inventados o públicos sin información personal.",
+        "Clasifica cada mapping como equivalente, aproximado o no defendible y registra cualquier pérdida semántica.",
+        "Define conformance, completeness y plausibility para el uso antes de calcular resultados.",
+        "Conserva procedencia de fuente, versión y transformación de cada registro problemático."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para historias clínicas, APIs y estándares y calidad.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Construye cinco observaciones locales y especifica qué información se necesita antes de mapearlas.",
+        "Identifica un caso donde el nombre coloquial sea insuficiente para elegir un LOINC.",
+        "Construye un mapping aproximado y redacta la advertencia que debe acompañarlo.",
+        "Diseña un concepto sin mapping defendible y justifica por qué no debe forzarse.",
+        "Diferencia CodeSystem, ValueSet y binding usando el mismo ejemplo.",
+        "Calcula conformance para un conjunto sintético con denominador explícito.",
+        "Calcula completeness para requisitos del uso y explica por qué no mide exactitud.",
+        "Propón tres reglas de plausibility sin presentarlas como verdad clínica universal.",
+        "Localiza una discrepancia mediante la cadena de procedencia sintética.",
+        "Compara el informe multidimensional con un único porcentaje de calidad y explica cuál es más auditable."
       ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
+      "deliverables": ["Tabla de mappings con equivalencia y versión.", "Ejemplo de CodeSystem–ValueSet–binding.", "Panel separado de conformance, completeness y plausibility.", "Cadena de procedencia de un caso problemático.", "Registro de pérdidas semánticas.", "Conclusión dependiente del uso.", "Lista priorizada de fallos de interoperabilidad."],
+      "checking_criteria": ["No se fuerza equivalencia terminológica inexistente.", "Sistema y versión de código quedan trazados.", "Cada métrica tiene definición y denominador.", "Plausibility no se confunde con corrección.", "La procedencia permite localizar una transformación.", "Las limitaciones son específicas y no genéricas.", "La salida conserva casos fallidos además de exitosos.", "El razonamiento puede repetirse con otro conjunto sintético."]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
+      "title": "Reto autónomo: auditoría extremo a extremo",
       "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
+        "Recibe un flujo sintético ajeno o reutiliza el anterior ocultando temporalmente sus resultados esperados.",
+        "Audita por capas: transporte, estructura, identidad, referencias, terminología, unidades, calidad y procedencia.",
+        "Prioriza hallazgos por impacto sobre la preservación de información, no por facilidad de corrección.",
+        "Propón una prueba de regresión para cada hallazgo crítico o importante.",
+        "Entrega una conclusión que diferencie evidencia observada de inferencias pendientes."
       ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de integración con sistemas sanitarios y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte historias clínicas, APIs y estándares y calidad.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
+      "problems": [
+        "Detecta al menos un fallo de identidad o duplicación.",
+        "Detecta una referencia rota o ambigua.",
+        "Detecta una incompatibilidad de perfil o versión.",
+        "Detecta un problema de terminología o mapping.",
+        "Detecta una unidad o contexto semántico incompatible.",
+        "Evalúa conformance con reglas declaradas.",
+        "Evalúa completeness para el uso especificado.",
+        "Evalúa plausibility sin asumir que equivale a verdad.",
+        "Comprueba si la procedencia permite reconstruir cada transformación.",
+        "Diseña una prueba de regresión para el hallazgo de mayor prioridad.",
+        "Separa lo que U4 permite afirmar de lo que exigiría U5.",
+        "Separa lo que U4 permite afirmar de lo que exigiría U6."
       ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
-      ]
+      "deliverables": ["Informe de auditoría por capas.", "Matriz de hallazgos y severidad.", "Evidencia reproducible de cada hallazgo.", "Pruebas de regresión propuestas.", "Mapa de procedencia.", "Conclusión técnica delimitada.", "Handoff explícito hacia U5 y U6."],
+      "checking_criteria": ["La auditoría cubre todas las capas declaradas.", "Cada hallazgo tiene evidencia reproducible.", "La severidad se justifica por impacto en información o uso.", "Las pruebas de regresión podrían detectar recurrencia.", "No se ocultan fallos no resueltos.", "La procedencia está documentada.", "No se afirma seguridad o eficacia clínica.", "El informe permite a un tercero decidir qué corregir a continuación."]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar historias clínicas como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar historias clínicas en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre historias clínicas y APIs demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir estándares y calidad después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Datos e interoperabilidad al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"error": "Decir que dos sistemas son interoperables porque ambos usan FHIR.", "correction": "Declarar versión, perfiles, extensiones, terminologías, operaciones y contrato del caso y demostrar compatibilidad con pruebas."},
+    {"error": "Confundir Resource.id con un identificador clínico persistente.", "correction": "Separar identidad lógica del recurso de identifiers de negocio y documentar política de copia, reconciliación y referencias."},
+    {"error": "Asumir que un HTTP 200 significa intercambio correcto.", "correction": "Verificar estructura, referencias, semántica, unidades, valores y procedencia además del transporte."},
+    {"error": "Tratar validación de perfil como prueba de verdad clínica.", "correction": "La conformidad solo demuestra reglas del perfil; plausibilidad, corrección y utilidad requieren evidencia adicional."},
+    {"error": "Forzar todo código local a una terminología estándar.", "correction": "Clasificar equivalencia y conservar casos no mapeables o aproximados con pérdida semántica explícita."},
+    {"error": "Usar CodeSystem y ValueSet como sinónimos.", "correction": "El primero define un sistema de conceptos; el segundo selecciona conceptos pertinentes y puede integrar múltiples sistemas."},
+    {"error": "Promediar todas las métricas en un único porcentaje de calidad.", "correction": "Reportar dimensiones separadas con denominador, criterio y uso previsto para no ocultar fallos diferentes."},
+    {"error": "Eliminar el código o valor original después de una transformación.", "correction": "Conservar procedencia, versión y representación fuente cuando sea necesaria para auditar o revertir mappings."},
+    {"error": "Probar solo el happy path.", "correction": "Predefinir recursos inválidos, referencias rotas, códigos fuera de conjunto, unidades incompatibles y cambios de versión."},
+    {"error": "Concluir utilidad clínica o conformidad regulatoria desde pruebas técnicas.", "correction": "Limitar U4 a evidencia técnica y semántica; transferir evaluación clínica/económica a U5 y privacidad/regulación/implementación a U6."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar integración con sistemas sanitarios?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan historias clínicas y APIs?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; estándares y calidad puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre estándares y calidad?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre integración con sistemas sanitarios?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Datos e interoperabilidad?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question": "¿Por qué transportar JSON correctamente no demuestra interoperabilidad semántica?", "answer": "Porque el receptor puede analizar la sintaxis y aun interpretar de forma diferente códigos, unidades, identidad, temporalidad o contexto.", "reasoning": "La semántica exige reglas compartidas y pruebas de preservación de significado.", "common_error": "Equiparar conectividad o parseo con comprensión clínica."},
+    {"question": "¿Qué información falta cuando alguien afirma solamente que una API 'usa FHIR'?", "answer": "Como mínimo versión, perfiles, extensiones, terminologías, operaciones y reglas del caso de uso que deben ser compatibles.", "reasoning": "FHIR base deja grados de libertad que se concretan en implementaciones y perfiles.", "common_error": "Tratar el nombre del estándar como contrato completo."},
+    {"question": "¿Qué diferencia hay entre Resource.id e identifier?", "answer": "Resource.id identifica lógicamente un recurso en un contexto de servidor; identifier representa identificadores de negocio o dominio y puede tener otro ciclo de vida.", "reasoning": "Separarlos evita duplicados y referencias incorrectas al mover recursos.", "common_error": "Copiar ids locales como si fueran identificadores universales."},
+    {"question": "¿Qué demuestra que un recurso pase validación FHIR contra un perfil?", "answer": "Que satisface las reglas estructurales, cardinalidades, tipos, bindings e invariantes evaluadas para ese perfil; no demuestra verdad ni utilidad clínica.", "reasoning": "Conformidad es una capa de calidad, no una validación del mundo real.", "common_error": "Interpretar 'valid' como clínicamente correcto."},
+    {"question": "¿Por qué un mapping aproximado debe conservarse como aproximado?", "answer": "Porque ocultar la pérdida semántica puede hacer que el receptor trate conceptos distintos como equivalentes y produzca análisis o decisiones incorrectas.", "reasoning": "La interoperabilidad prioriza fidelidad de significado sobre completar todos los campos.", "common_error": "Forzar un destino para alcanzar 100 % de mapping."},
+    {"question": "¿Cómo se diferencian CodeSystem y ValueSet?", "answer": "CodeSystem define conceptos y códigos de un sistema; ValueSet selecciona el conjunto de conceptos permitido o pertinente para un contexto y puede combinar sistemas.", "reasoning": "La distinción es esencial para comprender bindings y validación terminológica.", "common_error": "Llamar ValueSet a cualquier lista completa de códigos de un sistema."},
+    {"question": "¿Por qué completeness depende del uso?", "answer": "Porque los elementos necesarios cambian según la tarea; un conjunto puede estar completo para una finalidad e incompleto para otra.", "reasoning": "El denominador debe derivarse de requisitos definidos antes de medir.", "common_error": "Hablar de completitud global sin especificar campos requeridos ni propósito."},
+    {"question": "¿Qué aporta Provenance y qué no demuestra?", "answer": "Registra contexto sobre fuentes, agentes y actividades que generaron o modificaron recursos; facilita trazabilidad, pero no certifica que el contenido sea verdadero o seguro.", "reasoning": "Procedencia es evidencia contextual para investigar confianza y reproducibilidad.", "common_error": "Confundir trazabilidad con garantía automática de calidad."},
+    {"question": "¿Qué debe contener una prueba extremo a extremo convincente?", "answer": "Entrada conocida, resultado esperado, versiones, paso por el flujo completo y comparación de estructura, identidad, referencias, semántica, unidades, valores y procedencia.", "reasoning": "Solo así se puede localizar en qué capa una transformación alteró información.", "common_error": "Comprobar únicamente que la API respondió sin error."},
+    {"question": "¿Qué no puede concluir U4 después de una batería técnica completamente satisfactoria?", "answer": "No puede afirmar por sí sola seguridad, eficacia, beneficio clínico, equidad, cumplimiento de privacidad o conformidad regulatoria de un despliegue real.", "reasoning": "Esas afirmaciones requieren evidencia y procesos adicionales abordados en U5, U6 y contextos profesionales.", "common_error": "Convertir interoperabilidad técnica en validación clínica o regulatoria."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Integración con sistemas sanitarios."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"topic": "Historia clínica electrónica", "connection": "FHIR, perfiles, terminologías e identidad permiten construir contratos interoperables para información clínica estructurada sin asumir que todos los EHR modelan igual el mismo concepto."},
+    {"topic": "Laboratorio clínico", "connection": "LOINC y unidades explícitas permiten diferenciar observaciones que comparten un nombre coloquial pero difieren en muestra, propiedad, escala, tiempo o método."},
+    {"topic": "Imagen médica", "connection": "DICOM conserva objetos y servicios especializados de imagen mientras FHIR puede aportar contexto clínico y referencias, exigiendo enlaces trazables entre dominios."},
+    {"topic": "Aplicaciones integradas con EHR", "connection": "SMART App Launch ilustra descubrimiento de capacidades y acceso limitado a APIs FHIR; la arquitectura completa de privacidad y seguridad continúa en U6."},
+    {"topic": "Datos para analítica e investigación", "connection": "Conformance, completeness, plausibility y procedencia permiten evaluar si los datos son aptos para un uso analítico definido sin confundir disponibilidad con validez científica."}
   ],
   "sources": [
-    {
-      "title": "WHO Digital Health",
-      "organization": "World Health Organization",
-      "url": "https://www.who.int/health-topics/digital-health",
-      "type": "recurso institucional",
-      "description": "Estrategia, gobernanza y equidad en salud digital.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos clínicos y fisiológicos para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "UMLS",
-      "organization": "National Library of Medicine",
-      "url": "https://www.nlm.nih.gov/research/umls/",
-      "type": "sistema terminológico",
-      "description": "Integración y correspondencia entre vocabularios biomédicos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Privacy Framework",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/privacy-framework",
-      "type": "marco oficial",
-      "description": "Gestión de riesgos de privacidad en sistemas de información.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title": "FHIR R5 Documentation Index", "organization": "HL7 International", "url": "https://www.hl7.org/fhir/R5/documentation.html", "type": "estándar oficial", "description": "Documentación de FHIR R5 sobre recursos, perfiles, terminologías, validación, versionado y seguridad.", "verification_status": "verified_directly"},
+    {"title": "FHIR Resource References", "organization": "HL7 International", "url": "https://www.hl7.org/fhir/references.html", "type": "estándar oficial", "description": "Reglas normativas para Reference, identidades y referencias canónicas entre recursos FHIR.", "verification_status": "verified_directly"},
+    {"title": "Validating Resources — FHIR R5", "organization": "HL7 International", "url": "https://www.hl7.org/fhir/validation.html", "type": "documentación oficial", "description": "Describe validación de estructura, cardinalidad, dominios de valores, bindings, invariantes y perfiles.", "verification_status": "verified_directly"},
+    {"title": "FHIR Provenance", "organization": "HL7 International", "url": "https://hl7.org/fhir/provenance.html", "type": "estándar oficial", "description": "Define el recurso Provenance y su uso para registrar entidades, agentes y actividades que afectan recursos.", "verification_status": "verified_directly"},
+    {"title": "SMART App Launch 2.2.0", "organization": "HL7 International", "url": "https://www.hl7.org/fhir/smart-app-launch/", "type": "guía de implementación oficial", "description": "Versión publicada 2.2.0 basada en FHIR R4 para descubrimiento, autorización y autenticación de aplicaciones SMART.", "verification_status": "verified_directly"},
+    {"title": "SNOMED CT Implementation Support Portal", "organization": "SNOMED International", "url": "https://www.implementation.snomed.org/", "type": "recurso oficial", "description": "Guía y herramientas de implementación, terminología, mappings, reference sets y servicios SNOMED CT.", "verification_status": "verified_directly"},
+    {"title": "LOINC Users' Guide — Introduction", "organization": "Regenstrief Institute", "url": "https://loinc.org/kb/users-guide/introduction", "type": "estándar y guía oficial", "description": "Define LOINC como estándar global para identificar resultados de laboratorio y observaciones clínicas e interoperar con estándares de intercambio.", "verification_status": "verified_directly"},
+    {"title": "DICOM Current Edition", "organization": "Medical Imaging & Technology Alliance / NEMA", "url": "https://www.dicomstandard.org/current/", "type": "estándar oficial", "description": "Edición vigente y partes del estándar DICOM para información, codificación, servicios y comunicación de imagen médica.", "verification_status": "verified_directly"},
+    {"title": "A Harmonized Data Quality Assessment Terminology and Framework for the Secondary Use of Electronic Health Record Data", "organization": "Kahn et al.", "url": "https://pubmed.ncbi.nlm.nih.gov/27713905/", "type": "artículo indexado", "description": "Marco armonizado de calidad de datos EHR con conformance, completeness y plausibility y contextos de verification/validation.", "verification_status": "verified_directly"},
+    {"title": "Methods and dimensions of electronic health record data quality assessment: enabling reuse for clinical research", "organization": "Weiskopf y Weng", "url": "https://pubmed.ncbi.nlm.nih.gov/22733976/", "type": "artículo indexado", "description": "Revisión de dimensiones y métodos de evaluación de calidad de datos EHR, incluida dependencia de la tarea y evaluación sistemática.", "verification_status": "verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo en estado review. La curación interna utiliza fuentes oficiales y literatura indexada verificadas, pero no constituye revisión disciplinar humana externa. Todas las actividades usan escenarios y datos sintéticos: no deben emplearse historias clínicas reales, identificadores personales, credenciales ni tokens de sistemas sanitarios. Superar validación FHIR, pruebas de API, mappings terminológicos o controles de calidad en esta unidad no demuestra seguridad, eficacia, utilidad clínica, equidad, cumplimiento de privacidad ni conformidad regulatoria de un sistema real. U5 conserva evaluación clínica y económica; U6 conserva privacidad, regulación e implementación."
 }
