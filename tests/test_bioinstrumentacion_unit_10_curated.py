@@ -65,7 +65,7 @@ class BioinstrumentacionUnit10CuratedTests(unittest.TestCase):
             covered.update(item["linked_learning_outcome_ids"])
         self.assertEqual(covered, {f"BIOINST-U10-LO{i:02d}" for i in range(1,6)})
         text=json.dumps(self.assessment, ensure_ascii=False).lower()
-        for marker in ["±2.5 v", "tag v1.0", "raw.csv", "otra máquina", "se cambia el sensor", "se borra el resultado fallido", "uso clínico"]:
+        for marker in ["±2.5 v", "etiquetado v1.0", "raw.csv", "otra máquina", "se cambia el sensor", "se borra el resultado fallido", "uso clínico"]:
             self.assertIn(marker, text)
 
     def test_glossary_claims_and_sources_are_traceable(self) -> None:
