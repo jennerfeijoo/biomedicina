@@ -43,7 +43,7 @@ class BiofotonicaUnit03CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
             "radiancia",
-            "aproximación de difusión",
+            "ecuación de difusión",
             "cw",
             "dominio de frecuencia",
             "dominio temporal",
