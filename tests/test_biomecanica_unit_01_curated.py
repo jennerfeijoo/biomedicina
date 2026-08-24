@@ -26,7 +26,12 @@ class BiomecanicaUnit01CuratedTests(unittest.TestCase):
         text = SOURCE.read_text(encoding="utf-8").casefold()
         self.assertNotIn(GENERIC, text)
         self.assertNotIn("\\sum \\mathbf{f}=m\\mathbf{a}", text)
-        self.assertIn("\\mathbf r_b=\\mathbf r_{ba}\\mathbf r_a+\\mathbf p_{ba}".replace("\\mathbf r_{ba}", "\\mathbf r_{ba}"), text)
+        equations = [
+            equation["latex"]
+            for section in self.unit["theory_sections"]
+            for equation in section.get("equations", [])
+        ]
+        self.assertIn("\\mathbf r_B=\\mathbf R_{BA}\\mathbf r_A+\\mathbf p_{BA}", equations)
 
     def test_theory_is_kinematic_and_substantive(self) -> None:
         sections = self.unit["theory_sections"]
@@ -43,7 +48,7 @@ class BiomecanicaUnit01CuratedTests(unittest.TestCase):
             "reproducibilidad",
         ):
             self.assertIn(concept, theory)
-        self.assertNotIn("fuerzas y momentos que producen", theory.split("sin atribuir todavía", 1)[0] if "sin atribuir todavía" in theory else "")
+        self.assertIn("sin atribuir todavía las causas mecánicas", theory)
 
     def test_guided_activity_is_scaffolded_and_synthetic(self) -> None:
         activities = self.unit["guided_activities"]
