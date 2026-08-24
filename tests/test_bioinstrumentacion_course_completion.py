@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "bioinstrumentacion"
 
+# Final normal-user commit: the corpus below was already validated strictly and regenerated.
+
 
 class BioinstrumentacionCourseCompletionTests(unittest.TestCase):
     def test_course_is_content_complete_but_human_review_remains_pending(self) -> None:
