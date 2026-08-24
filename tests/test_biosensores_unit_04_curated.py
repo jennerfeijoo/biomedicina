@@ -80,7 +80,7 @@ class BiosensoresUnit04CuratedTests(unittest.TestCase):
         for term in ("inmovilización", "edc/nhs", "biofouling", "número de reynolds", "número de péclet", "tiempo de residencia"):
             self.assertIn(term, terms)
         examples = json.dumps(self.unit["worked_examples"], ensure_ascii=False).casefold()
-        for result in ("100 s", "re=0.1", "pe=2000", "5 min"):
+        for result in ("100 s", "re=0.1", "pe=ul/d=2000", "5 min"):
             self.assertIn(result, examples)
 
     def test_sources_are_directly_verified_and_disciplinary(self) -> None:
