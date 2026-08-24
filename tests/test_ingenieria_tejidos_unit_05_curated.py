@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Final user-authored trigger after generated publication synchronization.
+
 import json
 import unittest
 from pathlib import Path
