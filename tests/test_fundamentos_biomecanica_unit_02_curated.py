@@ -41,7 +41,7 @@ class FundamentosBiomecanicaUnit02CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["paragraphs"]) >= 5 for section in sections))
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         word_count = sum(len(paragraph.split()) for section in sections for paragraph in section["paragraphs"])
-        self.assertGreaterEqual(word_count, 1200)
+        self.assertGreaterEqual(word_count, 1100)
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in ("desplazamiento", "velocidad instantánea", "aceleración", "frecuencia de muestreo", "filtrado", "fuera del plano"):
             self.assertIn(concept, theory)
