@@ -121,6 +121,6 @@ class DesarrolloDispositivosMedicosUnit04CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir verificación con validación", purpose)
 
 
-# Final user-authored trigger after descriptor synchronization and semantic regression repair for U4.
+# Final user-authored trigger after publication synchronized the U4 curriculum descriptor.
 if __name__ == "__main__":
     unittest.main()
