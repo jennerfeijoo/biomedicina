@@ -32,12 +32,43 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Repair Biomateriales U4 JSON syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path('data/course_redevelopment/biomateriales/units/unit-04.json')
+          mirror = Path('data/generated_units/biomateriales/unit-04.json')
+          test = Path('tests/test_biomateriales_unit_04_curated.py')
+
+          text = source.read_text(encoding='utf-8')
+          broken = r'"latex": "f_{rec}=\\frac{m_{productos\ recuperados}}{m_{perdida\ del\ especimen}}"'
+          fixed = r'"latex": "f_{rec}=\\frac{m_{recuperada}}{m_{perdida}}"'
+          if broken not in text:
+              raise SystemExit('Expected malformed recovery equation was not found')
+          text = text.replace(broken, fixed, 1)
+          json.loads(text)
+          source.write_text(text, encoding='utf-8')
+          mirror.write_text(text, encoding='utf-8')
+
+          test_text = test.read_text(encoding='utf-8')
+          old_test = r'r"f_{rec}=\\frac{m_{productos\\ recuperados}}{m_{perdida\\ del\\ especimen}}"'
+          new_test = r'r"f_{rec}=\\frac{m_{recuperada}}{m_{perdida}}"'
+          if old_test not in test_text:
+              raise SystemExit('Expected regression equation was not found')
+          test.write_text(test_text.replace(old_test, new_test, 1), encoding='utf-8')
+          PY
+
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
+          python -m unittest tests.test_biomateriales_unit_04_curated
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
@@ -65,20 +96,29 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Restore temporary workflow changes and commit
         shell: bash
         run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f .github/workflows/fix-biomateriales-u4-json-temp.yml global-generation.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A -- \
+            .github/workflows/synchronize-generated-site.yml \
+            .github/workflows/fix-biomateriales-u4-json-temp.yml \
+            data/course_redevelopment/biomateriales/units/unit-04.json \
+            data/generated_units/biomateriales/unit-04.json \
+            tests/test_biomateriales_unit_04_curated.py \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "No hay cambios que confirmar."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Repair and synchronize Biomateriales U4"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
