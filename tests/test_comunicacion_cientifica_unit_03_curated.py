@@ -40,7 +40,7 @@ class ComunicacionCientificaUnit03CuratedTests(unittest.TestCase):
             "métodos",
             "resultados",
             "discusión",
-            "resumen estructurado",
+            "resúmenes estructurados",
             "guías de reporte",
             "referencias",
             "trazabilidad",
