@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-# Final user-authored validation trigger after publication synchronization.
+# Final user-authored gate trigger after generated-site synchronization on the current branch head.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "laboratorio-biomecanica" / "units" / "unit-02.json"
 MIRROR = ROOT / "data" / "generated_units" / "laboratorio-biomecanica" / "unit-02.json"
