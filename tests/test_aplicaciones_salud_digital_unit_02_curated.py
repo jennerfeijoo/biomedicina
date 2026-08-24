@@ -42,7 +42,7 @@ class AplicacionesSaludDigitalUnit02CuratedTests(unittest.TestCase):
             "efectividad, eficiencia y satisfacción",
             "tecnologías de asistencia",
             "think-aloud",
-            "tasa de finalización",
+            "una tasa alta de finalización",
             "tarea crítica",
             "validación de factores humanos",
         ):
