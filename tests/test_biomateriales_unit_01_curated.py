@@ -75,5 +75,6 @@ class BiomaterialesUnit01CuratedTests(unittest.TestCase):
         self.assertIn("no uses datos de pacientes", text)
 
 
+# Final user-authored trigger after deterministic source/public synchronization.
 if __name__ == "__main__":
     unittest.main()
