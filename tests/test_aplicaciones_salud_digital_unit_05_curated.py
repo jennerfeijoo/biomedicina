@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# User-authored CI trigger after public HTML synchronization.
+# Final user-authored CI trigger after publication metadata synchronization.
 
 import json
 import unittest
