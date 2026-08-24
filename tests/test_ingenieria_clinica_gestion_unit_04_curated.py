@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# User-authored validation trigger after public-site synchronization.
+# Final user-authored validation trigger after publication metadata synchronization.
 import json
 import unittest
 from pathlib import Path
