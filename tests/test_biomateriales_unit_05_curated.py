@@ -49,7 +49,7 @@ class BiomaterialesUnit05CuratedTests(unittest.TestCase):
             "propiedades del volumen de propiedades de superficie",
             "ángulo de contacto",
             "una micrografía atractiva no es una medición representativa",
-            "profundidad de análisis",
+            "profundidad efectiva",
             "extractables y leachables",
         ):
             self.assertIn(phrase, theory)
