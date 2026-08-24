@@ -40,7 +40,7 @@ class ImagenesBiomedicasUnit06CuratedTests(unittest.TestCase):
             "tamaño de píxel",
             "fantoma",
             "línea base",
-            "drl",
+            "diagnostic reference levels",
             "campo magnético estático",
             "índice térmico",
         ):
