@@ -60,14 +60,19 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
                 self.assertGreaterEqual(len(unit["topics"]), 4)
                 self.assertGreaterEqual(len(unit["examples"]), 2)
                 self.assertGreaterEqual(len(unit["activities"]), 1)
+                self.assertTrue(all(activity["deliverables"] for activity in unit["activities"]))
+                self.assertTrue(all(activity["estimated_duration_minutes"] for activity in unit["activities"]))
                 self.assertTrue(unit["glossary_entry_ids"])
                 self.assertTrue(unit["source_ids"])
                 self.assertEqual(len(unit["claim_ids"]), 4)
                 assessment = load(f"assessments/unit-{n:02d}.json")
                 self.assertEqual(assessment["unit_id"], unit["id"])
                 self.assertGreaterEqual(len(assessment["items"]), 8)
+                self.assertTrue(all(item["difficulty"] != "unclassified" for item in assessment["items"]))
+                self.assertTrue(all(item["cognitive_level"] != "unclassified" for item in assessment["items"]))
                 self.assertTrue(all(item["answer_key"]["explanation"] for item in assessment["items"]))
                 self.assertTrue(all(item["feedback"]["correct"] and item["feedback"]["incorrect"] for item in assessment["items"]))
+                self.assertTrue(all(item["source_ids"] for item in assessment["items"]))
 
     def test_course_learning_outcomes_are_covered(self) -> None:
         course_los = {item["id"] for item in self.course["learning_outcomes"]}
@@ -79,7 +84,9 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
         source_ids = {item["id"] for item in self.sources["sources"]}
         self.assertGreaterEqual(len(source_ids), 25)
         self.assertEqual(self.sources.get("coverage_gaps"), [])
-        self.assertTrue(all(item.get("verification_status") != "unverified" for item in self.sources["sources"]))
+        self.assertTrue(
+            all(item.get("verification_status") not in (None, "", "unverified") for item in self.sources["sources"])
+        )
         entries = self.glossary["entries"]
         self.assertGreaterEqual(len(entries), 80)
         self.assertTrue(all(entry.get("source_ids") for entry in entries))
@@ -90,6 +97,7 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
         for claim in claims:
             self.assertIn(claim["source_id"], source_ids)
             self.assertIn(claim["text"], canonical_text[claim["unit_id"]])
+            self.assertIsNone(claim["reviewer_validation_id"])
 
     def test_course_assessment_is_complete_and_weighted(self) -> None:
         assessment = self.course_assessment
@@ -98,7 +106,7 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
         self.assertEqual(sum(item["weight_percent"] for item in assessment["midterm_blueprint"]), 100)
         self.assertEqual(sum(item["weight_percent"] for item in assessment["capstone"]["rubric"]), 100)
         self.assertGreaterEqual(len(assessment["diagnostic"]["questions"]), 5)
-        self.assertGreaterEqual(len(assessment["capstone"]["required_deliverables"]), 6)
+        self.assertGreaterEqual(len(assessment["capstone"]["required_deliverables"]), 8)
 
     def test_course_preserves_evidence_boundaries(self) -> None:
         text = json.dumps(self.units, ensure_ascii=False).casefold()
@@ -116,6 +124,6 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
         self.assertTrue(all(item["status"] == "planned" for item in self.media["items"]))
 
 
-# Trigger the repository's current one-shot canonical closure workflow.
+# Final regression: content closure is machine-checkable; human review remains explicitly pending.
 if __name__ == "__main__":
     unittest.main()
