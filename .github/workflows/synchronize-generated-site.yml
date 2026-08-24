@@ -32,19 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Bootstrap and finalize canonical Desarrollo de Dispositivos Médicos
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! -f data/courses/desarrollo-dispositivos-medicos/course.json ]]; then
-            python scripts/migrate_course_to_canonical.py \
-              --subject desarrollo-dispositivos-medicos \
-              --course-code DDM
-          fi
-          python scripts/finalize_desarrollo_dispositivos_canonical_temp.py
-          python -m unittest tests.test_desarrollo_dispositivos_medicos_canonical_course
-          python scripts/validate_academic_courses.py
-
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -78,28 +65,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit canonical closure and self-clean
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          git rm -f .github/workflows/canonicalize-desarrollo-dispositivos-temp.yml || true
-          git rm -f scripts/finalize_desarrollo_dispositivos_canonical_temp.py || true
           git add -A -- \
-            .github/workflows/synchronize-generated-site.yml \
-            data/courses/desarrollo-dispositivos-medicos \
-            tests/test_desarrollo_dispositivos_medicos_canonical_course.py \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El cierre canónico y el sitio público ya están sincronizados."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Close canonical Desarrollo de Dispositivos Médicos course"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
