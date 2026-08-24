@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Bootstrap canonical Desarrollo de Dispositivos Médicos
+      - name: Bootstrap and finalize canonical Desarrollo de Dispositivos Médicos
         shell: bash
         run: |
           set -euo pipefail
@@ -41,23 +41,9 @@ jobs:
               --subject desarrollo-dispositivos-medicos \
               --course-code DDM
           fi
+          python scripts/finalize_desarrollo_dispositivos_canonical_temp.py
+          python -m unittest tests.test_desarrollo_dispositivos_medicos_canonical_course
           python scripts/validate_academic_courses.py
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          root = Path('data/courses/desarrollo-dispositivos-medicos')
-          required = [
-              root / 'course.json', root / 'glossary.json', root / 'sources.json',
-              root / 'claims.json', root / 'media.json',
-              root / 'assessments/course-assessment.json',
-          ]
-          required += [root / 'units' / f'unit-{i:02d}.json' for i in range(1, 7)]
-          required += [root / 'assessments' / f'unit-{i:02d}.json' for i in range(1, 7)]
-          for path in required:
-              if not path.exists():
-                  raise SystemExit(f'Missing canonical output: {path}')
-              json.loads(path.read_text(encoding='utf-8'))
-          PY
 
       - name: Validate structured academic sources
         shell: bash
@@ -92,7 +78,7 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit canonical bootstrap and deterministic public site
+      - name: Commit canonical closure and self-clean
         shell: bash
         run: |
           set -euo pipefail
@@ -101,17 +87,19 @@ jobs:
           git fetch origin main
           git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git rm -f .github/workflows/canonicalize-desarrollo-dispositivos-temp.yml || true
+          git rm -f scripts/finalize_desarrollo_dispositivos_canonical_temp.py || true
           git add -A -- \
             .github/workflows/synchronize-generated-site.yml \
             data/courses/desarrollo-dispositivos-medicos \
+            tests/test_desarrollo_dispositivos_medicos_canonical_course.py \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El corpus canónico y el sitio público ya están sincronizados."
+            echo "El cierre canónico y el sitio público ya están sincronizados."
             exit 0
           fi
-          git commit -m "Bootstrap canonical Desarrollo de Dispositivos Médicos"
+          git commit -m "Close canonical Desarrollo de Dispositivos Médicos course"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
