@@ -131,6 +131,6 @@ class DesarrolloDispositivosMedicosUnit05CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir validación con verificación técnica", purpose)
 
 
-# Final user-authored trigger after public HTML synchronization for U5.
+# Final user-authored trigger after publication synchronized the U5 curriculum descriptor.
 if __name__ == "__main__":
     unittest.main()
