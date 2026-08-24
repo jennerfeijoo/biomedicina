@@ -120,6 +120,6 @@ class DesarrolloDispositivosMedicosUnit04CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir verificación con validación", purpose)
 
 
-# Permanent regression for the curated U4 verification unit.
+# Final user-authored trigger after public-site synchronization for U4.
 if __name__ == "__main__":
     unittest.main()
