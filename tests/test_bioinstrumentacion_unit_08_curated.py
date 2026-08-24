@@ -50,7 +50,7 @@ class BioinstrumentacionUnit08CuratedTests(unittest.TestCase):
         self.assertEqual(len(activity["deliverables"]), 6)
         self.assertEqual(len(activity["checking_criteria"]), 10)
         text = " ".join(activity["instructions"] + activity["tasks"] + activity["checking_criteria"]).lower()
-        for marker in ["antes de calcular", "datos sintéticos", "calibración", "ajuste", "correlacion", "guard band", "validez clínica"]:
+        for marker in ["antes de calcular", "conjunto sintético", "calibración", "ajuste", "correlacion", "guard band", "validez clínica"]:
             self.assertIn(marker, text)
         self.assertIn("no se modifican para acomodar resultados", text)
 
