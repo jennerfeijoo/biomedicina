@@ -126,6 +126,6 @@ class DesarrolloDispositivosMedicosUnit03CuratedTests(unittest.TestCase):
         self.assertIn("sin reducir el riesgo a una multiplicación de escalas ordinales", purpose)
 
 
-# Final user-authored retry after a scheduler cancellation of the structured-connections workflow.
+# Final user-authored retry after U2 terminology alignment was merged into main.
 if __name__ == "__main__":
     unittest.main()
