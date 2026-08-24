@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final user-authored validation trigger after JSON syntax repair.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "biofotonica" / "units" / "unit-04.json"
 MIRROR = ROOT / "data" / "generated_units" / "biofotonica" / "unit-04.json"
