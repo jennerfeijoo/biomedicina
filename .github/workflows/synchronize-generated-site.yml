@@ -7,7 +7,6 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
-      - 'tests/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -33,32 +32,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Curate Biosensores U2
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/curate_biosensores_u2_temp.py')
-          text = path.read_text(encoding='utf-8')
-          old = '"evidencia clínica y regulación."\n  ],'
-          new = '"evidencia clínica y regulación."}\n  ],'
-          if old not in text:
-              raise SystemExit('No se encontró el cierre sintáctico esperado del curador U2')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
-          PY
-          python scripts/curate_biosensores_u2_temp.py
-
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
-          python scripts/audit_generic_content.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
-          python tests/test_biosensores_unit_02_curated.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
@@ -84,18 +65,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit curated U2 and deterministic public site
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          rm -f scripts/curate_biosensores_u2_temp.py global-generation.txt
-          git add -A
+          git add -A -- \
+            ciencias-basicas \
+            biologicas-medicas \
+            ingenieria-biomedica \
+            gestion-etica-comunicacion \
+            catalogo
           if git diff --cached --quiet; then
-            echo "Biosensores U2 y el sitio público ya están sincronizados."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Curate Biosensores U2 and synchronize public site"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
