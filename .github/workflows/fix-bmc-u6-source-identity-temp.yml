@@ -1,0 +1,57 @@
+name: Fix BMC U6 source identity temp
+
+on:
+  push:
+    branches:
+      - codex/biomecanica-medios-continuos-unit-06-academic-quality
+
+permissions:
+  contents: write
+
+jobs:
+  fix-source-identity:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: codex/biomecanica-medios-continuos-unit-06-academic-quality
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Give ASME standards stable distinct identities
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path('data/course_redevelopment/biomecanica-medios-continuos/units/unit-06.json')
+          mirror = Path('data/generated_units/biomecanica-medios-continuos/unit-06.json')
+          data = json.loads(source.read_text(encoding='utf-8'))
+          urls = {
+              'asme-vv10': 'https://www.asme.org/codes-standards/find-codes-standards/standard-for-verification-and-validation-in-computational-solid-mechanics',
+              'asme-vvuq10-2': 'https://www.asme.org/codes-standards/find-codes-standards/the-role-of-uncertainty-quantification-in-verification-and-validation-of-computational-solid-mechanics-models',
+          }
+          found = set()
+          for item in data.get('sources', []):
+              source_id = item.get('id')
+              if source_id in urls:
+                  item['url'] = urls[source_id]
+                  found.add(source_id)
+          if found != set(urls):
+              raise SystemExit(f'Missing expected ASME sources: {sorted(set(urls)-found)}')
+          rendered = json.dumps(data, ensure_ascii=False, indent=2) + '\n'
+          source.write_text(rendered, encoding='utf-8')
+          mirror.write_text(rendered, encoding='utf-8')
+          if source.read_bytes() != mirror.read_bytes():
+              raise SystemExit('Source/mirror mismatch')
+          PY
+      - name: Remove temporary workflow and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/fix-bmc-u6-source-identity-temp.yml
+          git add data/course_redevelopment/biomecanica-medios-continuos/units/unit-06.json data/generated_units/biomecanica-medios-continuos/unit-06.json
+          git commit -m "Fix distinct ASME source identities in continuum biomechanics U6"
+          git push origin HEAD:codex/biomecanica-medios-continuos-unit-06-academic-quality
