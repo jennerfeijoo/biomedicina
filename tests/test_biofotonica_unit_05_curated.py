@@ -48,7 +48,7 @@ class BiofotonicaUnit05CuratedTests(unittest.TestCase):
             "fotosensibilizador",
             "oxígeno singlete",
             "perfusión",
-            "clasificación de producto",
+            "clase de producto",
         ):
             self.assertIn(concept, theory)
         self.assertIn("no debe usarse como sinónimo", theory)
