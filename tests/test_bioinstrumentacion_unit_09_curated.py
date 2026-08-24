@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final clean-head gate trigger; no academic behavior is changed by this comment.
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "bioinstrumentacion"
 
