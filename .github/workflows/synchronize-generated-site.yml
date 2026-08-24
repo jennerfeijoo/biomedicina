@@ -32,40 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Normalize Clinical Engineering U6 terminology
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          paths = [
-              Path('data/course_redevelopment/ingenieria-clinica-gestion/units/unit-06.json'),
-              Path('data/generated_units/ingenieria-clinica-gestion/unit-06.json'),
-          ]
-          replacements = [
-              (
-                  'No declarar éxito por completar el calendario de formación.',
-                  'No declarar éxito solo porque se completó el calendario de formación.',
-              ),
-              (
-                  'El Model for Improvement utiliza ciclos Plan-Do-Study-Act para probar cambios',
-                  'El Model for Improvement utiliza ciclos Plan-Do-Study-Act (PDSA) para probar cambios',
-              ),
-          ]
-          for path in paths:
-              text = path.read_text(encoding='utf-8')
-              for old, new in replacements:
-                  if old not in text:
-                      raise SystemExit(f'No se encontró el texto esperado en {path}: {old}')
-                  text = text.replace(old, new, 1)
-              json.loads(text)
-              path.write_text(text, encoding='utf-8')
-          if paths[0].read_bytes() != paths[1].read_bytes():
-              raise SystemExit('U6 source/mirror diverged after terminology normalization')
-          PY
-
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -78,7 +44,6 @@ jobs:
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
           fi
-          python -m unittest tests.test_ingenieria_clinica_gestion_unit_06_curated -v
 
       - name: Regenerate site deterministically
         shell: bash
@@ -100,25 +65,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit normalized U6 and deterministic public site
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git add -A -- \
-            .github/workflows/synchronize-generated-site.yml \
-            data/course_redevelopment/ingenieria-clinica-gestion/units/unit-06.json \
-            data/generated_units/ingenieria-clinica-gestion/unit-06.json \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "U6 y sitio público ya están sincronizados."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Normalize Clinical Engineering U6 and regenerate site"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
