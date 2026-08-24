@@ -57,7 +57,7 @@ class IngenieriaTejidosUnit01CuratedTests(unittest.TestCase):
         self.assertIn("no constituye revisión disciplinar externa", notice)
         self.assertIn("unidades posteriores", notice)
         self.assertIn("eficacia clínica", purpose)
-        self.assertIn("no tratar la tríada clásica como una receta universal", purpose)
+        self.assertIn("sin tratar la tríada clásica como una receta universal", purpose)
 
     def test_guided_activities_use_progressive_scaffolding_and_synthetic_cases(self) -> None:
         activities = self.unit["guided_activities"]
@@ -104,7 +104,7 @@ class IngenieriaTejidosUnit01CuratedTests(unittest.TestCase):
     def test_in_vitro_evidence_is_not_overclaimed(self) -> None:
         theory = " ".join(p for section in self.unit["theory_sections"] for p in section["paragraphs"]).casefold()
         assessment = json.dumps(self.unit["self_assessment"], ensure_ascii=False).casefold()
-        self.assertIn("seguridad, eficacia", theory)
+        self.assertIn("seguridad, beneficio clínico", theory)
         self.assertIn("no puede concluirse", assessment)
         self.assertIn("clínicamente beneficioso", assessment)
 
