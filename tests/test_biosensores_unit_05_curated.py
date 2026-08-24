@@ -9,8 +9,6 @@ SOURCE = ROOT / "data" / "course_redevelopment" / "biosensores" / "units" / "uni
 MIRROR = ROOT / "data" / "generated_units" / "biosensores" / "unit-05.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
-# Trigger the one-shot JSON repair workflow; the regression remains permanent.
-
 
 class BiosensoresUnit05CuratedTests(unittest.TestCase):
     @classmethod
@@ -49,7 +47,8 @@ class BiosensoresUnit05CuratedTests(unittest.TestCase):
             "correlación",
         ):
             self.assertIn(concept, theory)
-        self.assertIn("correlación alta no demuestra acuerdo", theory)
+        self.assertIn("correlación alta puede ocurrir", theory)
+        self.assertIn("separar asociación de acuerdo", theory)
 
     def test_core_equations_are_present(self) -> None:
         equations = {
