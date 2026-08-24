@@ -32,12 +32,20 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Build canonical Imágenes Biomédicas closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/curate_imagenes_biomedicas_canonical_temp.py
+
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
+          python scripts/validate_academic_courses.py --course imagenes-biomedicas --strict-content
+          python -m unittest tests.test_imagenes_biomedicas_canonical_course
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
@@ -45,11 +53,11 @@ jobs:
             python scripts/validate_bioinstrumentation_public_canonical.py
           fi
 
-      - name: Regenerate site deterministically
+      - name: Regenerate Imágenes Biomédicas deterministically
         shell: bash
         run: |
           set -o pipefail
-          python scripts/generate_site.py --force --with-units 2>&1 | tee global-generation.txt
+          python scripts/generate_site.py --force --subject imagenes-biomedicas --with-units 2>&1 | tee global-generation.txt
 
       - name: Validate regenerated site
         shell: bash
@@ -65,20 +73,26 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Remove temporary curator and restore workflow
+        if: success()
+        shell: bash
+        run: |
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f scripts/curate_imagenes_biomedicas_canonical_temp.py global-generation.txt
+
+      - name: Commit canonical corpus and deterministic public site
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+            data/courses/imagenes-biomedicas \
+            ingenieria-biomedica/imagenes-biomedicas \
+            .github/workflows/synchronize-generated-site.yml \
+            scripts/curate_imagenes_biomedicas_canonical_temp.py
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "El cierre canónico y el sitio público ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Close canonical Imágenes Biomédicas course"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
