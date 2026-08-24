@@ -28,7 +28,7 @@ class BiomaterialesUnit05CuratedTests(unittest.TestCase):
         self.assertNotIn(GENERIC, self.text)
         for concept in (
             "mensurando",
-            "astm e8/e8m-24",
+            "astm e8/e8m-25",
             "astm d638-22",
             "iso 25178-2:2021",
             "sem/eds",
@@ -49,7 +49,7 @@ class BiomaterialesUnit05CuratedTests(unittest.TestCase):
             "propiedades del volumen de propiedades de superficie",
             "ángulo de contacto",
             "una micrografía atractiva no es una medición representativa",
-            "profundidad efectiva",
+            "profundidad de análisis",
             "extractables y leachables",
         ):
             self.assertIn(phrase, theory)
@@ -101,18 +101,22 @@ class BiomaterialesUnit05CuratedTests(unittest.TestCase):
 
     def test_sources_are_directly_verified_and_current(self) -> None:
         sources = self.unit["sources"]
-        self.assertGreaterEqual(len(sources), 10)
+        self.assertGreaterEqual(len(sources), 14)
         self.assertTrue(all(item.get("verification_status") == "verified_directly" for item in sources))
         urls = {item["url"] for item in sources}
         expected = {
             "https://www.iso.org/standard/64750.html",
             "https://www.iso.org/standard/82241.html",
             "https://www.iso.org/standard/75138.html",
-            "https://store.astm.org/e0008_e0008m-24.html",
-            "https://store.astm.org/standards/d638/1000",
+            "https://store.astm.org/e0008_e0008m-25.html",
+            "https://store.astm.org/d0638-22.html",
             "https://www.iso.org/standard/74591.html",
-            "https://store.astm.org/standards/d7334",
+            "https://store.astm.org/d7334-08r22.html",
             "https://www.bipm.org/en/doi/10.59161/jcgm100-2008e",
+            "https://store.astm.org/e0384-22.html",
+            "https://www.iso.org/standard/85223.html",
+            "https://store.astm.org/e1508-12ar19.html",
+            "https://www.nist.gov/srd/surface-data",
         }
         self.assertTrue(expected.issubset(urls))
 
