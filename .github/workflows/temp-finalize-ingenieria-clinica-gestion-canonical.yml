@@ -1,0 +1,61 @@
+name: Temporary canonical Clinical Engineering closure
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-clinica-gestion-canonical-closure
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/ingenieria-clinica-gestion-canonical-closure
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Bootstrap canonical course
+        run: python scripts/migrate_course_to_canonical.py --subject ingenieria-clinica-gestion --course-code ICG
+
+      - name: Finalize academic corpus
+        run: python scripts/finalize_ingenieria_clinica_gestion_canonical_temp.py
+
+      - name: Validate canonical structures and regression
+        run: |
+          set -euo pipefail
+          python scripts/validate_academic_courses.py
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python scripts/audit_generic_content.py
+          python -m unittest discover -s tests -p 'test_ingenieria_clinica_gestion_canonical_course.py' -v
+
+      - name: Synchronize editorial status and public site
+        run: |
+          set -euo pipefail
+          python scripts/sync_catalog_statuses.py
+          python scripts/generate_site.py --force --with-units
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Remove temporary automation
+        run: |
+          rm scripts/finalize_ingenieria_clinica_gestion_canonical_temp.py
+          rm .github/workflows/temp-finalize-ingenieria-clinica-gestion-canonical.yml
+
+      - name: Commit canonical closure
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Close canonical Clinical Engineering course"
+          git push origin HEAD:codex/ingenieria-clinica-gestion-canonical-closure
