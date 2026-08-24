@@ -1,4 +1,4 @@
-# Final user-authored trigger after publication metadata synchronization.
+# Final human-triggered verification after publication synchronized the subject metadata.
 from __future__ import annotations
 
 import json
