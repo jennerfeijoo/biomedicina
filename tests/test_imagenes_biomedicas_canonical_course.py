@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSE_ROOT = ROOT / "data" / "courses" / "imagenes-biomedicas"
 GENERIC = "concepto de la unidad que debe definirse"
-# Final user-authored trigger after canonical corpus generation.
+# Final user-authored trigger after public synchronization.
 
 
 def load(relative: str) -> dict:
