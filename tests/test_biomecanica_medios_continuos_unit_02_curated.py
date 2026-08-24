@@ -86,5 +86,6 @@ class BiomecanicaMediosContinuosUnit02CuratedTests(unittest.TestCase):
         self.assertIn("queda para u3", purpose)
 
 
+# Final user-authored validation trigger after public-site synchronization.
 if __name__ == "__main__":
     unittest.main()
