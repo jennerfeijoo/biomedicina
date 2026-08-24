@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final user-authored validation trigger after deterministic synchronization.
+# Final user-authored trigger after publication metadata synchronization.
 
 import json
 import unittest
