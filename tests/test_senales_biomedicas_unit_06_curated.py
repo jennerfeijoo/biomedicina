@@ -51,7 +51,7 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
             "discriminación",
-            "curva de calibración",
+            "gráfica de calibración",
             "incertidumbre epistémica",
             "fidelidad",
             "estabilidad",
@@ -86,7 +86,7 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
             "no se convierte automáticamente en biomarcador causal",
             "la explicación tampoco sustituye validación",
             "no deben interpretarse automáticamente como efectos causales",
-            "no presenta atribución como causalidad",
+            "no se presenta atribución como causalidad",
         ):
             self.assertIn(phrase, self.text)
 
@@ -175,6 +175,6 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
         self.assertIn("beneficio clínico demostrado", purpose)
 
 
-# Final user-authored trigger after publication synchronization.
+# Final user-authored trigger after publication synchronization and regression alignment.
 if __name__ == "__main__":
     unittest.main()
