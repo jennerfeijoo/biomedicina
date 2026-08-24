@@ -44,26 +44,30 @@ jobs:
               Path('data/course_redevelopment/biosensores/units/unit-05.json'),
               Path('data/generated_units/biosensores/unit-05.json'),
           ]
-          needle = '"error": "Modificar simultáneamente superficie, transductor y análisis durante la validación."'
+          needles = [
+              '"error": "Modificar simultáneamente superficie, transductor y análisis durante la validación."',
+              '"question": "¿Qué queda fuera de U5 aunque el expediente analítico sea sólido?"',
+          ]
           for path in targets:
               lines = path.read_text(encoding='utf-8').splitlines()
-              matches = [i for i, line in enumerate(lines) if needle in line]
-              if len(matches) != 1:
-                  raise SystemExit(f'Se esperó una línea objetivo en {path}; encontradas={len(matches)}')
-              index = matches[0]
-              stripped = lines[index].rstrip()
-              if stripped.endswith('"}'):
-                  pass
-              elif stripped.endswith('"'):
-                  lines[index] = stripped + '}'
-              else:
-                  raise SystemExit(f'Final inesperado en línea objetivo de {path}: {stripped[-20:]}')
+              for needle in needles:
+                  matches = [i for i, line in enumerate(lines) if needle in line]
+                  if len(matches) != 1:
+                      raise SystemExit(f'Se esperó una línea objetivo en {path}; {needle[:35]}... encontradas={len(matches)}')
+                  index = matches[0]
+                  stripped = lines[index].rstrip()
+                  if stripped.endswith('"}') or stripped.endswith('"},'):
+                      continue
+                  if stripped.endswith('"'):
+                      lines[index] = stripped + '}'
+                      continue
+                  raise SystemExit(f'Final inesperado en línea objetivo de {path}: {stripped[-30:]}')
               text = '\n'.join(lines) + '\n'
               json.loads(text)
               path.write_text(text, encoding='utf-8')
           if targets[0].read_bytes() != targets[1].read_bytes():
               raise SystemExit('La fuente y el espejo de U5 dejaron de ser idénticos')
-          print('U5 reparada y espejo exacto verificado.')
+          print('U5 reparada, JSON válido y espejo exacto verificado.')
           PY
 
       - name: Validate structured academic sources
