@@ -45,7 +45,7 @@ class AplicacionesSaludDigitalUnit03CuratedTests(unittest.TestCase):
         self.assertEqual(len(sections), 4)
         self.assertTrue(all(len(section["paragraphs"]) >= 5 for section in sections))
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
-        theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
+        theory = json.dumps(sections, ensure_ascii=False).casefold()
         for phrase in (
             "calidad de telehealth",
             "sensor, contacto con el cuerpo",
