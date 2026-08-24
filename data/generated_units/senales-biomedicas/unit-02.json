@@ -6,386 +6,581 @@
   "slug": "calidad-y-preprocesamiento",
   "title": "Calidad y preprocesamiento",
   "status": "review",
-  "purpose": "Integrar ruido, artefactos, filtrado y línea base para resolver un caso de conservación de rasgos clínicamente relevantes con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Evaluar y diseñar un preprocesamiento reproducible de señales biomédicas que distinga ruido, interferencia y artefacto; justifique corrección de línea base, filtros pasaaltos, pasabajos, pasabanda y notch; cuantifique respuesta en frecuencia, fase, retardo y distorsión; y demuestre con señales sintéticas o abiertas qué rasgos se conservan o alteran antes de cualquier interpretación clínica.",
   "learning_objectives": [
-    "Definir ruido, artefactos y filtrado y línea base mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte ruido con artefactos y delimite el papel de filtrado y línea base.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre conservación de rasgos clínicamente relevantes con incertidumbre y límites.",
-    "Transferir el método de Calidad y preprocesamiento a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir ruido aleatorio, interferencia determinista, artefacto fisiológico o instrumental y deriva de línea base, vinculando cada categoría con una hipótesis de origen y un control verificable.",
+    "Interpretar respuesta en frecuencia, banda de transición, orden, fase, retardo de grupo y respuesta al impulso para anticipar cómo un filtro modifica una señal biomédica.",
+    "Comparar filtros FIR e IIR y procesamiento causal frente a fase cero, seleccionando una estrategia coherente con análisis offline o tiempo real y declarando sus limitaciones.",
+    "Cuantificar el compromiso entre reducción de ruido y distorsión de rasgos usando SNR, error temporal, amplitud, área, correlación o métricas específicas de la modalidad.",
+    "Diseñar y auditar correcciones de línea base, notch y filtrado de banda sin asumir que una señal más suave o visualmente limpia es más fiel.",
+    "Construir un expediente reproducible de preprocesamiento con señal cruda preservada, parámetros, versiones, pruebas sintéticas, análisis de sensibilidad y límites de interpretación."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Calidad y preprocesamiento",
+      "heading": "1. Ruido, interferencia, artefacto y línea base",
       "paragraphs": [
-        "La unidad «Calidad y preprocesamiento» sitúa ruido, artefactos y filtrado y línea base dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Señales Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Calidad y preprocesamiento» en Señales Biomédicas, «ruido», se entiende así: Variación no deseada que se superpone a una medición y limita la recuperación de la información de interés. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Calidad y preprocesamiento», «artefactos», aporta otra dimensión al problema de Señales Biomédicas: Patrones de una medición o imagen producidos por adquisición, movimiento o procesamiento y no por la estructura de interés. Su relación con ruido debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Calidad y preprocesamiento» en Señales Biomédicas, «filtrado y línea base», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Preprocesar no significa embellecer una señal, sino transformar datos con un objetivo explícito y una pérdida aceptable. Antes de filtrar se debe describir qué componente se considera información, qué componente se considera perturbación y por qué. El mismo patrón puede ser ruido para una tarea y señal para otra: una componente lenta que molesta al detectar picos puede contener información relevante en un análisis de tendencia o de potenciales evocados.",
+        "El ruido suele reservarse para fluctuaciones no deseadas con componente aleatoria, mientras que una interferencia puede tener estructura reconocible, como la red eléctrica o un reloj digital. Un artefacto es una señal producida por movimiento, contacto, actividad fisiológica ajena al fenómeno de interés o procesamiento, y puede solaparse espectralmente con la señal útil. Esa superposición impide asumir que toda energía fuera de una banda prefijada es descartable.",
+        "La deriva de línea base es una variación lenta del nivel sobre el que se superpone la señal. En ECG puede asociarse con respiración, movimiento o cambios de impedancia; en PPG el movimiento y la presión del sensor pueden alterar tanto la componente pulsátil como la base. Eliminar la línea base con un pasaaltos demasiado agresivo puede deformar segmentos lentos, desplazar amplitudes o introducir oscilaciones que no estaban presentes en la señal original.",
+        "Una estrategia rigurosa prioriza reducir la perturbación en su origen cuando sea posible. Mejorar contacto, referencia, fijación mecánica, blindaje, geometría, sincronización o condiciones de registro puede ser más informativo que aplicar un filtro posterior. Cuando la corrección digital sea necesaria, la señal cruda debe conservarse para permitir auditoría, repetir el análisis con otros parámetros y comprobar si una conclusión depende del preprocesamiento.",
+        "La clasificación inicial se convierte en hipótesis comprobable mediante perturbaciones sintéticas y controles. Si se sospecha interferencia de red, se puede inyectar una sinusoidal conocida y comprobar su atenuación; si se sospecha deriva, se añade una componente lenta y se mide cuánto cambia la morfología de interés tras corregirla. El objetivo no es demostrar que un algoritmo limpia, sino caracterizar qué elimina, qué conserva y qué puede inventar."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Calidad y preprocesamiento.",
-        "Relacionar ruido, artefactos y filtrado y línea base mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "La etiqueta ruido depende de la tarea y no autoriza a descartar automáticamente una banda.",
+        "Ruido, interferencia, artefacto y deriva tienen mecanismos distintos y requieren controles distintos.",
+        "Reducir perturbaciones en la adquisición suele ser preferible a corregirlas ciegamente después.",
+        "La señal cruda debe preservarse y el preprocesamiento debe poder repetirse con parámetros alternativos."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Respuesta del filtro, fase, causalidad y distorsión",
       "paragraphs": [
-        "Para «Calidad y preprocesamiento» dentro de Señales Biomédicas, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Señales Biomédicas, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre ruido o artefactos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Calidad y preprocesamiento», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Señales Biomédicas, la incertidumbre de «Calidad y preprocesamiento» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Un filtro lineal e invariante en el tiempo se caracteriza por su respuesta al impulso h[n] o, de manera equivalente, por su respuesta en frecuencia H(e^{jω}). La magnitud indica cuánto se atenúa o amplifica cada frecuencia y la fase describe cómo se desplazan sus componentes temporales. Dos filtros con magnitud parecida pueden producir formas de onda distintas si su fase o su respuesta transitoria difieren.",
+        "Las bandas de paso y rechazo no están separadas por una frontera ideal. Los filtros reales tienen una banda de transición, ondulación y atenuación finitas. Aumentar el orden puede estrechar la transición, pero también incrementa retardo, sensibilidad numérica, ringing o complejidad. Por eso una especificación útil declara frecuencias de paso y rechazo, atenuación requerida, tolerancia de amplitud, fase o retardo y el rasgo de la señal que no debe deformarse.",
+        "Los filtros FIR pueden diseñarse con fase lineal exacta, lo que produce un retardo constante para las componentes de la banda de interés, a costa de órdenes potencialmente mayores. Los IIR suelen alcanzar transiciones comparables con menos coeficientes, pero presentan fase no lineal salvo diseños o compensaciones específicas. Ninguna familia es universalmente superior: la elección depende de precisión temporal, recursos, estabilidad, latencia y uso offline o en tiempo real.",
+        "El filtrado hacia adelante y hacia atrás, usado en funciones de fase cero, cancela el retardo de fase neto pero es acausal: utiliza muestras futuras y no puede reproducirse como algoritmo estrictamente en tiempo real. Además, aplicar un filtro dos veces modifica la respuesta de magnitud y puede producir transitorios en los bordes. Por tanto, escribir solamente 'filtro de 0.5–40 Hz' es insuficiente para reproducir el procedimiento.",
+        "Los artefactos de filtrado son especialmente relevantes cuando se estudian latencias, pendientes, segmentos lentos o potenciales evocados. La literatura de ECG y EEG muestra que filtros agresivos pueden crear desplazamientos, ringing o picos de polaridad opuesta. La verificación debe incluir señales sintéticas con componentes conocidas y comparar antes y después no solo en una gráfica, sino con métricas de amplitud, latencia, área y error."
+      ],
+      "equations": [
+        {
+          "latex": "y[n]=\\sum_{k=-\\infty}^{\\infty} h[k]x[n-k]",
+          "meaning": "Convolución discreta: la salida de un sistema LTI es la combinación de la entrada con su respuesta al impulso."
+        },
+        {
+          "latex": "H(e^{j\\omega})=\\sum_{n=-\\infty}^{\\infty}h[n]e^{-j\\omega n}",
+          "meaning": "Transformada de tiempo discreto de la respuesta al impulso; describe magnitud y fase del filtro."
+        },
+        {
+          "latex": "\\tau_g(\\omega)=-\\frac{d\\phi(\\omega)}{d\\omega}",
+          "meaning": "Retardo de grupo: mide cómo la fase del filtro desplaza temporalmente las componentes alrededor de cada frecuencia."
+        }
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "Magnitud y fase forman parte de la especificación del filtro; una sola frecuencia de corte no basta.",
+        "Mayor orden no significa automáticamente mejor fidelidad.",
+        "FIR, IIR, causal y fase cero implican compromisos diferentes de latencia, fase y complejidad.",
+        "La respuesta al impulso y las pruebas sintéticas ayudan a detectar ringing y desplazamientos."
       ]
     },
     {
-      "heading": "Aplicación razonada: conservación de rasgos clínicamente relevantes",
+      "heading": "3. Estrategias de preprocesamiento por modalidad",
       "paragraphs": [
-        "En la unidad «Calidad y preprocesamiento» de Señales Biomédicas, el caso conductor es conservación de rasgos clínicamente relevantes. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Calidad y preprocesamiento» conecta ruido con artefactos y utiliza filtrado y línea base como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «conservación de rasgos clínicamente relevantes» en Señales Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Calidad y preprocesamiento» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de conservación de rasgos clínicamente relevantes y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "En ECG, el preprocesamiento suele enfrentarse a deriva de línea base, interferencia de red y actividad muscular. La revisión de Luo y Johnston subraya el equilibrio entre supresión de ruido y deformación de la señal deseada. Un pasaaltos que mejora la estabilidad visual puede alterar componentes de baja frecuencia y segmentos como ST; un notch puede introducir ringing o modificar amplitudes si su banda se solapa con contenido útil.",
+        "En EEG y potenciales relacionados con eventos, los filtros pasaaltos merecen especial cautela. Widmann y colaboradores recomiendan evaluar respuesta del filtro, orden, transición, fase y causalidad; Tanner y colaboradores demostraron que determinados pasaaltos pueden introducir efectos artificiales que preceden temporalmente a la actividad real. En consecuencia, la selección debe estar ligada al componente, métrica y ventana temporal, y validarse con datos simulados o análisis de sensibilidad.",
+        "En sEMG, el movimiento, la interfaz electrodo-piel, la red eléctrica y otras fuentes fisiológicas pueden contaminar el registro. Merletti y Cerone enfatizan prácticas de detección y acondicionamiento además del filtrado. Una banda fija aplicada sin considerar tarea, electrodo, frecuencia de muestreo y objetivo puede eliminar información o conservar artefactos. Cuando se estima amplitud, fatiga u otra característica, el filtro debe formar parte de la definición del procesamiento reportado.",
+        "En PPG, el movimiento puede modificar amplitud, línea base y morfología, y su espectro puede coincidir con el pulso. Las revisiones de PPG describen enfoques que van desde filtrado convencional hasta índices de calidad y métodos adaptativos, pero ningún filtro separa de forma perfecta movimiento y fisiología cuando comparten banda. Acelerometría, canales ópticos adicionales o criterios de calidad pueden aportar evidencia complementaria que una sola transformación temporal no ofrece.",
+        "La consecuencia pedagógica es que no existe un 'pipeline de limpieza' universal para ECG, EEG, sEMG y PPG. Una receta reutilizable debe formularse en términos de preguntas: qué rasgo se preserva, qué perturbación se modela, qué información auxiliar existe, qué latencia es admisible, qué comparación evidencia distorsión y qué parámetro cambiaría la conclusión. Los valores concretos se justifican para cada tarea y no se presentan como umbrales clínicos universales."
       ],
       "equations": [
         {
           "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
-          "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
-          }
+          "meaning": "Relación señal-ruido en potencia; solo es comparable si señal, ruido, banda y ventana se definen de forma consistente."
+        },
+        {
+          "latex": "\\mathrm{RMSE}=\\sqrt{\\frac{1}{N}\\sum_{n=1}^{N}(x[n]-\\hat{x}[n])^2}",
+          "meaning": "Error cuadrático medio entre una referencia y una señal procesada; puede complementar métricas de amplitud o latencia."
+        },
+        {
+          "latex": "\\rho=\\frac{\\mathrm{cov}(x,\\hat{x})}{\\sigma_x\\sigma_{\\hat{x}}}",
+          "meaning": "Correlación lineal; una correlación alta no garantiza conservación exacta de amplitud ni tiempo."
         }
       ],
       "key_points": [
-        "Delimitar el caso de conservación de rasgos clínicamente relevantes antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "ECG, EEG, sEMG y PPG comparten principios de filtrado, pero no una receta universal.",
+        "La distorsión debe evaluarse sobre el rasgo que se pretende medir, no solo mediante apariencia o SNR.",
+        "Artefactos con espectro solapado requieren información o controles adicionales, no solo filtros más agresivos.",
+        "Los parámetros de preprocesamiento forman parte de la definición reproducible del resultado."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "4. Validación del preprocesamiento y trazabilidad",
       "paragraphs": [
-        "La reproducibilidad de «Calidad y preprocesamiento» en Señales Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Calidad y preprocesamiento» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Señales Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Calidad y preprocesamiento» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de ruido, artefactos y filtrado y línea base debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Señales Biomédicas.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre conservación de rasgos clínicamente relevantes. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Señales Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un pipeline debe validarse antes de aplicarlo como rutina. La prueba mínima combina señales sintéticas, segmentos reales o abiertos y condiciones límite. En una señal sintética se conocen de antemano amplitud, frecuencia, latencia y perturbación, por lo que es posible medir atenuación, desplazamiento y ringing. En datos abiertos se evalúa si esos hallazgos siguen siendo plausibles ante variabilidad y artefactos más complejos.",
+        "Comparar solamente la señal cruda y la filtrada sobre una figura invita a decisiones subjetivas. Es preferible definir métricas antes del análisis: error en amplitud de picos, desplazamiento temporal, error de área, variación de intervalos, RMSE, SNR o una métrica de calidad específica. Cada métrica responde a una pregunta distinta. Una reducción de RMSE global podría ocultar una distorsión pequeña pero importante en la característica concreta que se medirá después.",
+        "Los bordes y discontinuidades requieren atención. Muchos algoritmos rellenan, reflejan o extrapolan datos para reducir transitorios; la elección puede modificar los primeros y últimos segundos de una ventana. En análisis por épocas, filtrar cada época por separado puede producir bordes repetidos, mientras que filtrar una señal continua y luego segmentar cambia el contexto temporal del filtro. La decisión debe registrarse y evaluarse con pruebas dirigidas.",
+        "La reproducibilidad exige conservar señal cruda, código o procedimiento, librería y versión, tipo de filtro, orden, frecuencias de paso y rechazo o corte, frecuencia de muestreo, método de fase, padding, tratamiento de NaN, secuencia de operaciones y criterios para excluir segmentos. Cambiar el orden entre remuestreo, filtrado, corrección de base y detección puede cambiar el resultado aunque se usen los mismos bloques.",
+        "El cierre responsable separa calidad técnica de interpretación clínica. Demostrar que un pipeline reduce una perturbación sintética y preserva un rasgo definido no demuestra sensibilidad diagnóstica, utilidad clínica ni seguridad de un dispositivo. La unidad termina cuando el estudiante puede justificar una transformación, mostrar su función de transferencia o respuesta, cuantificar sus efectos y declarar qué conclusiones permanecen fuera del alcance."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Una prueba sintética con verdad conocida es una herramienta central para validar filtros.",
+        "La métrica de fidelidad se elige según el rasgo que se usará después.",
+        "Padding, bordes y orden de operaciones son parámetros metodológicos, no detalles invisibles.",
+        "Validación técnica del preprocesamiento no equivale a validación clínica."
       ]
     }
   ],
   "glossary": [
     {
       "term": "ruido",
-      "definition": "Variación no deseada que se superpone a una medición y limita la recuperación de la información de interés."
+      "definition": "Componente no deseado, con frecuencia estocástico, que reduce la capacidad de estimar la señal o rasgo de interés."
     },
     {
-      "term": "artefactos",
-      "definition": "Patrones de una medición o imagen producidos por adquisición, movimiento o procesamiento y no por la estructura de interés."
+      "term": "interferencia",
+      "definition": "Perturbación estructurada procedente de otra fuente o sistema, como la red eléctrica o un reloj electrónico."
     },
     {
-      "term": "filtrado y línea base",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "artefacto",
+      "definition": "Patrón no atribuible al fenómeno objetivo y originado por movimiento, contacto, otra fisiología, adquisición o procesamiento."
     },
     {
-      "term": "Calidad y preprocesamiento",
-      "definition": "Dominio de estudio que integra ruido, artefactos, filtrado y línea base para resolver un problema delimitado y verificable."
+      "term": "deriva de línea base",
+      "definition": "Variación lenta del nivel de referencia sobre el que se superpone la señal de interés."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de conservación de rasgos clínicamente relevantes usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "filtro pasaaltos",
+      "definition": "Sistema que atenúa componentes de baja frecuencia respecto de una banda superior definida."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "filtro pasabajos",
+      "definition": "Sistema que atenúa componentes de alta frecuencia respecto de una banda inferior definida."
     },
     {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "filtro pasabanda",
+      "definition": "Sistema que preserva preferentemente una banda intermedia y atenúa frecuencias inferiores y superiores."
     },
     {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "filtro notch",
+      "definition": "Filtro de rechazo estrecho destinado a atenuar una banda limitada, por ejemplo alrededor de una interferencia conocida."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "FIR",
+      "definition": "Filtro de respuesta finita al impulso; puede diseñarse con fase lineal exacta."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "IIR",
+      "definition": "Filtro de respuesta infinita al impulso que emplea realimentación y puede lograr transiciones pronunciadas con menor orden."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "frecuencia de corte",
+      "definition": "Frecuencia definida por el criterio del diseño donde la respuesta alcanza un nivel especificado; no describe por sí sola toda la transición."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "banda de transición",
+      "definition": "Intervalo entre banda de paso y rechazo donde cambia progresivamente la magnitud de la respuesta."
+    },
+    {
+      "term": "respuesta al impulso",
+      "definition": "Salida del sistema ante un impulso ideal y representación temporal completa de un sistema LTI."
+    },
+    {
+      "term": "respuesta en frecuencia",
+      "definition": "Descripción compleja de magnitud y fase con que un sistema modifica cada frecuencia."
+    },
+    {
+      "term": "fase",
+      "definition": "Ángulo de la respuesta compleja que determina desplazamientos relativos de componentes frecuenciales."
+    },
+    {
+      "term": "retardo de grupo",
+      "definition": "Derivada negativa de la fase respecto de la frecuencia y medida del retardo local de componentes espectrales."
+    },
+    {
+      "term": "ringing",
+      "definition": "Oscilación transitoria introducida por la respuesta del filtro alrededor de discontinuidades o cambios rápidos."
+    },
+    {
+      "term": "fase cero",
+      "definition": "Procesamiento acausal offline que elimina el retardo de fase neto, habitualmente mediante filtrado hacia adelante y atrás."
+    },
+    {
+      "term": "padding",
+      "definition": "Extensión artificial de los bordes usada para reducir transitorios durante filtrado o transformaciones."
+    },
+    {
+      "term": "SNR",
+      "definition": "Relación entre potencia atribuida a señal y potencia atribuida a ruido bajo una definición explícita de banda y ventana."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Calidad y preprocesamiento",
-      "scenario": "Un equipo propone estudiar conservación de rasgos clínicamente relevantes, pero su pregunta mezcla ruido, artefactos y filtrado y línea base sin definir unidades, referencias ni resultado admisible.",
+      "title": "Pasaaltos y deriva de línea base en un ECG sintético",
+      "scenario": "Se construye un ECG sintético con componente lenta de 0.2 Hz y un segmento de interés cuya amplitud debe conservarse. Se comparan dos pasaaltos con distinta frecuencia de transición.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de ruido, artefactos y filtrado y línea base.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Guardar la señal limpia como referencia y añadir solamente una deriva conocida.",
+        "Aplicar ambos filtros con el mismo método de fase y registrar orden y respuesta.",
+        "Medir reducción de la deriva y cambio de amplitud y área del segmento de interés.",
+        "Repetir con la deriva de distinta amplitud para evaluar sensibilidad.",
+        "Elegir el filtro que cumple un criterio de deriva sin exceder el error de morfología predefinido."
       ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "El filtro más agresivo puede producir una línea base visualmente más estable y, al mismo tiempo, deformar más el rasgo que se pretende medir. La selección se decide por criterios cuantitativos, no por limpieza visual.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+        "La señal sintética no reproduce toda la variabilidad clínica.",
+        "El resultado depende del rasgo elegido y del diseño exacto del filtro.",
+        "No establece una frecuencia clínica universal."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre ruido y artefactos en el caso de conservación de rasgos clínicamente relevantes; una condición vinculada con filtrado y línea base podría producir el mismo patrón.",
+      "title": "Notch de red: atenuación frente a ringing",
+      "scenario": "Una señal sintética contiene un componente útil transitorio y una sinusoidal de red. Se compara un notch estrecho con uno de rechazo más amplio.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar filtrado y línea base como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Estimar amplitud de la interferencia antes del filtrado.",
+        "Inspeccionar respuesta en frecuencia y respuesta al impulso de ambos diseños.",
+        "Cuantificar atenuación en la frecuencia de red.",
+        "Medir overshoot o ringing alrededor del transitorio útil.",
+        "Documentar qué diseño satisface simultáneamente el rechazo y el límite de distorsión."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "Mayor rechazo o mayor ancho de notch no implica necesariamente mejor resultado si aumenta la deformación temporal de la señal útil.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "Una interferencia real puede variar en frecuencia y amplitud.",
+        "La presencia de armónicos puede requerir otra estrategia.",
+        "El ejemplo no sustituye una evaluación del entorno de adquisición."
+      ]
+    },
+    {
+      "title": "Filtro causal frente a fase cero",
+      "scenario": "Un evento sintético ocurre en t=2.000 s y se requiere estimar su latencia. Se procesa con un filtro causal y con una implementación hacia adelante y atrás.",
+      "reasoning_steps": [
+        "Usar la misma especificación de magnitud cuando sea posible.",
+        "Medir la latencia del máximo antes y después de cada procesamiento.",
+        "Calcular o inspeccionar el retardo de grupo del filtro causal.",
+        "Comprobar que el método de fase cero utiliza muestras futuras.",
+        "Separar la opción válida para análisis offline de la que podría implementarse en tiempo real."
+      ],
+      "interpretation": "La fase cero evita el retardo neto, pero no convierte el algoritmo en causal ni elimina automáticamente transitorios o cambios de magnitud.",
+      "limitations": [
+        "La latencia del máximo no resume toda la forma de onda.",
+        "Otros filtros pueden tener retardos dependientes de frecuencia.",
+        "Un sistema en tiempo real debe considerar además buffering y cómputo."
+      ]
+    },
+    {
+      "title": "Artefacto de movimiento en PPG con solapamiento espectral",
+      "scenario": "Una PPG sintética de 1.2 Hz se contamina con movimiento periódico cercano a 1.0 Hz y con una señal auxiliar de acelerómetro correlacionada con el movimiento.",
+      "reasoning_steps": [
+        "Mostrar que un simple pasabanda conserva tanto pulso como parte del movimiento.",
+        "Comparar espectros de PPG y acelerómetro.",
+        "Construir un criterio de calidad que marque ventanas con alta coherencia o correlación con el movimiento.",
+        "Comparar estimación de frecuencia pulsátil con y sin exclusión de ventanas contaminadas.",
+        "Declarar que la señal auxiliar aporta información que no está contenida en el PPG aislado."
+      ],
+      "interpretation": "Cuando señal y artefacto comparten banda, filtrar por frecuencia puede ser insuficiente; la información auxiliar y los índices de calidad permiten una decisión más informada.",
+      "limitations": [
+        "El modelo sintético simplifica la óptica y el movimiento real.",
+        "Correlación con aceleración no identifica todos los artefactos.",
+        "No valida un estimador clínico de frecuencia cardiaca."
+      ]
+    },
+    {
+      "title": "Sensibilidad de un ERP a la frecuencia pasaaltos",
+      "scenario": "Una onda lenta sintética se superpone a un componente ERP y se evalúan varios pasaaltos. El objetivo es conservar amplitud media y latencia del componente.",
+      "reasoning_steps": [
+        "Generar la señal limpia y una versión contaminada con deriva lenta.",
+        "Filtrar la misma señal con varias frecuencias de transición y parámetros documentados.",
+        "Medir SNR, amplitud media y latencia bajo cada opción.",
+        "Inspeccionar si aparecen deflexiones antes del componente verdadero.",
+        "Elegir parámetros mediante un compromiso explícito entre ruido y distorsión."
+      ],
+      "interpretation": "El mejor SNR no es suficiente si el filtro introduce una forma de onda que cambia la inferencia temporal o de amplitud.",
+      "limitations": [
+        "Un ERP sintético no representa todos los componentes ni poblaciones.",
+        "Las recomendaciones dependen del tipo de puntuación y diseño.",
+        "No se deben trasladar los parámetros sin revalidación."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Actividad guiada 1: anatomía de un filtro sin datos clínicos",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja solo con señales sintéticas generadas por ti; no conectes sensores a personas.",
+        "Define antes de filtrar qué componente es señal útil y qué perturbación añadirás.",
+        "Compara al menos un FIR y un IIR con frecuencia de muestreo conocida.",
+        "Guarda señal cruda, parámetros y resultados en archivos separados.",
+        "Responde primero con predicciones y después contrástalas con los resultados."
       ],
       "problems": [
-        "Define ruido mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo artefactos modifica o complementa a ruido.",
-        "Propón una prueba que distinga el papel de filtrado y línea base de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Genera dos sinusoides útiles y una interferencia adicional de frecuencia conocida.",
+        "Dibuja el espectro de la señal limpia y contaminada.",
+        "Especifica banda de paso, banda de rechazo y transición del filtro.",
+        "Compara magnitud de respuesta de un FIR y un IIR.",
+        "Compara la fase o el retardo de grupo de ambos.",
+        "Mide atenuación de la interferencia.",
+        "Mide error de amplitud de cada componente útil.",
+        "Inserta un impulso o escalón y observa ringing.",
+        "Repite con un filtro hacia adelante y atrás y explica por qué es acausal.",
+        "Redacta una decisión de diseño con un criterio cuantitativo de aceptación."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Notebook o script reproducible.",
+        "Tabla de especificaciones y métricas.",
+        "Figura de respuesta en frecuencia y señal antes/después.",
+        "Conclusión de máximo 180 palabras con una limitación."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "La señal útil y la perturbación se definen antes del procesamiento.",
+        "Se reportan frecuencia de muestreo, tipo, orden y bandas.",
+        "Se analiza magnitud y fase, no solo la señal temporal.",
+        "La conclusión usa métricas y no apariencia visual.",
+        "Se identifica explícitamente el carácter acausal del filtrado de fase cero.",
+        "Los datos son exclusivamente sintéticos."
       ]
     },
     {
-      "title": "Taller de evidencia: conservación de rasgos clínicamente relevantes",
+      "title": "Actividad guiada 2: preservar un rasgo frente a línea base y red",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Usa una señal sintética o un registro abierto de PhysioNet sin datos identificables.",
+        "Conserva una copia inmutable de la señal cruda y sus metadatos.",
+        "Predefine un rasgo que quieras preservar: amplitud, intervalo, área o latencia.",
+        "Añade perturbaciones sintéticas conocidas si utilizas un registro abierto.",
+        "Compara al menos tres configuraciones y registra también resultados desfavorables."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para ruido, artefactos y filtrado y línea base.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Selecciona un segmento y documenta frecuencia de muestreo y unidades.",
+        "Define una métrica de línea base y una métrica de fidelidad del rasgo.",
+        "Añade una deriva lenta de amplitud conocida.",
+        "Añade una interferencia sinusoidal de red de amplitud conocida.",
+        "Diseña una corrección de base conservadora.",
+        "Diseña una segunda opción más agresiva.",
+        "Diseña o justifica un notch y examina su respuesta al impulso.",
+        "Calcula la reducción de perturbación de cada pipeline.",
+        "Calcula el error del rasgo de interés respecto de la referencia.",
+        "Elige una opción o concluye que ninguna cumple los criterios predefinidos."
       ],
       "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Tabla de trazabilidad crudo→transformaciones→resultado.",
+        "Comparación de tres pipelines.",
+        "Métricas de perturbación y fidelidad.",
+        "Registro de parámetros y versiones.",
+        "Conclusión con criterio de aceptación y rechazo."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
+        "La señal cruda permanece disponible y separada.",
+        "Se conoce la verdad de al menos una perturbación inyectada.",
+        "La métrica de fidelidad corresponde al rasgo declarado.",
+        "Se reportan resultados negativos o distorsiones.",
+        "La elección está basada en criterios previos.",
+        "No se formula diagnóstico ni umbral clínico."
       ]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
+      "title": "Actividad guiada 3: auditoría de un pipeline publicado",
       "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
+        "Selecciona un método de filtrado descrito en una fuente académica o documentación técnica localizable.",
+        "Reconstruye solo la parte que pueda ejecutarse con datos sintéticos o abiertos.",
+        "Haz una lista explícita de parámetros reportados, inferidos y ausentes.",
+        "Ejecuta un análisis de sensibilidad cambiando un parámetro a la vez.",
+        "Presenta la auditoría como crítica metodológica, no como validación externa del estudio."
       ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de conservación de rasgos clínicamente relevantes y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte ruido, artefactos y filtrado y línea base.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
+      "problems": [
+        "Identifica el objetivo del preprocesamiento en la fuente.",
+        "Registra tipo de filtro, orden, frecuencias y frecuencia de muestreo si están disponibles.",
+        "Determina si el procesamiento es causal o de fase cero.",
+        "Identifica cómo se trataron bordes o padding.",
+        "Identifica el orden de las transformaciones.",
+        "Reproduce la respuesta en frecuencia del filtro descrito.",
+        "Aplica el pipeline a una señal sintética con verdad conocida.",
+        "Mide al menos dos tipos de distorsión.",
+        "Cambia un parámetro relevante y registra si cambia la conclusión.",
+        "Redacta qué información faltante impediría una reproducción exacta."
       ],
       "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
+        "Ficha de reproducibilidad.",
+        "Script o notebook sintético.",
+        "Tabla de parámetros reportados/ausentes.",
+        "Análisis de sensibilidad.",
+        "Recomendaciones de reporte metodológico."
       ],
       "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "La fuente está identificada con localizador estable.",
+        "No se inventan parámetros que la fuente no proporciona.",
+        "La prueba sintética tiene una referencia conocida.",
+        "Se cuantifica al menos una mejora y una posible distorsión.",
+        "Se diferencia reproducción técnica de validación científica o clínica.",
+        "Las recomendaciones se limitan al reporte y al método evaluado."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar ruido como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar ruido en una explicación."
+      "error": "Filtrar hasta que la señal se vea limpia.",
+      "correction": "Definir antes el rasgo, la perturbación y métricas de aceptación; una señal suave puede estar deformada."
     },
     {
-      "error": "Afirmar que una relación entre ruido y artefactos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Reportar solo 'band-pass 0.5–40 Hz'.",
+      "correction": "Registrar tipo, orden, bandas/cortes, frecuencia de muestreo, fase, padding, implementación y secuencia."
     },
     {
-      "error": "Añadir filtrado y línea base después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Suponer que fase cero significa ausencia total de artefactos.",
+      "correction": "La fase cero elimina retardo neto, pero sigue modificando magnitud y puede producir transitorios de borde."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Usar un notch por defecto sin demostrar interferencia de red.",
+      "correction": "Inspeccionar espectro, entorno y respuesta del filtro; justificar si el rechazo aporta beneficio."
     },
     {
-      "error": "Generalizar la conclusión de Calidad y preprocesamiento al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+      "error": "Eliminar línea base con un pasaaltos agresivo y después interpretar segmentos lentos.",
+      "correction": "Evaluar explícitamente deformación del componente lento mediante referencia sintética o análisis de sensibilidad."
+    },
+    {
+      "error": "Comparar SNR antes y después con bandas o ventanas distintas.",
+      "correction": "Mantener una definición consistente de señal, ruido, banda y ventana para que la comparación sea interpretable."
+    },
+    {
+      "error": "Aplicar el mismo pipeline a ECG, EEG, sEMG y PPG.",
+      "correction": "Derivar parámetros del fenómeno, rasgo, artefacto, adquisición y uso previsto de cada modalidad."
+    },
+    {
+      "error": "Filtrar cada época sin revisar efectos de borde.",
+      "correction": "Caracterizar padding y transitorios y comparar con filtrado continuo antes de segmentar cuando corresponda."
+    },
+    {
+      "error": "Sobrescribir o descartar los datos crudos.",
+      "correction": "Conservar datos originales inmutables y registrar cada transformación de forma reproducible."
+    },
+    {
+      "error": "Confundir mejora técnica del preprocesamiento con validez clínica.",
+      "correction": "Limitar la conclusión a las métricas y señales evaluadas; diagnóstico y utilidad clínica requieren evidencia independiente."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar conservación de rasgos clínicamente relevantes?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Por qué una componente de baja frecuencia no es automáticamente ruido?",
+      "answer": "Porque su relevancia depende de la tarea y puede contener parte del fenómeno de interés.",
+      "reasoning": "La clasificación señal/ruido es operacional y debe vincularse a un rasgo y uso previsto.",
+      "common_error": "Definir ruido solo por estar fuera de una banda habitual."
     },
     {
-      "question": "¿Cómo se relacionan ruido y artefactos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; filtrado y línea base puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Qué información falta si solo se reporta la frecuencia de corte?",
+      "answer": "Tipo de filtro, orden o transición, atenuación, fase, frecuencia de muestreo, implementación y tratamiento de bordes, entre otros.",
+      "reasoning": "La frecuencia de corte no determina la respuesta completa ni la reproducibilidad.",
+      "common_error": "Asumir que todos los filtros con el mismo corte son equivalentes."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre filtrado y línea base?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Qué diferencia práctica existe entre causal y fase cero?",
+      "answer": "Un filtro causal usa presente/pasado y puede operar en tiempo real; fase cero suele usar muestras futuras mediante procesamiento offline.",
+      "reasoning": "La fase temporal forma parte del uso previsto del algoritmo.",
+      "common_error": "Llamar fase cero a un filtro causal sin compensación."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Por qué el mejor SNR puede no ser el mejor pipeline?",
+      "answer": "Porque puede aumentar SNR mientras deforma amplitud, latencia, área o morfología del rasgo de interés.",
+      "reasoning": "Optimizar una métrica no garantiza fidelidad en otra.",
+      "common_error": "Seleccionar el pipeline por una sola métrica global."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Qué prueba revela artefactos introducidos por el filtro?",
+      "answer": "Aplicar el filtro a señales sintéticas con forma y eventos conocidos y medir desplazamiento, ringing y cambio de amplitud.",
+      "reasoning": "Con verdad conocida se puede atribuir el cambio al procesamiento.",
+      "common_error": "Inspeccionar únicamente datos reales sin referencia."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Qué significa retardo de grupo?",
+      "answer": "Describe el retardo local de componentes frecuenciales derivado de la pendiente de fase.",
+      "reasoning": "Un retardo dependiente de frecuencia puede cambiar la forma temporal de una señal.",
+      "common_error": "Confundirlo con un desplazamiento constante para cualquier filtro."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre conservación de rasgos clínicamente relevantes?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Por qué un notch no debe aplicarse automáticamente?",
+      "answer": "Porque puede no existir la interferencia, puede solaparse con señal útil y puede introducir ringing o distorsión.",
+      "reasoning": "Toda transformación debe resolver una perturbación demostrada con un coste evaluado.",
+      "common_error": "Considerar el notch una etapa inocua de limpieza."
     },
     {
-      "question": "¿Qué demuestra dominio de Calidad y preprocesamiento?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué debe preservarse para reproducir el preprocesamiento?",
+      "answer": "Datos crudos, frecuencia de muestreo, parámetros, código/versión, orden de operaciones, padding, exclusiones y criterios.",
+      "reasoning": "La salida depende tanto de parámetros como de implementación y secuencia.",
+      "common_error": "Guardar solo el archivo filtrado final."
+    },
+    {
+      "question": "¿Por qué el movimiento en PPG no siempre se elimina con un pasabanda?",
+      "answer": "Porque su contenido espectral puede solaparse con el pulso y alterar también la línea base y la morfología.",
+      "reasoning": "Cuando las fuentes comparten banda se necesita información adicional o criterios de calidad.",
+      "common_error": "Asumir separación perfecta por frecuencia."
+    },
+    {
+      "question": "¿Qué puede concluir una validación sintética exitosa?",
+      "answer": "Que el pipeline cumple métricas técnicas bajo las señales y perturbaciones simuladas; no demuestra validez clínica ni desempeño general.",
+      "reasoning": "El alcance de la inferencia se limita a condiciones evaluadas.",
+      "common_error": "Presentar una prueba sintética como validación clínica."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Conservación de rasgos clínicamente relevantes."
+      "topic": "Electrocardiografía",
+      "connection": "La corrección de línea base y el filtrado deben equilibrar reducción de perturbaciones con conservación de segmentos y morfología."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
+      "topic": "EEG y potenciales evocados",
+      "connection": "La selección de pasaaltos, pasabajos y fase puede modificar amplitudes y latencias e incluso generar deflexiones artificiales."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "topic": "Electromiografía de superficie",
+      "connection": "La calidad depende de detección, interfaz, interferencia y procesamiento; la banda y el filtrado forman parte de la definición del resultado."
     },
     {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+      "topic": "Fotopletismografía",
+      "connection": "El movimiento puede compartir banda con el pulso, por lo que índices de calidad o señales auxiliares pueden ser necesarios."
+    },
+    {
+      "topic": "Reproducibilidad biomédica",
+      "connection": "Conservar datos crudos, parámetros, versiones y pruebas sintéticas permite auditar si una conclusión depende del pipeline."
     }
   ],
   "sources": [
     {
-      "title": "Lessons in Electric Circuits",
-      "organization": "All About Circuits",
-      "url": "https://www.allaboutcircuits.com/textbook/",
-      "type": "libro abierto",
-      "description": "Circuitos, dispositivos y análisis con ejercicios.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "A review of electrocardiogram filtering",
+      "organization": "Journal of Electrocardiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/20851409/",
+      "type": "revisión metodológica",
+      "description": "Revisa antialiasing, línea base, rechazo de red, artefacto muscular y riesgos de distorsión en ECG.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "NIST Measurement Services",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/calibrations",
-      "type": "metrología",
-      "description": "Trazabilidad, calibración y servicios de medición.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Digital filter design for electrophysiological data—a practical approach",
+      "organization": "Journal of Neuroscience Methods",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/25128257/",
+      "type": "tutorial metodológico",
+      "description": "Guía práctica sobre respuesta, FIR/IIR, cortes, orden, fase, retardo, causalidad y artefactos de filtrado en EEG/MEG.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "PhysioNet",
+      "title": "How inappropriate high-pass filters can produce artifactual effects and incorrect conclusions in ERP studies",
+      "organization": "Psychophysiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/25903295/",
+      "type": "estudio metodológico",
+      "description": "Demuestra que determinados pasaaltos pueden introducir efectos artificiales en ERP y alterar conclusiones.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Tutorial. Surface EMG detection, conditioning and pre-processing: Best practices",
+      "organization": "Journal of Electromyography and Kinesiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/32763743/",
+      "type": "tutorial metodológico",
+      "description": "Buenas prácticas de detección, interferencia, filtrado, muestreo y conversión A/D en sEMG.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Photoplethysmogram Analysis and Applications: An Integrative Review",
+      "organization": "Frontiers in Physiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/35300400/",
+      "type": "revisión integradora",
+      "description": "Revisa generación de PPG, ruido, movimiento, preprocesamiento, detección de rasgos e índices de calidad.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Optimal filters for ERP research I: A general approach for selecting filter settings",
+      "organization": "Psychophysiology",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38297978/",
+      "type": "estudio metodológico",
+      "description": "Propone seleccionar filtros equilibrando SNR y distorsión para el componente, métrica y diseño específicos.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "PhysioNet databases",
       "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
+      "url": "https://physionet.org/about/database/",
       "type": "datos abiertos",
-      "description": "Señales fisiológicas y anotaciones para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "description": "Colecciones de señales fisiológicas y metadatos para prácticas reproducibles con datos abiertos.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "SciPy Signal",
+      "title": "SciPy Signal Processing",
       "organization": "SciPy project",
       "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
-      "type": "documentación",
-      "description": "Procesamiento digital, filtrado y análisis espectral.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "type": "documentación técnica",
+      "description": "Referencia de implementación para diseño, respuesta y aplicación de filtros en ejercicios reproducibles.",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo en estado review. Esta curación interna no constituye revisión disciplinar externa, validación clínica, diagnóstico, recomendación terapéutica, certificación ni conformidad regulatoria. Las actividades usan señales sintéticas o datos abiertos y no requieren ni autorizan conectar sensores, electrodos o dispositivos experimentales a personas."
 }
