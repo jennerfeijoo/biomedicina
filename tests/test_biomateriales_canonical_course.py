@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final user-authored CI trigger after canonical generation and public synchronization.
+# Final user-authored CI trigger after public index synchronization.
 
 import json
 import unittest
