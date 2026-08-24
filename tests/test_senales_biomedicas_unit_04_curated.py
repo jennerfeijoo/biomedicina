@@ -51,7 +51,7 @@ class SenalesBiomedicasUnit04CuratedTests(unittest.TestCase):
         for concept in (
             "periodograma",
             "welch",
-            "ventana hann",
+            "hann",
             "espectrograma",
             "potencia de banda",
             "cross-spectrum",
