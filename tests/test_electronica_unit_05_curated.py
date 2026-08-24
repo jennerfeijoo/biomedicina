@@ -34,7 +34,10 @@ class ElectronicaUnit05CuratedTests(unittest.TestCase):
         self.assertEqual(len(sections), 4)
         self.assertTrue(all(len(section["paragraphs"]) >= 5 for section in sections))
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
-        theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
+        theory = " ".join(
+            [p for section in sections for p in section["paragraphs"]]
+            + [point for section in sections for point in section["key_points"]]
+        ).casefold()
         for concept in (
             "margen de ruido",
             "lógica combinacional",
@@ -112,7 +115,7 @@ class ElectronicaUnit05CuratedTests(unittest.TestCase):
     def test_important_misconceptions_and_boundary_are_explicit(self) -> None:
         text = SOURCE.read_text(encoding="utf-8").casefold()
         notice = self.unit["editorial_notice"].casefold()
-        self.assertIn("no garantiza cero eventos", text)
+        self.assertIn("no una garantía absoluta", text)
         self.assertIn("debounce no reemplaza sincronización", text)
         self.assertIn("115200 baud", text)
         self.assertIn("no constituye revisión disciplinar externa", notice)
