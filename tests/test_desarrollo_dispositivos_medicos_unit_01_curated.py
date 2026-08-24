@@ -108,6 +108,6 @@ class DesarrolloDispositivosMedicosUnit01CuratedTests(unittest.TestCase):
         self.assertIn("afirmación regulatoria", purpose)
 
 
-# Final user-authored trigger after restoring the generic synchronization workflow and explicit triangulation wording.
+# Final user-authored gate trigger after deterministic public-site synchronization.
 if __name__ == "__main__":
     unittest.main()
