@@ -47,7 +47,7 @@ class SenalesBiomedicasUnit03CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
             "pan y tompkins",
-            "delineación",
+            "delinear",
             "intervalos nn",
             "variabilidad del pulso",
             "fiducial ppg",
