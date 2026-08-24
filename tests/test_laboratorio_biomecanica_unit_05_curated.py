@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-# Final user-authored gate trigger after U5 publication synchronization.
+# Final user-authored gate trigger after U5 publication synchronization and regression correction.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "laboratorio-biomecanica" / "units" / "unit-05.json"
 MIRROR = ROOT / "data" / "generated_units" / "laboratorio-biomecanica" / "unit-05.json"
@@ -83,7 +83,8 @@ class LaboratorioBiomecanicaUnit05CuratedTests(unittest.TestCase):
         for term in (
             "dinámica inversa",
             "fuerza intersegmentaria",
-            "momento intersegmentario neto",
+            "momento intersegmentario",
+            "momento articular neto",
             "parámetro inercial segmentario",
             "residual",
             "consistencia dinámica",
