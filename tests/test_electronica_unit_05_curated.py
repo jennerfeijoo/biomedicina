@@ -36,7 +36,7 @@ class ElectronicaUnit05CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "margen de ruido",
+            "márgenes de ruido",
             "schmitt",
             "setup",
             "hold",
