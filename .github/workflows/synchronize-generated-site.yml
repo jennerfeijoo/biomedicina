@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Repair Biomateriales U4 JSON syntax
+      - name: Normalize Biomateriales U4 recovery equation
         shell: bash
         run: |
           set -euo pipefail
@@ -43,11 +43,15 @@ jobs:
           source = Path('data/course_redevelopment/biomateriales/units/unit-04.json')
           mirror = Path('data/generated_units/biomateriales/unit-04.json')
           text = source.read_text(encoding='utf-8')
-          broken = r'"latex": "f_{rec}=\\frac{m_{productos\ recuperados}}{m_{perdida\ del\ especimen}}"'
+          malformed = r'"latex": "f_{rec}=\\frac{m_{productos\ recuperados}}{m_{perdida\ del\ especimen}}"'
+          plain = '"latex": "f_rec=m_rec/m_loss"'
           fixed = r'"latex": "f_{rec}=\\frac{m_{recuperada}}{m_{perdida}}"'
-          if broken not in text:
-              raise SystemExit('Expected malformed recovery equation was not found')
-          text = text.replace(broken, fixed, 1)
+          if malformed in text:
+              text = text.replace(malformed, fixed, 1)
+          elif plain in text:
+              text = text.replace(plain, fixed, 1)
+          elif fixed not in text:
+              raise SystemExit('Recovery equation is in an unexpected state')
           json.loads(text)
           source.write_text(text, encoding='utf-8')
           mirror.write_text(text, encoding='utf-8')
@@ -111,5 +115,5 @@ jobs:
             echo "No hay cambios que confirmar."
             exit 0
           fi
-          git commit -m "Repair and synchronize Biomateriales U4"
+          git commit -m "Normalize and synchronize Biomateriales U4"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
