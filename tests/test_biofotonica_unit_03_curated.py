@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final human-authored trigger after public-site synchronization.
+# Final human-authored trigger after publication metadata synchronization.
 
 import json
 import unittest
