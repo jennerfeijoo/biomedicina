@@ -32,45 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Repair Biosensores U5 JSON syntax
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          targets = [
-              Path('data/course_redevelopment/biosensores/units/unit-05.json'),
-              Path('data/generated_units/biosensores/unit-05.json'),
-          ]
-          needles = [
-              '"error": "Modificar simultáneamente superficie, transductor y análisis durante la validación."',
-              '"question": "¿Qué queda fuera de U5 aunque el expediente analítico sea sólido?"',
-              '"topic": "Control de calidad"',
-          ]
-          for path in targets:
-              lines = path.read_text(encoding='utf-8').splitlines()
-              for needle in needles:
-                  matches = [i for i, line in enumerate(lines) if needle in line]
-                  if len(matches) != 1:
-                      raise SystemExit(f'Se esperó una línea objetivo en {path}; {needle[:35]}... encontradas={len(matches)}')
-                  index = matches[0]
-                  stripped = lines[index].rstrip()
-                  if stripped.endswith('"}') or stripped.endswith('"},'):
-                      continue
-                  if stripped.endswith('"'):
-                      lines[index] = stripped + '}'
-                      continue
-                  raise SystemExit(f'Final inesperado en línea objetivo de {path}: {stripped[-30:]}')
-              text = '\n'.join(lines) + '\n'
-              json.loads(text)
-              path.write_text(text, encoding='utf-8')
-          if targets[0].read_bytes() != targets[1].read_bytes():
-              raise SystemExit('La fuente y el espejo de U5 dejaron de ser idénticos')
-          print('U5 reparada, JSON válido y espejo exacto verificado.')
-          PY
-
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -109,11 +70,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git add -A -- \
-            data/course_redevelopment/biosensores/units/unit-05.json \
-            data/generated_units/biosensores/unit-05.json \
-            .github/workflows/synchronize-generated-site.yml \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
@@ -123,5 +80,5 @@ jobs:
             echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Repair Biosensores U5 and synchronize public site"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
