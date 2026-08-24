@@ -73,6 +73,21 @@ class BioinstrumentacionCourseCompletionTests(unittest.TestCase):
         self.assertIn("criterios académicos internos", rules["interpretation"].lower())
         self.assertIn("no estándares profesionales", rules["interpretation"].lower())
 
+    def test_historical_glossary_gaps_are_now_traceable(self) -> None:
+        glossary = json.loads((COURSE / "glossary.json").read_text(encoding="utf-8"))
+        entries = {item["id"]: item for item in glossary["entries"]}
+        resolved = {
+            "BIOINST-GLO-049", "BIOINST-GLO-053", "BIOINST-GLO-055", "BIOINST-GLO-058",
+            "BIOINST-GLO-072", "BIOINST-GLO-073", "BIOINST-GLO-074", "BIOINST-GLO-075",
+            "BIOINST-GLO-076", "BIOINST-GLO-077", "BIOINST-GLO-083",
+        }
+        for entry_id in resolved:
+            entry = entries[entry_id]
+            self.assertNotEqual(entry["verification_status"], "unverified")
+            self.assertTrue(entry["source_ids"])
+            self.assertTrue(entry.get("source_locators"))
+        self.assertEqual(entries["BIOINST-GLO-072"]["source_ids"], ["iupac-stray-light-2025"])
+
 
 if __name__ == "__main__":
     unittest.main()
