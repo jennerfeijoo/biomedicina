@@ -48,7 +48,7 @@ class IngenieriaClinicaGestionUnit06CuratedTests(unittest.TestCase):
             "medida de balance",
             "tiempo de respuesta",
             "acuerdo de nivel de servicio",
-            "pdsa",
+            "plan-do-study-act",
             "probar, implementar y extender",
             "competencia",
             "adopción",
