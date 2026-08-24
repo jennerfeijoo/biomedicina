@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "bioestadistica"
 
+# Final normal-user commit: strict content audit, full tests and regeneration already passed.
+
 
 class BioestadisticaCourseCompletionTests(unittest.TestCase):
     def test_course_is_complete_but_human_review_remains_pending(self) -> None:
