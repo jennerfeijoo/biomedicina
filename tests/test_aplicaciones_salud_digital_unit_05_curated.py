@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# User-authored CI trigger after public HTML synchronization.
+
 import json
 import unittest
 from pathlib import Path
