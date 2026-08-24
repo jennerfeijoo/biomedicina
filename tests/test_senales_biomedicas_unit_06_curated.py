@@ -153,6 +153,6 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
         self.assertIn("autorización de uso asistencial", purpose)
 
 
-# Regression guard for the curated Signals Biomedical U6 source/mirror contract.
+# Final user-authored trigger after publication metadata synchronization.
 if __name__ == "__main__":
     unittest.main()
