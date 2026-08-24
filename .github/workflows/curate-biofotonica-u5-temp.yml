@@ -27,6 +27,31 @@ jobs:
       - name: Curate source and exact mirror
         run: python scripts/curate_biofotonica_u5_temp.py
 
+      - name: Repair generated regression literals
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tests/test_biofotonica_unit_05_curated.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              r'self.assertIn("E_e=\frac{P}{A}", equations)',
+              r'self.assertIn(r"E_e=\frac{P}{A}", equations)',
+          )
+          text = text.replace(
+              r'self.assertIn("H_e=\int_0^t E_e(\tau)\,d\tau", equations)',
+              r'self.assertIn(r"H_e=\int_0^t E_e(\tau)\,d\tau", equations)',
+          )
+          text = text.replace(
+              r'self.assertTrue(any("Omega" in eq or "\Omega" in eq for eq in equations))',
+              r'self.assertTrue(any(r"\Omega" in eq for eq in equations))',
+          )
+          text = text.replace(
+              'self.assertIn("no requiere exposición óptica real", notice)',
+              'self.assertIn("no requieren exposición óptica real", notice)',
+          )
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Validate structured curriculum
         run: |
           python scripts/validate_curriculum.py
