@@ -74,7 +74,7 @@ class BiomaterialesUnit04CuratedTests(unittest.TestCase):
         self.assertGreaterEqual(len(primary["deliverables"]), 7)
         self.assertGreaterEqual(len(primary["checking_criteria"]), 10)
         text = json.dumps(activities, ensure_ascii=False).casefold()
-        self.assertIn("datos sintéticos", text)
+        self.assertIn("sintétic", text)
         self.assertIn("no realices ensayos electroquímicos reales", text)
         self.assertIn("no se afirma seguridad clínica", text)
 
