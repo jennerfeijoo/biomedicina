@@ -1,0 +1,63 @@
+name: Sync Biomateriales Implantes claim ids (temporary)
+
+on:
+  push:
+    branches:
+      - codex/biomateriales-implantes-claim-traceability
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/biomateriales-implantes-claim-traceability
+          fetch-depth: 0
+
+      - name: Synchronize claim ids into canonical units
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('data/courses/biomateriales-implantes')
+          registry = json.loads((root / 'claims.json').read_text(encoding='utf-8'))
+          by_unit = {}
+          for claim in registry['claims']:
+              by_unit.setdefault(int(claim['unit']), []).append(claim['claim_id'])
+
+          expected_units = set(range(1, 7))
+          if set(by_unit) != expected_units:
+              raise SystemExit(f'claim registry does not cover U1-U6: {sorted(by_unit)}')
+
+          for unit_no in range(1, 7):
+              path = root / 'units' / f'unit-{unit_no:02d}.json'
+              unit = json.loads(path.read_text(encoding='utf-8'))
+              ids = sorted(by_unit[unit_no])
+              if len(ids) < 4:
+                  raise SystemExit(f'U{unit_no}: expected >=4 claims, got {len(ids)}')
+              unit['claim_ids'] = ids
+              path.write_text(json.dumps(unit, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
+      - name: Validate canonical academic course
+        shell: bash
+        run: |
+          python scripts/validate_academic_courses.py
+
+      - name: Commit synchronization and self-clean
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/sync-bimpl-claims-temp.yml
+          git add data/courses/biomateriales-implantes/units
+          git commit -m "Link Biomateriales e Implantes units to claim registry"
+          git pull --rebase origin codex/biomateriales-implantes-claim-traceability
+          git push origin HEAD:codex/biomateriales-implantes-claim-traceability
