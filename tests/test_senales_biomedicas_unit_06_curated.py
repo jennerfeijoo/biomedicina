@@ -106,7 +106,7 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
             "revalidación",
         ):
             self.assertIn(concept, activity_text)
-        self.assertIn("no autoriza despliegue clínico", activity_text)
+        self.assertIn("no se autoriza despliegue clínico", activity_text)
 
     def test_glossary_examples_errors_and_assessment_are_specific(self) -> None:
         self.assertGreaterEqual(len(self.unit["glossary"]), 24)
@@ -168,5 +168,6 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
         self.assertIn("ni autorizar despliegue asistencial", purpose)
 
 
+# Final human-authored trigger after publication synchronization and syntax repair.
 if __name__ == "__main__":
     unittest.main()
