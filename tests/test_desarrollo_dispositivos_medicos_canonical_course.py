@@ -5,6 +5,7 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+# Final user-authored trigger after canonical generation and self-clean.
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "desarrollo-dispositivos-medicos"
 GENERIC = "concepto de la unidad que debe definirse"
