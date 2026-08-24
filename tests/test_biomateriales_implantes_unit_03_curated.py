@@ -50,7 +50,7 @@ class BiomaterialesImplantesUnit03CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
             "ajuste por interferencia",
-            "bone-to-implant",
+            "contacto hueso–implante",
             "recubrimientos de hidroxiapatita",
             "fijación cementada",
             "fijación no cementada",
@@ -133,7 +133,7 @@ class BiomaterialesImplantesUnit03CuratedTests(unittest.TestCase):
         purpose = self.unit["purpose"].casefold()
         self.assertIn("no constituye revisión disciplinar externa", notice)
         self.assertIn("no deben usarse como especificaciones de productos reales", notice)
-        self.assertIn("no confundir", purpose)
+        self.assertIn("sin confundir", purpose)
         self.assertIn("u4", notice)
 
 
