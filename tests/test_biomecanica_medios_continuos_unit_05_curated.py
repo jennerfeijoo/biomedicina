@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Final human-authored validation trigger after public synchronization.
+
 import json
 import unittest
 from pathlib import Path
