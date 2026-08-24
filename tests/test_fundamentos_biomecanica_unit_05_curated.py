@@ -117,7 +117,7 @@ class FundamentosBiomecanicaUnit05CuratedTests(unittest.TestCase):
     def test_scope_boundary_is_explicit(self) -> None:
         purpose = self.unit["purpose"].casefold()
         notice = self.unit["editorial_notice"].casefold()
-        self.assertIn("no tratar tablas poblacionales como medidas individuales exactas", purpose)
+        self.assertIn("sin tratar tablas poblacionales como medidas individuales exactas", purpose)
         self.assertIn("no constituyen revisión disciplinar externa", notice)
         self.assertIn("no requieren medir personas", notice)
         self.assertIn("diagnóstico", notice)
