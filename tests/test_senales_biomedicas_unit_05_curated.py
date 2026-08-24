@@ -158,5 +158,6 @@ class SenalesBiomedicasUnit05CuratedTests(unittest.TestCase):
         self.assertIn("sin convertir desempeño interno en utilidad clínica", purpose)
 
 
+# Final user-authored trigger after source, mirror, descriptor and public-page synchronization.
 if __name__ == "__main__":
     unittest.main()
