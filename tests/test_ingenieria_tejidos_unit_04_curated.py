@@ -50,7 +50,7 @@ class IngenieriaTejidosUnit04CuratedTests(unittest.TestCase):
             "heterogeneidad interna",
             "perfusabilidad",
             "esfuerzo cortante",
-            "controles discriminantes",
+            "controles que desacoplen explicaciones",
         ):
             self.assertIn(concept, theory)
         self.assertIn("no es una puntuación de «buena perfusión»", theory)
