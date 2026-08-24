@@ -39,7 +39,7 @@ class ElectronicaUnit05CuratedTests(unittest.TestCase):
             + [point for section in sections for point in section["key_points"]]
         ).casefold()
         for concept in (
-            "margen de ruido",
+            "márgenes de ruido",
             "lógica combinacional",
             "setup",
             "hold",
