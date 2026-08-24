@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-# User-authored validation trigger after U5 public-site synchronization.
+# Final user-authored validation trigger after U5 publication metadata synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "comunicacion-cientifica" / "units" / "unit-05.json"
 MIRROR = ROOT / "data" / "generated_units" / "comunicacion-cientifica" / "unit-05.json"
@@ -52,7 +52,7 @@ class ComunicacionCientificaUnit05CuratedTests(unittest.TestCase):
             "evidencia",
             "interpretación",
             "opinión",
-            "engagement",
+            "tiempo de visualización",
         ):
             self.assertIn(concept, theory)
         self.assertIn("no valida una afirmación", theory)
