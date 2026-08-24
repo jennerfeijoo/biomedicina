@@ -45,7 +45,7 @@ class IngenieriaClinicaGestionUnit05CuratedTests(unittest.TestCase):
             "reportabilidad",
             "jurisdicción",
             "imdrf",
-            "investigación inconclusa",
+            "inconclusa",
             "denominador",
             "recurrencia",
         ):
