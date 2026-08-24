@@ -38,7 +38,7 @@ class SenalesBiomedicasUnit02CuratedTests(unittest.TestCase):
             "deriva de línea base",
             "respuesta al impulso",
             "banda de transición",
-            "filtro causal",
+            "causalidad",
             "señal cruda",
             "validación clínica",
         ):
