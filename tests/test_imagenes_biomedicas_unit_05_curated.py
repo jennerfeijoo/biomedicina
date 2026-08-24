@@ -1,4 +1,4 @@
-# Final user-authored trigger after U5 publication synchronization.
+# Final user-authored gate trigger after current-main recovery and publication.
 from __future__ import annotations
 
 import json
