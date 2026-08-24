@@ -57,7 +57,8 @@ class BiomaterialesUnit06CuratedTests(unittest.TestCase):
 
     def test_risk_and_biological_evaluation_boundaries_are_explicit(self) -> None:
         theory = " ".join(p for section in self.unit["theory_sections"] for p in section["paragraphs"]).casefold()
-        self.assertIn("una propiedad peligrosa no equivale automáticamente a riesgo", theory)
+        self.assertIn("la mera presencia de una propiedad peligrosa no determina por sí sola el riesgo", theory)
+        self.assertIn("una propiedad peligrosa no equivale automáticamente a riesgo", self.text)
         self.assertIn("no demuestra riesgo cero", theory)
         self.assertIn("no autoriza a declarar conformidad con iso 10993", theory)
         self.assertIn("no que un dispositivo real es seguro, eficaz, conforme o listo para uso humano", theory)
@@ -67,7 +68,20 @@ class BiomaterialesUnit06CuratedTests(unittest.TestCase):
         self.assertIn("iso 17665:2024", self.text)
         self.assertIn("iso 11135:2014", self.text)
         self.assertIn("iso/fdis 11135", self.text)
-        self.assertNotIn("iso 11135:2026", self.text)
+
+        theory = " ".join(p for section in self.unit["theory_sections"] for p in section["paragraphs"]).casefold()
+        source_text = json.dumps(self.unit["sources"], ensure_ascii=False).casefold()
+        self.assertNotIn("iso 11135:2026", theory)
+        self.assertNotIn("iso 11135:2026", source_text)
+        self.assertIn("iso 11135:2014 sigue siendo la edición internacional publicada", theory)
+        self.assertIn("tercera edición se encuentra en fase fdis en 2026", theory)
+
+        pedagogical_errors = json.dumps(
+            self.unit["common_errors"] + self.unit["self_assessment"],
+            ensure_ascii=False,
+        ).casefold()
+        self.assertIn("iso 11135:2026", pedagogical_errors)
+
         notice = self.unit["editorial_notice"].casefold()
         self.assertIn("iso/fdis 11135 es un proyecto final y no una norma publicada", notice)
         self.assertIn("parámetros operativos de esterilización", notice)
