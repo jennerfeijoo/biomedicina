@@ -59,7 +59,7 @@ class BiomaterialesUnit04CuratedTests(unittest.TestCase):
         self.assertIn(r"V=k\frac{WL}{H}", equations)
         self.assertIn(r"T=W_0+C_0+S", equations)
         self.assertIn(r"M_n(t)=M_{n,0}e^{-kt}", equations)
-        self.assertIn(r"f_{rec}=\frac{m_{recuperada}}{m_{perdida}}", equations)
+        self.assertIn("f_rec=m_rec/m_loss", equations)
 
     def test_guided_activities_are_progressive_synthetic_and_scaffolded(self) -> None:
         activities = self.unit["guided_activities"]
