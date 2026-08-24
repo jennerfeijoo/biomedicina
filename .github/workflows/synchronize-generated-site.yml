@@ -44,13 +44,22 @@ jobs:
               Path('data/course_redevelopment/ingenieria-clinica-gestion/units/unit-06.json'),
               Path('data/generated_units/ingenieria-clinica-gestion/unit-06.json'),
           ]
-          needle = '    {"term": "trazabilidad de decisión", "definition": "Capacidad de reconstruir cómo datos, definiciones, pruebas, resultados y restricciones condujeron a una decisión de mejora."\n  ],'
-          replacement = '    {"term": "trazabilidad de decisión", "definition": "Capacidad de reconstruir cómo datos, definiciones, pruebas, resultados y restricciones condujeron a una decisión de mejora."}\n  ],'
+          repairs = [
+              (
+                  '    {"term": "trazabilidad de decisión", "definition": "Capacidad de reconstruir cómo datos, definiciones, pruebas, resultados y restricciones condujeron a una decisión de mejora."\n  ],',
+                  '    {"term": "trazabilidad de decisión", "definition": "Capacidad de reconstruir cómo datos, definiciones, pruebas, resultados y restricciones condujeron a una decisión de mejora."}\n  ],',
+              ),
+              (
+                  '    {"error": "Declarar sostenibilidad al terminar el proyecto.", "correction": "Mantener propietario, indicadores y reglas de seguimiento después de la implementación y comprobar que el desempeño persiste."\n  ],',
+                  '    {"error": "Declarar sostenibilidad al terminar el proyecto.", "correction": "Mantener propietario, indicadores y reglas de seguimiento después de la implementación y comprobar que el desempeño persiste."}\n  ],',
+              ),
+          ]
           for path in paths:
               text = path.read_text(encoding='utf-8')
-              if needle not in text:
-                  raise SystemExit(f'No se encontró el patrón de reparación en {path}')
-              text = text.replace(needle, replacement, 1)
+              for needle, replacement in repairs:
+                  if needle not in text:
+                      raise SystemExit(f'No se encontró un patrón de reparación en {path}: {needle[:90]}')
+                  text = text.replace(needle, replacement, 1)
               json.loads(text)
               path.write_text(text, encoding='utf-8')
           if paths[0].read_bytes() != paths[1].read_bytes():
