@@ -118,6 +118,6 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir requisitos con soluciones prematuras", purpose)
 
 
-# Final gate trigger after aligning the theory and glossary terminology for orphan requirements.
+# User-authored final trigger after strengthening orphan-requirement terminology in theory.
 if __name__ == "__main__":
     unittest.main()
