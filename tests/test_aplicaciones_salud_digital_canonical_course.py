@@ -41,8 +41,8 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
             [unit["title"] for unit in self.units],
             [
                 "Necesidades y ecosistema digital",
-                "Diseño centrado en las personas",
-                "Telemedicina, apps y monitorización",
+                "Diseño centrado en personas",
+                "Telemedicina y monitorización",
                 "Datos e interoperabilidad",
                 "Evaluación clínica y económica",
                 "Privacidad, regulación e implementación",
