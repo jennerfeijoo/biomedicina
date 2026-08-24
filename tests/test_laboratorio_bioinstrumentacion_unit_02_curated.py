@@ -10,7 +10,7 @@ MIRROR = ROOT / "data" / "generated_units" / "laboratorio-bioinstrumentacion" / 
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 WRONG_DIAGNOSTIC_DEFINITION = "proporción de casos positivos de referencia que una prueba identifica correctamente"
 
-# Final user-authored validation trigger after public-site synchronization.
+# Final user-authored validation trigger after public-site and curriculum metadata synchronization.
 
 
 class LaboratorioBioinstrumentacionUnit02CuratedTests(unittest.TestCase):
