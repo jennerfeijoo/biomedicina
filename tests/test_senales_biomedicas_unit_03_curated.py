@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final validation trigger after public and curriculum-metadata synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "senales-biomedicas" / "units" / "unit-03.json"
 MIRROR = ROOT / "data" / "generated_units" / "senales-biomedicas" / "unit-03.json"
