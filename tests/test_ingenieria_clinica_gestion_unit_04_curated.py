@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# User-authored validation trigger after public-site synchronization.
 import json
 import unittest
 from pathlib import Path
