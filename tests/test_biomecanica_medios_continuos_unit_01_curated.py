@@ -77,6 +77,6 @@ class BiomecanicaMediosContinuosUnit01CuratedTests(unittest.TestCase):
         self.assertIn("validación clínica", notice)
 
 
-# Final user-authored validation trigger after public-site synchronization.
+# Final user-authored trigger after recovered public-site synchronization.
 if __name__ == "__main__":
     unittest.main()
