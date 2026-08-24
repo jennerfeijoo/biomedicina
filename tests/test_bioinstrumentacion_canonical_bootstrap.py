@@ -24,13 +24,15 @@ RENDERER = load_module("advanced_unit_renderer_bioinst", "scripts/advanced_unit_
 
 
 class BioinstrumentacionCanonicalBootstrapTests(unittest.TestCase):
-    def test_course_has_ten_canonical_units_and_review_state(self) -> None:
+    def test_course_has_ten_canonical_units_and_preserves_review_boundary(self) -> None:
         course = json.loads((COURSE_DIR / "course.json").read_text(encoding="utf-8"))
         self.assertEqual(course["code"], "BIOINST")
         self.assertEqual(len(course["unit_files"]), 10)
         self.assertEqual(len(course["learning_outcomes"]), 8)
-        self.assertEqual(course["status"]["content"], "in_review")
-        self.assertEqual(course["status"]["pedagogy"], "in_review")
+        # The bootstrap originally created an in-review corpus; later academic
+        # completion may promote content/pedagogy without implying human review.
+        self.assertIn(course["status"]["content"], {"in_review", "complete"})
+        self.assertIn(course["status"]["pedagogy"], {"in_review", "complete"})
         self.assertEqual(course["status"]["internal_review"], "pending")
         self.assertEqual(course["status"]["external_review"], "pending")
         self.assertEqual(course["status"]["publication"], "published_provisional")
