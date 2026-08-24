@@ -117,8 +117,9 @@ class BiofotonicaUnit03CuratedTests(unittest.TestCase):
         self.assertIn("ni iluminar personas o animales", notice)
         self.assertIn("validación independientes", notice)
         self.assertIn("sin repetir la introducción al transporte de u1", purpose)
-        self.assertIn("sin convertir resultados de fantomas en afirmaciones clínicas", purpose)
+        self.assertIn("ni convertir resultados de fantomas en afirmaciones clínicas", purpose)
 
 
+# Final user-authored trigger after publication synchronization.
 if __name__ == "__main__":
     unittest.main()
