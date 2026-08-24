@@ -83,7 +83,8 @@ class LaboratorioBiomecanicaUnit05CuratedTests(unittest.TestCase):
         for term in (
             "dinámica inversa",
             "fuerza intersegmentaria",
-            "momento intersegmentario neto",
+            "momento intersegmentario",
+            "momento articular neto",
             "parámetro inercial segmentario",
             "residual",
             "consistencia dinámica",
