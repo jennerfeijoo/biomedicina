@@ -109,5 +109,6 @@ class BiomaterialesUnit03CuratedTests(unittest.TestCase):
         self.assertIn("no debe tratarse como etiqueta absoluta", text)
 
 
+# User-authored verification trigger after public HTML synchronization.
 if __name__ == "__main__":
     unittest.main()
