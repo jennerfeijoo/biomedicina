@@ -101,10 +101,11 @@ class BiofotonicaUnit02CuratedTests(unittest.TestCase):
         purpose = self.unit["purpose"].casefold()
         self.assertIn("no constituye revisión disciplinar externa", notice)
         self.assertIn("evaluación de seguridad óptica", notice)
-        self.assertIn("no autorizan iluminar personas o animales", notice)
+        self.assertIn("ni autorizan iluminar personas o animales", notice)
         self.assertIn("evidencia clínica", purpose)
         self.assertIn("conformidad regulatoria", purpose)
 
 
+# Final user-authored trigger after publication synchronization.
 if __name__ == "__main__":
     unittest.main()
