@@ -48,7 +48,7 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
             "frontera del sistema",
             "método de verificación previsto",
             "sistema de uso",
-            "análisis de impacto",
+            "matriz de impacto",
         ):
             self.assertIn(concept, theory)
         self.assertIn("u3", theory)
@@ -118,6 +118,6 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir requisitos con soluciones prematuras", purpose)
 
 
-# Final gate trigger after aligning the regression with the plural phrasing used in the curated theory.
+# Theory assertions follow the phrases used in prose; glossary assertions preserve canonical lifecycle terminology.
 if __name__ == "__main__":
     unittest.main()
