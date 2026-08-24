@@ -154,5 +154,6 @@ class SenalesBiomedicasUnit04CuratedTests(unittest.TestCase):
         self.assertIn("desaconsejan interpretar automáticamente", text)
 
 
+# Final user-authored trigger after source, mirror and public-page synchronization.
 if __name__ == "__main__":
     unittest.main()
