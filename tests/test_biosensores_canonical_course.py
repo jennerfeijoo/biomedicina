@@ -79,7 +79,7 @@ class BiosensoresCanonicalCourseTests(unittest.TestCase):
 
     def test_clinical_and_regulatory_boundary_is_explicit(self):
         notice = self.course["editorial_notice"].casefold()
-        self.assertIn("revisión disciplinar externa", notice)
+        self.assertIn("revisión disciplinaria externa", notice)
         self.assertIn("validación clínica", notice)
         self.assertIn("conformidad regulatoria", notice)
 
