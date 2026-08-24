@@ -56,9 +56,12 @@ class LaboratorioBiomecanicaUnit04CuratedTests(unittest.TestCase):
             "artefactos de movimiento",
             "envolvente lineal",
             "%mvc",
-            "neural drive",
         ):
             self.assertIn(concept, self.theory)
+        # The canonical English term is asserted in the glossary below; theory uses
+        # the equivalent Spanish concepts "esfuerzo neural" and "activación neural".
+        self.assertIn("esfuerzo neural", self.theory)
+        self.assertIn("activación neural", self.theory)
         self.assertIn("no puede concluirse", self.theory)
 
     def test_core_equations_are_measurement_specific(self) -> None:
