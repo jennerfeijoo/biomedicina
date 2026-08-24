@@ -36,7 +36,7 @@ class ImagenesBiomedicasUnit03CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in ("magnetización neta", "radiofrecuencia", "recuperación longitudinal", "codificación de fase", "frecuencia espacial", "resolución efectiva"):
             self.assertIn(concept, theory)
-        self.assertIn("unidad 6", theory)
+        self.assertIn("u6", theory)
         self.assertIn("artefactos", theory)
         self.assertIn("seguridad", theory)
 
