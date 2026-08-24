@@ -5,7 +5,7 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
-# Final user-authored trigger after canonical generation, publication synchronization, and self-clean.
+# Final user-authored validation trigger after canonical corpus publication.
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "desarrollo-dispositivos-medicos"
 GENERIC = "concepto de la unidad que debe definirse"
