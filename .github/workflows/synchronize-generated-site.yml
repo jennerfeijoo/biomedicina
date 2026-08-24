@@ -7,7 +7,6 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
-      - 'tests/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -33,22 +32,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Build canonical Aplicaciones de Salud Digital corpus
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/migrate_course_to_canonical.py \
-            --subject aplicaciones-salud-digital \
-            --course-code ASDIG
-          python scripts/curate_aplicaciones_salud_digital_course_temp.py
-
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
-          python scripts/validate_academic_courses.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
@@ -72,33 +61,24 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: aplicaciones-salud-digital-canonical-closure
+          name: generated-site-synchronization
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Self-clean one-shot curator and commit canonical closure
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          rm -f scripts/curate_aplicaciones_salud_digital_course_temp.py global-generation.txt
           git add -A -- \
-            data/courses/aplicaciones-salud-digital \
-            data/generated_courses/aplicaciones-salud-digital.json \
-            data/generated_units/aplicaciones-salud-digital \
-            data/subjects/ingenieria-biomedica/aplicaciones-salud-digital.json \
-            data/source_registry/aplicaciones-salud-digital.json \
-            data/claim_registry/aplicaciones-salud-digital.json \
-            ingenieria-biomedica/aplicaciones-salud-digital \
-            ingenieria-biomedica/index.html \
-            catalogo/index.html \
-            .github/workflows/synchronize-generated-site.yml \
-            scripts/curate_aplicaciones_salud_digital_course_temp.py
+            ciencias-basicas \
+            biologicas-medicas \
+            ingenieria-biomedica \
+            gestion-etica-comunicacion \
+            catalogo
           if git diff --cached --quiet; then
-            echo "No hay cambios de cierre canónico."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Build canonical Aplicaciones de Salud Digital course"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
