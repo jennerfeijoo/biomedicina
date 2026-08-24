@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final user-authored trigger after public and curriculum synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "imagenes-biomedicas" / "units" / "unit-03.json"
 MIRROR = ROOT / "data" / "generated_units" / "imagenes-biomedicas" / "unit-03.json"
