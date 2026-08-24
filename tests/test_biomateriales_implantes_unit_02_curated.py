@@ -134,5 +134,6 @@ class BiomaterialesImplantesUnit02CuratedTests(unittest.TestCase):
         self.assertIn("selección real requiere", notice)
 
 
+# Final user-authored trigger after public synchronization.
 if __name__ == "__main__":
     unittest.main()
