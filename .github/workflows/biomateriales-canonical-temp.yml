@@ -1,0 +1,68 @@
+name: Temporary Biomateriales canonical closure
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    if: github.head_ref == 'codex/biomateriales-canonical-closure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Build canonical Biomateriales corpus
+        run: python scripts/curate_biomateriales_canonical_temp.py
+
+      - name: Run canonical regression
+        run: python -m unittest tests.test_biomateriales_canonical_course -v
+
+      - name: Validate canonical course strictly
+        run: python scripts/validate_academic_courses.py --course biomateriales --strict-content
+
+      - name: Validate curriculum and generated units
+        run: |
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python scripts/audit_curriculum_completeness.py
+          python scripts/audit_course_readiness.py --strict
+
+      - name: Regenerate Biomateriales public site
+        run: python scripts/generate_site.py --force --subject biomateriales --with-units
+
+      - name: Synchronize catalog statuses
+        run: python scripts/sync_catalog_statuses.py
+
+      - name: Validate public output
+        run: |
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Remove temporary curator
+        run: |
+          rm scripts/curate_biomateriales_canonical_temp.py
+          rm .github/workflows/biomateriales-canonical-temp.yml
+
+      - name: Commit canonical closure
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Build canonical Biomateriales course"
+          git push origin HEAD:${{ github.head_ref }}
