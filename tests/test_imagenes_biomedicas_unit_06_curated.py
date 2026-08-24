@@ -42,7 +42,7 @@ class ImagenesBiomedicasUnit06CuratedTests(unittest.TestCase):
             "línea base",
             "diagnostic reference levels",
             "campo magnético estático",
-            "índice térmico",
+            "térmico (ti)",
         ):
             self.assertIn(concept, theory)
         self.assertIn("no demuestra", theory)
