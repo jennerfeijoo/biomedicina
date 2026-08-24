@@ -37,9 +37,12 @@ class BioestadisticaCourseCompletionTests(unittest.TestCase):
         self.assertEqual(set(assessment["capstone"]["linked_learning_outcome_ids"]), outcomes)
         self.assertTrue(assessment["midterm_blueprint"])
         self.assertEqual(sum(item["weight_percent"] for item in assessment["midterm_blueprint"]), 100)
-        self.assertEqual(sum(item["weight_percent"] for item in assessment["capstone"]["rubric"]), 100)
+        rubric = assessment["capstone"]["rubric"]
+        self.assertEqual(sum(item["weight_percent"] for item in rubric), 100)
         self.assertGreaterEqual(len(assessment["capstone"]["deliverables"]), 8)
-        self.assertTrue(all(len(item["performance_levels"]) == 4 for item in assessment["capstone"]["rubric"]))
+        for item in rubric:
+            for level in ("excellent", "competent", "developing", "insufficient"):
+                self.assertTrue(item[level])
 
     def test_all_units_keep_expert_review_pending_and_traceable_sources(self) -> None:
         course = json.loads((COURSE / "course.json").read_text(encoding="utf-8"))
