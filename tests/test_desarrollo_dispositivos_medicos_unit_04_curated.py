@@ -121,6 +121,6 @@ class DesarrolloDispositivosMedicosUnit04CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir verificación con validación", purpose)
 
 
-# Final user-authored trigger after publication synchronized the U4 curriculum descriptor.
+# Final user-authored trigger after the publication descriptor commit for U4.
 if __name__ == "__main__":
     unittest.main()
