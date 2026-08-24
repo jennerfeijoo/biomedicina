@@ -99,6 +99,6 @@ class BiomaterialesUnit02CuratedTests(unittest.TestCase):
         self.assertIn("desempeño clínico del dispositivo final", text)
 
 
-# User-authored regression for Biomateriales U2 academic curation.
+# User-authored trigger after synchronized public pages; publication metadata may follow.
 if __name__ == "__main__":
     unittest.main()
