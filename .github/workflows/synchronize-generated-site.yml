@@ -32,12 +32,20 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Curate Biomateriales e Implantes U3 deterministically
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/curate_biomateriales_implantes_u3_temp.py
+          python -m unittest tests.test_biomateriales_implantes_unit_03_curated
+
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
+          python scripts/audit_known_generic_content.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
@@ -65,20 +73,32 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Commit curated source and deterministic public site
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f \
+            scripts/curate_biomateriales_implantes_u3_temp.py \
+            scripts/.biomateriales_implantes_u3_payload_01.txt \
+            scripts/.biomateriales_implantes_u3_payload_02.txt \
+            scripts/.biomateriales_implantes_u3_payload_03.txt \
+            global-generation.txt
           git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+            .github/workflows/synchronize-generated-site.yml \
+            scripts/curate_biomateriales_implantes_u3_temp.py \
+            scripts/.biomateriales_implantes_u3_payload_01.txt \
+            scripts/.biomateriales_implantes_u3_payload_02.txt \
+            scripts/.biomateriales_implantes_u3_payload_03.txt \
+            data/course_redevelopment/biomateriales-implantes/units/unit-03.json \
+            data/generated_units/biomateriales-implantes/unit-03.json \
+            tests/test_biomateriales_implantes_unit_03_curated.py \
+            ingenieria-biomedica/biomateriales-implantes
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "No hay cambios que comprometer."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Curate Biomateriales e Implantes U3"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
