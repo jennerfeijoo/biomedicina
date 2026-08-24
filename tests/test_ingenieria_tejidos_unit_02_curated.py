@@ -46,7 +46,7 @@ class IngenieriaTejidosUnit02CuratedTests(unittest.TestCase):
             "duplicaciones poblacionales",
             "variabilidad entre donantes",
             "estabilidad genómica",
-            "células fuera del objetivo",
+            "células de otros linajes",
         ):
             self.assertIn(concept, theory)
         self.assertIn("los marcadores no sustituyen a la función", self.unit["theory_sections"][1]["heading"].casefold())
