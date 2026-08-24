@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final validation trigger after public U1 synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "comunicacion-cientifica" / "units" / "unit-01.json"
 MIRROR = ROOT / "data" / "generated_units" / "comunicacion-cientifica" / "unit-01.json"
