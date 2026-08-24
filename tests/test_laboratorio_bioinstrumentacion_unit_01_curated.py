@@ -9,7 +9,7 @@ SOURCE = ROOT / "data" / "course_redevelopment" / "laboratorio-bioinstrumentacio
 MIRROR = ROOT / "data" / "generated_units" / "laboratorio-bioinstrumentacion" / "unit-01.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
-# Final user-authored validation trigger after public-site synchronization.
+# Final user-authored validation trigger after publication metadata synchronization.
 
 
 class LaboratorioBioinstrumentacionUnit01CuratedTests(unittest.TestCase):
