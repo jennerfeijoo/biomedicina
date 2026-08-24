@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# User-authored trigger after deterministic public-site synchronization.
+# Final user-authored gate trigger after public-site synchronization.
 
 import json
 import unittest
