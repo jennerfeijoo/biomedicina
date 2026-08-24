@@ -110,5 +110,6 @@ class ElectronicaUnit01CuratedTests(unittest.TestCase):
         self.assertIn("equipos médicos", notice)
 
 
+# Final user-authored validation trigger after generated publication synchronization.
 if __name__ == "__main__":
     unittest.main()
