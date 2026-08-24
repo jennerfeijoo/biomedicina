@@ -53,7 +53,7 @@ class BiomaterialesImplantesUnit04CuratedTests(unittest.TestCase):
             "acoplamientos galvánicos",
             "fretting-corrosión",
             "osteólisis periprotésica",
-            "razón de carga",
+            "razón r",
             "regla lineal de miner",
         ):
             self.assertIn(concept, theory)
