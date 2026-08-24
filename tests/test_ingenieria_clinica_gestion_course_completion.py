@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final user-authored validation trigger after deterministic public-index synchronization.
+# Final user-authored validation trigger after deterministic public-index and bibliography synchronization.
 
 import json
 import unittest
