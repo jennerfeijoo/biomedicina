@@ -51,7 +51,7 @@ class SenalesBiomedicasUnit05CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "múltiples filas por sujeto",
+            "ventanas procedentes de un mismo sujeto",
             "selección de características",
             "dentro de cada fold",
             "baseline",
@@ -158,6 +158,6 @@ class SenalesBiomedicasUnit05CuratedTests(unittest.TestCase):
         self.assertIn("sin convertir desempeño interno en utilidad clínica", purpose)
 
 
-# Final user-authored trigger after source, mirror, descriptor and public-page synchronization.
+# Final user-authored trigger after repairing a brittle phrase-level regression.
 if __name__ == "__main__":
     unittest.main()
