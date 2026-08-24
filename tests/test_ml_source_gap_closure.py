@@ -43,7 +43,7 @@ class MachineLearningSourceGapClosureTests(unittest.TestCase):
         text = (source["role"] + " " + source["curricular_function"] + " " + source["limitations"]).lower()
         self.assertIn("gobernanza", text)
         self.assertIn("no valida un modelo concreto", text)
-        self.assertIn("no sustituye evaluación clínica", text)
+        self.assertIn("ni sustituye evaluación clínica", text)
 
     def test_human_review_boundaries_remain_pending(self) -> None:
         status = self.course["status"]
