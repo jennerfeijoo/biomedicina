@@ -32,32 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Repair Desarrollo Dispositivos U6 JSON
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          paths = [
-              Path('data/course_redevelopment/desarrollo-dispositivos-medicos/units/unit-06.json'),
-              Path('data/generated_units/desarrollo-dispositivos-medicos/unit-06.json'),
-          ]
-          needle = 'autoridades competentes."\n  ],'
-          replacement = 'autoridades competentes."}\n  ],'
-          for path in paths:
-              text = path.read_text(encoding='utf-8')
-              if needle in text:
-                  text = text.replace(needle, replacement, 1)
-                  path.write_text(text, encoding='utf-8')
-              json.loads(path.read_text(encoding='utf-8'))
-
-          if paths[0].read_bytes() != paths[1].read_bytes():
-              raise SystemExit('Redevelopment source and generated mirror differ after repair')
-          PY
-          python -m unittest tests.test_desarrollo_dispositivos_medicos_unit_06_curated
-
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -91,27 +65,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit repaired structured data and deterministic public site
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          git rm -f .github/workflows/fix-desarrollo-dispositivos-u6-json-temp.yml
           git add -A -- \
-            .github/workflows/synchronize-generated-site.yml \
-            data/course_redevelopment/desarrollo-dispositivos-medicos/units/unit-06.json \
-            data/generated_units/desarrollo-dispositivos-medicos/unit-06.json \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "La reparación y el sitio público ya están sincronizados."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Fix and synchronize Desarrollo Dispositivos U6"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
