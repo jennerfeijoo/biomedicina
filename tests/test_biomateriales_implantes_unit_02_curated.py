@@ -130,10 +130,10 @@ class BiomaterialesImplantesUnit02CuratedTests(unittest.TestCase):
         purpose = self.unit["purpose"].casefold()
         self.assertIn("no constituye revisión disciplinar externa", notice)
         self.assertIn("no constituye", notice)
-        self.assertIn("no confundir", purpose)
+        self.assertIn("sin confundir", purpose)
         self.assertIn("selección real requiere", notice)
 
 
-# Final user-authored trigger after public synchronization.
+# Final user-authored trigger after public synchronization and regression correction.
 if __name__ == "__main__":
     unittest.main()
