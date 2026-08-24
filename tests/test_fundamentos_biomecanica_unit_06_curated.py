@@ -55,7 +55,7 @@ class FundamentosBiomecanicaUnit06CuratedTests(unittest.TestCase):
         ).casefold()
         self.assertIn("la variable final suele ser resultado de varias transformaciones", theory)
         self.assertIn("correlación alta no implica acuerdo", theory)
-        self.assertIn("laboratorio de biomecánica", theory)
+        self.assertIn("asignaturas prácticas posteriores", theory)
 
     def test_core_equations_are_present(self) -> None:
         equations = {
@@ -127,6 +127,6 @@ class FundamentosBiomecanicaUnit06CuratedTests(unittest.TestCase):
         self.assertIn("prescripción", notice)
 
 
-# Final user-authored verification trigger after publication metadata synchronization.
+# Final verification trigger after regression repair.
 if __name__ == "__main__":
     unittest.main()
