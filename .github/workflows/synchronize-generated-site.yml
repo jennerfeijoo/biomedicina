@@ -7,6 +7,7 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
+      - 'tests/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -31,6 +32,14 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+
+      - name: Build canonical Digital Health corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/canonicalize_aplicaciones_salud_digital_temp.py
+          python scripts/validate_academic_courses.py --course aplicaciones-salud-digital --strict-content
+          python -m unittest tests.test_aplicaciones_salud_digital_canonical_course -v
 
       - name: Validate structured academic sources
         shell: bash
@@ -57,28 +66,21 @@ jobs:
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
 
-      - name: Upload synchronization diagnostic
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: generated-site-synchronization
-          path: global-generation.txt
-          if-no-files-found: warn
+      - name: Restore workflow and remove temporary builder
+        shell: bash
+        run: |
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f scripts/canonicalize_aplicaciones_salud_digital_temp.py global-generation.txt
 
-      - name: Commit deterministic public site
+      - name: Commit canonical course and synchronized site
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "No hay cambios que confirmar."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Canonicalize Aplicaciones de Salud Digital"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
