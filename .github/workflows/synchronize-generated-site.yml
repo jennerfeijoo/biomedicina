@@ -32,6 +32,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Synchronize Clinical Engineering U3 structured mirror
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp data/course_redevelopment/ingenieria-clinica-gestion/units/unit-03.json \
+             data/generated_units/ingenieria-clinica-gestion/unit-03.json
+          python -m unittest tests.test_ingenieria_clinica_gestion_unit_03_curated
+
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -65,20 +73,25 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Commit deterministic structured mirror and public site
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git add -A -- \
+            .github/workflows/synchronize-generated-site.yml \
+            data/generated_units/ingenieria-clinica-gestion/unit-03.json \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "U3 y el sitio público ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Synchronize Clinical Engineering U3 public content"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
