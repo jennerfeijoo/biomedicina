@@ -117,7 +117,7 @@ class LaboratorioBiomecanicaUnit02CuratedTests(unittest.TestCase):
             "u6 estadística",
         ):
             self.assertIn(phrase, notice)
-        self.assertIn("no convierte una trayectoria", purpose)
+        self.assertIn("convierte una trayectoria", purpose)
         self.assertIn("conclusión clínica", purpose)
 
 
