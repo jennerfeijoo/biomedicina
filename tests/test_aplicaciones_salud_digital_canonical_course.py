@@ -50,7 +50,7 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
         )
         all_text = json.dumps(self.units, ensure_ascii=False).casefold()
         self.assertNotIn(GENERIC, all_text)
-        for concept in ("teoría de cambio", "usabilidad", "telemedicina", "fhir", "icer", "ciberseguridad"):
+        for concept in ("mecanismo de cambio", "usabilidad", "telemedicina", "fhir", "icer", "ciberseguridad"):
             self.assertIn(concept, all_text)
 
     def test_each_unit_has_full_pedagogical_structure(self) -> None:
