@@ -50,7 +50,7 @@ class BiomaterialesImplantesUnit04CuratedTests(unittest.TestCase):
         for concept in (
             "tercer cuerpo",
             "repasivación",
-            "corrosión galvánica",
+            "acoplamientos galvánicos",
             "fretting-corrosión",
             "osteólisis periprotésica",
             "razón de carga",
