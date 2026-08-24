@@ -41,7 +41,7 @@ class BiomecanicaUnit05CuratedTests(unittest.TestCase):
             "anti-aliasing",
             "normalización",
             "desfase temporal",
-            "propagación",
+            "los errores se propagan",
         ):
             self.assertIn(concept, text)
         self.assertIn("no es una lectura directa de fuerza muscular", text)
