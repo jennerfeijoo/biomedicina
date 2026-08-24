@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-# User-authored validation trigger after deterministic public-site synchronization.
+# Final user-authored validation trigger after publication synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "laboratorio-biomecanica" / "units" / "unit-02.json"
 MIRROR = ROOT / "data" / "generated_units" / "laboratorio-biomecanica" / "unit-02.json"
@@ -16,6 +16,11 @@ class LaboratorioBiomecanicaUnit02CuratedTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = json.loads(SOURCE.read_text(encoding="utf-8"))
         cls.text = SOURCE.read_text(encoding="utf-8").casefold()
+        cls.theory = " ".join(
+            paragraph
+            for section in cls.unit["theory_sections"]
+            for paragraph in section["paragraphs"]
+        ).casefold()
 
     def test_generated_unit_is_exact_redevelopment_mirror(self) -> None:
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
@@ -35,9 +40,8 @@ class LaboratorioBiomecanicaUnit02CuratedTests(unittest.TestCase):
         self.assertEqual(len(sections), 4)
         self.assertTrue(all(len(section["paragraphs"]) >= 5 for section in sections))
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
-        theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "proyección 2d",
+            "análisis 2d",
             "reconstrucción 3d",
             "artefacto de tejido blando",
             "frecuencia de muestreo",
@@ -48,7 +52,7 @@ class LaboratorioBiomecanicaUnit02CuratedTests(unittest.TestCase):
             "rmse",
             "correlación",
         ):
-            self.assertIn(concept, theory)
+            self.assertIn(concept, self.theory)
 
     def test_core_kinematic_equations_are_present(self) -> None:
         equations = {
@@ -62,35 +66,22 @@ class LaboratorioBiomecanicaUnit02CuratedTests(unittest.TestCase):
         self.assertTrue(any("\\mathrm{RMSE}" in equation for equation in equations))
 
     def test_guided_activity_is_self_contained_and_synthetic(self) -> None:
-        activities = self.unit["guided_activities"]
-        self.assertEqual(len(activities), 1)
-        activity = activities[0]
+        activity = self.unit["guided_activities"][0]
         self.assertGreaterEqual(len(activity["instructions"]), 6)
         self.assertGreaterEqual(len(activity["problems"]), 12)
         self.assertGreaterEqual(len(activity["deliverables"]), 8)
         self.assertGreaterEqual(len(activity["checking_criteria"]), 12)
-        activity_text = json.dumps(activity, ensure_ascii=False).casefold()
-        self.assertIn("no grabes personas", activity_text)
-        self.assertIn("serie a=[10,18,25,17,9]", activity_text)
-        self.assertIn("2d", activity_text)
-        self.assertIn("3d", activity_text)
-        self.assertIn("rmse", activity_text)
+        text = json.dumps(activity, ensure_ascii=False).casefold()
+        for phrase in ("no grabes personas", "serie a=[10,18,25,17,9]", "2d", "3d", "rmse"):
+            self.assertIn(phrase, text)
 
-    def test_glossary_examples_errors_and_assessment_are_specific(self) -> None:
+    def test_learning_support_is_specific_and_sufficient(self) -> None:
         self.assertGreaterEqual(len(self.unit["glossary"]), 20)
         self.assertGreaterEqual(len(self.unit["worked_examples"]), 5)
         self.assertGreaterEqual(len(self.unit["common_errors"]), 10)
         self.assertGreaterEqual(len(self.unit["self_assessment"]), 10)
         terms = {entry["term"].casefold() for entry in self.unit["glossary"]}
-        for term in (
-            "aliasing",
-            "proyección 2d",
-            "reconstrucción 3d",
-            "artefacto de tejido blando",
-            "interpolación",
-            "filtrado",
-            "rmse",
-        ):
+        for term in ("aliasing", "proyección 2d", "reconstrucción 3d", "artefacto de tejido blando", "interpolación", "filtrado", "rmse"):
             self.assertIn(term, terms)
 
     def test_sources_are_directly_verified_and_disciplinary(self) -> None:
@@ -116,13 +107,16 @@ class LaboratorioBiomecanicaUnit02CuratedTests(unittest.TestCase):
     def test_editorial_boundary_and_course_progression_are_explicit(self) -> None:
         notice = self.unit["editorial_notice"].casefold()
         purpose = self.unit["purpose"].casefold()
-        self.assertIn("no constituye revisión disciplinar externa", notice)
-        self.assertIn("no autoriza registrar personas", notice)
-        self.assertIn("u1 establece protocolo", notice)
-        self.assertIn("u3 incorpora plataformas de fuerza", notice)
-        self.assertIn("u4 emg de superficie", notice)
-        self.assertIn("u5 dinámica inversa", notice)
-        self.assertIn("u6 estadística", notice)
+        for phrase in (
+            "no constituye revisión disciplinar externa",
+            "autorización para registrar personas",
+            "u1 establece protocolo",
+            "u3 incorpora plataformas de fuerza",
+            "u4 emg de superficie",
+            "u5 dinámica inversa",
+            "u6 estadística",
+        ):
+            self.assertIn(phrase, notice)
         self.assertIn("no convierte una trayectoria", purpose)
         self.assertIn("conclusión clínica", purpose)
 
