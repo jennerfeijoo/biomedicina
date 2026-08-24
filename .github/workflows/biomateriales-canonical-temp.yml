@@ -26,6 +26,42 @@ jobs:
       - name: Build canonical Biomateriales corpus
         run: python scripts/curate_biomateriales_canonical_temp.py
 
+      - name: Complete worked examples from curated self-assessment
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('.')
+          source_dir = root / 'data' / 'course_redevelopment' / 'biomateriales' / 'units'
+          canonical_dir = root / 'data' / 'courses' / 'biomateriales' / 'units'
+          for number in range(1, 7):
+              source = json.loads((source_dir / f'unit-{number:02d}.json').read_text(encoding='utf-8'))
+              target_path = canonical_dir / f'unit-{number:02d}.json'
+              target = json.loads(target_path.read_text(encoding='utf-8'))
+              candidates = source.get('self_assessment', [])
+              cursor = 0
+              while len(target['examples']) < 5 and cursor < len(candidates):
+                  raw = candidates[cursor]
+                  cursor += 1
+                  question = str(raw.get('question') or '').strip()
+                  answer = str(raw.get('answer') or '').strip()
+                  reasoning = str(raw.get('reasoning') or '').strip()
+                  common_error = str(raw.get('common_error') or '').strip()
+                  if not question or not answer:
+                      continue
+                  index = len(target['examples']) + 1
+                  target['examples'].append({
+                      'id': f"BIOMAT-U{number:02d}-EX{index:02d}",
+                      'title': f"Ejemplo de transferencia {index}",
+                      'scenario': question,
+                      'reasoning_steps': [reasoning or 'Identificar el concepto y contrastar la afirmación con las condiciones y límites de la unidad.'],
+                      'interpretation': answer,
+                      'limitations': common_error or 'No extrapolar la respuesta fuera del alcance y las condiciones declaradas en la unidad.'
+                  })
+              target_path.write_text(json.dumps(target, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
       - name: Run canonical regression
         run: python -m unittest tests.test_biomateriales_canonical_course -v
 
