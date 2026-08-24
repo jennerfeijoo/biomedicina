@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Final user-authored verification trigger after canonical Electronics closure.
+
 import json
 import unittest
 from pathlib import Path
