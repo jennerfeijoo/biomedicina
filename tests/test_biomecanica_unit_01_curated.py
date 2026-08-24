@@ -9,7 +9,7 @@ SOURCE = ROOT / "data" / "course_redevelopment" / "biomecanica" / "units" / "uni
 MIRROR = ROOT / "data" / "generated_units" / "biomecanica" / "unit-01.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
-# Final user-authored trigger after deterministic regeneration and curator cleanup.
+# Final user-authored trigger after publication metadata synchronization.
 
 
 class BiomecanicaUnit01CuratedTests(unittest.TestCase):
