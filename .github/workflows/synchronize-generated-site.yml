@@ -32,6 +32,20 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Restrict claim candidates to sufficiently described verified sources
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/curate_laboratorio_biomecanica_canonical_temp.py')
+          text = path.read_text(encoding='utf-8')
+          old = '    selected = unit["source_ids"][:8]\n'
+          new = '    selected = [sid for sid in unit["source_ids"] if len(str(source_map[sid].get("description") or "").split()) >= 6][:8]\n'
+          if old not in text:
+              raise SystemExit('claim selection pattern not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Build canonical Laboratorio de Biomecanica closure
         run: python scripts/curate_laboratorio_biomecanica_canonical_temp.py
 
