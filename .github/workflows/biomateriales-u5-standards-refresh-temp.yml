@@ -1,0 +1,118 @@
+name: Biomateriales U5 standards refresh (temporary)
+
+on:
+  push:
+    branches: [codex/biomateriales-u5-standards-refresh]
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: codex/biomateriales-u5-standards-refresh
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Refresh standards and strengthen traceability
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          src = Path('data/course_redevelopment/biomateriales/units/unit-05.json')
+          mirror = Path('data/generated_units/biomateriales/unit-05.json')
+          test = Path('tests/test_biomateriales_unit_05_curated.py')
+          unit = json.loads(src.read_text(encoding='utf-8'))
+
+          def repl(v, old, new):
+              if isinstance(v, str): return v.replace(old, new)
+              if isinstance(v, list): return [repl(x, old, new) for x in v]
+              if isinstance(v, dict): return {k: repl(x, old, new) for k, x in v.items()}
+              return v
+
+          for old, new in [
+              ('ASTM E8/E8M-24', 'ASTM E8/E8M-25'),
+              ('https://store.astm.org/e0008_e0008m-24.html', 'https://store.astm.org/e0008_e0008m-25.html'),
+              ('https://store.astm.org/standards/d638/1000', 'https://store.astm.org/d0638-22.html'),
+              ('https://store.astm.org/standards/d7334', 'https://store.astm.org/d7334-08r22.html'),
+          ]:
+              unit = repl(unit, old, new)
+
+          p = unit['theory_sections'][3]['paragraphs'][0]
+          p = p.replace('La profundidad efectiva, resolución espectral, fondo, calibración y estrategia de ajuste condicionan la interpretación.',
+                        'La profundidad de análisis efectiva, la resolución espectral, el fondo, la calibración y la estrategia de ajuste condicionan la interpretación.')
+          if 'NIST X-ray Photoelectron Spectroscopy Database' not in p:
+              p += (' La NIST X-ray Photoelectron Spectroscopy Database aporta posiciones de líneas y desplazamientos químicos críticamente evaluados; '
+                    'apoya asignaciones espectrales, pero no sustituye la calibración, el ajuste ni la documentación del estado de la muestra.')
+          unit['theory_sections'][3]['paragraphs'][0] = p
+
+          p = unit['theory_sections'][1]['paragraphs'][2]
+          if 'ISO 14577-1:2026' not in p:
+              p += (' ASTM E384-22 documenta microindentación Knoop/Vickers y fuentes de error que afectan repetibilidad y reproducibilidad. '
+                    'ISO 14577-1:2026 es la edición vigente para indentación instrumentada y exige especial atención a la forma real de la punta y a la función de área a pequeña escala. '
+                    'Dureza o parámetros de indentación no se convierten automáticamente en resistencia a tracción o desgaste.')
+          unit['theory_sections'][1]['paragraphs'][2] = p
+
+          p = unit['theory_sections'][2]['paragraphs'][2]
+          if 'ASTM E1508-12a(2019)' not in p:
+              p += (' ASTM E1508-12a(2019) sigue siendo la guía activa para análisis cuantitativo EDS mientras existe una revisión en desarrollo; '
+                    'su alcance obliga a conservar condiciones de adquisición, estrategia de cuantificación y limitaciones de sensibilidad.')
+          unit['theory_sections'][2]['paragraphs'][2] = p
+
+          extras = [
+              {'title':'ASTM E384-22 — Standard Test Method for Microindentation Hardness of Materials','organization':'ASTM International','url':'https://store.astm.org/e0384-22.html','type':'método de ensayo','description':'Método activo para microindentación Knoop/Vickers, con fuentes de error y efectos sobre precisión, sesgo, repetibilidad y reproducibilidad.','verification_status':'verified_directly'},
+              {'title':'ISO 14577-1:2026 — Instrumented indentation test for hardness and materials parameters — Part 1: Test method','organization':'ISO','url':'https://www.iso.org/standard/85223.html','type':'norma internacional','description':'Edición 3 publicada en junio de 2026 para indentación instrumentada; explicita la influencia de la geometría de la punta y la función de área en micro/nanoescala.','verification_status':'verified_directly'},
+              {'title':'ASTM E1508-12a(2019) — Standard Guide for Quantitative Analysis by Energy-Dispersive Spectroscopy','organization':'ASTM International','url':'https://store.astm.org/e1508-12ar19.html','type':'guía normalizada','description':'Guía activa para análisis cuantitativo EDS en SEM/EPMA y sus capacidades y limitaciones.','verification_status':'verified_directly'},
+              {'title':'NIST Surface Data — X-ray Photoelectron Spectroscopy and surface-analysis databases','organization':'National Institute of Standards and Technology','url':'https://www.nist.gov/srd/surface-data','type':'base de datos de referencia','description':'Datos de referencia para XPS y análisis de superficie, incluidas energías de enlace, desplazamientos químicos y recursos de interpretación cuantitativa.','verification_status':'verified_directly'},
+          ]
+          urls = {s.get('url') for s in unit['sources']}
+          for item in extras:
+              if item['url'] not in urls:
+                  unit['sources'].append(item); urls.add(item['url'])
+
+          rendered = json.dumps(unit, ensure_ascii=False, indent=2) + '\n'
+          src.write_text(rendered, encoding='utf-8')
+          mirror.write_text(rendered, encoding='utf-8')
+
+          t = test.read_text(encoding='utf-8')
+          for old, new in [
+              ('astm e8/e8m-24', 'astm e8/e8m-25'),
+              ('https://store.astm.org/e0008_e0008m-24.html', 'https://store.astm.org/e0008_e0008m-25.html'),
+              ('https://store.astm.org/standards/d638/1000', 'https://store.astm.org/d0638-22.html'),
+              ('https://store.astm.org/standards/d7334', 'https://store.astm.org/d7334-08r22.html'),
+              ('"profundidad efectiva",', '"profundidad de análisis",'),
+              ('self.assertGreaterEqual(len(sources), 10)', 'self.assertGreaterEqual(len(sources), 14)'),
+          ]:
+              t = t.replace(old, new)
+          anchor = '            "https://www.bipm.org/en/doi/10.59161/jcgm100-2008e",\n'
+          extra_expected = ('            "https://store.astm.org/e0384-22.html",\n'
+                            '            "https://www.iso.org/standard/85223.html",\n'
+                            '            "https://store.astm.org/e1508-12ar19.html",\n'
+                            '            "https://www.nist.gov/srd/surface-data",\n')
+          if 'https://www.iso.org/standard/85223.html' not in t:
+              t = t.replace(anchor, anchor + extra_expected)
+          test.write_text(t, encoding='utf-8')
+          PY
+
+          python -m unittest tests.test_biomateriales_unit_05_curated -v
+          python scripts/validate_generated_units.py
+          python scripts/generate_site.py --force --subject biomateriales --with-units
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Commit and self-clean
+        shell: bash
+        run: |
+          rm -f .github/workflows/biomateriales-u5-standards-refresh-temp.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refresh Biomateriales U5 characterization standards"
+          git push origin HEAD:codex/biomateriales-u5-standards-refresh
