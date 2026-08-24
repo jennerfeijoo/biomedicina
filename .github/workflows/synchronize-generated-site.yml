@@ -7,8 +7,6 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
-      - 'tests/**'
-      - 'patch_biomateriales_u1_temp.py'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -34,14 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply Biomateriales U1 progressive activities
-        shell: bash
-        run: |
-          set -euo pipefail
-          python patch_biomateriales_u1_temp.py
-          python -m unittest tests.test_biomateriales_unit_01_curated
-          python scripts/validate_biomaterials_baseline_audit.py
-
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -66,8 +56,6 @@ jobs:
         run: |
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
-          python scripts/validate_biomaterials_baseline_audit.py
-          python -m unittest tests.test_biomateriales_unit_01_curated
 
       - name: Upload synchronization diagnostic
         if: always()
@@ -77,18 +65,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit Biomateriales U1 pedagogy and deterministic public site
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git show origin/main:.github/workflows/synchronize-generated-site.yml > .github/workflows/synchronize-generated-site.yml
-          rm -f patch_biomateriales_u1_temp.py global-generation.txt
-          git add -A
+          git add -A -- \
+            ciencias-basicas \
+            biologicas-medicas \
+            ingenieria-biomedica \
+            gestion-etica-comunicacion \
+            catalogo
           if git diff --cached --quiet; then
-            echo "Biomateriales U1 ya está sincronizada y sin artefactos temporales."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Complete Biomateriales U1 guided practice"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
