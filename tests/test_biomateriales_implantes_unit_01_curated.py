@@ -36,7 +36,7 @@ class BiomaterialesImplantesUnit01CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "necesidad clínica",
+            "necesidad",
             "uso previsto",
             "casos de carga",
             "situación peligrosa",
@@ -46,6 +46,7 @@ class BiomaterialesImplantesUnit01CuratedTests(unittest.TestCase):
             "trazabilidad",
         ):
             self.assertIn(concept, theory)
+        self.assertIn("necesidad clínica", self.unit["purpose"].casefold())
         self.assertIn("selección de materiales", theory)
         self.assertIn("unidades 2 a 6", theory)
 
