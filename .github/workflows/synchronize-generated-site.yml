@@ -32,6 +32,32 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Repair Clinical Engineering U6 JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          paths = [
+              Path('data/course_redevelopment/ingenieria-clinica-gestion/units/unit-06.json'),
+              Path('data/generated_units/ingenieria-clinica-gestion/unit-06.json'),
+          ]
+          needle = '    {"term": "trazabilidad de decisión", "definition": "Capacidad de reconstruir cómo datos, definiciones, pruebas, resultados y restricciones condujeron a una decisión de mejora."\n  ],'
+          replacement = '    {"term": "trazabilidad de decisión", "definition": "Capacidad de reconstruir cómo datos, definiciones, pruebas, resultados y restricciones condujeron a una decisión de mejora."}\n  ],'
+          for path in paths:
+              text = path.read_text(encoding='utf-8')
+              if needle not in text:
+                  raise SystemExit(f'No se encontró el patrón de reparación en {path}')
+              text = text.replace(needle, replacement, 1)
+              json.loads(text)
+              path.write_text(text, encoding='utf-8')
+          if paths[0].read_bytes() != paths[1].read_bytes():
+              raise SystemExit('La fuente y el espejo U6 dejaron de ser idénticos')
+          print('U6 reparada y JSON válido en fuente y espejo.')
+          PY
+
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -44,6 +70,7 @@ jobs:
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
           fi
+          python -m unittest tests.test_ingenieria_clinica_gestion_unit_06_curated
 
       - name: Regenerate site deterministically
         shell: bash
@@ -65,20 +92,26 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Commit repaired source and deterministic public site
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git add -A -- \
+            data/course_redevelopment/ingenieria-clinica-gestion/units/unit-06.json \
+            data/generated_units/ingenieria-clinica-gestion/unit-06.json \
+            .github/workflows/synchronize-generated-site.yml \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
             gestion-etica-comunicacion \
             catalogo
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "U6 y el sitio público ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Repair Clinical Engineering U6 structured content"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
