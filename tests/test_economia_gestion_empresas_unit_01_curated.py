@@ -9,6 +9,8 @@ SOURCE = ROOT / "data" / "course_redevelopment" / "economia-gestion-empresas" / 
 MIRROR = ROOT / "data" / "generated_units" / "economia-gestion-empresas" / "unit-01.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
+# Final user-authored trigger after the generated public site was synchronized.
+
 
 class EconomiaGestionEmpresasUnit01CuratedTests(unittest.TestCase):
     @classmethod
