@@ -1,0 +1,60 @@
+name: Bootstrap canonical Device Development corpus
+
+on:
+  push:
+    branches:
+      - codex/desarrollo-dispositivos-medicos-canonical-closure
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/desarrollo-dispositivos-medicos-canonical-closure
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Bootstrap canonical course
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/migrate_course_to_canonical.py \
+            --subject desarrollo-dispositivos-medicos \
+            --course-code DDM
+          python scripts/validate_canonical_courses.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('data/courses/desarrollo-dispositivos-medicos')
+          required = [
+              root / 'course.json', root / 'glossary.json', root / 'sources.json',
+              root / 'claims.json', root / 'media.json',
+              root / 'assessments/course-assessment.json',
+          ]
+          required += [root / 'units' / f'unit-{i:02d}.json' for i in range(1, 7)]
+          required += [root / 'assessments' / f'unit-{i:02d}.json' for i in range(1, 7)]
+          for path in required:
+              if not path.exists():
+                  raise SystemExit(f'Missing canonical output: {path}')
+              json.loads(path.read_text(encoding='utf-8'))
+          PY
+
+      - name: Commit canonical bootstrap and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/canonicalize-desarrollo-dispositivos-temp.yml
+          git add data/courses/desarrollo-dispositivos-medicos
+          git commit -m "Bootstrap canonical Desarrollo de Dispositivos Médicos"
+          git push origin HEAD:codex/desarrollo-dispositivos-medicos-canonical-closure
