@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final user-authored trigger after deterministic public-index synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "data" / "courses" / "biomateriales-implantes"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
