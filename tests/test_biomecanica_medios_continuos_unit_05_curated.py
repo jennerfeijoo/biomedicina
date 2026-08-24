@@ -97,7 +97,7 @@ class BiomecanicaMediosContinuosUnit05CuratedTests(unittest.TestCase):
         self.assertIn("no constituye predicción clínica", text)
         self.assertIn("no basta para declarar", text)
         self.assertIn("segmentación", text)
-        self.assertIn("no como diagnóstico", self.unit["editorial_notice"].casefold())
+        self.assertIn("no se presentan como diagnóstico", self.unit["editorial_notice"].casefold())
 
 
 if __name__ == "__main__":
