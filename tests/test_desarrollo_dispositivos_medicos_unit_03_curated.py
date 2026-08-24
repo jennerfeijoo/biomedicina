@@ -126,6 +126,6 @@ class DesarrolloDispositivosMedicosUnit03CuratedTests(unittest.TestCase):
         self.assertIn("sin reducir el riesgo a una multiplicación de escalas ordinales", purpose)
 
 
-# Final user-authored validation trigger after concurrent U2 terminology alignment on main.
+# Final user-authored retry after a scheduler cancellation of the structured-connections workflow.
 if __name__ == "__main__":
     unittest.main()
