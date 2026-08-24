@@ -32,6 +32,32 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Repair Biosensores U5 JSON syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          targets = [
+              Path('data/course_redevelopment/biosensores/units/unit-05.json'),
+              Path('data/generated_units/biosensores/unit-05.json'),
+          ]
+          old = '"puede requerir revalidación."\n  ],\n  "self_assessment"'
+          new = '"puede requerir revalidación."}\n  ],\n  "self_assessment"'
+          for path in targets:
+              text = path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'No se encontró el patrón esperado en {path}')
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+              json.loads(text)
+          if targets[0].read_bytes() != targets[1].read_bytes():
+              raise SystemExit('La fuente y el espejo de U5 dejaron de ser idénticos')
+          print('U5 reparada y espejo exacto verificado.')
+          PY
+
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -70,7 +96,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
           git add -A -- \
+            data/course_redevelopment/biosensores/units/unit-05.json \
+            data/generated_units/biosensores/unit-05.json \
+            .github/workflows/synchronize-generated-site.yml \
             ciencias-basicas \
             biologicas-medicas \
             ingenieria-biomedica \
@@ -80,5 +110,5 @@ jobs:
             echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Repair Biosensores U5 and synchronize public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
