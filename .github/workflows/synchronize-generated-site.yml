@@ -44,15 +44,23 @@ jobs:
               Path('data/course_redevelopment/biosensores/units/unit-05.json'),
               Path('data/generated_units/biosensores/unit-05.json'),
           ]
-          old = '"puede requerir revalidación."\n  ],\n  "self_assessment"'
-          new = '"puede requerir revalidación."}\n  ],\n  "self_assessment"'
+          needle = '"error": "Modificar simultáneamente superficie, transductor y análisis durante la validación."'
           for path in targets:
-              text = path.read_text(encoding='utf-8')
-              if old not in text:
-                  raise SystemExit(f'No se encontró el patrón esperado en {path}')
-              text = text.replace(old, new, 1)
-              path.write_text(text, encoding='utf-8')
+              lines = path.read_text(encoding='utf-8').splitlines()
+              matches = [i for i, line in enumerate(lines) if needle in line]
+              if len(matches) != 1:
+                  raise SystemExit(f'Se esperó una línea objetivo en {path}; encontradas={len(matches)}')
+              index = matches[0]
+              stripped = lines[index].rstrip()
+              if stripped.endswith('"}'):
+                  pass
+              elif stripped.endswith('"'):
+                  lines[index] = stripped + '}'
+              else:
+                  raise SystemExit(f'Final inesperado en línea objetivo de {path}: {stripped[-20:]}')
+              text = '\n'.join(lines) + '\n'
               json.loads(text)
+              path.write_text(text, encoding='utf-8')
           if targets[0].read_bytes() != targets[1].read_bytes():
               raise SystemExit('La fuente y el espejo de U5 dejaron de ser idénticos')
           print('U5 reparada y espejo exacto verificado.')
