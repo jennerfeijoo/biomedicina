@@ -42,7 +42,7 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "requisitos sin fuente",
+            "requisito huérfano",
             "gold plating",
             "requisitos derivados",
             "frontera del sistema",
@@ -118,6 +118,6 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir requisitos con soluciones prematuras", purpose)
 
 
-# Theory assertions follow the phrases used in prose; glossary assertions preserve canonical lifecycle terminology.
+# Final user-authored gate trigger after terminology and public-page synchronization.
 if __name__ == "__main__":
     unittest.main()
