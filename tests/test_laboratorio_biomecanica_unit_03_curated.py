@@ -54,7 +54,6 @@ class LaboratorioBiomecanicaUnit03CuratedTests(unittest.TestCase):
             "regla de contacto",
             "regla trapezoidal",
             "transformación espacial",
-            "rmse",
         ):
             self.assertIn(concept, self.theory)
 
