@@ -7,7 +7,6 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
-      - 'tests/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -33,15 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Build canonical Biosensores corpus
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/curate_biosensores_canonical_temp.py
-          python scripts/patch_biosensores_canonical_temp.py
-          python scripts/validate_academic_courses.py --course biosensores --strict-content
-          python -m unittest tests.test_biosensores_canonical_course
-
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -50,17 +40,10 @@ jobs:
           python scripts/validate_generated_units.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
-          python scripts/validate_academic_courses.py --course biosensores --strict-content
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
           fi
-
-      - name: Synchronize editorial metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/sync_catalog_statuses.py
 
       - name: Regenerate site deterministically
         shell: bash
@@ -71,11 +54,8 @@ jobs:
       - name: Validate regenerated site
         shell: bash
         run: |
-          set -euo pipefail
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
-          python scripts/validate_academic_courses.py --course biosensores --strict-content
-          python -m unittest tests.test_biosensores_canonical_course
 
       - name: Upload synchronization diagnostic
         if: always()
@@ -85,21 +65,20 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit canonical closure and public site
+      - name: Commit deterministic public site
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          rm -f scripts/curate_biosensores_canonical_temp.py
-          rm -f scripts/patch_biosensores_canonical_temp.py
-          rm -f scripts/build_biosensores_canonical_temp.py
-          rm -f global-generation.txt
-          git add -A
+          git add -A -- \
+            ciencias-basicas \
+            biologicas-medicas \
+            ingenieria-biomedica \
+            gestion-etica-comunicacion \
+            catalogo
           if git diff --cached --quiet; then
-            echo "El cierre canónico de Biosensores ya está sincronizado."
+            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
             exit 0
           fi
-          git commit -m "Close Biosensores canonical academic corpus"
+          git commit -m "Synchronize generated public site"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
