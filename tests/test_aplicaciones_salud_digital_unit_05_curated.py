@@ -112,4 +112,4 @@ class AplicacionesSaludDigitalUnit05CuratedTests(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-# Final user-authored verification trigger after generated-site synchronization.
+# Final user-authored verification trigger after publication metadata synchronization.
