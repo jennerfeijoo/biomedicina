@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Final user-authored validation trigger after curriculum/publication synchronization.
+
 import json
 import unittest
 from pathlib import Path
