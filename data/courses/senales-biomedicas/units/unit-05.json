@@ -1,0 +1,644 @@
+{
+  "$schema": "../../../../schemas/academic/unit-v1.schema.json",
+  "schema_version": "1.0",
+  "id": "SENBIO-U05",
+  "course_id": "senales-biomedicas",
+  "order": 5,
+  "slug": "caracteristicas-y-modelos",
+  "title": "Características y modelos",
+  "status": {
+    "content": "complete",
+    "sources": "traceable",
+    "pedagogy": "complete",
+    "multimedia": "planned",
+    "internal_review": "pending",
+    "external_review": "pending",
+    "publication": "published_provisional"
+  },
+  "purpose": "Construir y evaluar modelos predictivos reproducibles a partir de características temporales y frecuenciales de señales biomédicas, definiendo la unidad independiente de generalización, evitando fuga entre sujetos o episodios, ajustando preprocesamiento y selección únicamente con datos de entrenamiento, separando tuning de evaluación y comunicando discriminación, error e incertidumbre sin convertir desempeño interno en utilidad clínica.",
+  "prerequisite_unit_ids": [
+    "SENBIO-U04"
+  ],
+  "course_learning_outcome_ids": [
+    "SENBIO-LO05",
+    "SENBIO-LO07"
+  ],
+  "learning_outcomes": [
+    {
+      "id": "SENBIO-U05-LO01",
+      "statement": "Construir una matriz de características trazable a partir de segmentos de señal, conservando definición, unidad, ventana, canal, versión del extractor y relación con los análisis temporales y frecuenciales de las unidades previas."
+    },
+    {
+      "id": "SENBIO-U05-LO02",
+      "statement": "Definir la unidad independiente de generalización y diseñar particiones por sujeto, episodio, sesión o dispositivo que impidan que observaciones correlacionadas del mismo origen aparezcan simultáneamente en entrenamiento y evaluación."
+    },
+    {
+      "id": "SENBIO-U05-LO03",
+      "statement": "Encapsular imputación, escalado, reducción o selección de características y cualquier remuestreo dentro del pipeline ajustado exclusivamente en cada conjunto de entrenamiento."
+    },
+    {
+      "id": "SENBIO-U05-LO04",
+      "statement": "Comparar un baseline explícito con modelos candidatos de complejidad limitada y seleccionar hiperparámetros mediante validación interna sin reutilizar el conjunto de prueba para decidir el modelo."
+    },
+    {
+      "id": "SENBIO-U05-LO05",
+      "statement": "Evaluar clasificación con matriz de confusión, sensibilidad, especificidad, PPV, balanced accuracy, AUROC y AUPRC según prevalencia, umbral y objetivo del problema, evitando resumir todo en accuracy."
+    },
+    {
+      "id": "SENBIO-U05-LO06",
+      "statement": "Documentar un modelo bloqueado con variables, particiones, semillas, pipeline, hiperparámetros, métricas, intervalos o análisis de sensibilidad y límites de transferencia, reservando interpretación, explicabilidad y monitorización operativa para la unidad 6."
+    }
+  ],
+  "topics": [
+    {
+      "id": "SENBIO-U05-T01",
+      "title": "1. De la señal a una matriz de características trazable",
+      "blocks": [
+        {
+          "id": "SENBIO-U05-T01-B01",
+          "type": "equation",
+          "latex": "z_j=\\frac{x_j-\\mu_{j,train}}{\\sigma_{j,train}}",
+          "label": "Estandarización de la característica j usando media y desviación estimadas solo en entrenamiento; validación y prueba reutilizan esos parámetros sin recalcularlos."
+        },
+        {
+          "id": "SENBIO-U05-T01-B02",
+          "type": "equation",
+          "latex": "\\mathbf X\\in\\mathbb R^{n\\times p}",
+          "label": "Matriz de diseño con n unidades de observación y p características; n no equivale al número de unidades independientes si existen múltiples filas por sujeto o episodio."
+        }
+      ],
+      "key_points": [
+        "Cada característica necesita definición, unidad, ventana, canal y procedencia reproducibles.",
+        "Número de segmentos y número de sujetos independientes son cantidades distintas.",
+        "La etiqueta y el tiempo índice pueden introducir fuga aunque el algoritmo de clasificación sea correcto.",
+        "El pipeline completo, incluidas transformaciones aprendidas, es el objeto que se ajusta y valida."
+      ],
+      "subtopics": [
+        {
+          "id": "SENBIO-U05-T01-ST01",
+          "title": "Cada característica necesita definición, unidad, ventana, canal y procedencia reproducibles",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T01-ST01-B01",
+              "type": "paragraph",
+              "text": "Un modelo no recibe una señal fisiológica abstracta, sino una representación construida a partir de ventanas, eventos, canales y reglas de procesamiento. Una característica es una función definida sobre un segmento o conjunto de eventos: por ejemplo RMS, amplitud pico a pico, duración, variabilidad de intervalos, potencia en una banda o frecuencia mediana. U3 y U4 explican cómo obtener descriptores temporales y espectrales; U5 los convierte en columnas de una matriz de diseño y exige que cada columna conserve nombre, unidad, definición, ventana, canal y versión del procedimiento que la produjo."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T01-ST02",
+          "title": "Número de segmentos y número de sujetos independientes son cantidades distintas",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T01-ST02-B01",
+              "type": "paragraph",
+              "text": "La unidad de fila debe declararse antes de modelar. Una fila puede representar una ventana de cinco segundos, un latido, una sesión o una persona, pero esas filas no son necesariamente independientes. Cien ventanas procedentes de un mismo sujeto comparten anatomía, sensor, colocación, contexto y otras características persistentes. Contarlas como cien individuos independientes puede hacer que un clasificador aprenda una huella del sujeto en lugar del fenómeno de interés y produzca una estimación de generalización artificialmente optimista."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T01-ST03",
+          "title": "La etiqueta y el tiempo índice pueden introducir fuga aunque el algoritmo de clasificación sea correcto",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T01-ST03-B01",
+              "type": "paragraph",
+              "text": "La definición de etiqueta también forma parte de la característica experimental. Si una etiqueta se construye usando información posterior al instante de predicción, o si la ventana incluye muestras posteriores al evento que pretende anticiparse, aparece fuga temporal aunque la partición estadística sea correcta. Por ello cada tarea debe declarar tiempo índice, horizonte, ventana de observación y regla de etiquetado antes de calcular características. Un rasgo matemáticamente válido puede ser metodológicamente inválido si usa información no disponible en el uso previsto."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T01-ST04",
+          "title": "El pipeline completo, incluidas transformaciones aprendidas, es el objeto que se ajusta y valida",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T01-ST04-B01",
+              "type": "paragraph",
+              "text": "Las transformaciones aprendidas de los datos, como imputar con la media, estandarizar, estimar componentes principales o seleccionar columnas según asociación con la etiqueta, no son propiedades fijas del sensor. Sus parámetros dependen de la muestra usada para ajustarlas. En evaluación predictiva deben aprenderse exclusivamente con el subconjunto de entrenamiento correspondiente y después aplicarse sin reajuste a validación o prueba. Esta regla convierte el pipeline completo, y no solo el clasificador final, en el objeto que debe validarse."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SENBIO-U05-T02",
+      "title": "2. Partición por grupos y prevención sistemática de fuga",
+      "blocks": [],
+      "key_points": [
+        "La unidad de generalización manda sobre el split: sujeto, episodio, sesión o dispositivo.",
+        "Selección de características y preprocesamiento fuera de cross-validation producen fuga.",
+        "Remuestreo y transformaciones supervisadas se ajustan solo dentro de cada entrenamiento.",
+        "Tuning interno y evaluación externa cumplen funciones distintas y no deben reutilizar el mismo resultado."
+      ],
+      "subtopics": [
+        {
+          "id": "SENBIO-U05-T02-ST01",
+          "title": "La unidad de generalización manda sobre el split: sujeto, episodio, sesión o dispositivo",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T02-ST01-B01",
+              "type": "paragraph",
+              "text": "La pregunta de generalización determina la partición. Si el objetivo es funcionar en sujetos nuevos, ninguna ventana del mismo sujeto puede aparecer en entrenamiento y prueba. Si el objetivo es transferir entre sesiones o dispositivos, la agrupación debe respetar esa dependencia. Dividir aleatoriamente ventanas antes de considerar su origen suele ser inadecuado porque entrenamiento y prueba comparten información estable. Métodos como GroupKFold formalizan una regla básica: un grupo aparece en un solo lado de cada división de evaluación."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T02-ST02",
+          "title": "Selección de características y preprocesamiento fuera de cross-validation producen fuga",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T02-ST02-B01",
+              "type": "paragraph",
+              "text": "La fuga no se limita al split. Calcular normalización, imputación, PCA, selección univariada, selección recursiva o reducción de dimensionalidad con todo el conjunto antes de cross-validation deja que la evaluación influya en el espacio de características. Estudios en EEG, radiomics y neuroimagen han mostrado que seleccionar características fuera de la validación puede inflar de forma importante la precisión aparente. La solución conceptual es sencilla: toda operación que aprenda parámetros debe vivir dentro de la rama de entrenamiento de cada fold."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T02-ST03",
+          "title": "Remuestreo y transformaciones supervisadas se ajustan solo dentro de cada entrenamiento",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T02-ST03-B01",
+              "type": "paragraph",
+              "text": "Un Pipeline encadena transformaciones y estimador para que cada llamada de ajuste ocurra sobre el entrenamiento disponible en ese fold. Si se emplea sobremuestreo, generación sintética de minorías o selección guiada por la etiqueta, esa operación también debe realizarse después de separar el fold y nunca sobre el conjunto completo. El conjunto de prueba solo recibe transformaciones ya aprendidas; no participa en escoger variables, umbrales, hiperparámetros ni reglas de limpieza."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T02-ST04",
+          "title": "Tuning interno y evaluación externa cumplen funciones distintas y no deben reutilizar el mismo resultado",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T02-ST04-B01",
+              "type": "paragraph",
+              "text": "Cuando se prueban muchas combinaciones de características e hiperparámetros, la validación usada para elegir la mejor combinación ya forma parte del entrenamiento. Evaluar el modelo seleccionado sobre esos mismos resultados de validación produce sesgo de selección. La validación anidada separa un bucle interno para selección y un bucle externo para estimar desempeño. Un test final adicional puede mantenerse bloqueado hasta que arquitectura, variables y reglas estén congeladas."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SENBIO-U05-T03",
+      "title": "3. Baselines, regularización y selección de modelo",
+      "blocks": [
+        {
+          "id": "SENBIO-U05-T03-B01",
+          "type": "equation",
+          "latex": "p(y=1\\mid\\mathbf x)=\\frac{1}{1+e^{-(\\beta_0+\\boldsymbol\\beta^T\\mathbf x)}}",
+          "label": "Probabilidad de clase positiva en regresión logística; los coeficientes se estiman solo con entrenamiento y cualquier regularización se selecciona internamente."
+        }
+      ],
+      "key_points": [
+        "El baseline se evalúa con exactamente la misma partición y métricas que los candidatos.",
+        "Hiperparámetros y selección aprendida pertenecen al entrenamiento, no al test.",
+        "Una variable seleccionada no se convierte automáticamente en biomarcador estable o causal.",
+        "El modelo se bloquea antes de la evaluación final y la complejidad adicional debe justificar su beneficio."
+      ],
+      "subtopics": [
+        {
+          "id": "SENBIO-U05-T03-ST01",
+          "title": "El baseline se evalúa con exactamente la misma partición y métricas que los candidatos",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T03-ST01-B01",
+              "type": "paragraph",
+              "text": "Todo experimento necesita un baseline que haga visible cuánto aporta el modelo. Un clasificador que siempre predice la clase mayoritaria, una regla basada en una sola característica predefinida o una regresión logística regularizada pueden servir como referencias dependiendo de la pregunta. Un modelo más complejo no es mejor por definición; debe justificar una mejora reproducible frente al baseline bajo la misma partición, el mismo conjunto de prueba y las mismas métricas."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T03-ST02",
+          "title": "Hiperparámetros y selección aprendida pertenecen al entrenamiento, no al test",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T03-ST02-B01",
+              "type": "paragraph",
+              "text": "La regresión logística transforma una combinación lineal de características en una probabilidad entre cero y uno. Con muchas variables correlacionadas o pocos sujetos, la regularización limita la complejidad efectiva y puede estabilizar coeficientes, pero su intensidad es un hiperparámetro que debe seleccionarse dentro del entrenamiento. Árboles, SVM u otros clasificadores son candidatos posibles, no requisitos. Para una unidad pedagógica interesa comparar pocas familias bien justificadas antes que lanzar una búsqueda masiva difícil de auditar."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T03-ST03",
+          "title": "Una variable seleccionada no se convierte automáticamente en biomarcador estable o causal",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T03-ST03-B01",
+              "type": "paragraph",
+              "text": "La selección de características puede ser previa por conocimiento del dominio cuando se define antes de observar las etiquetas del conjunto de estudio, o aprendida mediante filtros, regularización o procedimientos wrapper. Cuando depende de los datos o de la etiqueta, forma parte del modelo y debe repetirse dentro de cada fold. Una lista final de variables elegidas después de todo el entrenamiento no demuestra que esas variables sean biomarcadores estables; describe el resultado de un procedimiento condicionado a muestra, partición y algoritmo."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T03-ST04",
+          "title": "El modelo se bloquea antes de la evaluación final y la complejidad adicional debe justificar su beneficio",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T03-ST04-B01",
+              "type": "paragraph",
+              "text": "La decisión final debe bloquear arquitectura, conjunto de características, hiperparámetros y regla de umbral antes de abrir el test. Si dos modelos rinden de forma compatible dentro de la incertidumbre, se prefiere el más simple cuando reduce grados de libertad y facilita reproducibilidad sin sacrificar el objetivo definido. Esta regla no convierte simplicidad en virtud universal, pero evita seleccionar complejidad por diferencias pequeñas obtenidas después de muchas comparaciones."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SENBIO-U05-T04",
+      "title": "4. Métricas, incertidumbre y alcance de la validación",
+      "blocks": [
+        {
+          "id": "SENBIO-U05-T04-B01",
+          "type": "equation",
+          "latex": "\\mathrm{Sensibilidad}=\\frac{TP}{TP+FN}",
+          "label": "Fracción de positivos reales detectados como positivos."
+        },
+        {
+          "id": "SENBIO-U05-T04-B02",
+          "type": "equation",
+          "latex": "\\mathrm{PPV}=\\frac{TP}{TP+FP}",
+          "label": "Fracción de predicciones positivas que son verdaderas; depende de prevalencia y composición de la muestra."
+        },
+        {
+          "id": "SENBIO-U05-T04-B03",
+          "type": "equation",
+          "latex": "\\mathrm{BalancedAccuracy}=\\frac{1}{2}\\left(\\frac{TP}{TP+FN}+\\frac{TN}{TN+FP}\\right)",
+          "label": "Promedio de sensibilidad y especificidad para evitar que la clase mayoritaria domine la accuracy convencional."
+        }
+      ],
+      "key_points": [
+        "Métricas y umbral se eligen según la pregunta y el coste de errores, no después de ver cuál luce mejor.",
+        "AUPRC es especialmente informativa cuando la clase positiva es rara y debe contextualizarse con su prevalencia.",
+        "La incertidumbre debe respetar la unidad independiente; ventanas correlacionadas no son réplicas independientes.",
+        "Validación interna técnica no equivale a utilidad clínica, validación externa, seguridad o preparación para despliegue."
+      ],
+      "subtopics": [
+        {
+          "id": "SENBIO-U05-T04-ST01",
+          "title": "Métricas y umbral se eligen según la pregunta y el coste de errores, no después de ver cuál luce mejor",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T04-ST01-B01",
+              "type": "paragraph",
+              "text": "La matriz de confusión depende de un umbral y resume verdaderos positivos, falsos positivos, verdaderos negativos y falsos negativos. Sensibilidad y especificidad condicionan sobre la clase real; PPV o precisión condiciona sobre las predicciones positivas y por tanto cambia con prevalencia y composición de la muestra. Accuracy puede ocultar un clasificador inútil cuando una clase domina. Balanced accuracy da igual peso medio a sensibilidad y especificidad, pero tampoco reemplaza el examen de errores relevantes para la tarea."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T04-ST02",
+          "title": "AUPRC es especialmente informativa cuando la clase positiva es rara y debe contextualizarse con su prevalencia",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T04-ST02-B01",
+              "type": "paragraph",
+              "text": "AUROC resume discriminación a través de umbrales y es útil, pero en problemas muy desbalanceados puede coexistir con una precisión positiva pobre. AUPRC concentra la relación entre recall y precision y debe interpretarse contra la prevalencia o tasa positiva del conjunto evaluado. Las métricas no son intercambiables: se predefinen según consecuencias del error y se reportan junto con la matriz de confusión en un umbral relevante, no solo como un único número máximo."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T04-ST03",
+          "title": "La incertidumbre debe respetar la unidad independiente; ventanas correlacionadas no son réplicas independientes",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T04-ST03-B01",
+              "type": "paragraph",
+              "text": "La variabilidad entre folds no es una medida completa de incertidumbre. Con pocos sujetos, estimaciones de cross-validation pueden tener grandes barras de error y el desvío estándar entre folds puede subestimar esa incertidumbre. Cuando se usan intervalos por bootstrap o remuestreo, la unidad de remuestreo debe respetar la independencia, por ejemplo sujetos y no ventanas correlacionadas. Además conviene repetir particiones razonables o realizar análisis de sensibilidad para comprobar si la conclusión depende de una división concreta."
+            }
+          ]
+        },
+        {
+          "id": "SENBIO-U05-T04-ST04",
+          "title": "Validación interna técnica no equivale a utilidad clínica, validación externa, seguridad o preparación para despliegue",
+          "blocks": [
+            {
+              "id": "SENBIO-U05-T04-ST04-B01",
+              "type": "paragraph",
+              "text": "Una validación interna correcta demuestra desempeño bajo el conjunto y diseño evaluados; no demuestra utilidad clínica, robustez en otro hospital, equidad, seguridad ni comportamiento después del despliegue. TRIPOD+AI ofrece principios de reporte transparente para estudios de modelos predictivos, pero cumplir una guía de reporte no valida un modelo. La unidad 6 retomará interpretación, explicabilidad, monitorización y deriva; U5 termina cuando existe un modelo bloqueado y una estimación de desempeño técnicamente defendible con límites explícitos."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "id": "SENBIO-U05-EJ01",
+      "title": "Ventanas aleatorias frente a separación por sujeto",
+      "scenario": "Doce sujetos sintéticos aportan cincuenta ventanas cada uno. Cada sujeto tiene un pequeño offset estable no relacionado con la clase, además de una señal débil asociada con la etiqueta.",
+      "reasoning_steps": [
+        "Generar identificador de sujeto y múltiples ventanas por sujeto.",
+        "Dividir primero ventanas al azar y entrenar un modelo con características que incluyen indirectamente el offset individual.",
+        "Repetir usando grupos para que ningún sujeto aparezca en ambos lados.",
+        "Comparar métricas y revisar cuánto cae el desempeño cuando desaparece la posibilidad de reconocer sujetos vistos.",
+        "Concluir cuál split responde realmente a la pregunta de generalizar a sujetos nuevos."
+      ],
+      "interpretation": "Una partición por ventanas puede medir memoria de identidad compartida; la partición por sujeto aproxima mejor una predicción en individuos no vistos.",
+      "limitations": [
+        "El offset sintético simplifica huellas reales de sujeto.",
+        "La magnitud exacta de la inflación depende del dataset.",
+        "Agrupar correctamente no garantiza por sí solo validez externa."
+      ]
+    },
+    {
+      "id": "SENBIO-U05-EJ02",
+      "title": "Selección de características antes y dentro de cross-validation",
+      "scenario": "Un dataset sintético contiene 500 características de ruido y una señal predictiva débil. Se seleccionan las 20 variables con mayor asociación con la etiqueta.",
+      "reasoning_steps": [
+        "Aplicar incorrectamente la selección usando todos los datos y registrar la puntuación de cross-validation.",
+        "Construir un pipeline que repita la selección solo dentro de cada fold de entrenamiento.",
+        "Mantener clasificador y particiones comparables.",
+        "Comparar diferencia de desempeño y lista de variables elegidas entre folds.",
+        "Explicar por qué la primera estrategia permitió que las etiquetas de evaluación influyeran en el espacio de características."
+      ],
+      "interpretation": "La selección supervisada forma parte del entrenamiento; ejecutarla antes de cross-validation puede generar optimismo incluso cuando el clasificador nunca ve explícitamente las etiquetas de prueba.",
+      "limitations": [
+        "El número de variables y señal se eligen con fines didácticos.",
+        "La magnitud del sesgo no es universal.",
+        "Métodos no supervisados también pueden filtrar información si se ajustan globalmente."
+      ]
+    },
+    {
+      "id": "SENBIO-U05-EJ03",
+      "title": "Baseline frente a regresión logística regularizada",
+      "scenario": "Una tarea balanceada por sujeto usa seis características temporales y espectrales predefinidas para distinguir dos estados sintéticos.",
+      "reasoning_steps": [
+        "Definir un baseline de clase mayoritaria y un baseline basado en una sola característica preespecificada.",
+        "Construir un pipeline con estandarización y regresión logística regularizada.",
+        "Seleccionar la intensidad de regularización solo en validación interna por grupos.",
+        "Evaluar los tres modelos sobre el mismo fold externo.",
+        "Decidir si la mejora justifica conservar el modelo multivariable."
+      ],
+      "interpretation": "Un candidato debe demostrar valor añadido frente a referencias simples usando exactamente la misma evidencia de evaluación.",
+      "limitations": [
+        "La regresión logística no captura todas las relaciones posibles.",
+        "Un mejor score no prueba causalidad de las características.",
+        "La comparación requiere repetirse en varios folds o particiones."
+      ]
+    },
+    {
+      "id": "SENBIO-U05-EJ04",
+      "title": "Accuracy engañosa en una clase rara",
+      "scenario": "En 1000 segmentos independientes por sujeto, solo 50 pertenecen a la clase positiva; un modelo predice siempre negativo.",
+      "reasoning_steps": [
+        "Construir TP=0, FN=50, TN=950 y FP=0.",
+        "Calcular accuracy=95%.",
+        "Calcular sensibilidad=0% y balanced accuracy=50%.",
+        "Explicar por qué un resultado aparentemente alto no cumple el objetivo de detectar positivos.",
+        "Añadir AUROC/AUPRC únicamente para un modelo con scores continuos y comparar contra la prevalencia positiva."
+      ],
+      "interpretation": "La accuracy aislada puede ocultar fracaso total de la clase minoritaria; métricas deben elegirse según el error relevante.",
+      "limitations": [
+        "El ejemplo usa una regla extrema.",
+        "Balanced accuracy tampoco incorpora todos los costes.",
+        "PPV depende de prevalencia y umbral."
+      ]
+    },
+    {
+      "id": "SENBIO-U05-EJ05",
+      "title": "Tuning y test bloqueado",
+      "scenario": "Se comparan 30 combinaciones de características e hiperparámetros. El equipo propone escoger la que tenga mejor AUPRC en el conjunto de prueba.",
+      "reasoning_steps": [
+        "Identificar que usar el test para escoger entre 30 configuraciones lo convierte en datos de selección.",
+        "Mover la comparación a un bucle interno de validación por grupos.",
+        "Elegir una configuración usando solo entrenamiento interno.",
+        "Reajustar el pipeline seleccionado con el entrenamiento disponible del fold externo o conjunto de desarrollo.",
+        "Abrir el test una sola vez después de bloquear el procedimiento y reportar la discrepancia con la validación interna."
+      ],
+      "interpretation": "El test estima desempeño de un procedimiento ya decidido; si participa en decisiones deja de ser una evaluación independiente.",
+      "limitations": [
+        "Un único test puede tener incertidumbre considerable.",
+        "La independencia depende también del origen de los sujetos.",
+        "La validación externa exige una población o contexto distinto cuando esa sea la afirmación."
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "id": "SENBIO-U05-ACT01",
+      "title": "Actividad guiada 1: detectar fuga por sujeto con señales sintéticas",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [],
+      "instructions": [
+        "Trabaja solo con datos sintéticos y conserva una semilla reproducible.",
+        "Genera al menos 20 sujetos, múltiples ventanas por sujeto y una etiqueta binaria con una señal débil conocida.",
+        "Añade una huella individual estable que no sea causal de la etiqueta pero permita reconocer sujetos.",
+        "Compara exactamente el mismo pipeline bajo split aleatorio por ventanas y split agrupado por sujeto.",
+        "No optimices el modelo entre ambas comparaciones; el objetivo es aislar el efecto de la partición."
+      ],
+      "tasks": [
+        "Construye una tabla con subject_id, window_id, etiqueta y características.",
+        "Cuenta ventanas totales y sujetos independientes.",
+        "Realiza un split aleatorio por ventanas y cuantifica cuántos sujetos aparecen en ambos lados.",
+        "Entrena un baseline y un clasificador simple.",
+        "Calcula balanced accuracy y AUPRC.",
+        "Repite usando GroupKFold o una separación equivalente por sujeto.",
+        "Compara métricas entre ambos diseños.",
+        "Elimina la huella individual sintética y repite para comprobar su contribución.",
+        "Explica qué pregunta responde cada split.",
+        "Redacta una regla de partición que usarías si el objetivo fueran sesiones nuevas del mismo sujeto en lugar de sujetos nuevos."
+      ],
+      "deliverables": [
+        "Notebook o script reproducible.",
+        "Diagrama de dependencia sujeto→ventanas.",
+        "Tabla de solapamiento de sujetos por split.",
+        "Tabla comparativa de métricas.",
+        "Conclusión de máximo 200 palabras con el alcance de generalización."
+      ],
+      "checking_criteria": [
+        "La unidad independiente se declara antes del split.",
+        "El split agrupado contiene cero sujetos compartidos.",
+        "El pipeline se mantiene constante entre comparaciones.",
+        "Se reportan métricas adecuadas además de accuracy.",
+        "La caída de desempeño no se presenta como fallo del algoritmo sino como estimación más realista.",
+        "No se hacen afirmaciones clínicas a partir del experimento sintético."
+      ],
+      "estimated_duration_minutes": 90,
+      "status": "complete"
+    },
+    {
+      "id": "SENBIO-U05-ACT02",
+      "title": "Actividad guiada 2: selección de características sin contaminar la evaluación",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [],
+      "instructions": [
+        "Genera un conjunto sintético con muchas variables de ruido y pocas variables predictivas conocidas.",
+        "Reserva grupos independientes antes de cualquier transformación aprendida.",
+        "Implementa primero una estrategia deliberadamente incorrecta con selección supervisada global para visualizar el sesgo.",
+        "Implementa después selección, estandarización y clasificador dentro de un pipeline ajustado por fold.",
+        "Mantén idénticas semillas y particiones cuando compares estrategias."
+      ],
+      "tasks": [
+        "Define número de sujetos, ventanas y características.",
+        "Selecciona globalmente las k variables con mayor asociación y estima desempeño por cross-validation.",
+        "Registra qué información de evaluación fue utilizada indirectamente.",
+        "Construye un Pipeline con selección y estandarización internas.",
+        "Ejecuta cross-validation agrupada.",
+        "Compara AUROC, AUPRC y balanced accuracy de ambos procedimientos.",
+        "Cuantifica estabilidad de variables seleccionadas entre folds.",
+        "Repite aumentando el número de variables de ruido.",
+        "Explica por qué una lista final de variables no equivale a biomarcadores confirmados.",
+        "Diseña un test de regresión que impida volver a ejecutar selección antes del split."
+      ],
+      "deliverables": [
+        "Dos pipelines explícitos: incorrecto y correcto.",
+        "Tabla de métricas por estrategia.",
+        "Mapa de selección de variables por fold.",
+        "Explicación del mecanismo de fuga.",
+        "Prueba automatizada o pseudocódigo de protección."
+      ],
+      "checking_criteria": [
+        "La estrategia incorrecta se usa solo como demostración pedagógica.",
+        "La estrategia correcta aprende selección y escala dentro del entrenamiento.",
+        "Los grupos independientes se respetan.",
+        "Las métricas se calculan sobre predicciones fuera de muestra.",
+        "La estabilidad de características se informa sin causalidad implícita.",
+        "La conclusión menciona sobreajuste y sesgo de selección por separado."
+      ],
+      "estimated_duration_minutes": 120,
+      "status": "complete"
+    },
+    {
+      "id": "SENBIO-U05-ACT03",
+      "title": "Actividad guiada 3: comparación reproducible y bloqueo del modelo",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [],
+      "instructions": [
+        "Usa datos sintéticos multicanal o un dataset abierto no identificable y documenta su procedencia.",
+        "Predefine un baseline, una regresión logística regularizada y como máximo un segundo modelo candidato.",
+        "Usa validación anidada por grupos: selección de hiperparámetros dentro y estimación de desempeño fuera.",
+        "No inspecciones el test bloqueado para elegir características, modelo, umbral o hiperparámetros.",
+        "Entrega una ficha del modelo bloqueado antes de la evaluación final."
+      ],
+      "tasks": [
+        "Define población técnica, unidad de generalización y etiqueta.",
+        "Construye un diccionario de características proveniente de U3/U4.",
+        "Define baseline y candidatos.",
+        "Especifica pipeline completo y espacio de tuning limitado.",
+        "Ejecuta selección interna por grupos.",
+        "Obtén predicciones externas fuera de muestra.",
+        "Calcula matriz de confusión, sensibilidad, especificidad, PPV, balanced accuracy, AUROC y AUPRC.",
+        "Compara AUPRC con la prevalencia positiva.",
+        "Realiza un análisis de sensibilidad a una partición alternativa o semilla predefinida.",
+        "Bloquea el modelo y redacta qué evidencia faltaría antes de hablar de validación externa o utilidad clínica."
+      ],
+      "deliverables": [
+        "Protocolo de partición y grupos.",
+        "Pipeline y espacio de tuning.",
+        "Resultados por fold externo y métricas agregadas.",
+        "Matriz de confusión a un umbral declarado.",
+        "Ficha del modelo bloqueado.",
+        "Sección de limitaciones y siguiente validación requerida."
+      ],
+      "checking_criteria": [
+        "Existe baseline explícito.",
+        "No hay transformaciones ajustadas con evaluación externa.",
+        "Tuning y estimación de desempeño están separados.",
+        "Las métricas reflejan desbalance y umbral.",
+        "El modelo final está congelado antes del test.",
+        "La conclusión distingue validación interna, externa y utilidad clínica."
+      ],
+      "estimated_duration_minutes": 150,
+      "status": "complete"
+    }
+  ],
+  "assessment_file": "assessments/unit-05.json",
+  "glossary_entry_ids": [
+    "SENBIO-GLO-085",
+    "SENBIO-GLO-086",
+    "SENBIO-GLO-087",
+    "SENBIO-GLO-088",
+    "SENBIO-GLO-089",
+    "SENBIO-GLO-090",
+    "SENBIO-GLO-091",
+    "SENBIO-GLO-092",
+    "SENBIO-GLO-093",
+    "SENBIO-GLO-094",
+    "SENBIO-GLO-095",
+    "SENBIO-GLO-096",
+    "SENBIO-GLO-097",
+    "SENBIO-GLO-098",
+    "SENBIO-GLO-099",
+    "SENBIO-GLO-100",
+    "SENBIO-GLO-101",
+    "SENBIO-GLO-102",
+    "SENBIO-GLO-103",
+    "SENBIO-GLO-104",
+    "SENBIO-GLO-105",
+    "SENBIO-GLO-106",
+    "SENBIO-GLO-107",
+    "SENBIO-GLO-108"
+  ],
+  "source_ids": [
+    "data-leakage-inflates-prediction-performance-in-connectome-based-machine-learning-models",
+    "inflated-prediction-accuracy-of-neuropsychiatric-biomarkers-caused-by-data-leakage-in-feature-selection",
+    "measuring-the-bias-of-incorrect-application-of-feature-selection-when-using-cross-validation-in-radiomics",
+    "the-precision-recall-plot-is-more-informative-than-the-roc-plot-when-evaluating-binary-classifiers-on-imbalanced-datasets",
+    "cross-validation-failure-small-sample-sizes-lead-to-large-error-bars",
+    "tripod-ai-statement-updated-guidance-for-reporting-clinical-prediction-models-that-use-regression-or-machine-learning-methods",
+    "common-pitfalls-and-recommended-practices",
+    "groupkfold",
+    "pipeline"
+  ],
+  "claim_ids": [
+    "SENBIO-U05-C001",
+    "SENBIO-U05-C002",
+    "SENBIO-U05-C003",
+    "SENBIO-U05-C004",
+    "SENBIO-U05-C005",
+    "SENBIO-U05-C006",
+    "SENBIO-U05-C007",
+    "SENBIO-U05-C008"
+  ],
+  "media_ids": [
+    "SENBIO-U05-MED01"
+  ],
+  "common_errors": [
+    {
+      "error": "Dividir ventanas al azar cuando varias provienen del mismo sujeto.",
+      "correction": "Agrupar por la unidad que debe generalizarse y mantener cada grupo completo en un solo lado de la evaluación."
+    },
+    {
+      "error": "Estandarizar con media y desviación de todo el dataset.",
+      "correction": "Estimar parámetros únicamente en entrenamiento y aplicar después la transformación aprendida."
+    },
+    {
+      "error": "Seleccionar variables usando todas las etiquetas antes de cross-validation.",
+      "correction": "Mover selección dentro del pipeline y repetirla en cada fold de entrenamiento."
+    },
+    {
+      "error": "Sobremuestrear la clase minoritaria antes del split.",
+      "correction": "Separar primero y realizar cualquier remuestreo solo dentro del entrenamiento correspondiente."
+    },
+    {
+      "error": "Usar el test para escoger el mejor modelo o umbral.",
+      "correction": "Tomar decisiones con validación interna y mantener el test bloqueado hasta congelar el procedimiento."
+    },
+    {
+      "error": "Comparar un modelo sofisticado sin baseline.",
+      "correction": "Evaluar una referencia simple bajo la misma partición y métricas para medir valor añadido."
+    },
+    {
+      "error": "Reportar solo accuracy en una tarea desbalanceada.",
+      "correction": "Añadir matriz de confusión, sensibilidad, especificidad, PPV, balanced accuracy y curvas adecuadas al objetivo."
+    },
+    {
+      "error": "Interpretar AUROC alto como PPV alto.",
+      "correction": "Examinar AUPRC, prevalencia y desempeño a umbrales relevantes; PPV depende de la tasa positiva."
+    },
+    {
+      "error": "Usar desviación entre folds como intervalo de confianza del desempeño.",
+      "correction": "Reconocer dependencia entre folds y usar procedimientos de incertidumbre que respeten la unidad independiente."
+    },
+    {
+      "error": "Llamar biomarcador a una característica seleccionada en una muestra.",
+      "correction": "Describirla como variable seleccionada por un procedimiento; estabilidad, causalidad y utilidad requieren evidencia adicional."
+    }
+  ],
+  "biomedical_connections": [
+    "ECG y detección de eventos: Características de intervalos, morfología y frecuencia pueden alimentar clasificadores, pero ventanas del mismo paciente deben agruparse cuando la meta es generalizar a pacientes nuevos.",
+    "EEG y neurotecnología: Alta dimensionalidad y múltiples épocas por sujeto hacen especialmente importante ejecutar selección dentro de validación y evitar fuga por sujeto.",
+    "sEMG y reconocimiento de patrones: Características temporales y espectrales permiten tareas de reconocimiento, pero cambios de sesión, colocación y sujeto definen dominios de generalización distintos.",
+    "PPG y wearables: Múltiples ventanas continuas de una misma persona son correlacionadas; evaluar por ventanas aleatorias puede sobreestimar rendimiento en usuarios nuevos.",
+    "Modelos predictivos clínicos: Principios de partición, pipeline, test bloqueado y reporte transparente son necesarios antes de cualquier evaluación clínica posterior, pero una práctica educativa no demuestra utilidad asistencial."
+  ],
+  "editorial_notice": "Material educativo en estado review. Esta curación interna no constituye revisión disciplinar externa, validación clínica, certificación de un algoritmo, diagnóstico ni recomendación terapéutica. Las actividades usan datos sintéticos o abiertos no identificables y no autorizan conectar sensores a personas. Un score de validación interna no demuestra utilidad clínica, transportabilidad, seguridad, equidad ni preparación para despliegue; interpretación, explicabilidad y monitorización operativa se desarrollan en la unidad 6.",
+  "legacy_origin": "data/generated_units/senales-biomedicas/unit-05.json"
+}
