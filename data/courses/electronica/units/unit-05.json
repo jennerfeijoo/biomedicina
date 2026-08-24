@@ -1,0 +1,691 @@
+{
+  "$schema": "../../../../schemas/academic/unit-v1.schema.json",
+  "schema_version": "1.0",
+  "id": "ELEC-U05",
+  "course_id": "electronica",
+  "order": 5,
+  "slug": "electronica-digital",
+  "title": "Electrónica digital",
+  "status": {
+    "content": "complete",
+    "sources": "traceable",
+    "pedagogy": "complete",
+    "multimedia": "planned",
+    "internal_review": "pending",
+    "external_review": "pending",
+    "publication": "published_provisional"
+  },
+  "purpose": "Diseñar, analizar y verificar interfaces digitales de baja velocidad para sensores y módulos electrónicos mediante niveles lógicos, márgenes de ruido, lógica combinacional y secuencial, temporización, sincronización de entradas asíncronas y protocolos GPIO, I2C, SPI y UART. La unidad conserva una frontera explícita: U4 cubre filtrado y generación analógica; U5 se centra en lógica, temporización e interfaces; U6 queda reservada para implementación física, esquemático, PCB, instrumentación, diagnóstico, EMC y verificación de hardware. Todas las actividades usan datos, tramas y señales sintéticas y no autorizan conectar circuitos a personas ni a equipos médicos en servicio.",
+  "prerequisite_unit_ids": [],
+  "course_learning_outcome_ids": [
+    "ELEC-LO05"
+  ],
+  "learning_outcomes": [
+    {
+      "id": "ELEC-U05-LO01",
+      "statement": "Interpretar VIH, VIL, VOH y VOL y calcular márgenes de ruido alto y bajo para decidir si dos dispositivos digitales son eléctricamente compatibles bajo las condiciones declaradas de sus hojas de datos."
+    },
+    {
+      "id": "ELEC-U05-LO02",
+      "statement": "Distinguir lógica combinacional y secuencial y razonar con tablas de verdad, biestables, máquinas de estados y señales de reset sin confundir el valor booleano con el nivel analógico que lo representa."
+    },
+    {
+      "id": "ELEC-U05-LO03",
+      "statement": "Construir presupuestos de temporización con retardo de propagación, clock-to-Q, setup, hold y skew, e identificar cuándo una entrada asíncrona introduce riesgo de metastabilidad o requiere una estrategia específica de cruce de dominio."
+    },
+    {
+      "id": "ELEC-U05-LO04",
+      "statement": "Explicar y comparar GPIO, I2C, SPI y UART a partir de topología eléctrica, señales, direccionamiento o selección, temporización y capacidad de transferencia, evitando asumir que una etiqueta de protocolo garantiza compatibilidad eléctrica."
+    },
+    {
+      "id": "ELEC-U05-LO05",
+      "statement": "Dimensionar conceptualmente resistencias pull-up de un bus I2C usando límites de corriente y tiempo de subida y verificar una transacción sintética mediante diagrama temporal y criterios de ACK/NACK."
+    },
+    {
+      "id": "ELEC-U05-LO06",
+      "statement": "Diseñar un protocolo reproducible de verificación para un nodo digital sintético que incluya compatibilidad de niveles, casos límite de temporización, fallos de interfaz, trazas esperadas y límites de interpretación antes de cualquier implementación física."
+    }
+  ],
+  "topics": [
+    {
+      "id": "ELEC-U05-T01",
+      "title": "1. Abstracción digital, niveles lógicos y márgenes eléctricos",
+      "blocks": [
+        {
+          "id": "ELEC-U05-T01-B01",
+          "type": "equation",
+          "latex": "NM_H=V_{OH(min)}-V_{IH(min)}",
+          "label": "Margen de ruido estático para el estado alto; debe calcularse con valores garantizados y bajo las condiciones de carga aplicables.",
+          "variables": {
+            "V_OH(min)": "mínimo nivel alto garantizado por el emisor",
+            "V_IH(min)": "mínimo nivel que el receptor garantiza como alto"
+          }
+        },
+        {
+          "id": "ELEC-U05-T01-B02",
+          "type": "equation",
+          "latex": "NM_L=V_{IL(max)}-V_{OL(max)}",
+          "label": "Margen de ruido estático para el estado bajo; un valor positivo no reemplaza la verificación de corriente y temporización.",
+          "variables": {
+            "V_IL(max)": "máximo nivel que el receptor garantiza como bajo",
+            "V_OL(max)": "máximo nivel bajo garantizado por el emisor"
+          }
+        }
+      ],
+      "key_points": [
+        "Los estados lógicos se implementan con rangos eléctricos, no con tensiones ideales únicas.",
+        "VIH/VIL pertenecen al receptor y VOH/VOL a la salida del emisor; la compatibilidad se evalúa con límites garantizados.",
+        "Las entradas flotantes o lentas pueden producir comportamiento indeterminado y mayor consumo.",
+        "Push-pull y open-drain tienen reglas de interconexión diferentes y no son intercambiables."
+      ],
+      "subtopics": [
+        {
+          "id": "ELEC-U05-T01-ST01",
+          "title": "Los estados lógicos se implementan con rangos eléctricos, no con tensiones ideales únicas",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T01-ST01-B01",
+              "type": "paragraph",
+              "text": "La electrónica digital representa información mediante estados discretos, pero los pines físicos siguen siendo circuitos analógicos con tensiones, corrientes, capacitancias y tiempos finitos. Por eso un 0 o un 1 lógico no es una tensión única. Una hoja de datos especifica intervalos garantizados: VIL(max) es la mayor tensión que el receptor debe reconocer como nivel bajo y VIH(min) la menor que debe reconocer como nivel alto; entre ambos puede existir una región no garantizada. En la salida, VOL(max) y VOH(min) expresan los niveles que el emisor garantiza bajo condiciones de carga concretas. La compatibilidad debe comprobarse con esos límites y no con valores típicos ni con la tensión nominal de alimentación."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T01-ST02",
+          "title": "VIH/VIL pertenecen al receptor y VOH/VOL a la salida del emisor; la compatibilidad se evalúa con límites garantizados",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T01-ST02-B01",
+              "type": "paragraph",
+              "text": "Los márgenes de ruido cuantifican la distancia entre lo que garantiza un emisor y lo que exige un receptor. Para estado alto, NMH=VOH(min)-VIH(min); para estado bajo, NML=VIL(max)-VOL(max). Un margen positivo es condición básica de compatibilidad estática, pero no demuestra por sí solo que la interfaz funcione: también deben respetarse corriente de salida, capacitancia, velocidad de flanco, límites absolutos y temporización. Un margen negativo o una entrada que excede el máximo absoluto exige rediseño, por ejemplo mediante un traductor de nivel apropiado, y nunca debe justificarse con que una prueba aislada «parece funcionar»."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T01-ST03",
+          "title": "Las entradas flotantes o lentas pueden producir comportamiento indeterminado y mayor consumo",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T01-ST03-B01",
+              "type": "paragraph",
+              "text": "Las entradas CMOS no utilizadas no deben dejarse flotantes. Una tensión indefinida o un flanco excesivamente lento puede mantener transistores internos parcialmente conduciendo, aumentar consumo y favorecer conmutaciones no deseadas. Una resistencia pull-up o pull-down fija un estado por defecto cuando la arquitectura lo permite. Cuando la entrada puede cambiar lentamente o contener ruido alrededor del umbral, una entrada Schmitt incorpora histéresis: utiliza un umbral para la transición ascendente y otro para la descendente, reduciendo conmutaciones repetidas. La histéresis no sustituye el cumplimiento de límites de tensión ni corrige cualquier forma de ruido."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T01-ST04",
+          "title": "Push-pull y open-drain tienen reglas de interconexión diferentes y no son intercambiables",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T01-ST04-B01",
+              "type": "paragraph",
+              "text": "La salida push-pull conduce activamente hacia alto y hacia bajo; conectar directamente dos salidas push-pull que intenten estados opuestos puede producir contención y corriente excesiva. Una salida open-drain, en cambio, puede forzar el nodo a bajo y deja que una resistencia externa lo lleve a alto. Esta estructura permite compartir una línea entre varios dispositivos, como ocurre en I2C, pero hace que el tiempo de subida dependa de la resistencia pull-up y de la capacitancia del bus. Así, la elección de interfaz exige vincular lógica, electricidad y tiempo en un único presupuesto verificable."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ELEC-U05-T02",
+      "title": "2. Lógica secuencial, temporización, metastabilidad y señales asíncronas",
+      "blocks": [
+        {
+          "id": "ELEC-U05-T02-B01",
+          "type": "equation",
+          "latex": "T_{clk} >= t_{CQ(max)}+t_{logic(max)}+t_{setup}+t_{skew}",
+          "label": "Presupuesto didáctico de setup para una ruta síncrona simple; el diseño real debe incorporar la convención de skew, jitter e incertidumbres indicada por la herramienta o tecnología.",
+          "variables": {
+            "T_clk": "periodo de reloj",
+            "t_CQ(max)": "clock-to-Q máximo",
+            "t_logic(max)": "retardo combinacional máximo",
+            "t_setup": "tiempo de setup del receptor",
+            "t_skew": "margen de desfase o incertidumbre asignado"
+          }
+        }
+      ],
+      "key_points": [
+        "La lógica secuencial añade estado y exige especificar reloj, reset y transición válida entre estados.",
+        "Setup y hold son restricciones distintas; cumplir frecuencia máxima no garantiza automáticamente hold.",
+        "La metastabilidad es un fenómeno probabilístico asociado a entradas asíncronas y cruces de dominio.",
+        "Sincronizadores simples sirven para ciertos controles de un bit, pero no son una solución universal para buses o pulsos."
+      ],
+      "subtopics": [
+        {
+          "id": "ELEC-U05-T02-ST01",
+          "title": "La lógica secuencial añade estado y exige especificar reloj, reset y transición válida entre estados",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T02-ST01-B01",
+              "type": "paragraph",
+              "text": "La lógica combinacional produce una salida determinada por las entradas presentes; la lógica secuencial incorpora estado y, por tanto, memoria del pasado. Un flip-flop captura datos alrededor de un evento de reloj y una máquina de estados finitos combina registros con lógica de siguiente estado y salidas. Esta distinción es central para diseñar control de sensores: una comparación de umbrales puede ser combinacional, mientras un protocolo, un contador de muestras o una secuencia de inicialización requieren estado. El reset también forma parte del diseño temporal y debe llevar el sistema a un estado conocido sin crear transiciones ambiguas."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T02-ST02",
+          "title": "Setup y hold son restricciones distintas; cumplir frecuencia máxima no garantiza automáticamente hold",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T02-ST02-B01",
+              "type": "paragraph",
+              "text": "Los circuitos reales no responden instantáneamente. El retardo de propagación describe cuánto tarda un cambio en una entrada en reflejarse en una salida. En una ruta síncrona, el dato lanzado por un registro aparece tras clock-to-Q, atraviesa lógica combinacional y debe estabilizarse antes del tiempo de setup del registro receptor. El requisito de hold impone que el dato permanezca estable durante un intervalo después del flanco. El skew y la incertidumbre del reloj modifican el margen disponible. Un diseño reproducible documenta estos términos y calcula el peor caso con valores máximos o mínimos pertinentes, no con promedios."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T02-ST03",
+          "title": "La metastabilidad es un fenómeno probabilístico asociado a entradas asíncronas y cruces de dominio",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T02-ST03-B01",
+              "type": "paragraph",
+              "text": "Una señal que cambia sin relación fija con el reloj del receptor puede violar setup o hold. El flip-flop puede entonces entrar temporalmente en un estado metastable antes de resolver a 0 o 1. La metastabilidad no se elimina mediante una afirmación lógica; se reduce la probabilidad de propagación dando tiempo de resolución y usando estructuras de sincronización adecuadas. Para una entrada de control de un solo bit, una cadena de registros sincronizadores es una técnica común. Para pulsos breves, buses multibit o transferencias entre dominios con tasas diferentes pueden ser necesarios handshake, pulse stretching, Gray coding o FIFO asíncrona, según el caso."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T02-ST04",
+          "title": "Sincronizadores simples sirven para ciertos controles de un bit, pero no son una solución universal para buses o pulsos",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T02-ST04-B01",
+              "type": "paragraph",
+              "text": "El rebote de contactos y las interrupciones asíncronas ilustran por qué temporización y estado no deben tratarse como detalles posteriores. Un pulsador mecánico puede generar múltiples transiciones en milisegundos; un algoritmo o circuito de debounce define una ventana o criterio de estabilidad antes de aceptar el cambio. Una interrupción de sensor puede requerir sincronización y captura de evento para no perder un pulso. La estrategia debe justificarse a partir de ancho mínimo de pulso, frecuencia de eventos, reloj disponible y consecuencias de contar dos veces o perder un evento."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ELEC-U05-T03",
+      "title": "3. GPIO, I2C, SPI y UART como contratos eléctricos y temporales",
+      "blocks": [
+        {
+          "id": "ELEC-U05-T03-B01",
+          "type": "equation",
+          "latex": "R_{P(min)}=(V_{CC}-V_{OL(max)})/I_{OL}",
+          "label": "Límite inferior del pull-up I2C por capacidad de hundimiento de corriente; deben emplearse los valores y condiciones de la especificación del dispositivo.",
+          "variables": {
+            "R_P(min)": "resistencia pull-up mínima",
+            "V_CC": "alimentación del bus",
+            "V_OL(max)": "nivel bajo máximo permitido",
+            "I_OL": "corriente de hundimiento utilizada para el límite"
+          }
+        },
+        {
+          "id": "ELEC-U05-T03-B02",
+          "type": "equation",
+          "latex": "t_r=0.8473 R_P C_b",
+          "label": "Aproximación RC usada en la guía de TI para el tiempo de subida entre niveles de referencia del estándar I2C.",
+          "variables": {
+            "t_r": "tiempo de subida",
+            "R_P": "resistencia pull-up",
+            "C_b": "capacitancia total estimada del bus"
+          }
+        },
+        {
+          "id": "ELEC-U05-T03-B03",
+          "type": "equation",
+          "latex": "R_{P(max)}=t_{r(max)}/(0.8473 C_b)",
+          "label": "Límite superior del pull-up I2C impuesto por el tiempo de subida máximo admisible para el modo considerado.",
+          "variables": {
+            "R_P(max)": "resistencia pull-up máxima",
+            "t_r(max)": "tiempo de subida máximo",
+            "C_b": "capacitancia de bus"
+          }
+        },
+        {
+          "id": "ELEC-U05-T03-B04",
+          "type": "equation",
+          "latex": "T_{bit}=1/baud",
+          "label": "Duración nominal de un bit UART para una tasa de baudios dada.",
+          "variables": {
+            "T_bit": "duración de bit",
+            "baud": "símbolos por segundo para la configuración UART binaria habitual"
+          }
+        }
+      ],
+      "key_points": [
+        "Una etiqueta de protocolo no demuestra compatibilidad de tensiones, corrientes o estados durante reset.",
+        "I2C combina un protocolo lógico con una red open-drain cuyo pull-up determina corriente y tiempo de subida.",
+        "SPI exige leer la hoja de datos del periférico para CPOL, CPHA, chip select, frecuencia y tiempos.",
+        "UART necesita coincidencia de formato y baud; el margen de error aceptable depende del receptor y de la trama."
+      ],
+      "subtopics": [
+        {
+          "id": "ELEC-U05-T03-ST01",
+          "title": "Una etiqueta de protocolo no demuestra compatibilidad de tensiones, corrientes o estados durante reset",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T03-ST01-B01",
+              "type": "paragraph",
+              "text": "GPIO es la forma más directa de interfaz digital: un pin se configura como entrada o salida y puede tener características push-pull, open-drain, pull-up, pull-down, interrupción o histéresis según el dispositivo. Incluso en esta interfaz mínima deben verificarse niveles lógicos, corriente, estado durante reset y dirección del pin. Para señales que atraviesan dominios de alimentación distintos, la compatibilidad no se deduce de que ambos sistemas usen lógica binaria; se comparan umbrales y límites absolutos y se selecciona un traductor de nivel cuando corresponde."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T03-ST02",
+          "title": "I2C combina un protocolo lógico con una red open-drain cuyo pull-up determina corriente y tiempo de subida",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T03-ST02-B01",
+              "type": "paragraph",
+              "text": "I2C usa líneas SDA y SCL compartidas con salidas open-drain u open-collector y resistencias pull-up. Los dispositivos transmiten forzando un cero o liberando la línea; por eso varios participantes pueden compartir el bus sin contención de alto activa. Una transacción se organiza mediante condiciones START y STOP, dirección, bit de lectura/escritura, datos y ACK/NACK. La velocidad admisible depende del modo y de la carga del bus. La resistencia pull-up debe ser suficientemente pequeña para producir un flanco ascendente dentro del tiempo permitido, pero suficientemente grande para no exigir al dispositivo una corriente de bajo superior a la especificada."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T03-ST03",
+          "title": "SPI exige leer la hoja de datos del periférico para CPOL, CPHA, chip select, frecuencia y tiempos",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T03-ST03-B01",
+              "type": "paragraph",
+              "text": "SPI suele usar SCLK, una señal de selección de chip y líneas de datos como MOSI y MISO, con transmisión síncrona y, en muchas implementaciones, full duplex. A diferencia de I2C, no existe una única trama universal que garantice interoperabilidad: número de bits, orden, frecuencia máxima, comportamiento de chip select y el modo definido por CPOL y CPHA dependen del periférico. El margen de setup y hold debe comprobarse combinando el retardo de salida del transmisor, el periodo de reloj y los requisitos del receptor. Elegir el modo incorrecto puede desplazar el instante de muestreo aunque la frecuencia nominal parezca correcta."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T03-ST04",
+          "title": "UART necesita coincidencia de formato y baud; el margen de error aceptable depende del receptor y de la trama",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T03-ST04-B01",
+              "type": "paragraph",
+              "text": "UART transmite de forma asíncrona sin una línea de reloj compartida. El receptor deduce el tiempo de bit a partir de una tasa de baudios configurada y detecta una trama mediante bit de inicio, bits de datos y, según la configuración, paridad y bits de parada. Los extremos deben acordar velocidad, número de bits, paridad y parada, y además ser eléctricamente compatibles. La tolerancia al error de reloj no es una cifra universal: depende de la arquitectura del receptor, sobremuestreo, longitud de trama y condiciones especificadas por cada dispositivo. Un análisis educativo debe calcular el tiempo de bit y la duración nominal de trama y después consultar la especificación concreta antes de aceptar un margen."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ELEC-U05-T04",
+      "title": "4. Verificación reproducible, fallos de interfaz y frontera con implementación física",
+      "blocks": [],
+      "key_points": [
+        "El diagrama temporal es una especificación verificable, no solo una ilustración.",
+        "Las pruebas de fallo deben predecir qué patrón discrimina entre hipótesis alternativas.",
+        "Decodificar una trama no prueba márgenes eléctricos, integridad de señal, EMC ni seguridad.",
+        "U5 entrega contratos y criterios; U6 verifica implementación física, PCB e instrumentación."
+      ],
+      "subtopics": [
+        {
+          "id": "ELEC-U05-T04-ST01",
+          "title": "El diagrama temporal es una especificación verificable, no solo una ilustración",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T04-ST01-B01",
+              "type": "paragraph",
+              "text": "Una interfaz digital se verifica mejor como contrato explícito que como demostración informal. El contrato registra alimentación, límites lógicos, dirección de cada señal, tipo de salida, estado en reset, frecuencia, tiempos de setup/hold, formato de trama y respuesta esperada. Un diagrama temporal convierte ese contrato en eventos observables: qué línea cambia, en qué flanco se muestrea, cuándo aparece ACK, cuánto dura un bit y qué estado debe mantenerse durante una ventana. La misma representación permite localizar si un fallo proviene de la lógica, de la temporización o de la capa eléctrica."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T04-ST02",
+          "title": "Las pruebas de fallo deben predecir qué patrón discrimina entre hipótesis alternativas",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T04-ST02-B01",
+              "type": "paragraph",
+              "text": "Las pruebas deben incluir condiciones nominales y fallos deliberados. Para GPIO son útiles entrada flotante, pull incorrecto y contención conceptual; para I2C, ausencia de ACK, bus atascado en bajo, pull-up demasiado grande o dirección errónea; para SPI, CPOL/CPHA incorrectos, chip select mal delimitado o frecuencia excesiva; para UART, formato o baud incompatibles. En una simulación o traza sintética se define antes qué patrón prueba cada hipótesis. Esta práctica evita ajustar explicaciones después de observar el resultado y facilita convertir un síntoma en una prueba discriminante."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T04-ST03",
+          "title": "Decodificar una trama no prueba márgenes eléctricos, integridad de señal, EMC ni seguridad",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T04-ST03-B01",
+              "type": "paragraph",
+              "text": "Un analizador lógico muestra niveles discretizados y tiempos de transición, y un decodificador de protocolo puede acelerar la inspección, pero ninguno sustituye la comprobación eléctrica. Una línea que el analizador interpreta como 1 puede tener margen insuficiente, sobreimpulso o un flanco lento que requiera osciloscopio. Del mismo modo, una trama decodificada correctamente no demuestra robustez ante tolerancias, EMI o variaciones de carga. En esta unidad se aprende a detectar cuándo la evidencia digital es suficiente y cuándo debe escalarse a una medición analógica o a la validación física de U6."
+            }
+          ]
+        },
+        {
+          "id": "ELEC-U05-T04-ST04",
+          "title": "U5 entrega contratos y criterios; U6 verifica implementación física, PCB e instrumentación",
+          "blocks": [
+            {
+              "id": "ELEC-U05-T04-ST04-B01",
+              "type": "paragraph",
+              "text": "La entrega final debe separar cálculo, simulación, verificación de protocolo y hardware pendiente. No se afirmará seguridad eléctrica, compatibilidad electromagnética, calibración, confiabilidad de producto ni aptitud clínica a partir de una traza sintética. U6 tomará estos contratos digitales como entradas para esquemático, PCB, instrumentación y diagnóstico físico. Mantener esta frontera convierte U5 en una especificación verificable y reutilizable, en vez de mezclar prematuramente lógica de interfaz con decisiones de fabricación o conformidad."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "id": "ELEC-U05-EJ01",
+      "title": "Compatibilidad de dos dominios lógicos",
+      "scenario": "Un emisor garantiza VOH(min)=2.4 V y VOL(max)=0.4 V; un receptor exige VIH(min)=2.0 V y VIL(max)=0.8 V.",
+      "reasoning_steps": [
+        "Calcular NMH=2.4-2.0=0.4 V.",
+        "Calcular NML=0.8-0.4=0.4 V.",
+        "Confirmar que ambos son positivos.",
+        "Revisar además corriente de carga, límites absolutos y temporización antes de declarar compatibilidad completa."
+      ],
+      "interpretation": "La compatibilidad estática de umbral tiene 0.4 V de margen en ambos estados, pero el cálculo no sustituye las demás condiciones de hoja de datos.",
+      "limitations": []
+    },
+    {
+      "id": "ELEC-U05-EJ02",
+      "title": "Entrada lenta y Schmitt trigger",
+      "scenario": "Una señal sintética sube lentamente y oscila alrededor de 1.5 V; una entrada Schmitt conmuta a alto en 2.0 V y a bajo en 1.0 V.",
+      "reasoning_steps": [
+        "Identificar una histéresis de 1.0 V.",
+        "Durante la subida, no cambiar a alto hasta superar 2.0 V.",
+        "Durante la bajada, conservar alto hasta caer por debajo de 1.0 V.",
+        "Comparar con una entrada sin histéresis, susceptible a múltiples conmutaciones cerca del umbral."
+      ],
+      "interpretation": "La histéresis estabiliza la decisión frente a una señal lenta o ruidosa, sin convertir una entrada fuera de especificación en una interfaz válida.",
+      "limitations": []
+    },
+    {
+      "id": "ELEC-U05-EJ03",
+      "title": "Ventana de pull-up para I2C",
+      "scenario": "Bus I2C a 3.3 V, VOL(max)=0.4 V, IOL=3 mA, capacitancia estimada 100 pF y tr(max)=300 ns.",
+      "reasoning_steps": [
+        "Calcular RP(min)=(3.3-0.4)/0.003≈967 Ω.",
+        "Calcular RP(max)=300 ns/(0.8473·100 pF)≈3.54 kΩ.",
+        "Elegir un valor estándar dentro de la ventana, por ejemplo 2.2 kΩ.",
+        "Volver a comprobar corriente y tiempo de subida con las condiciones reales del bus."
+      ],
+      "interpretation": "El pull-up se elige dentro de una ventana impuesta por corriente de bajo y velocidad de subida; no existe un único valor universal.",
+      "limitations": []
+    },
+    {
+      "id": "ELEC-U05-EJ04",
+      "title": "Margen temporal SPI",
+      "scenario": "A 10 MHz, el periodo es 100 ns. Un transmisor puede tardar 25 ns en presentar dato válido y el receptor exige 20 ns de setup antes del flanco de captura.",
+      "reasoning_steps": [
+        "Identificar en el modo SPI elegido qué flanco cambia y cuál captura.",
+        "Si hay medio periodo entre ambos, el presupuesto disponible es 50 ns.",
+        "Restar 25 ns de salida y 20 ns de setup: quedan 5 ns antes de considerar skew o incertidumbre.",
+        "Concluir que el margen es estrecho y debe verificarse con la hoja de datos completa."
+      ],
+      "interpretation": "La frecuencia nominal por sí sola no demuestra que el enlace SPI cumpla temporización.",
+      "limitations": []
+    },
+    {
+      "id": "ELEC-U05-EJ05",
+      "title": "Duración de una trama UART",
+      "scenario": "UART 115200 baud, formato 8N1: un bit de inicio, ocho de datos y un bit de parada.",
+      "reasoning_steps": [
+        "Calcular Tbit=1/115200≈8.68 μs.",
+        "Contar 10 bits por trama.",
+        "Estimar 86.8 μs por byte transmitido sin pausas adicionales.",
+        "No inferir una tolerancia universal de error de baud; consultar el receptor concreto."
+      ],
+      "interpretation": "El cálculo fija la escala temporal de la trama y permite construir una traza sintética verificable.",
+      "limitations": []
+    },
+    {
+      "id": "ELEC-U05-EJ06",
+      "title": "Entrada asíncrona y metastabilidad",
+      "scenario": "Una interrupción externa cambia sin relación con un reloj interno de 50 MHz.",
+      "reasoning_steps": [
+        "Reconocer que el flanco puede caer dentro de la ventana de setup/hold.",
+        "Para un nivel de control de un bit, considerar una cadena sincronizadora que aumente tiempo de resolución.",
+        "Si el evento es un pulso corto, comprobar que la sincronización simple no lo pierda y considerar captura o handshake.",
+        "No aplicar la misma solución sin análisis a un bus multibit."
+      ],
+      "interpretation": "La solución de CDC depende de la semántica y duración de la señal; una cadena de dos registros no es una receta universal.",
+      "limitations": []
+    }
+  ],
+  "activities": [
+    {
+      "id": "ELEC-U05-ACT01",
+      "title": "Actividad guiada 1: niveles lógicos y estados seguros",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [],
+      "instructions": [
+        "Trabaja solo con tablas y señales sintéticas.",
+        "Copia los límites eléctricos en una tabla separando emisor y receptor.",
+        "Usa siempre mínimos y máximos garantizados; no valores típicos.",
+        "Calcula primero márgenes estáticos y después revisa corriente y límites absolutos.",
+        "Marca cada conclusión como compatible, incompatible o evidencia insuficiente.",
+        "No conectes hardware a personas, animales ni equipos médicos."
+      ],
+      "tasks": [
+        "Calcula NMH y NML para dos dispositivos compatibles dados.",
+        "Repite el cálculo con un receptor cuyo VIH(min) produce NMH negativo.",
+        "Explica por qué una salida de 5 V puede dañar una entrada de 3.3 V aunque los estados booleanos coincidan.",
+        "Distingue push-pull de open-drain en cuatro descripciones de salida.",
+        "Identifica qué ocurre al conectar dos push-pull en estados opuestos.",
+        "Propón un estado por defecto para una entrada que no debe flotar.",
+        "Traza una señal lenta con umbrales Schmitt y marca los puntos de conmutación.",
+        "Decide en qué caso conceptual se requiere traducción de nivel y qué especificaciones faltan antes de elegir un circuito."
+      ],
+      "deliverables": [
+        "Tabla de VIH/VIL/VOH/VOL.",
+        "Cálculos de NMH/NML.",
+        "Clasificación push-pull/open-drain.",
+        "Diagrama de histéresis.",
+        "Lista de evidencias faltantes."
+      ],
+      "checking_criteria": [
+        "Usa límites garantizados.",
+        "No confunde VIH/VIL con VOH/VOL.",
+        "Calcula ambos márgenes con unidades.",
+        "Detecta al menos un caso incompatible.",
+        "No deja entradas flotantes sin justificación.",
+        "No presenta histéresis como protección universal.",
+        "Distingue incompatibilidad lógica de límite absoluto.",
+        "La conclusión no afirma seguridad de hardware real."
+      ],
+      "estimated_duration_minutes": 90,
+      "status": "complete"
+    },
+    {
+      "id": "ELEC-U05-ACT02",
+      "title": "Actividad guiada 2: temporización y cruce asíncrono",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [],
+      "instructions": [
+        "Usa una línea temporal común en nanosegundos.",
+        "Dibuja primero reloj y ventanas de captura.",
+        "Separa requisitos de setup y hold.",
+        "Calcula un presupuesto de peor caso antes de juzgar el enlace.",
+        "Para señales asíncronas identifica tipo: nivel, pulso o bus.",
+        "Describe qué fallo evita cada estructura propuesta."
+      ],
+      "tasks": [
+        "Calcula el periodo de relojes de 25, 50 y 100 MHz.",
+        "Evalúa un presupuesto de setup con tCQ, lógica y setup dados.",
+        "Construye un ejemplo que cumple setup pero puede fallar hold.",
+        "Dibuja una entrada que cambia dentro de la ventana de setup/hold.",
+        "Explica por qué la metastabilidad no puede modelarse como un tercer estado lógico estable.",
+        "Propón sincronización para un nivel asíncrono de un bit.",
+        "Explica por qué un pulso más corto que un periodo puede perderse.",
+        "Selecciona entre sincronizador, handshake o FIFO para tres escenarios conceptuales.",
+        "Aplica debounce a una secuencia sintética de 12 transiciones y justifica la ventana elegida."
+      ],
+      "deliverables": [
+        "Dos diagramas temporales.",
+        "Presupuesto de setup.",
+        "Análisis separado de hold.",
+        "Tabla de tipos de CDC.",
+        "Secuencia debounced.",
+        "Conclusión sobre evidencia y límites."
+      ],
+      "checking_criteria": [
+        "No mezcla setup y hold.",
+        "Usa peor caso pertinente.",
+        "Reconoce el carácter probabilístico de metastabilidad.",
+        "No usa un sincronizador de dos registros como solución universal.",
+        "Distingue nivel, pulso y bus.",
+        "Justifica la ventana de debounce.",
+        "Registra qué información falta del dispositivo real.",
+        "Mantiene la actividad completamente sintética."
+      ],
+      "estimated_duration_minutes": 60,
+      "status": "complete"
+    },
+    {
+      "id": "ELEC-U05-ACT03",
+      "title": "Actividad guiada 3: nodo de sensor digital sintético",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [],
+      "instructions": [
+        "Define un sensor y controlador ficticios con datos de hoja de datos suministrados en la actividad.",
+        "Crea una matriz de requisitos: tensión, tipo de salida, velocidad y formato.",
+        "Evalúa I2C, SPI y UART antes de elegir una interfaz.",
+        "Construye las tramas y diagramas temporales sin usar hardware.",
+        "Incluye al menos cuatro fallos inyectados y predice la traza antes de observarla.",
+        "Cierra con criterios de aceptación y con la lista explícita de verificaciones que quedan para U6."
+      ],
+      "tasks": [
+        "Elige entre I2C, SPI y UART para tres requisitos diferentes y justifica cada decisión.",
+        "Para un bus I2C dado calcula RP(min) y RP(max).",
+        "Comprueba si un valor comercial de pull-up cae dentro de la ventana.",
+        "Construye una transacción I2C de escritura con START, dirección, R/W, ACK, byte de datos y STOP.",
+        "Modifica la traza para representar un NACK y explica dos causas posibles.",
+        "Analiza un bus I2C atascado en bajo y formula una prueba discriminante.",
+        "Dibuja una transferencia SPI de 8 bits en un modo CPOL/CPHA especificado.",
+        "Calcula un margen de setup SPI con periodo, retraso de salida y requisito de entrada.",
+        "Predice la consecuencia de seleccionar un CPOL/CPHA incorrecto.",
+        "Calcula Tbit y duración de una trama UART 8N1 a dos baudios.",
+        "Explica por qué no puede fijarse una tolerancia universal de error de baud sin conocer el receptor.",
+        "Detecta una incompatibilidad de niveles entre sensor y controlador y define qué información requiere el traductor.",
+        "Clasifica una interrupción de sensor como señal asíncrona y propone una estrategia de captura.",
+        "Construye una matriz de fallos: pull-up alto, dirección I2C errónea, SPI mode erróneo, baud erróneo, entrada flotante y bus contention.",
+        "Define una traza esperada para cada fallo antes de compararla con la traza sintética.",
+        "Redacta un criterio de aceptación que cubra niveles, temporización, formato y respuesta de error."
+      ],
+      "deliverables": [
+        "Matriz de requisitos.",
+        "Cálculo de pull-up I2C.",
+        "Trama I2C anotada.",
+        "Diagrama SPI anotado.",
+        "Cálculo UART.",
+        "Presupuesto de temporización.",
+        "Matriz de fallos.",
+        "Criterios de aceptación.",
+        "Lista U5 versus U6.",
+        "Conclusión proporcional."
+      ],
+      "checking_criteria": [
+        "La interfaz se elige por requisitos y no por costumbre.",
+        "El pull-up respeta límites de corriente y subida.",
+        "I2C incluye ACK/NACK y estados de línea coherentes.",
+        "SPI declara CPOL/CPHA y chip select.",
+        "UART declara formato y baud.",
+        "La compatibilidad eléctrica se verifica además del protocolo.",
+        "Los fallos tienen predicción previa.",
+        "La sincronización asíncrona corresponde al tipo de señal.",
+        "El analizador lógico no se presenta como prueba de integridad analógica.",
+        "La actividad no usa personas ni equipos médicos.",
+        "Se distingue claramente cálculo, simulación y hardware pendiente.",
+        "U6 queda reservada para PCB, instrumentación, EMC y diagnóstico físico."
+      ],
+      "estimated_duration_minutes": 60,
+      "status": "complete"
+    }
+  ],
+  "assessment_file": "assessments/unit-05.json",
+  "glossary_entry_ids": [
+    "ELEC-GLO-095",
+    "ELEC-GLO-096",
+    "ELEC-GLO-097",
+    "ELEC-GLO-098",
+    "ELEC-GLO-099",
+    "ELEC-GLO-100",
+    "ELEC-GLO-101",
+    "ELEC-GLO-102",
+    "ELEC-GLO-103",
+    "ELEC-GLO-104",
+    "ELEC-GLO-105",
+    "ELEC-GLO-106",
+    "ELEC-GLO-107",
+    "ELEC-GLO-108",
+    "ELEC-GLO-109",
+    "ELEC-GLO-110",
+    "ELEC-GLO-111",
+    "ELEC-GLO-112",
+    "ELEC-GLO-113",
+    "ELEC-GLO-114",
+    "ELEC-GLO-115",
+    "ELEC-GLO-116",
+    "ELEC-GLO-117",
+    "ELEC-GLO-118",
+    "ELEC-GLO-119",
+    "ELEC-GLO-120",
+    "ELEC-GLO-121"
+  ],
+  "source_ids": [
+    "logic-guide-rev-ac",
+    "understanding-and-interpreting-standard-logic-data-sheets-rev-c",
+    "implications-of-slow-or-floating-cmos-inputs-rev-e",
+    "understanding-schmitt-triggers-rev-b",
+    "i2c-bus-specification-and-user-manual-um10204-rev-7-0",
+    "i2c-bus-pull-up-resistor-calculation-slva689",
+    "introduction-to-spi-interface",
+    "uart-asynchronous-modes",
+    "metastability-analysis",
+    "voltage-level-translation-guide"
+  ],
+  "claim_ids": [
+    "ELEC-U05-CL01",
+    "ELEC-U05-CL02",
+    "ELEC-U05-CL03",
+    "ELEC-U05-CL04"
+  ],
+  "media_ids": [
+    "ELEC-U05-MED01"
+  ],
+  "common_errors": [
+    {
+      "error": "Tratar 0 y 1 como tensiones exactas.",
+      "correction": "Usar VIH, VIL, VOH y VOL garantizados y sus condiciones de carga."
+    },
+    {
+      "error": "Comparar solo tensiones de alimentación para decidir compatibilidad.",
+      "correction": "Comparar umbrales, niveles de salida, límites absolutos, corriente y temporización."
+    },
+    {
+      "error": "Dejar entradas CMOS flotantes porque no se usan.",
+      "correction": "Asignar un estado definido conforme a la arquitectura y la hoja de datos."
+    },
+    {
+      "error": "Conectar dos salidas push-pull sobre la misma línea como si fueran open-drain.",
+      "correction": "Evitar contención y usar una topología explícitamente diseñada para línea compartida."
+    },
+    {
+      "error": "Asumir que cumplir setup garantiza hold.",
+      "correction": "Analizar restricciones máximas y mínimas por separado."
+    },
+    {
+      "error": "Creer que un sincronizador elimina la metastabilidad.",
+      "correction": "Explicar que reduce la probabilidad de propagación y seleccionar la estructura según nivel, pulso o bus."
+    },
+    {
+      "error": "Elegir cualquier pull-up I2C habitual sin calcularlo.",
+      "correction": "Verificar simultáneamente corriente de bajo y tiempo de subida con capacitancia del bus."
+    },
+    {
+      "error": "Suponer que SPI define una única trama y un único flanco de captura.",
+      "correction": "Leer CPOL, CPHA, selección, orden y tiempos del periférico concreto."
+    },
+    {
+      "error": "Usar una tolerancia fija de baud para cualquier UART.",
+      "correction": "Calcular tiempo de bit y consultar arquitectura, sobremuestreo, longitud de trama y especificación del receptor."
+    },
+    {
+      "error": "Tomar una decodificación correcta del analizador lógico como validación completa.",
+      "correction": "Separar protocolo, nivel eléctrico, integridad de señal, implementación física, EMC y seguridad."
+    }
+  ],
+  "biomedical_connections": [
+    "Los márgenes lógicos y el protocolo determinan si un sensor y un controlador pueden intercambiar datos de manera técnicamente coherente.",
+    "Direccionamiento, ACK y pull-ups permiten estudiar cómo varios módulos comparten SDA/SCL y cómo capacitancia y velocidad condicionan el bus.",
+    "El presupuesto de temporización muestra cómo frecuencia, CPOL/CPHA y retrasos de dispositivo afectan la captura de datos de un convertidor o sensor.",
+    "El formato asíncrono permite practicar cálculo de tiempo de bit, estructura de trama y detección de incompatibilidades de configuración.",
+    "La sincronización y captura de eventos conectan temporización digital con la necesidad de no perder o duplicar eventos en una cadena de adquisición."
+  ],
+  "editorial_notice": "Unidad desarrollada académicamente en estado review. La curación interna no constituye revisión disciplinar externa, validación de hardware, certificación de seguridad eléctrica, ensayo EMC, calibración metrológica, evaluación de conformidad ni validación clínica. Las actividades emplean exclusivamente datos, tramas y señales sintéticas; no autorizan conectar circuitos, sensores o buses a personas, animales ni equipos médicos en servicio. U5 verifica lógica, temporización e interfaces a nivel conceptual y simulado; U6 conserva la implementación física, PCB, instrumentación y diagnóstico. La revisión humana interna y externa permanece pendiente.",
+  "legacy_origin": "data/generated_units/electronica/unit-05.json"
+}
