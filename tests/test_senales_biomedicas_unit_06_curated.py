@@ -175,5 +175,6 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
         self.assertIn("beneficio clínico demostrado", purpose)
 
 
+# Final user-authored trigger after publication synchronization.
 if __name__ == "__main__":
     unittest.main()
