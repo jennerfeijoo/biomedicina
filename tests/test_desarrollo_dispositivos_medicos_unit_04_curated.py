@@ -45,7 +45,7 @@ class DesarrolloDispositivosMedicosUnit04CuratedTests(unittest.TestCase):
         self.assertIn("la pregunta central de verificación es específica", theory)
         self.assertIn("la salida de diseño satisface el requisito especificado", theory)
         self.assertIn("validación", theory)
-        self.assertIn("u5", theory)
+        self.assertIn("necesidades del usuario y uso previsto", theory)
         self.assertIn("peor caso", theory)
         self.assertIn("repetir una prueba solo porque falló", theory)
         self.assertIn("no existe una regla universal", theory)
@@ -121,6 +121,6 @@ class DesarrolloDispositivosMedicosUnit04CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir verificación con validación", purpose)
 
 
-# Final user-authored trigger after public-site synchronization for U4.
+# Final user-authored trigger after descriptor synchronization and semantic regression repair for U4.
 if __name__ == "__main__":
     unittest.main()
