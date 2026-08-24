@@ -1,4 +1,4 @@
-# Regression for curated Imágenes Biomédicas U5.
+# Final user-authored trigger after U5 publication synchronization.
 from __future__ import annotations
 
 import json
