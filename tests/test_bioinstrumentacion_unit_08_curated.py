@@ -39,7 +39,7 @@ class BioinstrumentacionUnit08CuratedTests(unittest.TestCase):
         text = json.dumps(self.unit, ensure_ascii=False).lower()
         for marker in ["calibración", "ajuste", "repetibilidad", "reproducibilidad", "covarianza", "regla de decisión", "zona de guarda"]:
             self.assertIn(marker, text)
-        self.assertIn("no demuestra por sí solos", text)
+        self.assertIn("no demuestran por sí solos", text)
 
     def test_activity_is_reproducible_and_scaffolded(self) -> None:
         activity = self.unit["activities"][0]
