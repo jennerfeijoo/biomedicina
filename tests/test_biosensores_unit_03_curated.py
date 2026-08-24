@@ -53,7 +53,7 @@ class BiosensoresUnit03CuratedTests(unittest.TestCase):
         self.assertIn("A=\\varepsilon b c=\\log_{10}\\left(\\frac{P_0}{P}\\right)", equations)
         self.assertIn("\\Delta f=-\\frac{2f_0^2}{A\\sqrt{\\rho_q\\mu_q}}\\,\\Delta m", equations)
         text = SOURCE.read_text(encoding="utf-8").casefold()
-        self.assertIn("película rígida", text)
+        self.assertIn("capa rígida", text)
         self.assertIn("muestra turbia", text)
         self.assertIn("actividad", text)
 
