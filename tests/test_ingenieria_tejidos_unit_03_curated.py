@@ -1,3 +1,4 @@
+# Final user-authored trigger after regression correction and deterministic public synchronization.
 from __future__ import annotations
 
 import json
