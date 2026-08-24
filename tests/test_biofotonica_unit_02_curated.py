@@ -122,5 +122,6 @@ class BiofotonicaUnit02CuratedTests(unittest.TestCase):
         self.assertIn("sensibilidad instrumental", purpose)
 
 
+# Final user-authored verification trigger after public-site synchronization.
 if __name__ == "__main__":
     unittest.main()
