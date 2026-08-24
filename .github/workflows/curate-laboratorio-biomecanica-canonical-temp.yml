@@ -1,0 +1,99 @@
+name: Curate Laboratorio Biomecanica canonical temp
+
+on:
+  push:
+    branches:
+      - codex/laboratorio-biomecanica-canonical-closure-v2
+    paths:
+      - scripts/curate_laboratorio_biomecanica_canonical_temp.py
+      - .github/workflows/curate-laboratorio-biomecanica-canonical-temp.yml
+      - .github/workflows/synchronize-generated-site.yml
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: codex/laboratorio-biomecanica-canonical-closure-v2
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Preserve source rationale for canonical claim tracing
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/curate_laboratorio_biomecanica_canonical_temp.py')
+          text = path.read_text(encoding='utf-8')
+
+          old_sources = 'sources = load(TARGET / "sources.json")\nsource_map = {item["id"]: item for item in sources["sources"]}\n'
+          new_sources = '''sources = load(TARGET / "sources.json")
+for source in sources["sources"]:
+    if not str(source.get("description") or "").strip():
+        inherited = str(source.get("why_relevant") or "").strip()
+        if inherited:
+            source["description"] = inherited
+source_map = {item["id"]: item for item in sources["sources"]}
+'''
+          if old_sources not in text:
+              raise SystemExit('source normalization pattern not found')
+          text = text.replace(old_sources, new_sources, 1)
+
+          old_selection = '    selected = unit["source_ids"][:8]\n'
+          new_selection = '    selected = [sid for sid in unit["source_ids"] if len(str(source_map[sid].get("description") or "").split()) >= 6][:8]\n'
+          if old_selection not in text:
+              raise SystemExit('claim selection pattern not found')
+          text = text.replace(old_selection, new_selection, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Build canonical closure
+        run: python scripts/curate_laboratorio_biomecanica_canonical_temp.py
+
+      - name: Validate canonical corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_academic_courses.py
+          python -m unittest tests.test_laboratorio_biomecanica_canonical_course -v
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python scripts/audit_generic_content.py
+          python scripts/audit_curriculum_completeness.py
+          python scripts/validate_pilot_foundations.py
+
+      - name: Regenerate Laboratorio de Biomecanica
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/generate_site.py --force --subject laboratorio-biomecanica --with-units --force-authored-units
+          python scripts/sync_catalog_statuses.py
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Self-clean and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f scripts/curate_laboratorio_biomecanica_canonical_temp.py
+          rm -f .github/workflows/curate-laboratorio-biomecanica-canonical-temp.yml
+          rm -f global-generation.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Close Laboratorio de Biomecánica canonical course"
+          git push origin HEAD:codex/laboratorio-biomecanica-canonical-closure-v2
