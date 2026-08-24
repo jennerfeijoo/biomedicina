@@ -40,7 +40,7 @@ class IngenieriaTejidosUnit03CuratedTests(unittest.TestCase):
             "interconectividad",
             "anisotropía",
             "superficie condicionada",
-            "masa remanente",
+            "retención de masa",
             "criterios no compensables",
             "iso 10993-1",
         ):
