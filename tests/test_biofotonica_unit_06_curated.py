@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "biofotonica" / "units" / "unit-06.json"
 MIRROR = ROOT / "data" / "generated_units" / "biofotonica" / "unit-06.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
+# Final user-authored trigger after public-site synchronization.
 
 
 class BiofotonicaUnit06CuratedTests(unittest.TestCase):
