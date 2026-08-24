@@ -127,6 +127,6 @@ class FundamentosBiomecanicaUnit06CuratedTests(unittest.TestCase):
         self.assertIn("prescripción", notice)
 
 
-# Trigger validation after generated-site synchronization.
+# Final user-authored verification trigger after publication metadata synchronization.
 if __name__ == "__main__":
     unittest.main()
