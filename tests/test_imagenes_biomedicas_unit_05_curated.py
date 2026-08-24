@@ -42,7 +42,7 @@ class ImagenesBiomedicasUnit05CuratedTests(unittest.TestCase):
             "tiempo de vuelo",
             "suv",
             "beer-lambert",
-            "dispersión reducida",
+            "coeficiente de dispersión reducido",
         ):
             self.assertIn(concept, theory)
 
