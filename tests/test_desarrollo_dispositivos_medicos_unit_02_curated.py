@@ -42,7 +42,7 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
-            "requisito huérfano",
+            "requisitos sin fuente",
             "gold plating",
             "requisito derivado",
             "frontera del sistema",
@@ -118,6 +118,6 @@ class DesarrolloDispositivosMedicosUnit02CuratedTests(unittest.TestCase):
         self.assertIn("sin confundir requisitos con soluciones prematuras", purpose)
 
 
-# User-authored gate trigger after deterministic public-site synchronization.
+# Final gate trigger; the theory uses the explicit phrase "requisitos sin fuente" while the glossary names that defect "requisito huérfano".
 if __name__ == "__main__":
     unittest.main()
