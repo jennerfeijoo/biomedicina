@@ -7,6 +7,7 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
+      - 'tests/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -32,14 +33,23 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Curate Biomecanica course closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/curate_biomecanica_course_temp.py
+          python scripts/publish_courses.py --subject biomecanica
+
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
+          python scripts/audit_generic_content.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
+          python tests/test_biomecanica_course_closure.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
@@ -65,20 +75,21 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Commit deterministic course closure and public site
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+
+          # El workflow y el curador son infraestructura temporal: no forman parte del PR final.
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f scripts/curate_biomecanica_course_temp.py global-generation.txt
+
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "El cierre académico de Biomecánica ya está sincronizado."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Close Biomecanica course-level academic alignment"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
