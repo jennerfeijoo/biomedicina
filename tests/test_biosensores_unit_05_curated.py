@@ -115,7 +115,7 @@ class BiosensoresUnit05CuratedTests(unittest.TestCase):
         self.assertIn("validación clínica", notice)
         self.assertIn("conformidad regulatoria", notice)
         self.assertIn("sensibilidad diagnóstica", purpose)
-        self.assertIn("validez clínica", purpose)
+        self.assertIn("utilidad clínica", purpose)
 
 
 if __name__ == "__main__":
