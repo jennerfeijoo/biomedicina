@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final user-authored trigger will be added after publication synchronization.
+# Final user-authored trigger after publication and catalog synchronization.
 
 import json
 import unittest
