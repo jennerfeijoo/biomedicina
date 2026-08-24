@@ -98,6 +98,6 @@ class BiomecanicaMediosContinuosUnit04CuratedTests(unittest.TestCase):
         self.assertIn("espesores", text)
 
 
-# Final human-authored validation trigger after synchronized public rendering.
+# Final user-authored trigger after subject metadata synchronization.
 if __name__ == "__main__":
     unittest.main()
