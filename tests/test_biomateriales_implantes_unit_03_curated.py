@@ -137,5 +137,6 @@ class BiomaterialesImplantesUnit03CuratedTests(unittest.TestCase):
         self.assertIn("u4", notice)
 
 
+# Final user-authored trigger after publication metadata synchronization.
 if __name__ == "__main__":
     unittest.main()
