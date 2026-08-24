@@ -1,0 +1,49 @@
+name: Temporary Biomecanica canonical bootstrap
+
+on:
+  push:
+    branches:
+      - codex/biomecanica-canonical-course-closure
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/biomecanica-canonical-course-closure
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Bootstrap canonical course
+        run: python scripts/migrate_course_to_canonical.py --subject biomecanica --course-code BIOMEC
+
+      - name: Validate canonical structure
+        run: python scripts/validate_academic_courses.py
+
+      - name: Audit strict content gaps
+        shell: bash
+        run: |
+          set +e
+          python scripts/validate_academic_courses.py --strict-content 2>&1 | tee /tmp/biomecanica-strict-content.txt
+          code=${PIPESTATUS[0]}
+          echo "strict_content_exit=${code}"
+          exit 0
+
+      - name: Commit canonical bootstrap and self-clean
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/temp-biomecanica-canonical-bootstrap.yml
+          git add data/courses/biomecanica
+          git commit -m "Bootstrap canonical Biomecanica corpus"
+          git push origin HEAD:codex/biomecanica-canonical-course-closure
