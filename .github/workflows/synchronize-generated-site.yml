@@ -7,6 +7,7 @@ on:
       - 'docs/**'
       - 'scripts/**'
       - 'templates/**'
+      - 'tests/**'
       - '.github/workflows/synchronize-generated-site.yml'
 
 permissions:
@@ -32,6 +33,13 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Synchronize curated Biomateriales U1
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp data/course_redevelopment/biomateriales/units/unit-01.json data/generated_units/biomateriales/unit-01.json
+          python -m unittest tests.test_biomateriales_unit_01_curated
+
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -56,6 +64,7 @@ jobs:
         run: |
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
+          python -m unittest tests.test_biomateriales_unit_01_curated
 
       - name: Upload synchronization diagnostic
         if: always()
@@ -65,20 +74,18 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Commit curated source mirror and deterministic public site
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+          git show origin/main:.github/workflows/synchronize-generated-site.yml > .github/workflows/synchronize-generated-site.yml
+          rm -f global-generation.txt
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "Biomateriales U1 ya está sincronizada."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Synchronize curated Biomateriales U1"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
