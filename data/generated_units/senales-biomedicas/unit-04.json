@@ -6,386 +6,335 @@
   "slug": "analisis-frecuencial",
   "title": "Análisis frecuencial",
   "status": "review",
-  "purpose": "Integrar PSD, espectrogramas, bandas y coherencia para resolver un caso de estudio de oscilaciones fisiológicas con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Construir un análisis frecuencial y tiempo-frecuencia reproducible de señales biomédicas mediante DFT, periodograma, PSD, método de Welch, ventanas, potencia por bandas, STFT/espectrograma y coherencia, cuantificando resolución, fuga, varianza, no estacionariedad y fuentes de asociación espuria antes de atribuir significado fisiológico a picos, bandas o acoplamientos.",
   "learning_objectives": [
-    "Definir PSD, espectrogramas y bandas y coherencia mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte PSD con espectrogramas y delimite el papel de bandas y coherencia.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre estudio de oscilaciones fisiológicas con incertidumbre y límites.",
-    "Transferir el método de Análisis frecuencial a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir espectro de amplitud, espectro de potencia y densidad espectral de potencia, conservando unidades, normalización, representación unilateral/bilateral y relación con la duración observada.",
+    "Explicar y cuantificar cómo duración de segmento, frecuencia de muestreo, ventana, solapamiento y promediado de Welch modifican resolución frecuencial, fuga espectral y variabilidad de la estimación.",
+    "Construir e interpretar espectrogramas mediante STFT, justificando longitud de ventana y salto temporal de acuerdo con el compromiso entre localización temporal y frecuencial.",
+    "Calcular potencia absoluta y relativa en bandas definidas a priori y evaluar sensibilidad a límites de banda, tendencia, ventana, componente aperiódica y presencia real o ausente de oscilaciones.",
+    "Calcular cross-spectrum y coherencia cuadrática de magnitud entre dos señales y explicar por qué una coherencia elevada no demuestra causalidad, conectividad anatómica ni independencia frente a referencia común o conducción de volumen.",
+    "Construir un expediente reproducible de análisis espectral con señal cruda preservada, frecuencia de muestreo, segmentos, ventanas, detrending, normalización, resolución, métricas, análisis de sensibilidad y límites de inferencia."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Análisis frecuencial",
+      "heading": "1. De la DFT a la densidad espectral de potencia",
       "paragraphs": [
-        "La unidad «Análisis frecuencial» sitúa PSD, espectrogramas y bandas y coherencia dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Señales Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Análisis frecuencial» en Señales Biomédicas, «PSD», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Análisis frecuencial», «espectrogramas», aporta otra dimensión al problema de Señales Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con PSD debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Análisis frecuencial» en Señales Biomédicas, «bandas y coherencia», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en Análisis frecuencial.",
-        "Relacionar PSD, espectrogramas y bandas y coherencia mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Análisis frecuencial» dentro de Señales Biomédicas, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Señales Biomédicas, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre PSD o espectrogramas debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Análisis frecuencial», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Señales Biomédicas, la incertidumbre de «Análisis frecuencial» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: estudio de oscilaciones fisiológicas",
-      "paragraphs": [
-        "En la unidad «Análisis frecuencial» de Señales Biomédicas, el caso conductor es estudio de oscilaciones fisiológicas. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Análisis frecuencial» conecta PSD con espectrogramas y utiliza bandas y coherencia como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «estudio de oscilaciones fisiológicas» en Señales Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Análisis frecuencial» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de estudio de oscilaciones fisiológicas y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "El dominio frecuencial reorganiza una señal temporal en componentes sinusoidales complejas. Para una secuencia finita, la transformada discreta de Fourier produce coeficientes asociados a una rejilla de frecuencias. Esa representación no revela automáticamente osciladores fisiológicos: describe cómo la energía o potencia de la ventana analizada puede representarse en una base de frecuencias. Antes de interpretar un máximo se deben conocer duración, frecuencia de muestreo, tendencia, ventana y unidades de la señal original.",
+        "Un espectro de amplitud, un espectro de potencia y una densidad espectral de potencia no son la misma magnitud. La PSD distribuye potencia o varianza por unidad de frecuencia y, con una normalización coherente, su integral sobre una banda recupera la contribución de potencia de esa banda. Para una señal expresada en microvoltios, una PSD puede expresarse en microvoltios cuadrados por hertz. Confundir densidad con potencia integrada produce comparaciones dependientes del ancho de bin.",
+        "La separación nominal de bins de una DFT de N muestras adquiridas a frecuencia fs es fs/N, equivalente a 1/T para una ventana de duración T. Esta relación muestra por qué observar más tiempo permite distinguir componentes próximas con mayor capacidad espectral. Añadir ceros antes de la FFT interpola la rejilla de representación y puede facilitar la localización visual de un máximo, pero no crea información que permita resolver dos componentes que la duración original no separaba.",
+        "El periodograma estima la PSD a partir del módulo cuadrado de la transformada de un registro finito. Su interpretación presupone que el segmento representa razonablemente el proceso que se desea resumir. En señales biomédicas con cambios de estado, artefactos, transitorios o tendencias, una única PSD global puede mezclar fenómenos que nunca coexistieron de manera estable. La inspección temporal y la selección documentada de épocas preceden a la estadística espectral.",
+        "El detrending y la eliminación de media modifican especialmente las frecuencias bajas y deben declararse. La representación unilateral para señales reales concentra la contribución de frecuencias positivas con el escalado correspondiente, mientras que una representación bilateral conserva componentes positivas y negativas. Comparar PSD obtenidas con convenciones distintas sin revisar escalado, unidades y normalización puede generar diferencias puramente metodológicas."
       ],
       "equations": [
         {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
-          "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
-          }
+          "latex": "X[k]=\\sum_{n=0}^{N-1}x[n]e^{-j2\\pi kn/N}",
+          "meaning": "DFT de una secuencia de N muestras; cada k corresponde a una frecuencia discreta determinada por fs y N."
+        },
+        {
+          "latex": "\\Delta f=\\frac{f_s}{N}=\\frac{1}{T}",
+          "meaning": "Separación de bins para un segmento de duración T=N/fs; aumentar T mejora la rejilla frecuencial fundamental."
+        },
+        {
+          "latex": "P_{[f_1,f_2]}=\\int_{f_1}^{f_2}S_{xx}(f)\\,df",
+          "meaning": "Potencia integrada en una banda a partir de una PSD Sxx con escalado de densidad coherente."
         }
       ],
       "key_points": [
-        "Delimitar el caso de estudio de oscilaciones fisiológicas antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "PSD y potencia de banda conservan unidades y normalizaciones que deben reportarse.",
+        "La resolución fundamental depende de la duración efectiva del segmento, no del número de ceros añadidos a la FFT.",
+        "Una PSD global presupone que resumir el segmento como un proceso aproximadamente estacionario es útil para la pregunta.",
+        "Media, tendencia, representación unilateral/bilateral y escalado forman parte del método reproducible."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Ventanas, fuga espectral y estimación de Welch",
       "paragraphs": [
-        "La reproducibilidad de «Análisis frecuencial» en Señales Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Análisis frecuencial» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Señales Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Análisis frecuencial» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de PSD, espectrogramas y bandas y coherencia debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Señales Biomédicas.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre estudio de oscilaciones fisiológicas. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Señales Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Analizar un fragmento finito equivale a multiplicar una señal potencialmente más larga por una ventana temporal. Una ventana rectangular produce transiciones bruscas en los bordes y puede dispersar energía de una componente hacia frecuencias vecinas cuando la observación no contiene un número entero de ciclos. Ese fenómeno de fuga espectral no significa que aparezcan nuevas fuentes fisiológicas; es una consecuencia de observar una señal durante tiempo finito.",
+        "Ventanas como Hann suavizan los bordes y reducen lóbulos laterales a cambio de ensanchar el lóbulo principal. Por ello existe un compromiso entre detectar componentes débiles cerca de una fuerte y separar componentes muy próximas. No hay una ventana universalmente mejor. La elección se justifica por amplitud relativa de componentes, resolución requerida, duración disponible y métrica que se extraerá después.",
+        "Welch divide el registro en segmentos, aplica una ventana a cada segmento, calcula periodogramas modificados y los promedia. El promediado reduce la variabilidad de la estimación comparado con un único periodograma, pero los segmentos más cortos pierden resolución frecuencial. Aumentar solapamiento genera más segmentos sin crear la misma cantidad de información independiente; la ventana y el solapamiento deben considerarse conjuntamente.",
+        "El tamaño de FFT puede ser mayor que la longitud de segmento mediante zero-padding. Esto produce más puntos en el eje de frecuencia y puede interpolar mejor la forma del pico estimado, pero la capacidad de distinguir dos tonos sigue gobernada principalmente por duración efectiva y ventana. Reportar solamente nfft y omitir nperseg puede hacer parecer que el análisis tuvo una resolución que los datos no sustentan.",
+        "Una comparación robusta entre condiciones mantiene constantes, salvo justificación explícita, frecuencia de muestreo, definición de época, detrending, ventana, longitud de segmento, solapamiento, nfft y escalado. También prueba sensibilidad a decisiones razonables. Si un pico o diferencia desaparece al cambiar modestamente una longitud de segmento o al excluir una época contaminada, esa dependencia forma parte del resultado y debe comunicarse."
+      ],
+      "equations": [
+        {
+          "latex": "\\widehat{S}_{xx}^{Welch}(f)=\\frac{1}{K}\\sum_{r=1}^{K}\\widehat{S}_{xx,r}(f)",
+          "meaning": "Estimación de Welch como promedio de K periodogramas modificados de segmentos, con el escalado de ventana correspondiente."
+        },
+        {
+          "latex": "x_w[n]=x[n]w[n]",
+          "meaning": "Ventaneo temporal; multiplicar por w[n] modifica la respuesta espectral y el patrón de fuga."
+        }
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "La fuga espectral es una consecuencia del registro finito y de la ventana, no evidencia automática de múltiples osciladores.",
+        "Ventanas distintas intercambian anchura del lóbulo principal y supresión de lóbulos laterales.",
+        "Welch intercambia resolución por menor varianza mediante segmentación y promediado.",
+        "Zero-padding interpola la representación espectral, pero no aumenta la información contenida en el segmento original."
+      ]
+    },
+    {
+      "heading": "3. STFT, espectrograma y compromiso tiempo-frecuencia",
+      "paragraphs": [
+        "Cuando el contenido frecuencial cambia durante el registro, una PSD global puede ocultar la evolución temporal. La transformada de Fourier de tiempo corto aplica una ventana deslizante y calcula un espectro para cada posición. El espectrograma representa típicamente magnitud o potencia de esos coeficientes en un plano tiempo-frecuencia. Cada columna resume una vecindad temporal, no un instante infinitamente preciso.",
+        "Una ventana larga contiene más ciclos y mejora la capacidad de separar frecuencias cercanas, pero difumina cambios rápidos en el tiempo. Una ventana corta localiza mejor transitorios, pero amplía la incertidumbre frecuencial y puede contener pocos ciclos de componentes lentas. Por eso la longitud de ventana se expresa en segundos además de muestras y se vincula a la escala temporal y frecuencial del fenómeno investigado.",
+        "El salto entre ventanas determina la densidad de columnas temporales. Un hop pequeño produce una visualización más continua y mayor redundancia, pero no hace que ventanas fuertemente solapadas sean observaciones independientes. La elección de solapamiento afecta coste, correlación entre estimaciones y apariencia. Los bordes pueden requerir padding y contienen menos soporte de datos reales, de modo que deben identificarse en la interpretación.",
+        "El color de un espectrograma puede representar potencia lineal, densidad o una transformación logarítmica. Cambiar límites de color o escala dB puede alterar de forma intensa qué patrones son visibles sin modificar los datos. Una figura reproducible incluye unidades, escala, ventana, duración, hop, nfft, frecuencia de muestreo y tratamiento de bordes, y se acompaña de métricas si se utilizará para comparar condiciones.",
+        "Un máximo localizado en tiempo y frecuencia no demuestra por sí mismo una oscilación fisiológica estable. Una onda no sinusoidal puede generar armónicos; un transitorio breve distribuye energía en varias frecuencias; y actividad aperiódica puede cambiar la potencia de bandas. El análisis debe verificar la presencia y forma del fenómeno en datos y simulaciones, y no convertir automáticamente una región coloreada del espectrograma en un mecanismo biológico."
+      ],
+      "equations": [
+        {
+          "latex": "X(m,\\omega)=\\sum_n x[n]w[n-mH]e^{-j\\omega n}",
+          "meaning": "STFT con ventana w desplazada en pasos H; cada m produce una estimación espectral local."
+        },
+        {
+          "latex": "\\mathcal{S}(m,\\omega)=|X(m,\\omega)|^2",
+          "meaning": "Espectrograma de potencia como módulo cuadrado de la STFT bajo una convención de escalado definida."
+        }
+      ],
+      "key_points": [
+        "STFT permite seguir cambios espectrales, pero cada estimación integra una ventana temporal finita.",
+        "Ventanas largas favorecen resolución frecuencial; ventanas cortas favorecen localización temporal.",
+        "Solapamiento denso aumenta redundancia y apariencia suave, no independencia estadística.",
+        "Escala de color, padding, unidades y parámetros del espectrograma son parte de la evidencia reportada."
+      ]
+    },
+    {
+      "heading": "4. Bandas, cross-spectrum, coherencia y límites fisiológicos",
+      "paragraphs": [
+        "La potencia de banda integra una PSD entre límites definidos. Puede reportarse en unidades absolutas o normalizarse respecto de una banda de referencia o potencia total, pero ambas respuestas significan cosas distintas. Los límites deben declararse y justificarse; una etiqueta como alfa, LF, HF o banda de fatiga no convierte una frontera convencional en una constante biológica universal. Los picos individuales pueden desplazarse entre personas, estados y modalidades.",
+        "En EEG y otros potenciales de campo, cambios de potencia en una banda pueden reflejar componentes oscilatorias, actividad aperiódica, forma no sinusoidal, referencia, volumen conductor o mezcla de fuentes. Las recomendaciones metodológicas sobre oscilaciones aconsejan verificar que una oscilación esté realmente presente, considerar frecuencias pico variables y separar cuando sea relevante el componente aperiódico. Integrar bandas fijas sin estas comprobaciones puede atribuir significado a cambios de fondo espectral.",
+        "El cross-spectrum conserva información de amplitud y fase compartida entre dos señales por frecuencia. La coherencia cuadrática de magnitud normaliza el módulo del cross-spectrum por las PSD individuales y toma valores entre cero y uno para una estimación estándar. Un valor alto indica una relación lineal consistente en frecuencia bajo la segmentación utilizada; no identifica dirección, causalidad ni mecanismo anatómico.",
+        "En EEG, una referencia común y la conducción de volumen pueden elevar coherencia entre sensores aunque las fuentes de interés no estén funcionalmente acopladas. En EEG–EMG o entre sensores periféricos, ruido común, movimiento, sincronización del equipo y preprocesamiento compartido también pueden producir asociaciones. La coherencia debe compararse con controles, simulaciones, referencias alternativas o medidas complementarias apropiadas a la pregunta.",
+        "Las aplicaciones biomédicas ilustran por qué el método se adapta a la modalidad. En HRV, las guías recientes desaconsejan interpretar automáticamente cocientes o bandas como marcadores específicos de salida simpática o 'balance simpático-vagal'. En sEMG, frecuencia mediana y espectro dependen de forma del potencial de unidad motora, geometría, conducción, fatiga y condiciones de adquisición. El objetivo académico de esta unidad es describir y comprobar rasgos espectrales, no convertirlos en diagnósticos o mecanismos únicos."
+      ],
+      "equations": [
+        {
+          "latex": "P_{rel,B}=\\frac{\\int_B S_{xx}(f)df}{\\int_R S_{xx}(f)df}",
+          "meaning": "Potencia relativa de una banda B respecto de una región de referencia R declarada; el resultado depende de ambas fronteras."
+        },
+        {
+          "latex": "C_{xy}(f)=\\frac{|P_{xy}(f)|^2}{P_{xx}(f)P_{yy}(f)}",
+          "meaning": "Coherencia cuadrática de magnitud estimada a partir de espectros auto y cruzado; no implica causalidad ni dirección."
+        }
+      ],
+      "key_points": [
+        "Las fronteras de banda son decisiones metodológicas y pueden requerir adaptación o análisis de sensibilidad.",
+        "Potencia absoluta y relativa responden preguntas distintas y deben conservar su denominador o unidad.",
+        "Coherencia alta describe asociación frecuencial estimada; no demuestra causalidad ni conectividad anatómica.",
+        "Referencia común, conducción de volumen, ruido compartido y preprocesamiento pueden producir coherencia espuria."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "PSD",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "espectrogramas",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "bandas y coherencia",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Análisis frecuencial",
-      "definition": "Dominio de estudio que integra PSD, espectrogramas, bandas y coherencia para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de estudio de oscilaciones fisiológicas usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term": "DFT", "definition": "Transformada discreta de Fourier que representa una secuencia finita mediante coeficientes complejos en frecuencias discretas."},
+    {"term": "FFT", "definition": "Familia de algoritmos eficientes para calcular una DFT; no es una magnitud espectral distinta."},
+    {"term": "periodograma", "definition": "Estimador espectral construido a partir del módulo cuadrado de la transformada de un segmento finito con escalado definido."},
+    {"term": "PSD", "definition": "Densidad espectral de potencia: distribución de potencia o varianza por unidad de frecuencia."},
+    {"term": "resolución frecuencial", "definition": "Capacidad de distinguir estructura cercana en frecuencia, limitada principalmente por duración efectiva, ventana y método de estimación."},
+    {"term": "fuga espectral", "definition": "Dispersión de energía hacia frecuencias vecinas causada por observar una señal durante una ventana finita y por discontinuidades de borde."},
+    {"term": "ventana Hann", "definition": "Ventana suave usada para reducir lóbulos laterales frente a la rectangular, a costa de ensanchar el lóbulo principal."},
+    {"term": "lóbulo principal", "definition": "Región central de la respuesta espectral de una ventana que condiciona la separación de componentes próximas."},
+    {"term": "lóbulo lateral", "definition": "Respuesta secundaria de una ventana que permite que una componente fuerte contamine bins alejados."},
+    {"term": "método de Welch", "definition": "Estimación PSD que promedia periodogramas modificados de segmentos, habitualmente solapados, para reducir variabilidad."},
+    {"term": "zero-padding", "definition": "Adición de ceros antes de una FFT para densificar la rejilla de representación sin añadir información temporal nueva."},
+    {"term": "detrending", "definition": "Eliminación explícita de una media o tendencia antes del análisis; modifica especialmente contenido de muy baja frecuencia."},
+    {"term": "STFT", "definition": "Transformada de Fourier de tiempo corto obtenida al desplazar una ventana y calcular un espectro local en cada posición."},
+    {"term": "espectrograma", "definition": "Representación tiempo-frecuencia, comúnmente de potencia o magnitud de una STFT, con escala y unidades definidas."},
+    {"term": "hop", "definition": "Número de muestras entre posiciones consecutivas de una ventana en una STFT."},
+    {"term": "potencia de banda", "definition": "Integral o suma apropiadamente escalada de la PSD dentro de límites de frecuencia declarados."},
+    {"term": "potencia relativa", "definition": "Potencia de una banda dividida por una potencia de referencia explícita; depende del denominador elegido."},
+    {"term": "cross-spectrum", "definition": "Espectro cruzado complejo entre dos señales que conserva relaciones de amplitud y fase por frecuencia."},
+    {"term": "coherencia", "definition": "Medida normalizada de relación lineal frecuencial entre dos señales; no implica causalidad ni dirección."},
+    {"term": "conducción de volumen", "definition": "Propagación espacial de campos eléctricos a través de tejidos que puede mezclar fuentes y aumentar asociación entre sensores EEG."},
+    {"term": "actividad aperiódica", "definition": "Componente espectral no oscilatoria de banda ancha cuya pendiente o nivel puede modificar potencia medida dentro de bandas."},
+    {"term": "estacionariedad", "definition": "Supuesto aproximado de que propiedades estadísticas relevantes permanecen suficientemente estables durante la ventana analizada."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Análisis frecuencial",
-      "scenario": "Un equipo propone estudiar estudio de oscilaciones fisiológicas, pero su pregunta mezcla PSD, espectrogramas y bandas y coherencia sin definir unidades, referencias ni resultado admisible.",
+      "title": "Duración, zero-padding y dos componentes cercanas",
+      "scenario": "Una señal sintética contiene tonos de 10.0 y 10.6 Hz. Se compara un segmento de 2 s con uno de 10 s, ambos muestreados a 200 Hz, y se aplica además zero-padding.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de PSD, espectrogramas y bandas y coherencia.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Calcular Δf=1/T: 0.5 Hz para 2 s y 0.1 Hz para 10 s.",
+        "Obtener periodogramas con la misma ventana y observar la superposición de los picos en el segmento corto.",
+        "Repetir con el segmento largo y comprobar la mayor separación espectral.",
+        "Aplicar una FFT con más puntos al segmento corto mediante zero-padding.",
+        "Comprobar que aparecen más muestras en frecuencia, pero que el lóbulo ancho del segmento corto no adquiere la resolución física del registro largo."
       ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+      "interpretation": "Zero-padding mejora la interpolación de la curva estimada; aumentar duración aporta información adicional y puede permitir distinguir componentes próximas.",
+      "limitations": ["El ejemplo usa tonos estacionarios ideales.", "La ventana modifica el ancho y los lóbulos de cada pico.", "No define una duración universal para señales fisiológicas."]
+    },
+    {
+      "title": "Rectangular frente a Hann ante fuga espectral",
+      "scenario": "Un tono sintético cae entre bins de la DFT y se analiza con ventana rectangular y Hann.",
+      "reasoning_steps": [
+        "Mantener idénticos señal, duración, fs y nfft.",
+        "Calcular el espectro con ventana rectangular.",
+        "Repetir con Hann y normalización consistente.",
+        "Comparar anchura del máximo y energía de lóbulos laterales.",
+        "Añadir un tono débil cercano y evaluar qué ventana permite distinguirlo mejor bajo esa relación de amplitudes."
+      ],
+      "interpretation": "Hann reduce fuga lejana pero ensancha el lóbulo principal; la elección depende del problema y no de una jerarquía absoluta de ventanas.",
+      "limitations": ["Otras ventanas producen compromisos distintos.", "La comparación requiere escalado consistente.", "Un espectro real puede contener ruido coloreado y no solo tonos."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre PSD y espectrogramas en el caso de estudio de oscilaciones fisiológicas; una condición vinculada con bandas y coherencia podría producir el mismo patrón.",
+      "title": "Welch: varianza frente a resolución",
+      "scenario": "Se analiza una señal ruidosa de 60 s con Welch usando segmentos de 2, 5 y 10 s.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar bandas y coherencia como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Mantener ventana y regla de solapamiento declaradas.",
+        "Calcular Δf aproximada para cada longitud de segmento.",
+        "Contar cuántos segmentos contribuyen a cada promedio.",
+        "Comparar dispersión de PSD mediante varias realizaciones de ruido.",
+        "Elegir una configuración que separe las frecuencias relevantes sin producir una estimación excesivamente variable."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+      "interpretation": "Segmentos cortos aportan más promedios y suelen estabilizar la PSD, pero pierden detalle frecuencial; segmentos largos hacen el compromiso contrario.",
+      "limitations": ["Los segmentos solapados no son totalmente independientes.", "La estacionariedad puede limitar cuánto registro es razonable agrupar.", "La mejor configuración depende de las frecuencias objetivo."
+      ]
+    },
+    {
+      "title": "Espectrograma de una frecuencia que cambia en el tiempo",
+      "scenario": "Una señal sintética cambia progresivamente de 5 a 20 Hz y contiene un transitorio breve. Se comparan ventanas de 0.25, 1 y 4 s.",
+      "reasoning_steps": [
+        "Generar una verdad temporal conocida para frecuencia instantánea y transitorio.",
+        "Calcular tres espectrogramas con el mismo escalado y hop proporcional.",
+        "Medir error temporal alrededor del transitorio.",
+        "Medir anchura espectral alrededor de una frecuencia local.",
+        "Seleccionar una ventana según cuál de las dos precisiones es prioritaria para la pregunta."
+      ],
+      "interpretation": "La ventana corta localiza mejor el transitorio y la larga define mejor la frecuencia local; ningún espectrograma maximiza simultáneamente ambas resoluciones.",
+      "limitations": ["La frecuencia sintética es conocida y suave.", "El colormap puede exagerar diferencias visuales.", "La STFT no es el único método tiempo-frecuencia disponible."
+      ]
+    },
+    {
+      "title": "Coherencia alta producida por una fuente común",
+      "scenario": "Dos señales sintéticas independientes reciben la misma componente sinusoidal de contaminación además de sus componentes propias.",
+      "reasoning_steps": [
+        "Calcular coherencia entre las señales antes de añadir la fuente común.",
+        "Añadir la misma sinusoidal a ambas y repetir con idénticos parámetros de Welch.",
+        "Observar el aumento de coherencia alrededor de la frecuencia compartida.",
+        "Eliminar o modelar la fuente común en una prueba controlada y repetir.",
+        "Redactar por qué el primer resultado no demuestra una conexión causal entre los generadores independientes."
+      ],
+      "interpretation": "Una señal común puede elevar coherencia sin interacción entre las fuentes originales, análogo a problemas de referencia compartida, ruido común o conducción de volumen.",
+      "limitations": ["La simulación simplifica mezclas espaciales reales.", "Eliminar una fuente común en datos reales no siempre es posible.", "La coherencia tampoco proporciona dirección de interacción."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Actividad guiada 1: anatomía de una PSD con verdad conocida",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja exclusivamente con señales sintéticas para conocer de antemano las frecuencias y amplitudes verdaderas.",
+        "Define antes de calcular qué componentes deben resolverse y qué error espectral considerarás aceptable.",
+        "Mantén un registro explícito de fs, duración, ventana, nperseg, solapamiento, nfft, detrending y escalado.",
+        "Cambia un solo parámetro metodológico por comparación.",
+        "Explica cada diferencia mediante duración, ventana, fuga, promediado o normalización antes de atribuirla a la señal."
       ],
       "problems": [
-        "Define PSD mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo espectrogramas modifica o complementa a PSD.",
-        "Propón una prueba que distinga el papel de bandas y coherencia de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Genera dos sinusoides próximas y ruido blanco con fs conocida.",
+        "Calcula la DFT y etiqueta correctamente el eje de frecuencia.",
+        "Calcula la separación nominal Δf para tres duraciones.",
+        "Compara periodograma rectangular y Hann.",
+        "Cuantifica fuga fuera de una región predefinida alrededor del tono principal.",
+        "Aplica zero-padding y explica qué cambia y qué no cambia.",
+        "Calcula PSD de Welch con tres longitudes de segmento.",
+        "Integra la PSD alrededor de cada tono y verifica unidades.",
+        "Repite con un tono débil próximo a otro fuerte.",
+        "Construye una tabla de compromiso resolución–fuga–variabilidad y selecciona una configuración justificada."
       ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
-      ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
+      "deliverables": ["Script o notebook reproducible.", "Tabla de parámetros y unidades.", "Comparación gráfica de periodogramas y Welch.", "Tabla cuantitativa de resolución, fuga y potencia integrada.", "Conclusión de máximo 200 palabras con una limitación."],
+      "checking_criteria": ["La verdad espectral se define antes del análisis.", "Δf se vincula a duración efectiva y no solo a nfft.", "Las comparaciones usan escalado consistente.", "Se demuestra que zero-padding no crea resolución física nueva.", "La elección de ventana se justifica por un compromiso medido.", "La conclusión se limita a las señales sintéticas evaluadas."]
     },
     {
-      "title": "Taller de evidencia: estudio de oscilaciones fisiológicas",
+      "title": "Actividad guiada 2: espectrograma y eventos no estacionarios",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Genera una señal sintética con al menos un chirp, una ráfaga oscilatoria y un transitorio no oscilatorio.",
+        "Guarda los tiempos y frecuencias verdaderos de cada componente como referencia.",
+        "Compara al menos tres longitudes de ventana con la misma convención de potencia.",
+        "Usa escalas de color iguales cuando compares figuras.",
+        "No identifiques visualmente una banda sin cuantificar al menos una medida temporal y una frecuencial."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para PSD, espectrogramas y bandas y coherencia.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Calcula una PSD global y describe qué información temporal pierde.",
+        "Calcula un espectrograma con ventana corta.",
+        "Repite con ventana intermedia y larga.",
+        "Mide error de localización temporal de la ráfaga.",
+        "Mide anchura espectral de la ráfaga en cada configuración.",
+        "Cuantifica cómo cambia la representación del transitorio no sinusoidal.",
+        "Cambia el hop manteniendo la ventana y explica la redundancia introducida.",
+        "Identifica regiones afectadas por padding o borde.",
+        "Repite una figura en escala lineal y dB y explica cómo cambia la percepción visual.",
+        "Elige la configuración apropiada para detectar ráfagas y justifica qué precisión sacrificas."
       ],
-      "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
+      "deliverables": ["Señal sintética y tabla de verdad conocida.", "Tres espectrogramas comparables.", "Tabla de errores temporal y frecuencial.", "Registro de ventana, hop, nfft y escala.", "Conclusión sobre el compromiso tiempo-frecuencia."],
+      "checking_criteria": ["La PSD global se distingue del análisis tiempo-frecuencia.", "Las ventanas se expresan en segundos y muestras.", "El hop no se interpreta como resolución temporal independiente de la ventana.", "Los bordes se identifican explícitamente.", "La escala de color permanece trazable.", "No se confunde energía de un transitorio con evidencia de una oscilación estable."]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
+      "title": "Actividad guiada 3: potencia de banda y coherencia bajo confusores",
       "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
+        "Trabaja con señales sintéticas o datos abiertos no identificables; no conectes sensores a personas.",
+        "Predefine bandas y parámetros de Welch antes de comparar resultados.",
+        "Conserva por separado potencia absoluta, potencia relativa y coherencia.",
+        "Introduce en la parte sintética una fuente común conocida para comprobar asociación espuria.",
+        "Presenta la conclusión como evaluación metodológica y no como inferencia clínica o de conectividad anatómica."
       ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de estudio de oscilaciones fisiológicas y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte PSD, espectrogramas y bandas y coherencia.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
+      "problems": [
+        "Calcula potencia absoluta en dos bandas predefinidas.",
+        "Calcula potencia relativa usando un denominador explícito.",
+        "Desplaza cada límite de banda una cantidad pequeña y mide sensibilidad del resultado.",
+        "Añade una componente aperiódica sintética de pendiente distinta y observa su efecto sobre potencia de banda.",
+        "Calcula coherencia entre dos señales independientes.",
+        "Añade una sinusoidal común a ambas y cuantifica el cambio de coherencia.",
+        "Cambia longitud de segmento de Welch y evalúa estabilidad de la coherencia.",
+        "Simula una referencia común sumando una tercera señal a ambos canales.",
+        "Diseña un control que permita detectar que la asociación procede de la fuente compartida.",
+        "Redacta qué evidencia adicional sería necesaria antes de hablar de acoplamiento fisiológico."
       ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
-      ]
+      "deliverables": ["Tabla de bandas y denominadores.", "Análisis de sensibilidad de potencia.", "Curvas de coherencia en condiciones control y confusor.", "Diagrama causal simple de fuentes y señales observadas.", "Conclusión limitada al escenario evaluado."],
+      "checking_criteria": ["Potencia absoluta y relativa no se mezclan.", "Los límites de banda quedan registrados y se prueba su sensibilidad.", "La coherencia se calcula con parámetros reproducibles.", "Se demuestra una coherencia espuria mediante fuente común.", "No se interpreta coherencia como causalidad o dirección.", "Las actividades no usan adquisición en personas ni generan afirmaciones clínicas."]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar PSD como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar PSD en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre PSD y espectrogramas demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir bandas y coherencia después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Análisis frecuencial al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    {"error": "Llamar resolución frecuencial a 1/nfft después de zero-padding.", "correction": "Relacionar capacidad resolutiva con duración efectiva y ventana; zero-padding solo densifica la rejilla calculada."},
+    {"error": "Comparar amplitudes de un espectro con valores de PSD como si tuvieran las mismas unidades.", "correction": "Declarar si se usa amplitud, potencia o densidad y comprobar el escalado y las unidades."},
+    {"error": "Usar una ventana sin reportarla.", "correction": "Registrar ventana y normalización porque cambian fuga, anchura de picos y amplitud estimada."},
+    {"error": "Elegir segmentos de Welch muy cortos solo para obtener una curva suave.", "correction": "Comprobar que la longitud resuelve las frecuencias relevantes y cuantificar el compromiso con la varianza."},
+    {"error": "Interpretar cada columna de un espectrograma como un instante independiente.", "correction": "Recordar que cada columna integra una ventana y que ventanas solapadas son redundantes."},
+    {"error": "Cambiar la escala de color entre condiciones y comparar visualmente intensidad.", "correction": "Mantener límites y unidades comparables o usar métricas cuantitativas predefinidas."},
+    {"error": "Usar bandas convencionales como fronteras biológicas universales.", "correction": "Justificar límites, considerar picos individuales y ejecutar sensibilidad cuando la inferencia dependa de la frontera."},
+    {"error": "Presentar potencia relativa sin especificar potencia total o banda denominadora.", "correction": "Registrar explícitamente el denominador porque puede cambiar aunque la banda de interés no cambie."},
+    {"error": "Interpretar coherencia alta como causalidad o conectividad neuronal.", "correction": "Evaluar referencia común, conducción de volumen, ruido compartido y ausencia de dirección antes de cualquier inferencia fisiológica."},
+    {"error": "Interpretar LF/HF o una banda sEMG como un mecanismo fisiológico único.", "correction": "Separar descriptor espectral de mecanismo; múltiples procesos y decisiones metodológicas contribuyen a la métrica."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar estudio de oscilaciones fisiológicas?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan PSD y espectrogramas?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; bandas y coherencia puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre bandas y coherencia?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre estudio de oscilaciones fisiológicas?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Análisis frecuencial?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question": "¿Qué diferencia hay entre potencia de banda y PSD?", "answer": "La PSD es potencia por unidad de frecuencia; la potencia de banda integra esa densidad sobre un intervalo de frecuencias.", "reasoning": "Integrar densidad elimina la unidad por hertz y produce una magnitud dependiente de los límites de banda.", "common_error": "Sumar bins sin considerar escalado o ancho de frecuencia."},
+    {"question": "¿Por qué zero-padding no mejora la resolución física?", "answer": "Porque no añade duración ni nuevas muestras observadas; solo evalúa/interpola la transformada en una rejilla más densa.", "reasoning": "La información para separar componentes está limitada por el soporte temporal y la ventana.", "common_error": "Confundir más bins gráficos con más información."},
+    {"question": "¿Qué compromiso introduce una ventana Hann frente a rectangular?", "answer": "Reduce lóbulos laterales y fuga distante, pero ensancha el lóbulo principal.", "reasoning": "Las propiedades espectrales de la ventana determinan cómo se distribuye energía alrededor de una componente.", "common_error": "Considerar Hann siempre superior."},
+    {"question": "¿Qué gana y qué pierde Welch al usar segmentos más cortos?", "answer": "Puede ganar estabilidad mediante más promedios, pero pierde resolución frecuencial y contexto temporal por segmento.", "reasoning": "La longitud de segmento controla tanto número de segmentos como Δf aproximada.", "common_error": "Optimizar solo la suavidad de la curva."},
+    {"question": "¿Qué determina el compromiso tiempo-frecuencia de un espectrograma?", "answer": "Principalmente la duración y forma de la ventana: ventanas cortas localizan tiempo y ventanas largas separan mejor frecuencia.", "reasoning": "Cada espectro local usa datos de toda una ventana.", "common_error": "Creer que reducir hop resuelve simultáneamente ambas dimensiones."},
+    {"question": "¿Por qué una ráfaga no sinusoidal puede ocupar varias frecuencias?", "answer": "Porque duración finita y forma no sinusoidal requieren múltiples componentes de Fourier para su representación.", "reasoning": "Energía de banda ancha no implica necesariamente múltiples osciladores independientes.", "common_error": "Nombrar cada máximo como ritmo fisiológico distinto."},
+    {"question": "¿Qué diferencia hay entre potencia absoluta y relativa?", "answer": "La absoluta conserva la magnitud integrada; la relativa divide por una referencia y por tanto depende también del denominador.", "reasoning": "Dos señales pueden tener igual potencia absoluta en una banda y distinta potencia relativa si cambia el resto del espectro.", "common_error": "Interpretar un aumento relativo como aumento absoluto."},
+    {"question": "¿Qué expresa la coherencia cuadrática de magnitud?", "answer": "La consistencia normalizada de una relación lineal entre dos señales por frecuencia bajo el estimador y segmentación usados.", "reasoning": "Se deriva de autoespectros y cross-spectrum y no contiene por sí sola dirección causal.", "common_error": "Llamarla medida directa de conectividad anatómica."},
+    {"question": "¿Cómo puede una referencia común elevar coherencia?", "answer": "Una misma componente sumada a ambos canales crea contenido correlacionado aunque sus fuentes originales sean independientes.", "reasoning": "El sensor observa mezclas, no fuentes aisladas.", "common_error": "Atribuir toda asociación a interacción entre generadores."},
+    {"question": "¿Qué demuestra una banda espectral reproducible en datos abiertos?", "answer": "Demuestra un patrón técnico bajo esos datos, parámetros y condiciones; no demuestra por sí sola mecanismo fisiológico específico, diagnóstico ni utilidad clínica.", "reasoning": "La inferencia causal y clínica requiere controles y evidencia adicionales.", "common_error": "Convertir un descriptor espectral en biomarcador validado."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Estudio de oscilaciones fisiológicas."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    {"topic": "EEG y oscilaciones neuronales", "connection": "PSD, potencia de banda y espectrogramas describen estructura espectral, pero la interpretación debe considerar picos variables, actividad aperiódica, forma de onda, referencia y volumen conductor."},
+    {"topic": "EEG–EMG y coherencia", "connection": "La coherencia puede estudiar asociación frecuencial entre señales corticales y musculares, siempre que se evalúen referencia, conducción de volumen, ruido común y parámetros del estimador."},
+    {"topic": "Electromiografía de superficie", "connection": "Frecuencia mediana y otras métricas espectrales dependen de propiedades de potenciales de unidad motora, adquisición, geometría y estado muscular; no son mecanismos únicos."},
+    {"topic": "Variabilidad cardiaca", "connection": "El dominio frecuencial puede resumir modulación de series NN bajo protocolos definidos, pero las guías actuales advierten contra inferencias autonómicas simplistas a partir de bandas o cocientes."},
+    {"topic": "Monitorización multimodal", "connection": "PSD, STFT y cross-spectrum permiten comparar cambios temporales y frecuenciales entre canales, siempre que sincronización y cadenas de procesamiento sean trazables."}
   ],
   "sources": [
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Señales fisiológicas y anotaciones para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "SciPy Signal",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
-      "type": "documentación",
-      "description": "Procesamiento digital, filtrado y análisis espectral.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "CDRH Learn",
-      "organization": "U.S. FDA",
-      "url": "https://www.fda.gov/training-and-continuing-education/cdrh-learn",
-      "type": "formación regulatoria",
-      "description": "Módulos oficiales sobre dispositivos y evidencia.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "GNU Radio documentation",
-      "organization": "GNU Radio project",
-      "url": "https://wiki.gnuradio.org/index.php/Main_Page",
-      "type": "documentación abierta",
-      "description": "Simulación y procesamiento de señales por bloques.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title": "The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms", "organization": "IEEE Transactions on Audio and Electroacoustics", "url": "https://doi.org/10.1109/TAU.1967.1161901", "type": "artículo metodológico clásico", "description": "Trabajo original del método de Welch basado en segmentación, periodogramas modificados y promediado.", "verification_status": "verified_directly"},
+    {"title": "scipy.signal.welch", "organization": "SciPy project", "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html", "type": "documentación técnica", "description": "Referencia reproducible para parámetros de Welch: ventana, longitud de segmento, solapamiento, nfft, detrending y escalado.", "verification_status": "verified_directly"},
+    {"title": "ShortTimeFFT and spectrogram", "organization": "SciPy project", "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.spectrogram.html", "type": "documentación técnica", "description": "Documenta espectrograma como módulo cuadrado de STFT, ejes, escalado y efectos de parametrización tiempo-frecuencia.", "verification_status": "verified_directly"},
+    {"title": "scipy.signal.coherence", "organization": "SciPy project", "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.coherence.html", "type": "documentación técnica", "description": "Define coherencia cuadrática de magnitud a partir de Pxy, Pxx y Pyy y sus parámetros de estimación mediante Welch.", "verification_status": "verified_directly"},
+    {"title": "Methodological considerations for studying neural oscillations", "organization": "European Journal of Neuroscience", "url": "https://pubmed.ncbi.nlm.nih.gov/34268825/", "type": "revisión metodológica", "description": "Discute presencia real de oscilaciones, definición de bandas, actividad aperiódica, variabilidad temporal, forma de onda, mezcla espacial y SNR.", "verification_status": "verified_directly"},
+    {"title": "EEG coherency. I: Statistics, reference electrode, volume conduction, Laplacians, cortical imaging, and interpretation at multiple scales", "organization": "Electroencephalography and Clinical Neurophysiology", "url": "https://pubmed.ncbi.nlm.nih.gov/9402881/", "type": "revisión metodológica", "description": "Analiza cómo referencia y conducción de volumen afectan estimaciones de coherencia EEG y limitan su interpretación fisiológica.", "verification_status": "verified_directly"},
+    {"title": "Tutorial. Frequency analysis of the surface EMG signal: Best practices", "organization": "Journal of Electromyography and Kinesiology", "url": "https://pubmed.ncbi.nlm.nih.gov/39549620/", "type": "tutorial metodológico", "description": "Revisa Fourier, potencia, cross-spectrum, coherencia, estacionariedad, selección de épocas y métricas espectrales en sEMG.", "verification_status": "verified_directly"},
+    {"title": "Guidelines for rigor and reproducibility of heart rate variability within human cardiovascular research", "organization": "American Journal of Physiology-Heart and Circulatory Physiology", "url": "https://pubmed.ncbi.nlm.nih.gov/42495990/", "type": "guía metodológica", "description": "Guía reciente sobre medición e interpretación rigurosa de HRV, con cautelas frente a inferencias autonómicas específicas desde métricas espectrales.", "verification_status": "verified_directly"},
+    {"title": "Heart rate variability. Standards of measurement, physiological interpretation, and clinical use", "organization": "Task Force of the ESC and NASPE", "url": "https://pubmed.ncbi.nlm.nih.gov/8737210/", "type": "guía de referencia", "description": "Marco clásico para nomenclatura, métricas temporales y frecuenciales de HRV y condiciones de medición que aún requiere contextualización moderna.", "verification_status": "verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo en estado review. Esta curación interna no constituye revisión disciplinar externa, validación clínica, diagnóstico, recomendación terapéutica ni certificación de un algoritmo o dispositivo. Las actividades usan señales sintéticas o datos abiertos y no requieren ni autorizan conectar sensores a personas. Las bandas espectrales y la coherencia se presentan como descriptores metodológicos: no deben interpretarse automáticamente como biomarcadores, causalidad, conectividad anatómica o mecanismos fisiológicos únicos."
 }
