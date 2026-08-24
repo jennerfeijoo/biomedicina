@@ -117,6 +117,6 @@ class ComunicacionCientificaCanonicalCourseTests(unittest.TestCase):
         self.assertTrue(all(item["status"] == "planned" for item in self.media["items"]))
 
 
-# Permanent regression for the canonical course closure.
+# Final user-authored trigger after canonical corpus generation and cleanup.
 if __name__ == "__main__":
     unittest.main()
