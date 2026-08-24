@@ -51,7 +51,7 @@ class BiomaterialesImplantesUnit06CuratedTests(unittest.TestCase):
             "no equivale a una lista automática",
             "pms es más amplia",
             "no prueba causalidad",
-            "cero eventos observados no equivale a riesgo cero",
+            "un periodo sin eventos no demuestra riesgo cero",
         ):
             self.assertIn(phrase, theory)
 
@@ -125,11 +125,12 @@ class BiomaterialesImplantesUnit06CuratedTests(unittest.TestCase):
     def test_editorial_boundary_is_explicit(self) -> None:
         notice = self.unit["editorial_notice"].casefold()
         purpose = self.unit["purpose"].casefold()
+        objectives = " ".join(self.unit["learning_objectives"]).casefold()
         self.assertIn("no constituye revisión disciplinar externa", notice)
         self.assertIn("asesoría regulatoria o jurídica", notice)
         self.assertIn("todas las actividades y tasas son sintéticas", notice)
         self.assertIn("no contienen datos de pacientes", notice)
-        self.assertIn("sin emitir certificaciones", purpose)
+        self.assertIn("sin emitir certificaciones", objectives)
         self.assertIn("sin convertir", purpose)
 
 
