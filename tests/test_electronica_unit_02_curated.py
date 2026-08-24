@@ -98,5 +98,6 @@ class ElectronicaUnit02CuratedTests(unittest.TestCase):
         self.assertIn("revisión humana interna y externa permanece pendiente", notice)
 
 
+# User-authored validation trigger after generated public-site synchronization.
 if __name__ == "__main__":
     unittest.main()
