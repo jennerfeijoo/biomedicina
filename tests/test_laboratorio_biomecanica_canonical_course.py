@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,12 +75,24 @@ class LaboratorioBiomecanicaCanonicalCourseTests(unittest.TestCase):
             self.assertTrue(entry["source_ids"])
             self.assertTrue(set(entry["source_ids"]) <= source_ids)
             self.assertEqual(entry["verification_status"], "traceable_to_verified_source")
-        self.assertGreaterEqual(len(self.claims["claims"]), 24)
-        self.assertEqual({claim["unit_id"] for claim in self.claims["claims"]}, {f"LABBIO-U{i:02d}" for i in range(1, 7)})
-        for claim in self.claims["claims"]:
+
+        claims = self.claims["claims"]
+        self.assertEqual(len(claims), 24)
+        self.assertEqual(Counter(claim["unit"] for claim in claims), Counter({n: 4 for n in range(1, 7)}))
+        self.assertEqual({claim["unit_id"] for claim in claims}, {f"LABBIO-U{i:02d}" for i in range(1, 7)})
+        serialized_units = {
+            n: json.dumps(
+                json.loads((COURSE / "units" / f"unit-{n:02d}.json").read_text(encoding="utf-8")),
+                ensure_ascii=False,
+            )
+            for n in range(1, 7)
+        }
+        for claim in claims:
             self.assertIn(claim["source_id"], source_ids)
             self.assertEqual(claim["source_verification_status"], "verified_directly")
             self.assertEqual(claim["review_state"], "ai_review_provisional")
+            self.assertEqual(claim["support"], "direct")
+            self.assertIn(claim["text"], serialized_units[claim["unit"]])
 
     def test_course_assessment_integrates_all_six_units(self):
         assessment = json.loads((COURSE / "assessments" / "course-assessment.json").read_text(encoding="utf-8"))
