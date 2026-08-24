@@ -4,6 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
+# Final user-authored verification trigger after canonical publication.
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "biofotonica"
 GENERIC = "concepto de la unidad que debe definirse"
