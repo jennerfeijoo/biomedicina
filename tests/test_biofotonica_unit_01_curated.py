@@ -97,5 +97,6 @@ class BiofotonicaUnit01CuratedTests(unittest.TestCase):
         self.assertIn("sin convertir", purpose)
 
 
+# Final user-authored trigger after publication synchronization.
 if __name__ == "__main__":
     unittest.main()
