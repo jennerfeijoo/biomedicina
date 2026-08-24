@@ -1,0 +1,56 @@
+name: Temporary fix Clinical Engineering U5 JSON
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-clinica-gestion-unit-05-academic-quality
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: codex/ingenieria-clinica-gestion-unit-05-academic-quality
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Repair one missing object terminator and validate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          paths = [
+              Path('data/course_redevelopment/ingenieria-clinica-gestion/units/unit-05.json'),
+              Path('data/generated_units/ingenieria-clinica-gestion/unit-05.json'),
+          ]
+          needle = '    {"domain": "Analítica de seguridad", "connection": "Tasas con exposición, reglas de recurrencia y codificación armonizada permiten detectar señales sin confundir conteo de reportes con incidencia real o causalidad."\n  ],'
+          replacement = '    {"domain": "Analítica de seguridad", "connection": "Tasas con exposición, reglas de recurrencia y codificación armonizada permiten detectar señales sin confundir conteo de reportes con incidencia real o causalidad."}\n  ],'
+          for path in paths:
+              text = path.read_text(encoding='utf-8')
+              if needle not in text:
+                  raise SystemExit(f'Expected malformed fragment not found in {path}')
+              text = text.replace(needle, replacement, 1)
+              json.loads(text)
+              path.write_text(text, encoding='utf-8')
+          if paths[0].read_bytes() != paths[1].read_bytes():
+              raise SystemExit('U5 source and generated mirror diverged')
+          PY
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python -m unittest tests.test_ingenieria_clinica_gestion_unit_05_curated
+      - name: Commit repaired U5 and self-clean
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/fix-u5-json-temp.yml
+          git add data/course_redevelopment/ingenieria-clinica-gestion/units/unit-05.json data/generated_units/ingenieria-clinica-gestion/unit-05.json
+          git commit -m "Fix Clinical Engineering U5 structured content"
+          git push origin HEAD:codex/ingenieria-clinica-gestion-unit-05-academic-quality
