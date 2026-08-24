@@ -57,7 +57,7 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
             "no demuestra que el rasgo sea causal",
             "covariate shift",
             "concept drift",
-            "etiquetas diferidas",
+            "etiquetas llegan con retraso",
             "supervisión humana",
             "cambio controlado",
         ):
@@ -168,6 +168,6 @@ class SenalesBiomedicasUnit06CuratedTests(unittest.TestCase):
         self.assertIn("ni autorizar despliegue asistencial", purpose)
 
 
-# Final human-authored trigger after publication synchronization and syntax repair.
+# Final human-authored trigger after publication synchronization and semantic regression repair.
 if __name__ == "__main__":
     unittest.main()
