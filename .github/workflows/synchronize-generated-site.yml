@@ -32,12 +32,31 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Repair legacy Biomateriales U4 JSON escape
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = Path('data/course_redevelopment/biomateriales/units/unit-04.json')
+          mirror = Path('data/generated_units/biomateriales/unit-04.json')
+          text = source.read_text(encoding='utf-8')
+          text = text.replace('m_{productos\\ recuperados}', 'm_{productos\\\\ recuperados}')
+          text = text.replace('m_{perdida\\ del\\ especimen}', 'm_{perdida\\\\ del\\\\ especimen}')
+          json.loads(text)
+          source.write_text(text, encoding='utf-8')
+          mirror.write_text(text, encoding='utf-8')
+          assert source.read_bytes() == mirror.read_bytes()
+          PY
+
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
+          python -m unittest tests.test_biomateriales_unit_04_curated
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
@@ -57,28 +76,20 @@ jobs:
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
 
-      - name: Upload synchronization diagnostic
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: generated-site-synchronization
-          path: global-generation.txt
-          if-no-files-found: warn
-
-      - name: Commit deterministic public site
+      - name: Restore workflow and commit clean result
         shell: bash
         run: |
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f .github/workflows/temp-fix-biomateriales-u4-json.yml global-generation.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "No clean changes to commit."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Repair and synchronize Biomateriales U4"
+          git fetch origin "${GITHUB_HEAD_REF}"
+          git rebase "origin/${GITHUB_HEAD_REF}"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
