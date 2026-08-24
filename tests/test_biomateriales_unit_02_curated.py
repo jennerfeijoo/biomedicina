@@ -99,6 +99,6 @@ class BiomaterialesUnit02CuratedTests(unittest.TestCase):
         self.assertIn("desempeño clínico del dispositivo final", text)
 
 
-# User-authored trigger after synchronized public pages; publication metadata may follow.
+# Final user-authored trigger after publication metadata synchronization.
 if __name__ == "__main__":
     unittest.main()
