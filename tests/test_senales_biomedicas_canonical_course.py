@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Final user-authored gate trigger after current-main public regeneration.
+
 import json
 import unittest
 from pathlib import Path
