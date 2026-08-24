@@ -101,4 +101,4 @@ class FundamentosBiomecanicaUnit03CuratedTests(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-# Final user-authored verification trigger after public-site synchronization.
+# Final user-authored trigger after publication metadata synchronization.
