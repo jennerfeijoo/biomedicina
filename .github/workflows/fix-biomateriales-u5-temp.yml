@@ -1,0 +1,72 @@
+name: Fix Biomateriales U5 temp
+
+on:
+  push:
+    branches:
+      - codex/biomateriales-implantes-unit-05-academic-quality
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: codex/biomateriales-implantes-unit-05-academic-quality
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Repair U5 JSON and regression
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import shutil
+
+          source = Path('data/course_redevelopment/biomateriales-implantes/units/unit-05.json')
+          mirror = Path('data/generated_units/biomateriales-implantes/unit-05.json')
+          test = Path('tests/test_biomateriales_implantes_unit_05_curated.py')
+
+          lines = source.read_text(encoding='utf-8').splitlines()
+          repaired = False
+          for i in range(len(lines) - 2):
+              if '"Prótesis mamarias"' in lines[i] and lines[i + 1].strip() == '}' and lines[i + 2].strip() == '],':
+                  del lines[i + 1]
+                  repaired = True
+                  break
+          if not repaired:
+              raise SystemExit('No se encontró la llave extra esperada en U5')
+          source.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          json.loads(source.read_text(encoding='utf-8'))
+          shutil.copyfile(source, mirror)
+
+          text = test.read_text(encoding='utf-8')
+          text = text.replace(
+              'self.assertIn("insuficiente", equations["m_A=\\\\frac{m}{A}"].casefold())',
+              'self.assertIn("no resume", equations["m_A=\\\\frac{m}{A}"].casefold())',
+          )
+          text = text.replace(
+              'self.assertIn("no convertir", purpose)',
+              'self.assertIn("ni convertir", purpose)',
+          )
+          test.write_text(text, encoding='utf-8')
+
+          Path('.github/workflows/fix-biomateriales-u5-temp.yml').unlink()
+          PY
+      - name: Validate repaired U5
+        run: |
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python -m unittest tests.test_biomateriales_implantes_unit_05_curated
+      - name: Commit repaired unit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- data/course_redevelopment/biomateriales-implantes/units/unit-05.json data/generated_units/biomateriales-implantes/unit-05.json tests/test_biomateriales_implantes_unit_05_curated.py .github/workflows/fix-biomateriales-u5-temp.yml
+          git commit -m "Repair Biomateriales e Implantes U5 structure"
+          git push origin HEAD:codex/biomateriales-implantes-unit-05-academic-quality
