@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# Final semantic validation trigger for the consolidated U5 content.
 import json
 import unittest
 from pathlib import Path
@@ -41,7 +42,7 @@ class IngenieriaClinicaGestionUnit05CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         for concept in (
             "preservación de evidencia",
-            "reporte interno",
+            "sistema interno de incidentes",
             "jurisdicción",
             "imdrf",
             "denominador",
@@ -49,6 +50,8 @@ class IngenieriaClinicaGestionUnit05CuratedTests(unittest.TestCase):
             "acción correctiva",
         ):
             self.assertIn(concept, theory)
+        self.assertIn("fabricante puede tener obligaciones regulatorias específicas", theory)
+        self.assertIn("expediente interno", theory)
         self.assertIn("u2", theory)
         self.assertIn("u3", theory)
         self.assertIn("u6", theory)
