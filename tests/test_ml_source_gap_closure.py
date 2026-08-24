@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "machine-learning-biomedico-validacion-clinica"
 
+# Final user-authored trigger after strict source-gap closure and deterministic regeneration.
+
 
 class MachineLearningSourceGapClosureTests(unittest.TestCase):
     def test_traceable_course_has_no_unverified_core_sources(self) -> None:
