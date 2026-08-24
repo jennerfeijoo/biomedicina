@@ -118,7 +118,7 @@ class AplicacionesSaludDigitalUnit06CuratedTests(unittest.TestCase):
         self.assertIn("no constituye revisión disciplinar humana externa", notice)
         self.assertIn("asesoramiento jurídico", notice)
         self.assertIn("no deben utilizar datos personales", notice)
-        self.assertIn("autorización regulatoria", purpose)
+        self.assertIn("autorización legal o regulatoria", purpose)
         self.assertIn("evidencia de valor de u5", purpose)
 
 
