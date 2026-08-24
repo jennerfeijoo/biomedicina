@@ -116,6 +116,6 @@ class AplicacionesSaludDigitalCanonicalCourseTests(unittest.TestCase):
         self.assertTrue(all(item["status"] == "planned" for item in self.media["items"]))
 
 
-# Permanent regression for canonical Digital Health closure.
+# Trigger the repository's current one-shot canonical closure workflow.
 if __name__ == "__main__":
     unittest.main()
