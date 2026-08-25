@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data/course_redevelopment/ingenieria-neurosensorial/units/unit-01.json"
 MIRROR = ROOT / "data/generated_units/ingenieria-neurosensorial/unit-01.json"
 DESCRIPTOR = ROOT / "data/subjects/ingenieria-biomedica/ingenieria-neurosensorial.json"
+PUBLIC = ROOT / "ingenieria-biomedica/ingenieria-neurosensorial/unidades/unidad-01.html"
 
 GENERIC_MARKERS = [
     "Concepto de la unidad que debe definirse mediante entidades observables",
@@ -110,11 +111,19 @@ def test_unit_01_uses_verified_neurosensory_sources():
     assert required.issubset(urls)
 
 
-def test_published_descriptor_matches_when_unit_01_is_promoted():
-    if not DESCRIPTOR.exists():
-        return
+def test_published_descriptor_and_html_match_canonical_unit():
+    assert DESCRIPTOR.exists()
+    assert PUBLIC.exists()
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
-    detail = next((u for u in descriptor.get("detailed_units", []) if u.get("unit") == 1), None)
-    if detail and detail.get("description") != "Integrar transducción, codificación, vías y percepción para resolver un caso de definición de señales relevantes para neurotecnología con evidencia, controles, incertidumbre y comunicación proporcional.":
-        assert detail["description"] == source["purpose"]
+    detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 1)
+    assert detail["title"] == source["title"]
+    assert detail["description"] == source["purpose"]
+    public_text = PUBLIC.read_text(encoding="utf-8").lower()
+    for marker in ["potencial receptor", "tonotopía", "retinotopía", "fracción de weber", "fototransducción"]:
+        assert marker in public_text
+
+
+if __name__ == "__main__":
+    import pytest
+    raise SystemExit(pytest.main([__file__]))
