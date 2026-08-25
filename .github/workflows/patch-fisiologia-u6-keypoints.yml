@@ -1,0 +1,96 @@
+name: Patch temporary Fisiologia U6 key points
+
+on:
+  push:
+    branches:
+      - codex/fisiologia-sistemas-u6-modelos-integradores
+    paths:
+      - '.github/workflows/patch-fisiologia-u6-keypoints.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/fisiologia-sistemas-u6-modelos-integradores
+      - name: Strengthen key points and keep mirror exact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path('data/course_redevelopment/fisiologia-sistemas/units/unit-06.json')
+          mirror = Path('data/generated_units/fisiologia-sistemas/unit-06.json')
+          data = json.loads(source.read_text(encoding='utf-8'))
+          key_points = [
+              [
+                  'Estado, entrada, parámetro y salida cumplen funciones matemáticas y fisiológicas diferentes dentro de un modelo dinámico.',
+                  'La frontera del sistema determina qué balances se conservan, qué flujos cruzan el límite y qué mecanismos quedan omitidos.',
+                  'Unidades consistentes y balances de conservación son pruebas mínimas de coherencia antes de calibrar parámetros.',
+                  'Agregar variables y parámetros aumenta complejidad y no garantiza mayor capacidad explicativa, predictiva ni identificabilidad.',
+                  'El acoplamiento entre subsistemas exige declarar interfaces, unidades, dirección de influencia y escala temporal.',
+                  'El modelo es una hipótesis cuantitativa revisable y no una copia exhaustiva del organismo real.',
+              ],
+              [
+                  'La frecuencia, regularidad y ventana de muestreo condicionan qué dinámica fisiológica puede inferirse de una serie temporal.',
+                  'Un transitorio y un estado aproximadamente estable responden a preguntas distintas y no deben mezclarse sin justificación.',
+                  'Las perturbaciones informativas revelan ganancias y constantes de tiempo que un estado basal puede ocultar.',
+                  'Filtrado, interpolación y remuestreo forman parte del método y pueden modificar amplitud, fase, retardos y variabilidad.',
+                  'Correlación o precedencia temporal entre variables no demuestra por sí sola un mecanismo causal entre subsistemas.',
+                  'Las perturbaciones de U6 son exclusivamente sintéticas y se usan para comparar modelos, no para intervenir personas.',
+              ],
+              [
+                  'Un buen ajuste de las salidas observadas no implica que los parámetros individuales sean identificables de forma única.',
+                  'Identificabilidad estructural e identificabilidad práctica responden a limitaciones matemáticas y de datos diferentes.',
+                  'Una sensibilidad local alta no garantiza identificabilidad cuando varios parámetros producen efectos compensatorios sobre las salidas.',
+                  'La estructura temporal de los residuos puede revelar dinámica omitida aunque una métrica global de error parezca aceptable.',
+                  'La ambigüedad entre parámetros o mecanismos debe cuantificarse, documentarse y conservarse explícitamente en la conclusión.',
+                  'Una perturbación nueva puede aportar más información sobre parámetros que aumentar puntos redundantes alrededor del mismo basal.',
+              ],
+              [
+                  'Calibración, verificación y validación responden a preguntas distintas y no deben utilizarse como sinónimos.',
+                  'La validación requiere datos, condiciones o perturbaciones independientes de las utilizadas durante la calibración.',
+                  'Reservar una perturbación fuera del ajuste permite evaluar si el modelo transfiere correctamente su comportamiento dinámico.',
+                  'Un RMSE bajo no sustituye el análisis de residuos, conservación, dinámica ni predicciones fuera de la calibración.',
+                  'La incertidumbre estructural debe declararse cuando modelos alternativos explican de forma semejante las observaciones disponibles.',
+                  'La suficiencia de una validación depende del contexto de uso, la pregunta científica y el riesgo de la inferencia propuesta.',
+              ],
+              [
+                  'Integrar escalas no significa incluir todos los mecanismos; exige conservar los acoplamientos relevantes para la pregunta planteada.',
+                  'Cada interfaz multiescala requiere unidades compatibles, dirección de influencia declarada y escalas temporales explícitas.',
+                  'La separación de escalas es una aproximación comprobable cuya validez depende de las constantes de tiempo del sistema.',
+                  'La reproducibilidad computacional requiere especificar tanto el modelo como el protocolo experimental y de simulación.',
+                  'Los estándares de intercambio facilitan reproducción y reutilización, pero no garantizan la verdad científica del modelo.',
+                  'Un modelo útil declara condiciones de fallo, límites de extrapolación y observaciones capaces de refutar sus predicciones.',
+              ],
+          ]
+          assert len(data['theory_sections']) == len(key_points)
+          for section, points in zip(data['theory_sections'], key_points):
+              section['key_points'] = points
+          text = json.dumps(data, ensure_ascii=False, indent=2) + '\n'
+          source.write_text(text, encoding='utf-8')
+          mirror.write_text(text, encoding='utf-8')
+          PY
+          python -m json.tool data/course_redevelopment/fisiologia-sistemas/units/unit-06.json >/dev/null
+          cmp data/course_redevelopment/fisiologia-sistemas/units/unit-06.json data/generated_units/fisiologia-sistemas/unit-06.json
+          python3 scripts/validate_generated_units.py >/tmp/generated-units.txt
+      - name: Commit patch and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/patch-fisiologia-u6-keypoints.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/course_redevelopment/fisiologia-sistemas/units/unit-06.json \
+                  data/generated_units/fisiologia-sistemas/unit-06.json \
+                  .github/workflows/patch-fisiologia-u6-keypoints.yml
+          git commit -m 'Reforzar puntos clave de Fisiologia de Sistemas U6'
+          git push origin HEAD:codex/fisiologia-sistemas-u6-modelos-integradores
