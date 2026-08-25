@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "historias-clinicas-terminologias-estandares" / "units" / "unit-02.json"
 MIRROR = ROOT / "data" / "generated_units" / "historias-clinicas-terminologias-estandares" / "unit-02.json"
 SUBJECT = ROOT / "data" / "subjects" / "ingenieria-biomedica" / "historias-clinicas-terminologias-estandares.json"
+PUBLIC = ROOT / "ingenieria-biomedica" / "historias-clinicas-terminologias-estandares" / "unidades" / "unidad-02.html"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -206,6 +207,12 @@ class HistoriasClinicasUnit02CuratedTests(unittest.TestCase):
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
         self.assertEqual(detailed[2]["description"], self.unit["purpose"])
+
+    def test_public_unit_preserves_core_semantic_distinctions(self) -> None:
+        public = PUBLIC.read_text(encoding="utf-8").casefold()
+        self.assertIn("modelo de referencia", public)
+        self.assertIn("equivalencia semántica", public)
+        self.assertIn("cardinalidad", public)
 
 
 if __name__ == "__main__":
