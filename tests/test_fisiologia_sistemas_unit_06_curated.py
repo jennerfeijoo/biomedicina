@@ -75,7 +75,7 @@ class FisiologiaSistemasUnit06CuratedTests(unittest.TestCase):
             "identificabilidad estructural",
             "identificabilidad práctica",
             "sensibilidad alta no garantiza identificabilidad",
-            "buen ajuste no implica parámetros identificables",
+            "un buen ajuste de las salidas observadas no implica que los parámetros individuales sean identificables",
         ):
             self.assertIn(phrase, text)
 
