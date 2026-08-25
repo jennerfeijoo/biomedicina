@@ -26,6 +26,7 @@ def test_u6_identity_and_template_are_correct():
     assert unit["unit"] == 6
     assert unit["slug"] == "validacion-y-neuroetica"
     assert GENERIC not in text
+    assert "por completar" not in text
     assert r"\mathrm{snr}_{db}=10\log_{10}" not in text
 
 
