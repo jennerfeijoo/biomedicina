@@ -1,0 +1,43 @@
+name: Patch IDB U5 final common error boundary
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
+    paths:
+      - .github/workflows/patch-idb-u5-common-error.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
+          fetch-depth: 0
+      - name: Correct final stale interoperability wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          paths = [
+              Path('data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-05.json'),
+              Path('data/generated_units/ingenieria-datos-biomedicos/unit-05.json'),
+          ]
+          old = 'Consumir los gates de U4 y reservar interoperabilidad formal para U6.'
+          new = 'Consumir los gates de U4 y reservar privacidad y productos de datos para U6.'
+          for p in paths:
+              text = p.read_text(encoding='utf-8')
+              assert text.count(old) == 1, (p, text.count(old))
+              text = text.replace(old, new)
+              p.write_text(text, encoding='utf-8')
+          assert paths[0].read_bytes() == paths[1].read_bytes()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-05.json data/generated_units/ingenieria-datos-biomedicos/unit-05.json
+          git rm -f .github/workflows/patch-idb-u5-common-error.yml
+          git commit -m "Eliminar última referencia obsoleta de interoperabilidad en U5"
+          git push origin HEAD:codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
