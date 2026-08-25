@@ -34,6 +34,7 @@ class InformaticaBiomedicaUnit03CuratedTests(unittest.TestCase):
             "patient–study–series–instance",
             "snomed ct",
             "component, property, time, system, scale y method",
+            "ucum 2.2",
             "mapeos versionados",
         ):
             self.assertIn(phrase, objectives)
@@ -76,7 +77,7 @@ class InformaticaBiomedicaUnit03CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, text)
 
-    def test_dicom_information_model_is_not_reduced_to_files(self) -> None:
+    def test_dicom_information_model_and_web_services_are_distinguished(self) -> None:
         text = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
         for phrase in (
             "no es simplemente un formato de archivo",
@@ -88,19 +89,26 @@ class InformaticaBiomedicaUnit03CuratedTests(unittest.TestCase):
             "value representation",
             "value multiplicity",
             "2026c",
+            "dicomweb",
+            "qido-rs",
+            "wado-rs",
+            "stow-rs",
+            "no hace intercambiables",
         ):
             self.assertIn(phrase, text)
 
-    def test_snomed_and_loinc_preserve_conceptual_distinctions(self) -> None:
+    def test_snomed_loinc_and_ucum_preserve_semantic_roles(self) -> None:
         text = json.dumps(self.unit["theory_sections"][3], ensure_ascii=False).casefold()
         for phrase in (
             "concepto no es su display",
             "reference sets",
-            "julio de 2026",
+            "agosto de 2026",
             "component, property, time, system, scale",
             "2.83",
+            "ucum 2.2",
             "no el valor del resultado ni su unidad",
             "no deben tratarse como diccionarios",
+            "cambiar una etiqueta de unidad sin convertir el valor",
         ):
             self.assertIn(phrase, text)
 
@@ -122,13 +130,13 @@ class InformaticaBiomedicaUnit03CuratedTests(unittest.TestCase):
 
     def test_glossary_examples_and_activity_are_disciplinary(self) -> None:
         glossary = {x["term"].casefold() for x in self.unit["glossary"]}
-        self.assertGreaterEqual(len(glossary), 50)
+        self.assertGreaterEqual(len(glossary), 55)
         for term in (
             "interoperabilidad semántica", "identifier", "reference", "structuredefinition",
             "perfil fhir", "codesystem", "valueset", "conceptmap", "dicom", "iod",
-            "sop class", "study instance uid", "vr", "vm", "snomed ct", "sctid",
-            "reference set", "loinc", "component", "property", "system", "scale",
-            "round-trip", "pérdida semántica",
+            "sop class", "study instance uid", "vr", "vm", "dicomweb", "qido-rs",
+            "wado-rs", "stow-rs", "snomed ct", "sctid", "reference set", "loinc",
+            "component", "property", "system", "scale", "ucum", "round-trip", "pérdida semántica",
         ):
             self.assertIn(term, glossary)
         self.assertGreaterEqual(len(self.unit["worked_examples"]), 5)
@@ -138,23 +146,36 @@ class InformaticaBiomedicaUnit03CuratedTests(unittest.TestCase):
         self.assertGreaterEqual(len(activity["deliverables"]), 12)
         self.assertGreaterEqual(len(activity["checking_criteria"]), 25)
         joined = " ".join(activity["instructions"] + activity["problems"] + activity["checking_criteria"]).casefold()
-        for phrase in ("fhir", "dicom", "snomed ct", "loinc", "sintético", "meta.profile", "round-trip", "u4", "u5", "u6"):
+        for phrase in (
+            "fhir r5 5.0.0", "dicom 2026c", "snomed ct international edition august 2026",
+            "loinc 2.83", "ucum 2.2", "qido-rs", "wado-rs", "stow-rs",
+            "sintético", "meta.profile", "round-trip", "u4", "u5", "u6",
+        ):
             self.assertIn(phrase, joined)
 
+    def test_common_errors_block_shortcuts(self) -> None:
+        text = " ".join(x["error"] + " " + x["correction"] for x in self.unit["common_errors"]).casefold()
+        for phrase in (
+            "json válido", "display como identidad", "meta.profile", "codesystem y valueset",
+            "archivos .dcm", "patient id como identificador universal", "loinc solo por el nombre",
+            "forzar todos los mapeos", "round-trip", "qido-rs, wado-rs y stow-rs",
+            "cambiar la etiqueta de unidad sin convertir el valor",
+        ):
+            self.assertIn(phrase, text)
+
     def test_sources_assessment_connections_and_notice(self) -> None:
-        self.assertGreaterEqual(len(self.unit["sources"]), 18)
+        self.assertGreaterEqual(len(self.unit["sources"]), 20)
         self.assertTrue(all(x["verification_status"] == "verified_directly" for x in self.unit["sources"]))
+        titles = " ".join(x["title"] for x in self.unit["sources"]).casefold()
+        for phrase in ("august 2026", "dicom ps3.18 2026c", "ucum specification 2.2", "loinc 2.83"):
+            self.assertIn(phrase, titles)
         self.assertGreaterEqual(len(self.unit["self_assessment"]), 12)
         self.assertGreaterEqual(len(self.unit["biomedical_connections"]), 6)
         notice = self.unit["editorial_notice"].casefold()
         for phrase in (
-            "son sintéticos",
-            "no se deben introducir datos identificables",
-            "no interpreta resultados",
-            "no certifica interoperabilidad",
-            "u4 aborda analítica",
-            "u5 factores humanos",
-            "u6 gobernanza",
+            "son sintéticos", "no se deben introducir datos identificables", "no interpreta resultados",
+            "no certifica interoperabilidad", "u4 aborda analítica", "u5 factores humanos", "u6 gobernanza",
+            "25 de agosto de 2026", "deben revalidarse",
         ):
             self.assertIn(phrase, notice)
 
