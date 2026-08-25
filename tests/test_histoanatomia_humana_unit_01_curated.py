@@ -25,7 +25,7 @@ class HistoanatomiaHumanaUnit01CuratedTests(unittest.TestCase):
         self.assertEqual(self.unit["unit"], 1)
         self.assertEqual(self.unit["slug"], "metodos-y-organizacion-corporal")
         self.assertNotIn(GENERIC, self.text)
-        self.assertNotIn(r"v=\\frac{\\delta y}{\\delta t}", self.text)
+        self.assertNotIn(r"v=\frac{\delta y}{\delta t}", self.text)
 
     def test_learning_objectives_cover_orientation_preparation_and_microscopy(self) -> None:
         objectives = " ".join(self.unit["learning_objectives"]).casefold()
@@ -122,10 +122,11 @@ class HistoanatomiaHumanaUnit01CuratedTests(unittest.TestCase):
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
         self.assertEqual(detailed[1]["description"], self.unit["purpose"])
 
-    def test_course_remains_template_detected_until_units_2_to_6_are_curated(self) -> None:
+    def test_course_leaves_template_detected_after_units_1_to_6_are_curated(self) -> None:
         catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
-        pending = catalog["dimensions"]["specificity"]["template_detected"]
-        self.assertIn("histoanatomia-humana", pending)
+        specificity = catalog["dimensions"]["specificity"]
+        self.assertIn("histoanatomia-humana", specificity["screened_no_known_template_marker"])
+        self.assertNotIn("histoanatomia-humana", specificity["template_detected"])
 
 
 if __name__ == "__main__":
