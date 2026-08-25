@@ -59,6 +59,20 @@ class InnovacionEmprendimientoUnit01CuratedTests(unittest.TestCase):
         ):
             self.assertIn(concept, self.text)
 
+    def test_sampling_strategy_is_explicit_in_theory(self) -> None:
+        theory_text = " ".join(
+            paragraph.casefold()
+            for section in self.unit["theory_sections"]
+            for paragraph in section["paragraphs"]
+        )
+        theory_text += " " + " ".join(
+            point.casefold()
+            for section in self.unit["theory_sections"]
+            for point in section["key_points"]
+        )
+        self.assertIn("muestreo con variación deliberada", theory_text)
+        self.assertIn("saturación cualitativa", theory_text)
+
     def test_need_and_solution_layers_are_not_collapsed(self) -> None:
         for phrase in (
             "observación, interpretación, causalidad, necesidad y solución son capas distintas",
