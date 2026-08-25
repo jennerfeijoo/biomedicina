@@ -76,7 +76,7 @@ class HistoriaFilosofiaCienciaUnit05CuratedTests(unittest.TestCase):
         for phrase in ("conflicto de interés", "comparador", "desenlace", "patrocinio", "independencia analítica", "acceso a datos"):
             self.assertIn(phrase, text)
         self.assertIn("no demuestra por sí sola que un resultado sea falso", text)
-        self.assertIn("no demuestra conducta impropia", text)
+        self.assertIn("declararlo no prueba conducta impropia", text)
 
     def test_integrated_activity_keeps_epistemic_and_institutional_dimensions_separate(self) -> None:
         workshop = self.unit["guided_activities"][1]
