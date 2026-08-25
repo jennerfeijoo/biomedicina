@@ -6,387 +6,813 @@
   "slug": "implementacion-y-validacion",
   "title": "Implementación y validación",
   "status": "review",
-  "purpose": "Integrar casos de uso, pruebas de conformidad, gestión del cambio para resolver un caso de diseño de un flujo interoperable clínico con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Integrar U1–U5 en un flujo interoperable clínico completamente sintético y verificable: convertir un caso de uso en requisitos y criterios de aceptación trazables, comprobar conformidad estructural, semántica y de API con pruebas positivas, negativas y extremo a extremo, separar verificación técnica de validación para el uso previsto, preparar despliegue y observabilidad en un entorno simulado, y gestionar cambios mediante impacto, versionado, regresión, rollback y revalidación sin presentar el ejercicio como certificación, validación clínica ni autorización para producción.",
   "learning_objectives": [
-    "Definir casos de uso, pruebas de conformidad y gestión del cambio mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte casos de uso con pruebas de conformidad y delimite el papel de gestión del cambio.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre diseño de un flujo interoperable clínico con incertidumbre y límites.",
-    "Transferir el método de Implementación y validación a un escenario nuevo y justificar qué debe revalidarse."
+    "Transformar un caso de uso interoperable sintético en actores, precondiciones, flujo principal, excepciones, requisitos verificables y criterios de aceptación, manteniendo trazabilidad bidireccional entre necesidad, requisito y prueba.",
+    "Diseñar una estrategia de pruebas por capas que distinga parseo, validación FHIR, conformidad a perfiles y terminología, comportamiento de API, autorización y resultado extremo a extremo, incluyendo pruebas positivas y negativas.",
+    "Usar CapabilityStatement, StructureDefinition, ImplementationGuide, OperationOutcome y TestScript como artefactos de conformidad, explicando qué evidencia aportan y por qué ninguno demuestra por sí solo interoperabilidad operacional.",
+    "Distinguir verificación, conformidad, validación para el uso previsto y evaluación clínica, evitando equiparar un recurso válido, una suite verde o un flujo sintético exitoso con seguridad o utilidad clínica.",
+    "Diseñar un despliegue simulado con configuración versionada, datos sintéticos, observabilidad, criterios go/no-go, rollback y registro de incidencias, sin conectar sistemas asistenciales reales ni credenciales productivas.",
+    "Gestionar cambios de perfil, terminología, versión FHIR, API, autorización o configuración mediante análisis de impacto, selección de regresiones y revalidación proporcional, documentando evidencia residual y límites."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Implementación y validación",
+      "heading": "Del caso de uso al contrato verificable y la matriz de trazabilidad",
       "paragraphs": [
-        "La unidad «Implementación y validación» sitúa casos de uso, pruebas de conformidad y gestión del cambio dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Historias Clínicas, Terminologías y Estándares, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Implementación y validación» en Historias Clínicas, Terminologías y Estándares, «casos de uso», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Implementación y validación», «pruebas de conformidad», aporta otra dimensión al problema de Historias Clínicas, Terminologías y Estándares: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con casos de uso debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Implementación y validación» en Historias Clínicas, Terminologías y Estándares, «gestión del cambio», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "La implementación comienza antes del código. Un caso de uso debe identificar actores, objetivo, precondiciones, disparador, flujo principal, alternativas, fallos esperables y resultado observable. En interoperabilidad clínica, frases como «enviar resultados al hospital» son insuficientes porque no especifican qué sistema inicia el intercambio, qué artefacto representa el resultado, qué identidad se conserva, qué respuesta confirma recepción ni qué debe ocurrir ante datos inválidos.",
+        "Un requisito verificable expresa una obligación observable y una condición de aceptación. Debe separar requisitos funcionales —por ejemplo, aceptar una búsqueda concreta— de restricciones de estructura, terminología, seguridad o rendimiento. Los términos MUST, SHOULD y MAY solo son útiles si se vinculan a una especificación concreta y a una versión; copiarlos sin contexto no crea conformidad.",
+        "La matriz de trazabilidad enlaza caso de uso → requisito → fuente normativa o contractual → prueba → evidencia → resultado → defecto o riesgo residual. La trazabilidad es bidireccional: cada requisito importante necesita al menos una prueba y cada prueba debe justificar qué requisito cubre. Una suite extensa con pruebas huérfanas puede producir mucha actividad sin demostrar cobertura del caso de uso.",
+        "Los criterios de aceptación deben definirse antes de ejecutar la prueba. Un criterio puede exigir código HTTP, OperationOutcome, perfil declarado, terminología permitida, ausencia de un dato no autorizado o conservación de una referencia. «Funciona» no es un criterio reproducible. Cuando una expectativa depende de una decisión local, esa dependencia se registra como parte del contrato y no se presenta como regla universal de FHIR.",
+        "La cobertura no se reduce al porcentaje de pruebas ejecutadas. Conviene distinguir cobertura de requisitos, de perfiles, de interacciones, de caminos de error y de roles/autorizaciones. Un 100 % de casos felices puede dejar sin evaluar precisamente las condiciones que más discriminan una implementación robusta: entradas inválidas, ausencia de permisos, referencias rotas, códigos fuera de binding o cambios de versión.",
+        "Una medida descriptiva útil es la cobertura trazable de requisitos: la proporción de requisitos verificables que cuentan con al menos una prueba ejecutada y enlazada a evidencia. Deben publicarse numerador y denominador, no solo el porcentaje, porque excluir requisitos no verificables o contar varias pruebas del mismo requisito cambia la interpretación. Alcanzar 100 % de cobertura trazable no demuestra que las pruebas sean suficientes, que todos los caminos estén cubiertos ni que la implementación sea conforme, interoperable o clínicamente válida.",
+        "U1–U5 aportan las piezas que aquí se integran: longitudinalidad y estado, modelo de información, terminologías, intercambio HL7/FHIR y gobernanza. U6 no reenseña esas piezas; comprueba si siguen conservando significado cuando se ensamblan en un flujo y cuando aparecen fallos o cambios.",
+        "El producto educativo será un contrato ejecutable en sentido amplio: requisitos, fixtures sintéticos, pruebas, resultados y decisiones de cambio suficientes para que otra persona reconstruya qué se comprobó. No representa un contrato clínico, un acuerdo jurídico ni una certificación de un producto."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Implementación y validación.",
-        "Relacionar casos de uso, pruebas de conformidad y gestión del cambio mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Implementación y validación» dentro de Historias Clínicas, Terminologías y Estándares, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Historias Clínicas, Terminologías y Estándares, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre casos de uso o pruebas de conformidad debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Implementación y validación», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Historias Clínicas, Terminologías y Estándares, la incertidumbre de «Implementación y validación» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: diseño de un flujo interoperable clínico",
-      "paragraphs": [
-        "En la unidad «Implementación y validación» de Historias Clínicas, Terminologías y Estándares, el caso conductor es diseño de un flujo interoperable clínico. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Implementación y validación» conecta casos de uso con pruebas de conformidad y utiliza gestión del cambio como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «diseño de un flujo interoperable clínico» en Historias Clínicas, Terminologías y Estándares, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Implementación y validación» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de diseño de un flujo interoperable clínico y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "El caso de uso precede al diseño de pruebas.",
+        "Todo requisito importante necesita criterio de aceptación observable.",
+        "La trazabilidad conecta necesidad, requisito, prueba y evidencia.",
+        "Cobertura de casos felices no equivale a cobertura suficiente.",
+        "Las versiones de estándares forman parte del contrato verificable.",
+        "U6 integra U1–U5 sin sustituir sus modelos disciplinares."
       ],
       "equations": [
         {
-          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
-          "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
-          }
+          "latex": "\\mathrm{Cobertura}_{req}=\\frac{N_{req\\,con\\,prueba\\,ejecutada}}{N_{req\\,verificables}}",
+          "meaning": "Proporción descriptiva de requisitos verificables con al menos una prueba ejecutada y trazada; no es una medida de conformidad global ni de validez clínica."
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de diseño de un flujo interoperable clínico antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Conformidad por capas: validar recursos no basta para validar el flujo",
       "paragraphs": [
-        "La reproducibilidad de «Implementación y validación» en Historias Clínicas, Terminologías y Estándares requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Implementación y validación» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Historias Clínicas, Terminologías y Estándares separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Implementación y validación» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de casos de uso, pruebas de conformidad y gestión del cambio debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Historias Clínicas, Terminologías y Estándares.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre diseño de un flujo interoperable clínico. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Historias Clínicas, Terminologías y Estándares como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "FHIR distingue varias comprobaciones que con frecuencia se confunden. La validación de un recurso puede revisar estructura, cardinalidades, dominios de valores, bindings, invariantes y conformidad con perfiles. La operación $validate puede devolver un OperationOutcome con incidencias, pero su disponibilidad y los perfiles conocidos dependen del servidor. Pasar $validate es evidencia sobre el recurso y el contexto de validación, no sobre todo el comportamiento del sistema.",
+        "StructureDefinition expresa restricciones de perfiles; ImplementationGuide agrupa y publica artefactos de una solución; CapabilityStatement declara capacidades e interacciones soportadas. Un servidor puede declarar una capacidad y aun fallar una interacción concreta. Por ello la declaración se trata como expectativa a contrastar, no como resultado de prueba.",
+        "TestScript ofrece una representación estructurada de pruebas contra servidores o clientes FHIR. Puede describir operaciones y aserciones y vincular el alcance a artefactos de conformidad. Su valor está en volver explícita la expectativa y facilitar ejecución repetible; una prueba escrita de manera incorrecta, una cobertura incompleta o un entorno mal configurado pueden producir una conclusión engañosa aunque el TestScript sea sintácticamente válido.",
+        "Las pruebas se organizan por capas: validación estática de recursos; conformidad a perfiles y terminología; comportamiento HTTP/REST y search; bundles y transacciones cuando proceda; autorización; y escenario extremo a extremo. Cada capa responde una pregunta diferente. Un fallo temprano puede impedir interpretar capas posteriores y un éxito temprano no las sustituye.",
+        "Las pruebas negativas son obligatorias para razonar sobre límites. Ejemplos sintéticos incluyen cardinalidad inválida, código fuera de ValueSet requerido, referencia inexistente, parámetro no soportado, token sin alcance suficiente, recurso de paciente equivocado o bundle que viola una precondición. La expectativa negativa se especifica antes de ejecutar para evitar aceptar cualquier error como resultado correcto.",
+        "Herramientas como Inferno permiten escribir y ejecutar suites de conformidad FHIR y reutilizar validadores y clientes de prueba. Una herramienta de terceros es un instrumento: debe fijarse su versión, test kit, configuración y alcance. Pasar una suite concreta no significa conformidad con todos los perfiles existentes ni certificación regulatoria universal.",
+        "La conclusión debe nombrar exactamente la capa comprobada: «este fixture cumple el perfil X bajo el validador Y» es distinta de «el flujo interoperable satisface el caso de uso». Esta disciplina de lenguaje evita que una evidencia técnica estrecha se convierta en una afirmación clínica o institucional excesiva."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "$validate comprueba recursos y perfiles, no el flujo completo.",
+        "CapabilityStatement declara capacidades que todavía deben probarse.",
+        "TestScript hace explícitas operaciones y aserciones reproducibles.",
+        "Las pruebas negativas revelan límites que los casos felices ocultan.",
+        "La versión del validador y de la suite pertenece a la evidencia.",
+        "Conformidad técnica no equivale a certificación ni utilidad clínica."
+      ]
+    },
+    {
+      "heading": "Verificación, validación para el uso previsto y pruebas extremo a extremo",
+      "paragraphs": [
+        "Verificación pregunta si la implementación satisface requisitos especificados; validación para el uso previsto pregunta si el conjunto construido resuelve adecuadamente el propósito definido en el entorno de prueba. En esta unidad ambos términos se usan como categorías de ingeniería y deben declarar alcance. Ninguna prueba sintética de aula constituye validación clínica de una intervención, sistema asistencial o dispositivo.",
+        "Una estrategia de prueba combina fixtures controlados y oráculos explícitos. Un fixture define entrada, precondiciones y contexto; el oráculo define la salida esperada o una propiedad verificable. Los fixtures deben incluir identificadores ficticios, fechas y terminologías controladas, y conservar procedencia. Cambiar silenciosamente un fixture después de ver el resultado destruye parte de la auditabilidad de la prueba.",
+        "La prueba extremo a extremo sigue la información desde el origen sintético hasta el consumidor simulado y comprueba no solo transporte, sino significado y estado. Puede rastrear una orden de laboratorio ficticia, su resultado, el mapeo terminológico, el recurso FHIR, la respuesta de API y la visualización esperada. La comprobación debe detectar pérdida semántica, duplicación, desorden temporal, asociación al sujeto incorrecto y manejo de errores.",
+        "Los resultados se clasifican al menos como pass, fail, blocked o not run, con evidencia localizable. Un resultado blocked indica que no se pudo evaluar la expectativa y no debe contarse como pass. Los warnings también requieren política: ignorarlos por defecto o tratarlos siempre como fallo son decisiones distintas que deben estar justificadas.",
+        "La reproducibilidad exige fijar versiones de FHIR, Implementation Guides, paquetes, perfiles, terminologías, test kits, fixtures y configuración. FHIR evoluciona y sus implementadores deben identificar qué versión está en uso. Comparar resultados de dos ejecuciones sin fijar esas dependencias puede confundir cambio de sistema con cambio de referencia.",
+        "Los defectos se enlazan a la prueba que los reveló y se reproducen con un caso mínimo cuando sea posible. Tras una corrección se ejecuta la prueba original y un conjunto de regresiones relacionado. Cerrar un defecto porque «ya no se ve» sin preservar la prueba que lo detectó elimina evidencia útil para cambios futuros.",
+        "Un flujo que pasa todos los escenarios definidos sigue limitado por el espacio de pruebas. La conclusión final informa cobertura y huecos: actores no simulados, perfiles no cubiertos, cargas no evaluadas, condiciones organizativas ausentes y cualquier validación clínica o regulatoria fuera del alcance."
+      ],
+      "key_points": [
+        "Verificación y validación responden preguntas diferentes y acotadas.",
+        "Fixtures y oráculos deben definirse antes de inspeccionar resultados.",
+        "Blocked no puede contarse automáticamente como una prueba superada.",
+        "La prueba extremo a extremo conserva estado, identidad y significado.",
+        "Versiones y configuración son parte de la reproducibilidad experimental.",
+        "Todo defecto corregido debería dejar una regresión reutilizable."
+      ]
+    },
+    {
+      "heading": "Despliegue simulado, observabilidad, rollback e incidentes",
+      "paragraphs": [
+        "Implementar no termina cuando una suite local queda verde. El paso siguiente es un despliegue simulado en un entorno aislado, con configuración versionada y datos exclusivamente sintéticos. Se distinguen desarrollo, prueba y una producción simulada para enseñar separación de entornos sin acceder a infraestructura asistencial real.",
+        "Una checklist de readiness enlaza artefactos que deben existir antes del cambio: versión candidata, dependencias, perfiles/terminologías, migraciones si las hubiera, resultados de regresión, criterios go/no-go, responsables, plan de rollback y observabilidad mínima. La checklist no sustituye juicio técnico; hace visible qué evidencia faltaría para tomar una decisión.",
+        "Las smoke tests confirman rápidamente funciones críticas después del despliegue; las regresiones comprueban que comportamientos previamente válidos no se rompieron. Ninguna de las dos sustituye la prueba completa cuando el riesgo o el alcance del cambio lo exige. El conjunto seleccionado debe derivarse del impacto, no del tiempo disponible únicamente.",
+        "Observabilidad combina eventos, métricas y trazas o correlaciones suficientes para reconstruir el flujo. Ejemplos sintéticos son tasas de respuestas por clase HTTP, mensajes rechazados por perfil, latencia del flujo, reintentos, colas, códigos de error y correlación por identificador ficticio. Un dashboard sin umbral ni acción asociada es visualización, no control operacional.",
+        "Un criterio go/no-go se define antes del despliegue y puede incluir cero defectos críticos abiertos, regresiones seleccionadas superadas y capacidad demostrada de rollback. Rollback significa volver a un estado conocido; no es sinónimo de borrar evidencias. Los logs, resultados de prueba y decisión de cambio deben preservarse para auditoría.",
+        "Un criterio operacional cuantitativo útil es el presupuesto de error asociado a un SLO de disponibilidad. Si A_SLO es la fracción objetivo de disponibilidad durante una ventana T_window, el tiempo máximo de indisponibilidad compatible con ese objetivo es T_error=(1-A_SLO)T_window. Por ejemplo, 99.9 % durante 30 días deja 0.001×30 días = 0.03 días = 43.2 minutos de presupuesto. El cálculo solo traduce un objetivo operacional previamente acordado; no demuestra seguridad clínica, calidad semántica ni autorización de producción.",
+        "Un incidente sintético se documenta con detección, impacto observado, contención, causa todavía hipotética o confirmada, corrección, pruebas posteriores y aprendizaje. La causa raíz no se declara solo porque una modificación precedió al fallo. La unidad enseña a separar cronología de causalidad y a conservar alternativas hasta tener evidencia.",
+        "Este despliegue es pedagógico. No ofrece instrucciones para conectar endpoints clínicos, copiar credenciales, manipular datos reales o modificar sistemas hospitalarios. Un entorno productivo requiere controles organizativos, seguridad, privacidad, cumplimiento y validaciones que exceden esta unidad."
+      ],
+      "key_points": [
+        "El despliegue educativo ocurre únicamente en entornos sintéticos aislados.",
+        "Readiness convierte evidencia previa en una decisión go/no-go trazable.",
+        "Smoke tests y regresiones cubren propósitos diferentes después del cambio.",
+        "Observabilidad necesita métricas asociadas a umbrales y acciones.",
+        "Rollback restaura estado sin borrar la evidencia del incidente.",
+        "Cronología de un cambio no demuestra por sí sola causalidad.",
+        "El error budget traduce un SLO de disponibilidad en tiempo de indisponibilidad permitido."
+      ],
+      "equations": [
+        {
+          "latex": "T_{error}=(1-A_{SLO})T_{window}",
+          "meaning": "Tiempo máximo de indisponibilidad compatible con un objetivo de disponibilidad dentro de una ventana definida.",
+          "variables": {
+            "T_{error}": "presupuesto de tiempo de indisponibilidad",
+            "A_{SLO}": "fracción objetivo de disponibilidad entre 0 y 1",
+            "T_{window}": "duración de la ventana de observación"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Gestión del cambio: impacto, versionado, regresión y revalidación proporcional",
+      "paragraphs": [
+        "Los sistemas interoperables cambian porque cambian perfiles, terminologías, versiones de FHIR, dependencias, APIs, políticas de autorización, configuración o necesidades del usuario. La gestión del cambio convierte esa inevitabilidad en un proceso auditable. NIST describe el control de cambios como propuesta, justificación, implementación, prueba/evaluación, revisión y disposición; aquí se adapta ese patrón a un laboratorio sintético.",
+        "Cada solicitud de cambio registra motivo, artefactos afectados, versión anterior/nueva, responsable, riesgos, dependencias y criterio de aceptación. El análisis de impacto sigue las relaciones del repositorio: requisito, perfil, mapeo, test, fixture, API y documentación. Un cambio pequeño en texto puede ser editorial; un cambio de binding o cardinalidad puede requerir revalidar recursos y escenarios consumidores.",
+        "FHIR tiene política explícita de versiones y los artefactos de conformidad pueden declarar la versión aplicable. Una actualización R4→R5, una nueva versión de Implementation Guide o un paquete de terminología no se trata como simple sustitución de archivo. Deben identificarse incompatibilidades, artefactos afectados y estrategia de coexistencia o migración.",
+        "La regresión proporcional selecciona pruebas según el mapa de impacto y añade controles de alto valor que protegen funciones críticas. «Ejecutar todo siempre» puede ser útil en automatización barata, pero no reemplaza comprender qué prueba detectaría qué fallo. A la inversa, ejecutar solo la prueba modificada puede pasar por alto consecuencias en consumidores downstream.",
+        "La revalidación pregunta qué evidencia anterior sigue siendo aplicable después del cambio. Se conserva, repite o invalida de manera explícita. Una matriz cambio → impacto → pruebas → decisión evita declarar que todo el sistema sigue validado solo porque una prueba localizada volvió a pasar.",
+        "Los cambios urgentes también necesitan registro. Reducir pasos por urgencia no significa eliminar trazabilidad: se documentan excepción, autoridad, riesgo aceptado, pruebas mínimas y trabajo pendiente. Después se realiza revisión retrospectiva para convertir la solución temporal en una configuración controlada o revertirla.",
+        "El cierre del curso es una defensa de evidencia, no una demostración espectacular. El equipo entrega baseline versionada, candidato, matriz de trazabilidad, suite y resultados, defectos, decisión go/no-go, plan de rollback, registro de cambio y matriz de revalidación. Debe poder explicar qué sabe, qué no ha probado y qué tendría que cambiar antes de cualquier uso real."
+      ],
+      "key_points": [
+        "Todo cambio debe conservar motivo, impacto, responsable y evidencia.",
+        "Versiones FHIR e Implementation Guides forman parte del sistema probado.",
+        "La regresión se selecciona a partir del análisis de impacto.",
+        "Revalidar significa revisar qué evidencia previa sigue siendo aplicable.",
+        "Los cambios urgentes también requieren trazabilidad y revisión posterior.",
+        "El cierre distingue evidencia técnica de autorización para uso real."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "casos de uso",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Caso de uso",
+      "definition": "Descripción delimitada de actores, objetivo, precondiciones, flujo, excepciones y resultado esperado que orienta requisitos y pruebas."
     },
     {
-      "term": "pruebas de conformidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Actor",
+      "definition": "Rol de sistema o usuario simulado que participa en el caso de uso."
     },
     {
-      "term": "gestión del cambio",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Precondición",
+      "definition": "Estado que debe cumplirse antes de ejecutar un escenario de prueba."
     },
     {
-      "term": "Implementación y validación",
-      "definition": "Dominio de estudio que integra casos de uso, pruebas de conformidad, gestión del cambio para resolver un problema delimitado y verificable."
+      "term": "Requisito verificable",
+      "definition": "Obligación formulada de modo que pueda evaluarse mediante una observación o prueba."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de diseño de un flujo interoperable clínico usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Criterio de aceptación",
+      "definition": "Condición predefinida que determina si la evidencia satisface un requisito."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Matriz de trazabilidad",
+      "definition": "Relación auditable entre caso de uso, requisito, fuente, prueba, evidencia, resultado y defecto o riesgo."
     },
     {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Cobertura de requisitos",
+      "definition": "Proporción y distribución de requisitos que cuentan con pruebas pertinentes; no implica calidad de esas pruebas."
     },
     {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Caso feliz",
+      "definition": "Escenario en el que entradas y condiciones esperadas permiten completar el flujo principal."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Prueba negativa",
+      "definition": "Prueba que introduce una condición inválida, no autorizada o límite y predefine el rechazo o manejo esperado."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Conformidad",
+      "definition": "Grado en que un artefacto o implementación satisface reglas especificadas para un alcance concreto."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Validación FHIR",
+      "definition": "Comprobación de estructura, cardinalidades, valores, bindings, invariantes y perfiles aplicables a recursos FHIR."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "$validate",
+      "definition": "Operación FHIR que puede solicitar a un servidor comprobar un recurso respecto de reglas o perfiles conocidos."
+    },
+    {
+      "term": "OperationOutcome",
+      "definition": "Recurso FHIR utilizado para comunicar incidencias, advertencias o información derivada de operaciones."
+    },
+    {
+      "term": "StructureDefinition",
+      "definition": "Artefacto FHIR que define estructuras y restricciones, incluidos perfiles y extensiones."
+    },
+    {
+      "term": "ImplementationGuide",
+      "definition": "Artefacto que describe y agrupa una implementación coherente y sus dependencias/publicación."
+    },
+    {
+      "term": "CapabilityStatement",
+      "definition": "Declaración FHIR de capacidades, interacciones y comportamiento esperado de una implementación."
+    },
+    {
+      "term": "TestScript",
+      "definition": "Recurso FHIR que describe de forma estructurada pruebas y aserciones para servidores o clientes."
+    },
+    {
+      "term": "Binding terminológico",
+      "definition": "Regla que vincula un elemento codificado con un ValueSet y una fuerza de enlace."
+    },
+    {
+      "term": "Invariante",
+      "definition": "Regla lógica que debe cumplirse además de las cardinalidades y tipos."
+    },
+    {
+      "term": "Fixture",
+      "definition": "Entrada y contexto controlados usados como base reproducible de una prueba."
+    },
+    {
+      "term": "Oráculo de prueba",
+      "definition": "Resultado o propiedad esperada usada para decidir si una prueba pasa o falla."
+    },
+    {
+      "term": "Pass",
+      "definition": "Resultado que satisface el criterio de aceptación definido para la prueba."
+    },
+    {
+      "term": "Fail",
+      "definition": "Resultado que contradice el criterio de aceptación de una prueba ejecutada."
+    },
+    {
+      "term": "Blocked",
+      "definition": "Resultado en el que una precondición impide evaluar la expectativa; no equivale a pass."
+    },
+    {
+      "term": "Not run",
+      "definition": "Prueba que no fue ejecutada y por tanto no aporta evidencia de conformidad."
+    },
+    {
+      "term": "Warning",
+      "definition": "Hallazgo que requiere una política explícita para decidir si bloquea o no la aceptación."
+    },
+    {
+      "term": "Prueba extremo a extremo",
+      "definition": "Escenario que recorre múltiples componentes desde origen hasta consumidor y comprueba significado y estado."
+    },
+    {
+      "term": "Prueba de regresión",
+      "definition": "Prueba reutilizada para detectar que un comportamiento previamente aceptado se rompe tras un cambio."
+    },
+    {
+      "term": "Smoke test",
+      "definition": "Conjunto corto de comprobaciones críticas tras un despliegue para detectar fallos evidentes rápidamente."
+    },
+    {
+      "term": "Verificación",
+      "definition": "Evaluación de si la implementación satisface requisitos especificados dentro de un alcance."
+    },
+    {
+      "term": "Validación para el uso previsto",
+      "definition": "Evaluación de si el conjunto satisface el propósito definido bajo condiciones de prueba declaradas."
+    },
+    {
+      "term": "Interoperabilidad operacional",
+      "definition": "Capacidad observada de sistemas para completar el intercambio y comportamiento acordados en un flujo, más allá de validar un recurso aislado."
+    },
+    {
+      "term": "Baseline",
+      "definition": "Estado versionado de referencia contra el que se compara un candidato o cambio."
+    },
+    {
+      "term": "Candidato",
+      "definition": "Versión propuesta para evaluación antes de aceptación o despliegue simulado."
+    },
+    {
+      "term": "Version pinning",
+      "definition": "Fijación explícita de versiones de estándares, paquetes, herramientas, fixtures y configuración."
+    },
+    {
+      "term": "Dependencia",
+      "definition": "Artefacto, paquete, servicio o versión cuyo cambio puede alterar el comportamiento evaluado."
+    },
+    {
+      "term": "Entorno de prueba",
+      "definition": "Infraestructura aislada donde se ejecutan pruebas con datos y credenciales sintéticos."
+    },
+    {
+      "term": "Readiness",
+      "definition": "Estado de preparación evaluado contra una checklist y criterios go/no-go predefinidos."
+    },
+    {
+      "term": "Go/no-go",
+      "definition": "Decisión documentada de continuar o detener un cambio según evidencia y umbrales establecidos."
+    },
+    {
+      "term": "Rollback",
+      "definition": "Retorno controlado a una baseline conocida cuando un cambio no cumple criterios."
+    },
+    {
+      "term": "Observabilidad",
+      "definition": "Capacidad de reconstruir el estado y comportamiento del flujo mediante eventos, métricas y trazas o correlaciones."
+    },
+    {
+      "term": "Métrica operacional",
+      "definition": "Medida del comportamiento del sistema, como latencia, rechazos o reintentos, asociada a contexto."
+    },
+    {
+      "term": "Umbral",
+      "definition": "Valor o condición predefinida que dispara una decisión o investigación."
+    },
+    {
+      "term": "Incidente",
+      "definition": "Evento que interrumpe o degrada el comportamiento esperado y requiere registro e investigación."
+    },
+    {
+      "term": "Causa raíz",
+      "definition": "Explicación causal sustentada por evidencia, no inferida solo por proximidad temporal."
+    },
+    {
+      "term": "Control de cambios",
+      "definition": "Proceso documentado de proponer, justificar, implementar, probar, revisar y disponer cambios."
+    },
+    {
+      "term": "Análisis de impacto",
+      "definition": "Evaluación sistemática de artefactos, requisitos, pruebas y riesgos potencialmente afectados por un cambio."
+    },
+    {
+      "term": "Solicitud de cambio",
+      "definition": "Registro que identifica motivo, alcance, responsable, versiones, impacto, riesgos y criterios."
+    },
+    {
+      "term": "Revalidación",
+      "definition": "Revisión de qué evidencia previa permanece aplicable y qué pruebas deben repetirse tras un cambio."
+    },
+    {
+      "term": "Cambio urgente",
+      "definition": "Cambio realizado con proceso abreviado por urgencia, manteniendo excepción, autoridad, evidencia mínima y revisión posterior."
+    },
+    {
+      "term": "SemVer",
+      "definition": "Convención de versionado semántico que puede emplearse en software; no sustituye la política de versiones de FHIR o un IG."
+    },
+    {
+      "term": "Versión FHIR",
+      "definition": "Identificador de la publicación FHIR cuya semántica y reglas deben fijarse para interpretar recursos y artefactos."
+    },
+    {
+      "term": "Paquete FHIR",
+      "definition": "Distribución versionada de artefactos de una especificación o Implementation Guide."
+    },
+    {
+      "term": "Inferno Framework",
+      "definition": "Marco abierto para escribir y ejecutar test kits de conformidad FHIR; su resultado depende del kit y versión usados."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Implementación y validación",
-      "scenario": "Un equipo propone estudiar diseño de un flujo interoperable clínico, pero su pregunta mezcla casos de uso, pruebas de conformidad y gestión del cambio sin definir unidades, referencias ni resultado admisible.",
+      "title": "De «enviar un resultado» a requisitos verificables",
+      "scenario": "Un laboratorio sintético debe entregar un resultado ficticio a un consumidor FHIR; la especificación inicial solo dice «enviar y mostrar el resultado».",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de casos de uso, pruebas de conformidad y gestión del cambio.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Identificar actor emisor, consumidor y sujeto ficticio.",
+        "Separar creación del resultado, validación del perfil, intercambio, autorización y presentación.",
+        "Definir requisitos con criterios observables, incluido manejo de referencia inválida y código fuera de binding.",
+        "Trazar cada requisito a una prueba positiva o negativa.",
+        "Registrar qué no se evalúa: rendimiento a escala, seguridad productiva y utilidad clínica."
       ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "El caso de uso se convierte en un contrato auditable; la interoperabilidad ya no se juzga por una demostración visual aislada.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
+        "Los endpoints y datos son sintéticos.",
+        "No se evalúa un workflow hospitalario real.",
+        "La suite solo cubre los requisitos declarados."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre casos de uso y pruebas de conformidad en el caso de diseño de un flujo interoperable clínico; una condición vinculada con gestión del cambio podría producir el mismo patrón.",
+      "title": "Un Observation pasa $validate pero el flujo falla",
+      "scenario": "Un Observation sintético satisface su perfil, pero el consumidor no puede relacionarlo con el DiagnosticReport esperado.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar gestión del cambio como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Confirmar qué perfil y versión se validaron.",
+        "Separar validez del recurso de validez de referencias y comportamiento del flujo.",
+        "Ejecutar una prueba extremo a extremo que compruebe la relación esperada.",
+        "Registrar el fallo como defecto de integración, no como fallo del validador.",
+        "Añadir una regresión para la referencia y repetir el escenario."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "La conformidad del recurso es necesaria para esa capa, pero no suficiente para demostrar el caso de uso.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "No demuestra que todos los consumidores interpreten igual el contenido.",
+        "La corrección se evalúa solo en el escenario definido.",
+        "No representa una validación clínica."
+      ]
+    },
+    {
+      "title": "Prueba negativa de autorización",
+      "scenario": "Un cliente sintético con alcance insuficiente intenta leer un recurso fuera del conjunto permitido.",
+      "reasoning_steps": [
+        "Definir previamente actor, scope y recurso solicitado.",
+        "Fijar la respuesta aceptable según el contrato de prueba.",
+        "Ejecutar el caso permitido como control positivo.",
+        "Ejecutar el caso denegado y conservar código/respuesta.",
+        "No inferir seguridad global a partir de dos casos de autorización."
+      ],
+      "interpretation": "El caso negativo verifica una frontera concreta de acceso; no certifica todo el subsistema de seguridad.",
+      "limitations": [
+        "Credenciales y servidor son sintéticos.",
+        "No se realizan pruebas de penetración.",
+        "La política jurídica/institucional queda fuera del ejercicio."
+      ]
+    },
+    {
+      "title": "Cambio de perfil que rompe consumidores",
+      "scenario": "Una nueva versión del perfil hace obligatorio un elemento que los fixtures anteriores no incluían.",
+      "reasoning_steps": [
+        "Registrar versiones baseline y candidata.",
+        "Identificar recursos, mapeos, tests y consumidores afectados.",
+        "Actualizar un fixture candidato sin borrar la baseline.",
+        "Ejecutar validación de perfil y regresiones extremo a extremo.",
+        "Decidir aceptación, coexistencia o rollback según los criterios predefinidos."
+      ],
+      "interpretation": "El análisis de impacto conecta el cambio de artefacto con las evidencias que deben revalidarse.",
+      "limitations": [
+        "No cubre todos los cambios posibles entre versiones.",
+        "La estrategia de migración es educativa.",
+        "No autoriza actualización de sistemas reales."
+      ]
+    },
+    {
+      "title": "Despliegue simulado con fallo y rollback",
+      "scenario": "La versión candidata pasa pruebas previas, pero tras desplegarla en el entorno simulado aumenta la tasa de respuestas 5xx por encima del umbral predefinido.",
+      "reasoning_steps": [
+        "Confirmar que la métrica y umbral estaban predefinidos.",
+        "Correlacionar el fallo con trazas y pruebas sin declarar causalidad prematura.",
+        "Aplicar el criterio no-go y ejecutar rollback a la baseline.",
+        "Verificar la restauración con smoke tests.",
+        "Conservar evidencia y abrir investigación con hipótesis alternativas."
+      ],
+      "interpretation": "El rollback es una respuesta controlada a un criterio de operación; no borra la necesidad de analizar el defecto.",
+      "limitations": [
+        "Las métricas son generadas sintéticamente.",
+        "No modela disponibilidad clínica real.",
+        "No sustituye un plan institucional de continuidad."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Proyecto integrador: del contrato interoperable al cambio revalidado",
+      "estimated_time_minutes": 360,
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja exclusivamente con recursos FHIR, mensajes, identidades, tokens, configuraciones, logs y métricas sintéticos; no uses endpoints, credenciales ni datos clínicos reales.",
+        "Selecciona un flujo pequeño que reutilice explícitamente contenidos de U1–U5 y declara qué artefacto aporta cada unidad.",
+        "Fija desde el inicio versiones de FHIR, perfiles, Implementation Guide, terminologías y herramienta o versión de test utilizada.",
+        "Escribe criterios de aceptación antes de ejecutar cualquier prueba y evita modificarlos retroactivamente sin registrar el cambio.",
+        "Conserva fixtures positivos y negativos, resultados brutos y decisiones; no borres ejecuciones fallidas.",
+        "Separa validación de recurso, conformidad de API, autorización y prueba extremo a extremo en capas diferentes.",
+        "Incluye al menos una prueba que deba fallar y una que quede blocked para demostrar que los estados se interpretan correctamente.",
+        "Realiza un despliegue únicamente simulado con go/no-go, observabilidad y rollback.",
+        "Introduce un cambio controlado después de la baseline y selecciona regresiones a partir del análisis de impacto.",
+        "Cierra con una defensa de evidencia: qué se verificó, qué se validó para el uso sintético, qué no fue evaluado y qué exigiría un entorno real."
       ],
       "problems": [
-        "Define casos de uso mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo pruebas de conformidad modifica o complementa a casos de uso.",
-        "Propón una prueba que distinga el papel de gestión del cambio de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Define un caso de uso sintético con actores, objetivo, precondiciones, disparador, flujo principal, alternativas y resultado observable.",
+        "Redacta al menos ocho requisitos verificables y clasifícalos como estructura/semántica/API/autorización/extremo a extremo.",
+        "Convierte cada requisito en un criterio de aceptación observable y señala la versión de la referencia aplicable.",
+        "Construye una matriz requisito → fuente → prueba → evidencia → resultado → defecto/riesgo.",
+        "Calcula la cobertura trazable de requisitos como N de requisitos verificables con al menos una prueba ejecutada dividido por N de requisitos verificables; informa numerador y denominador y explica por qué 100 % no demuestra conformidad global.",
+        "Identifica dos requisitos del caso que no puedan demostrarse con $validate.",
+        "Construye un recurso FHIR sintético válido y documenta perfil, paquete y versión usados para validarlo.",
+        "Construye un recurso sintético inválido por cardinalidad, binding o invariante y predefine el OperationOutcome o tipo de hallazgo esperado.",
+        "Compara CapabilityStatement declarado con al menos tres interacciones ejecutadas en el entorno simulado.",
+        "Diseña dos TestScript o pseudotests equivalentes con aserciones explícitas; diferencia sintaxis de cobertura.",
+        "Define cuatro pruebas negativas: estructura inválida, referencia rota, terminología no permitida y acceso no autorizado.",
+        "Construye un fixture positivo y su oráculo; después crea una variante negativa cambiando una sola condición.",
+        "Diseña un escenario extremo a extremo que preserve sujeto ficticio, orden, resultado, terminología y referencia entre recursos.",
+        "Clasifica los resultados de una corrida como pass/fail/blocked/not run y justifica por qué blocked no suma evidencia positiva.",
+        "Fija versiones de FHIR, IG, paquetes, terminología, validator/test kit y fixtures en un manifiesto reproducible.",
+        "Simula un defecto descubierto por una prueba negativa y redacta un caso mínimo reproducible.",
+        "Corrige el defecto en el escenario conceptual y añade la prueba correspondiente al conjunto de regresión.",
+        "Diseña una checklist de readiness con criterios go/no-go para un despliegue exclusivamente sintético.",
+        "Define cuatro métricas de observabilidad, con unidad, ventana, umbral y acción asociada.",
+        "Simula un incidente post-despliegue y separa hechos observados, hipótesis causales y evidencia pendiente.",
+        "Define un procedimiento de rollback que restaure la baseline y conserve logs/resultados para auditoría.",
+        "Introduce un cambio de versión de perfil o terminología y realiza un análisis de impacto sobre requisitos, fixtures y pruebas.",
+        "Construye una matriz cambio → impacto → regresiones → evidencia que se conserva → evidencia que debe repetirse.",
+        "Compara una ejecución automatizada completa con una selección basada en riesgo/impacto y explica qué aporta cada enfoque.",
+        "Redacta la conclusión final separando conformidad demostrada, interoperabilidad operacional probada, huecos de cobertura y cualquier validación clínica/regulatoria no realizada."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Caso de uso y contrato de aceptación versionados.",
+        "Matriz bidireccional de trazabilidad requisito–prueba.",
+        "Manifiesto de versiones y dependencias.",
+        "Fixtures sintéticos positivos y negativos.",
+        "Plan de pruebas por capas.",
+        "Resultados clasificados con evidencia localizable.",
+        "Registro de defectos y regresiones.",
+        "Checklist de readiness y decisión go/no-go.",
+        "Panel o tabla de observabilidad sintética con umbrales.",
+        "Plan y evidencia de rollback simulado.",
+        "Solicitud de cambio y análisis de impacto.",
+        "Matriz de revalidación y conclusión proporcional."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: diseño de un flujo interoperable clínico",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para casos de uso, pruebas de conformidad y gestión del cambio.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de diseño de un flujo interoperable clínico y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte casos de uso, pruebas de conformidad y gestión del cambio.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "El caso de uso identifica actores y precondiciones sin depender de datos reales.",
+        "Los requisitos son observables y no se reducen a frases como «debe funcionar».",
+        "Cada requisito importante tiene al menos una prueba trazada.",
+        "Cada prueba declara qué requisito pretende cubrir.",
+        "La cobertura trazable declara numerador y denominador y no se interpreta como conformidad, interoperabilidad ni validez clínica global.",
+        "Las versiones de estándares y paquetes están fijadas.",
+        "$validate se interpreta como evidencia de una capa y no del flujo completo.",
+        "CapabilityStatement se trata como declaración contrastable y no como prueba.",
+        "Las pruebas negativas tienen resultado esperado antes de ejecutarse.",
+        "Los fixtures contienen únicamente identidades y datos sintéticos.",
+        "Los oráculos distinguen respuesta correcta de cualquier error genérico.",
+        "Pass, fail, blocked y not run se usan con significado distinto.",
+        "Los warnings siguen una política predefinida.",
+        "El escenario extremo a extremo conserva identidad, estado, referencia y semántica.",
+        "Los defectos enlazan a una prueba reproducible.",
+        "La corrección de un defecto deja una regresión.",
+        "La checklist go/no-go está vinculada a evidencia.",
+        "Las métricas de observabilidad incluyen umbral y acción.",
+        "El rollback restaura baseline sin borrar evidencia.",
+        "El incidente separa cronología de causalidad.",
+        "El análisis de impacto identifica dependencias downstream.",
+        "La selección de regresiones se justifica por el cambio.",
+        "La matriz de revalidación indica evidencia conservada y repetida.",
+        "La conclusión informa cobertura y huecos.",
+        "No se afirma certificación, seguridad clínica ni utilidad clínica.",
+        "El entregable permite a otra persona reconstruir la decisión completa."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar casos de uso como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar casos de uso en una explicación."
+      "error": "Tratar un caso de uso como una frase de intención.",
+      "correction": "Definir actores, precondiciones, flujo, excepciones y resultados observables antes de derivar requisitos."
     },
     {
-      "error": "Afirmar que una relación entre casos de uso y pruebas de conformidad demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Escribir requisitos sin criterios de aceptación.",
+      "correction": "Vincular cada obligación a una observación o prueba que permita decidir pass/fail."
     },
     {
-      "error": "Añadir gestión del cambio después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Asumir que un recurso que pasa $validate demuestra interoperabilidad.",
+      "correction": "Nombrar la capa validada y probar por separado API, referencias, autorización y flujo extremo a extremo."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Tomar CapabilityStatement como evidencia de que una interacción funciona.",
+      "correction": "Usarlo como declaración de capacidad que debe contrastarse con pruebas ejecutadas."
     },
     {
-      "error": "Generalizar la conclusión de Implementación y validación al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
+      "error": "Confundir TestScript válido con cobertura suficiente.",
+      "correction": "Auditar qué requisitos y escenarios cubre la suite y qué huecos permanecen."
+    },
+    {
+      "error": "Probar solo casos felices.",
+      "correction": "Añadir entradas inválidas, referencias rotas, terminología no permitida y acceso denegado con expectativas predefinidas."
+    },
+    {
+      "error": "Aceptar cualquier error como éxito de una prueba negativa.",
+      "correction": "Definir previamente el tipo de rechazo o propiedad esperada del error."
+    },
+    {
+      "error": "Contar blocked como pass.",
+      "correction": "Registrar blocked como ausencia de evidencia sobre la expectativa y resolver la precondición si es necesario."
+    },
+    {
+      "error": "Ignorar warnings sin política.",
+      "correction": "Definir cuándo un warning es aceptable, bloqueante o requiere revisión."
+    },
+    {
+      "error": "Cambiar fixtures después del resultado sin registrar versión.",
+      "correction": "Versionar fixtures y conservar baseline y candidato para reproducibilidad."
+    },
+    {
+      "error": "Llamar validación clínica a una prueba técnica sintética.",
+      "correction": "Restringir la conclusión al uso y entorno de prueba; la evaluación clínica queda fuera del alcance."
+    },
+    {
+      "error": "Desplegar porque todas las pruebas locales pasaron.",
+      "correction": "Exigir readiness, criterios go/no-go, observabilidad y rollback además de las regresiones."
+    },
+    {
+      "error": "Crear un dashboard sin decisiones asociadas.",
+      "correction": "Vincular cada métrica relevante a ventana, umbral y acción."
+    },
+    {
+      "error": "Borrar logs al ejecutar rollback.",
+      "correction": "Restaurar configuración/versión preservando evidencia para auditoría e investigación."
+    },
+    {
+      "error": "Declarar causa raíz porque el fallo ocurrió después de un cambio.",
+      "correction": "Separar temporalidad de causalidad y contrastar hipótesis con evidencia."
+    },
+    {
+      "error": "Actualizar una versión FHIR o IG como si fuera un reemplazo transparente.",
+      "correction": "Realizar análisis de impacto y fijar versión en recursos, perfiles, paquetes y pruebas."
+    },
+    {
+      "error": "Ejecutar solo la prueba modificada tras un cambio.",
+      "correction": "Seleccionar regresiones sobre consumidores y dependencias afectadas por el mapa de impacto."
+    },
+    {
+      "error": "Afirmar que el sistema sigue validado después de un cambio porque una prueba pasó.",
+      "correction": "Construir una matriz de revalidación que identifique qué evidencia se conserva, se repite o queda invalidada."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar diseño de un flujo interoperable clínico?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué convierte un caso de uso en una base útil para pruebas?",
+      "answer": "Actores, precondiciones, flujo, alternativas, resultados y criterios que permiten derivar requisitos observables.",
+      "reasoning": "La prueba necesita una expectativa concreta, no solo una intención.",
+      "common_error": "Empezar por la herramienta de test antes de definir el flujo."
     },
     {
-      "question": "¿Cómo se relacionan casos de uso y pruebas de conformidad?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; gestión del cambio puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Qué demuestra que un recurso pase $validate?",
+      "answer": "Que satisface las reglas que el validador comprobó en ese contexto, incluidos perfiles conocidos/aplicables; no demuestra todo el flujo.",
+      "reasoning": "La validación de recursos es una capa dentro de la interoperabilidad.",
+      "common_error": "Equivaler validación de recurso con interoperabilidad extremo a extremo."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre gestión del cambio?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Para qué sirve CapabilityStatement en una estrategia de prueba?",
+      "answer": "Para declarar capacidades esperadas que luego pueden transformarse en requisitos y pruebas.",
+      "reasoning": "Una declaración de capacidad no es evidencia de ejecución.",
+      "common_error": "Marcar una interacción como probada solo porque aparece declarada."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Qué aporta TestScript?",
+      "answer": "Una descripción estructurada y reutilizable de operaciones y aserciones para probar conformidad.",
+      "reasoning": "Mejora reproducibilidad, pero no garantiza que la cobertura sea completa.",
+      "common_error": "Confundir formato de test con calidad de la suite."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Por qué una prueba negativa necesita un oráculo?",
+      "answer": "Porque no cualquier error confirma el comportamiento esperado; debe predefinirse qué rechazo o propiedad sería correcto.",
+      "reasoning": "Sin oráculo se puede convertir un fallo inesperado en falso éxito.",
+      "common_error": "Aceptar un HTTP 500 como evidencia de control de acceso correcto."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Qué diferencia blocked de fail?",
+      "answer": "Blocked indica que una precondición impidió evaluar la expectativa; fail indica que se evaluó y contradijo el criterio.",
+      "reasoning": "Ambos estados aportan información distinta y ninguno equivale a pass.",
+      "common_error": "Sumar blocked a la tasa de éxito."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre diseño de un flujo interoperable clínico?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Qué debe fijarse para repetir una suite meses después?",
+      "answer": "Versiones de estándar, IG/paquetes, terminología, test kit, fixtures, configuración y criterios.",
+      "reasoning": "Las dependencias cambian y pueden alterar el resultado sin que cambie el sistema.",
+      "common_error": "Registrar solo el commit del código propio."
     },
     {
-      "question": "¿Qué demuestra dominio de Implementación y validación?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Cuándo una smoke test es suficiente?",
+      "answer": "Solo para el objetivo limitado de confirmar rápidamente funciones críticas; no sustituye regresión o validación completa cuando estas son necesarias.",
+      "reasoning": "Cada nivel de prueba responde a una pregunta distinta.",
+      "common_error": "Usar smoke tests verdes como aprobación general del despliegue."
+    },
+    {
+      "question": "¿Qué hace útil una métrica de observabilidad?",
+      "answer": "Tener definición, unidad, ventana, contexto, umbral y una acción asociada.",
+      "reasoning": "Sin una decisión posible, una métrica puede ser solo descriptiva.",
+      "common_error": "Crear dashboards sin criterios operacionales."
+    },
+    {
+      "question": "¿Qué evidencia debe conservar un rollback?",
+      "answer": "Versión fallida, logs, métricas, resultados, decisión y evidencia de restauración de la baseline.",
+      "reasoning": "Rollback corrige el estado operacional, no la historia del incidente.",
+      "common_error": "Borrar la evidencia del candidato fallido."
+    },
+    {
+      "question": "¿Cómo se decide qué regresiones repetir tras un cambio?",
+      "answer": "Desde el análisis de impacto sobre requisitos, perfiles, mapeos, APIs, consumidores, fixtures y riesgos.",
+      "reasoning": "La selección debe defender por qué detectaría consecuencias plausibles.",
+      "common_error": "Ejecutar solo la prueba directamente editada."
+    },
+    {
+      "question": "¿Qué debe decir la conclusión final si todo el laboratorio sintético pasa?",
+      "answer": "Qué requisitos y escenarios fueron demostrados bajo qué versiones y qué áreas no se evaluaron, sin afirmar certificación ni validez clínica.",
+      "reasoning": "La evidencia sigue limitada por cobertura y contexto.",
+      "common_error": "Escribir «sistema validado» sin alcance."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Diseño de un flujo interoperable clínico."
+      "title": "Laboratorio clínico interoperable",
+      "connection": "Permite verificar sintéticamente la cadena solicitud–resultado–informe y la preservación de identidad, tiempo y terminología sin acceder a LIS/EHR reales."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
+      "title": "Integración de dispositivos y observaciones",
+      "connection": "La trazabilidad de requisitos y perfiles ayuda a distinguir un recurso válido de un flujo de adquisición/consumo realmente probado."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "title": "Investigación con datos clínicos",
+      "connection": "Un pipeline reproducible necesita versiones, procedencia, pruebas y control de cambios además de la gobernanza de uso secundario desarrollada en U5."
     },
     {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
+      "title": "Aplicaciones SMART on FHIR",
+      "connection": "Las pruebas pueden separar autorización y scopes de conformidad de recursos y comportamiento de la aplicación, evitando convertir un token válido en evidencia de interoperabilidad."
+    },
+    {
+      "title": "Ingeniería clínica y compras",
+      "connection": "Matrices de requisitos, pruebas y defectos ofrecen evidencia técnica auditable para comparar integraciones, sin sustituir aceptación institucional o regulatoria."
+    },
+    {
+      "title": "IA clínica y sistemas de apoyo",
+      "connection": "Cambios en contratos de datos, terminologías o APIs pueden alterar entradas downstream; el análisis de impacto ayuda a identificar qué interfaces y validaciones deben repetirse."
     }
   ],
   "sources": [
     {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "UMLS",
-      "organization": "National Library of Medicine",
-      "url": "https://www.nlm.nih.gov/research/umls/",
-      "type": "sistema terminológico",
-      "description": "Integración y correspondencia entre vocabularios biomédicos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Privacy Framework",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/privacy-framework",
-      "type": "marco oficial",
-      "description": "Gestión de riesgos de privacidad en sistemas de información.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "HL7 FHIR",
+      "title": "HL7 FHIR R5 — Validating Resources",
       "organization": "HL7 International",
-      "url": "https://hl7.org/fhir/",
-      "type": "estándar sanitario",
-      "description": "Modelo de recursos e interfaces de interoperabilidad.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "url": "https://www.hl7.org/fhir/R5/validation.html",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "SNOMED CT",
-      "organization": "SNOMED International",
-      "url": "https://www.snomed.org/",
-      "type": "terminología clínica",
-      "description": "Conceptos y relaciones clínicas computables.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "HL7 FHIR R5 — Testing Implementations",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/R5/testing.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — TestScript",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/testscript.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — TestScript Detailed Descriptions",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/testscript-definitions.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — CapabilityStatement",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/capabilitystatement.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — ImplementationGuide",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/implementationguide.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — StructureDefinition",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/structuredefinition.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — OperationOutcome",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/operationoutcome.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — RESTful API",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/http.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — Search",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/search.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — Bundle",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/bundle.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — Profiling FHIR",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/profiling.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — Managing Multiple FHIR Versions",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/versioning.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "HL7 FHIR R5 — Version Management Policy",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/R5/versions.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "SMART App Launch 2.2.0 — Overview",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/smart-app-launch/",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "SMART App Launch 2.2.0 — Conformance",
+      "organization": "HL7 International",
+      "url": "https://www.hl7.org/fhir/smart-app-launch/STU2.2/conformance.html",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Inferno Framework — Inferno Core",
+      "organization": "Inferno Framework / MITRE",
+      "url": "https://github.com/inferno-framework/inferno-core",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "NIST SP 800-128 — Guide for Security-Focused Configuration Management of Information Systems",
+      "organization": "National Institute of Standards and Technology",
+      "url": "https://csrc.nist.gov/pubs/sp/800/128/upd1/final",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "professional_scope": "Material universitario para diseñar y auditar pruebas de interoperabilidad con artefactos, datos, identidades, tokens, endpoints y métricas exclusivamente sintéticos. No autoriza acceso a sistemas clínicos, no sustituye pruebas de seguridad especializadas, evaluación clínica, certificación, acreditación, aceptación institucional ni asesoría regulatoria.",
+  "editorial_notice": "Esta unidad usa FHIR R5 5.0.0 y SMART App Launch 2.2.0 como referencias educativas versionadas y herramientas de conformance testing como ejemplos, no como obligación universal. Pasar $validate, un TestScript o una suite Inferno demuestra únicamente el alcance probado. No uses EHR, LIS, PACS, endpoints, credenciales, tokens ni datos de pacientes reales. Cualquier despliegue, cambio, rollback, monitorización o incidente descrito es simulado. La implementación productiva requiere requisitos, seguridad, privacidad, gobernanza, validación y aprobaciones propias de la organización y jurisdicción."
 }
