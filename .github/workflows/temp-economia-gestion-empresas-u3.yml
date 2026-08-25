@@ -1,0 +1,72 @@
+name: Temporary Economía y Gestión de Empresas U3 curation
+
+on:
+  push:
+    branches:
+      - codex/economia-gestion-empresas-unit-03-academic-quality-v2
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/economia-gestion-empresas-unit-03-academic-quality-v2
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Curate U3 and synchronize exact mirror
+        run: python scripts/curate_economia_gestion_empresas_u3_temp.py
+
+      - name: Validate curriculum
+        run: python scripts/validate_curriculum.py
+
+      - name: Validate generated units
+        run: python scripts/validate_generated_units.py
+
+      - name: Assert U3 generic template removal
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('data/course_redevelopment/economia-gestion-empresas/units/unit-03.json')
+          mirror = Path('data/generated_units/economia-gestion-empresas/unit-03.json')
+          text = source.read_text(encoding='utf-8').casefold()
+          marker = 'concepto de la unidad que debe definirse mediante entidades observables'
+          assert marker not in text, 'U3 todavía contiene plantilla genérica'
+          assert source.read_bytes() == mirror.read_bytes(), 'fuente y espejo de U3 divergen'
+          PY
+
+      - name: Run permanent U3 regression
+        run: python -m unittest tests.test_economia_gestion_empresas_unit_03_curated
+
+      - name: Regenerate public course
+        run: python scripts/generate_site.py --force --subject economia-gestion-empresas --with-units --force-authored-units
+
+      - name: Validate public alignment
+        run: python scripts/audit_public_unit_alignment.py --strict
+
+      - name: Validate internal links
+        run: python scripts/validate_links.py
+
+      - name: Remove temporary machinery and commit curated U3
+        shell: bash
+        run: |
+          rm -f scripts/curate_economia_gestion_empresas_u3_temp.py
+          rm -f .github/workflows/temp-economia-gestion-empresas-u3.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- data/course_redevelopment/economia-gestion-empresas/units/unit-03.json data/generated_units/economia-gestion-empresas/unit-03.json tests/test_economia_gestion_empresas_unit_03_curated.py gestion-etica-comunicacion/economia-gestion-empresas scripts/curate_economia_gestion_empresas_u3_temp.py .github/workflows/temp-economia-gestion-empresas-u3.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Curate Economía y Gestión de Empresas U3"
+          git push origin HEAD:codex/economia-gestion-empresas-unit-03-academic-quality-v2
