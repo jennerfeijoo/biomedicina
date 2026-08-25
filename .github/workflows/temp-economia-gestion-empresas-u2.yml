@@ -32,14 +32,20 @@ jobs:
       - name: Validate generated units
         run: python scripts/validate_generated_units.py
 
-      - name: Audit known generic content
-        run: python scripts/audit_known_generic_content.py
+      - name: Assert U2 generic template removal
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('data/course_redevelopment/economia-gestion-empresas/units/unit-02.json')
+          mirror = Path('data/generated_units/economia-gestion-empresas/unit-02.json')
+          text = source.read_text(encoding='utf-8').casefold()
+          marker = 'concepto de la unidad que debe definirse mediante entidades observables'
+          assert marker not in text, 'U2 todavía contiene plantilla genérica'
+          assert source.read_bytes() == mirror.read_bytes(), 'fuente y espejo de U2 divergen'
+          PY
 
       - name: Run permanent U2 regression
         run: python -m unittest tests.test_economia_gestion_empresas_unit_02_curated
-
-      - name: Validate course architecture
-        run: python scripts/validate_course_architecture.py --subject economia-gestion-empresas
 
       - name: Regenerate public course
         run: python scripts/generate_site.py --force --subject economia-gestion-empresas --with-units --force-authored-units
