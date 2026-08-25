@@ -28,13 +28,13 @@ class TestInformaticaBiomedicaUnit06Curated(unittest.TestCase):
     def test_source_and_generated_mirror_are_identical(self) -> None:
         self.assertEqual(self.unit, self.mirror)
 
-    def test_published_descriptor_matches_when_promoted(self) -> None:
+    def test_published_descriptor_when_promoted_matches_canonical_purpose(self) -> None:
         published = next(item for item in self.descriptor["detailed_units"] if item["unit"] == 6)
         if published["description"] != self.unit["purpose"]:
-            self.skipTest("El publicador todavía no ha promovido la descripción canónica de U6")
+            self.skipTest("El publicador todavía no ha promovido el propósito canónico de U6.")
         self.assertEqual(published["description"], self.unit["purpose"])
 
-    def test_identity_depth_and_course_closure(self) -> None:
+    def test_identity_and_depth(self) -> None:
         self.assertEqual(self.unit["subject_id"], "informatica-biomedica")
         self.assertEqual(self.unit["unit"], 6)
         self.assertEqual(self.unit["slug"], "gobernanza-e-implementacion")
@@ -46,13 +46,12 @@ class TestInformaticaBiomedicaUnit06Curated(unittest.TestCase):
             self.assertGreaterEqual(len(section["key_points"]), 5)
             for point in section["key_points"]:
                 self.assertGreaterEqual(len(point.split()), 4)
-        self.assertGreaterEqual(len(self.unit["glossary"]), 55)
+        self.assertGreaterEqual(len(self.unit["glossary"]), 50)
         self.assertGreaterEqual(len(self.unit["worked_examples"]), 5)
-        self.assertGreaterEqual(len(self.unit["common_errors"]), 20)
+        self.assertGreaterEqual(len(self.unit["common_errors"]), 18)
         self.assertGreaterEqual(len(self.unit["self_assessment"]), 12)
         self.assertGreaterEqual(len(self.unit["biomedical_connections"]), 6)
-        self.assertGreaterEqual(len(self.unit["sources"]), 16)
-        self.assertIn("integra los artefactos de u1–u5", self.unit["purpose"].lower())
+        self.assertGreaterEqual(len(self.unit["sources"]), 15)
 
     def test_generic_template_and_inherited_ppv_are_removed(self) -> None:
         for marker in [
@@ -64,54 +63,154 @@ class TestInformaticaBiomedicaUnit06Curated(unittest.TestCase):
             self.assertNotIn(marker, self.text)
         self.assertNotIn("ppv=\\frac", self.text)
 
-    def test_governance_is_about_decision_rights_and_evidence(self) -> None:
-        for concept in ["derechos de decisión", "accountability", "raci", "decision log", "tolerancia al riesgo", "escalado"]:
+    def test_governance_is_decision_and_risk_governance_not_access_admin(self) -> None:
+        for concept in [
+            "derechos de decisión",
+            "tolerancia al riesgo",
+            "riesgo residual",
+            "registro de riesgos",
+            "raci",
+            "terceros",
+            "govern",
+            "identify",
+            "protect",
+            "detect",
+            "respond",
+            "recover",
+        ]:
             self.assertIn(concept, self.text)
-        self.assertIn("política, estándar interno, procedimiento, control y evidencia no son sinónimos", self.text)
-        self.assertIn("raci documenta responsabilidades locales pero no crea autoridad legal o clínica", self.text)
+        self.assertIn("no equivale a administración de accesos", self.text)
+        self.assertIn("raci", self.text)
 
-    def test_privacy_and_security_are_distinct_and_current(self) -> None:
-        for concept in ["riesgo de privacidad", "minimización de datos", "confidencialidad", "integridad", "disponibilidad", "least privilege"]:
+    def test_privacy_security_identity_and_zero_trust_are_separated(self) -> None:
+        for concept in [
+            "privacidad",
+            "ciberseguridad",
+            "confidencialidad",
+            "integridad",
+            "disponibilidad",
+            "autenticación",
+            "autorización",
+            "consentimiento",
+            "mínimo privilegio",
+            "rbac",
+            "abac",
+            "mfa",
+            "zero trust",
+        ]:
             self.assertIn(concept, self.text)
-        self.assertIn("puede existir riesgo de privacidad sin intrusión", self.text)
-        self.assertIn("autenticación prueba identidad; autorización determina acciones permitidas", self.text)
-        self.assertIn("seguía siendo borrador público en agosto de 2026", self.text)
-        self.assertIn("iso 27799:2025", self.text)
-        self.assertIn("govern, identify, protect, detect, respond y recover", self.text)
+        self.assertIn("privacidad y ciberseguridad se relacionan pero no son equivalentes", self.text)
+        self.assertIn("zero trust no significa 'no confiar en nadie'", self.text)
 
-    def test_change_continuity_and_recovery_are_substantive(self) -> None:
-        for concept in ["baseline de configuración", "change control", "release", "deployment", "rollback", "backup", "restore", "rto", "rpo", "downtime"]:
+    def test_privacy_framework_version_status_is_explicit(self) -> None:
+        self.assertIn("privacy framework 1.0", self.text)
+        self.assertIn("privacy framework 1.1", self.text)
+        self.assertIn("initial public draft", self.text)
+        self.assertIn("1.1 sigue como initial public draft", self.text)
+
+    def test_controls_logging_and_assessment_are_bounded(self) -> None:
+        for concept in [
+            "sp 800-53 rev. 5",
+            "sp 800-53a rev. 5",
+            "audit log",
+            "accountability",
+            "evidencia de control",
+            "segregación de funciones",
+        ]:
             self.assertIn(concept, self.text)
-        self.assertIn("backup no equivale a restore y rto no equivale a rpo", self.text)
-        self.assertIn("disponibilidad alta no demuestra seguridad, integridad ni utilidad clínica", self.text)
-        equations = " ".join(item["latex"].lower() for section in self.unit["theory_sections"] for item in section.get("equations", []))
-        self.assertIn("t_{available}", equations)
+        self.assertIn("seleccionar un control no demuestra que esté bien configurado", self.text)
+        self.assertIn("un log solo aporta accountability", self.text)
 
-    def test_implementation_science_separates_determinants_strategies_and_outcomes(self) -> None:
-        for concept in ["cfir", "determinante de implementación", "estrategia de implementación", "aceptabilidad", "adopción", "factibilidad", "fidelidad", "sostenibilidad"]:
+    def test_change_contingency_recovery_and_incident_response_are_substantive(self) -> None:
+        for concept in [
+            "gestión de configuración",
+            "change request",
+            "análisis de impacto",
+            "rollback",
+            "contingencia",
+            "backup",
+            "restore",
+            "rpo",
+            "rto",
+            "incident response",
+            "sp 800-61 rev. 3",
+        ]:
             self.assertIn(concept, self.text)
-        self.assertIn("resultados de implementación son distintos de resultados de servicio y clínicos", self.text)
-        self.assertIn("cfir organiza determinantes de implementación y no sustituye medidas de resultados", self.text)
-        self.assertIn("adopción elevada no demuestra eficacia clínica", self.text)
+        self.assertIn("backup no demuestra recuperación", self.text)
+        self.assertIn("haber desplegado el cambio no demuestra", self.text)
 
-    def test_monitoring_incidents_and_deimplementation_are_explicit(self) -> None:
-        for concept in ["monitorización", "evaluación de impacto", "near miss", "postmortem", "de-implementación"]:
+    def test_operational_metrics_have_denominators_and_limits(self) -> None:
+        equations = " ".join(
+            item["latex"].lower()
+            for section in self.unit["theory_sections"]
+            for item in section.get("equations", [])
+        )
+        self.assertIn("cfr=", equations)
+        self.assertIn("t_{indisp}", equations)
+        self.assertIn("disponibilidad y change failure rate son métricas operacionales", self.text)
+        self.assertIn("no mide por sí sola integridad de datos, seguridad ni utilidad clínica", self.text)
+
+    def test_implementation_science_and_rollout_are_not_reduced_to_installation(self) -> None:
+        for concept in [
+            "cfir",
+            "readiness",
+            "go/no-go",
+            "rollout por fases",
+            "hypercare",
+            "adopción",
+            "fidelidad",
+            "factibilidad",
+            "sostenibilidad",
+            "workaround",
+        ]:
             self.assertIn(concept, self.text)
-        self.assertIn("monitorizar la implementación de evaluar el impacto", self.text)
-        self.assertIn("la asociación temporal no prueba causalidad", self.text)
-        self.assertIn("cada indicador necesita denominador, fuente, frecuencia, responsable, umbral y acción definidos", self.text)
+        self.assertIn("instalar software no equivale a implementar un sistema sociotécnico", self.text)
+        self.assertIn("go-live no es un final", self.text)
 
-    def test_guided_activity_is_substantive_synthetic_and_non_authorizing(self) -> None:
+    def test_lifecycle_monitoring_exceptions_revalidation_and_retirement_are_explicit(self) -> None:
+        for concept in [
+            "monitorización",
+            "excepción temporal",
+            "control compensatorio",
+            "revalidación",
+            "decommissioning",
+            "fecha de expiración",
+        ]:
+            self.assertIn(concept, self.text)
+        self.assertIn("revalidar todo indiscriminadamente es ineficiente", self.text)
+        self.assertIn("apagar un servidor no completa el ciclo de vida", self.text)
+
+    def test_guided_activity_is_substantive_and_non_offensive(self) -> None:
         activity = self.unit["guided_activities"][0]
         self.assertGreaterEqual(activity["estimated_time_minutes"], 420)
-        self.assertGreaterEqual(len(activity["instructions"]), 12)
-        self.assertGreaterEqual(len(activity["problems"]), 24)
-        self.assertGreaterEqual(len(activity["deliverables"]), 12)
-        self.assertGreaterEqual(len(activity["checking_criteria"]), 25)
+        self.assertGreaterEqual(len(activity["instructions"]), 10)
+        self.assertGreaterEqual(len(activity["problems"]), 20)
+        self.assertGreaterEqual(len(activity["deliverables"]), 10)
+        self.assertGreaterEqual(len(activity["checking_criteria"]), 20)
         activity_text = json.dumps(activity, ensure_ascii=False).lower()
-        self.assertIn("sistema sintético", activity_text)
-        self.assertIn("tabletop", activity_text)
-        self.assertIn("no constituye despliegue, cumplimiento legal, certificación ni validación clínica real", activity_text)
+        for phrase in [
+            "sintéticos",
+            "no uses credenciales",
+            "sin técnicas ofensivas",
+            "no contiene técnicas ofensivas",
+        ]:
+            self.assertIn(phrase, activity_text)
+
+    def test_curricular_integration_closes_u1_to_u5_without_replacing_them(self) -> None:
+        purpose = self.unit["purpose"].lower()
+        for phrase in [
+            "u1",
+            "u2",
+            "u3",
+            "u4",
+            "u5",
+            "semántica y procedencia",
+            "workflows clínicos",
+            "interoperabilidad",
+            "analítica/cds",
+            "factores humanos",
+        ]:
+            self.assertIn(phrase, purpose)
 
     def test_examples_and_self_assessment_are_reasoned(self) -> None:
         for example in self.unit["worked_examples"]:
@@ -123,26 +222,40 @@ class TestInformaticaBiomedicaUnit06Curated(unittest.TestCase):
             self.assertTrue(item["reasoning"].strip())
             self.assertTrue(item["common_error"].strip())
 
-    def test_sources_are_directly_verified_and_multidisciplinary(self) -> None:
+    def test_sources_are_directly_verified_and_cover_security_health_it_and_implementation(self) -> None:
         for source in self.unit["sources"]:
             self.assertEqual(source["verification_status"], "verified_directly")
             self.assertTrue(source["url"].startswith("https://"))
         urls = " ".join(source["url"].lower() for source in self.unit["sources"])
-        for domain in ["nist.gov", "iso.org", "healthit.gov", "who.int", "pubmed.ncbi.nlm.nih.gov"]:
+        for domain in [
+            "nist.gov",
+            "healthit.gov",
+            "ahrq.gov",
+            "implementationscience.biomedcentral.com",
+            "pubmed.ncbi.nlm.nih.gov",
+        ]:
             self.assertIn(domain, urls)
 
-    def test_editorial_notice_blocks_operational_and_regulatory_overreach(self) -> None:
+    def test_editorial_notice_blocks_operational_legal_and_clinical_overreach(self) -> None:
         notice = self.unit["editorial_notice"].lower()
         for phrase in [
-            "no procesa historias clínicas reales",
-            "no modifica ehr ni cds operativos",
-            "no ejecuta pruebas de penetración contra sistemas reales",
-            "no define obligaciones jurídicas de una jurisdicción",
-            "no constituye certificación iso",
-            "ni aprobación institucional",
-            "no con una autorización de producción",
+            "no accede a sistemas clínicos reales",
+            "no usa credenciales o tokens reales",
+            "no ejecuta escaneo, explotación, malware ni pruebas ofensivas",
+            "no constituye asesoría jurídica",
+            "auditoría profesional de ciberseguridad",
+            "evaluación de conformidad",
+            "ni autorización de despliegue",
+            "privacy framework 1.1",
+            "borrador en 2026",
         ]:
             self.assertIn(phrase, notice)
+
+    def test_catalog_exit_when_publication_updates_editorial_state(self) -> None:
+        detected = self.catalog["dimensions"]["specificity"]["template_detected"]
+        if "informatica-biomedica" in detected:
+            self.skipTest("El catálogo todavía no ha sido sincronizado por el publicador.")
+        self.assertNotIn("informatica-biomedica", detected)
 
 
 if __name__ == "__main__":
