@@ -90,7 +90,7 @@ class ImagenesBiomedicasAvanzadasIUnit04CuratedTests(unittest.TestCase):
 
     def test_common_errors_protect_high_impact_misinterpretations(self) -> None:
         errors = json.dumps(self.unit["common_errors"], ensure_ascii=False).casefold()
-        for phrase in ("cuentas reconstruidas como bq/ml", "random coincidences con scatter", "actividad residual", "osem más iteraciones", "suv como una propiedad intrínseca", "patlak desde el primer frame", "input function como ground truth", "generalizar desempeño de fantoma", "armonización con certificación clínica"):
+        for phrase in ("cuentas reconstruidas como bq/ml", "random coincidences con scatter", "actividad administrada neta sin considerar residuo", "osem más iteraciones", "suv como una propiedad intrínseca", "patlak desde el primer frame", "input function como ground truth", "generalizar desempeño de fantoma", "armonización con certificación clínica"):
             self.assertIn(phrase, errors)
 
     def test_sources_assessment_connections_and_scope(self) -> None:
