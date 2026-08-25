@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "historia-filosofia-ciencia" / "units" / "unit-02.json"
 MIRROR = ROOT / "data" / "generated_units" / "historia-filosofia-ciencia" / "unit-02.json"
+SUBJECT = ROOT / "data" / "subjects" / "gestion-etica-comunicacion" / "historia-filosofia-ciencia.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -154,6 +155,11 @@ class HistoriaFilosofiaCienciaUnit02CuratedTests(unittest.TestCase):
         self.assertIn("reservando u3 para falsación", self.text)
         self.assertIn("u3 abordará falsación, kuhn, lakatos", self.text)
         self.assertIn("u4 desarrollará medición, clasificación y objetividad", self.text)
+
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
+        subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
+        published = next(x for x in subject["detailed_units"] if x["unit"] == 2)
+        self.assertEqual(published["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
