@@ -27,7 +27,11 @@ jobs:
           import tarfile
           from pathlib import Path
 
-          raw = base64.b64decode(Path('.tmp/history_u6_payload.b64').read_text(encoding='utf-8').strip())
+          encoded = Path('.tmp/history_u6_payload.b64').read_text(encoding='utf-8').strip()
+          print(f'payload_base64_chars={len(encoded)}')
+          encoded += '=' * (-len(encoded) % 4)
+          raw = base64.b64decode(encoded, validate=True)
+          print(f'payload_decoded_bytes={len(raw)}')
           with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as tf:
               members = tf.getmembers()
               allowed = {
@@ -44,6 +48,7 @@ jobs:
           json.loads(source.read_text(encoding='utf-8'))
           json.loads(mirror.read_text(encoding='utf-8'))
           assert source.read_bytes() == mirror.read_bytes()
+          print(f'canonical_json_bytes={len(source.read_bytes())}')
           PY
           python -m unittest tests.test_historia_filosofia_ciencia_unit_06_curated
       - name: Commit curated unit
