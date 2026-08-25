@@ -77,7 +77,7 @@ class IngenieriaDatosBiomedicosUnit01CuratedTests(unittest.TestCase):
             "sampling frequency",
             "ganancia",
             "baseline",
-            "clock drift",
+            "deriva",
             "wfdb",
             "los huecos son información",
             "no debe rellenarse silenciosamente",
