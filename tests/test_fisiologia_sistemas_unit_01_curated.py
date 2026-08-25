@@ -134,7 +134,7 @@ class FisiologiaSistemasUnit01CuratedTests(unittest.TestCase):
             "evita repetirlos",
             "datos sintéticos",
             "no para sustituir esas unidades",
-            "no para interpretar casos reales de pacientes",
+            "ni para interpretar casos reales de pacientes",
         ):
             self.assertIn(phrase, notice)
 
