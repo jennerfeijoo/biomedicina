@@ -58,20 +58,36 @@ class FisiologiaSistemasUnit06CuratedTests(unittest.TestCase):
             self.assertIn(phrase, text)
 
     def test_validation_and_reproducibility_boundaries(self) -> None:
-        text = self.text
         for phrase in (
             "calibración, verificación y validación responden a preguntas distintas",
             "computacionalmente reproducible y fisiológicamente incorrecto",
             "formato estándar o una simulación reproducible no prueban corrección fisiológica",
         ):
-            self.assertIn(phrase, text)
+            self.assertIn(phrase, self.text)
 
-    def test_glossary_and_activity_are_substantive(self) -> None:
+    def test_glossary_is_disciplinary(self) -> None:
         glossary = {x["term"].casefold() for x in self.unit["glossary"]}
         self.assertGreaterEqual(len(glossary), 35)
-        for term in ("variable de estado", "aliasing", "identificabilidad estructural", "identificabilidad práctica",
-                     "verificación", "validación", "cellml", "sed-ml", "combine archive"):
+        for term in (
+            "variable de estado",
+            "aliasing",
+            "identificabilidad estructural",
+            "identificabilidad práctica",
+            "verificación",
+            "validación",
+            "incertidumbre estructural",
+            "multiescala",
+            "acoplamiento",
+        ):
             self.assertIn(term, glossary)
+
+    def test_reproducibility_standards_are_taught_without_certifying_truth(self) -> None:
+        text = json.dumps(self.unit["theory_sections"][4], ensure_ascii=False).casefold()
+        for phrase in ("cellml", "sed-ml", "combine", "biomodels", "physiome"):
+            self.assertIn(phrase, text)
+        self.assertIn("formato estándar o una simulación reproducible no prueban corrección fisiológica", self.text)
+
+    def test_activity_is_integrative_and_reproducible(self) -> None:
         activity = self.unit["guided_activities"][0]
         self.assertGreaterEqual(activity["estimated_time_minutes"], 360)
         self.assertGreaterEqual(len(activity["problems"]), 20)
@@ -95,8 +111,12 @@ class FisiologiaSistemasUnit06CuratedTests(unittest.TestCase):
         self.assertGreaterEqual(len(self.unit["self_assessment"]), 12)
         self.assertGreaterEqual(len(self.unit["biomedical_connections"]), 6)
         notice = self.unit["editorial_notice"].casefold()
-        for phrase in ("exclusivamente sintéticas", "no constituye modelo clínico individual",
-                       "gemelo digital validado", "cualquier transferencia a personas"):
+        for phrase in (
+            "exclusivamente sintéticas",
+            "no constituye modelo clínico individual",
+            "gemelo digital validado",
+            "cualquier transferencia a personas",
+        ):
             self.assertIn(phrase, notice)
 
 
