@@ -87,9 +87,9 @@ class ImagenesBiomedicasAvanzadasIUnit03CuratedTests(unittest.TestCase):
     def test_doppler_section_enforces_angle_sampling_and_modality_limits(self) -> None:
         text = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
         for phrase in (
-            "pulsed-wave",
-            "continuous-wave",
             "sample volume",
+            "pulse repetition frequency",
+            "continuous-wave",
             "prf",
             "nyquist",
             "aliasing",
