@@ -115,6 +115,10 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         unit = next(item for item in descriptor['detailed_units'] if item['unit'] == 5)
         self.assertEqual(unit['title'], self.data['title'])
         self.assertEqual(unit['description'], self.data['purpose'])
+        published_description = unit['description'].lower()
+        for concept in ['seudonimización', 'minimización', 'autorización', 'productos de datos']:
+            self.assertIn(concept, published_description)
+        self.assertNotIn('interoperabilidad', published_description)
 
         self.assertTrue(PUBLIC.exists())
         public_text = PUBLIC.read_text(encoding='utf-8').lower()
