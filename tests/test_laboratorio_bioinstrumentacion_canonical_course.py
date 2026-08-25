@@ -1,3 +1,4 @@
+# User-authored CI trigger after canonical corpus generation.
 from __future__ import annotations
 
 import json
