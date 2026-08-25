@@ -151,11 +151,12 @@ def test_u5_publication_matches_after_promotion():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(unit for unit in descriptor["detailed_units"] if unit["unit"] == 5)
-    if detail["description"] == source["purpose"] and PUBLIC.exists():
-        public = PUBLIC.read_text(encoding="utf-8").casefold()
-        for marker in ("data leakage", "cross-subject", "estado idle", "baseline congelado", "information transfer rate"):
-            assert marker in public
-        assert GENERIC not in public
+    assert detail["description"] == source["purpose"]
+    assert PUBLIC.exists()
+    public = PUBLIC.read_text(encoding="utf-8").casefold()
+    for marker in ("data leakage", "cross-subject", "estado idle", "baseline congelado", "information transfer rate"):
+        assert marker in public
+    assert GENERIC not in public
 
 
 if __name__ == "__main__":
