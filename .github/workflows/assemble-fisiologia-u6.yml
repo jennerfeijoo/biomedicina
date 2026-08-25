@@ -1,0 +1,44 @@
+name: Assemble temporary Fisiologia U6
+
+on:
+  push:
+    branches:
+      - codex/fisiologia-sistemas-u6-modelos-integradores
+    paths:
+      - '.tmp/u6_payload/**'
+      - '.github/workflows/assemble-fisiologia-u6.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/fisiologia-sistemas-u6-modelos-integradores
+      - name: Assemble and validate payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/u6_payload/part*.b64 | base64 -d > /tmp/fisiologia-u6.tar.gz
+          tar -xzf /tmp/fisiologia-u6.tar.gz -C .
+          python -m json.tool data/course_redevelopment/fisiologia-sistemas/units/unit-06.json >/dev/null
+          cmp data/course_redevelopment/fisiologia-sistemas/units/unit-06.json data/generated_units/fisiologia-sistemas/unit-06.json
+      - name: Commit assembled U6
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/course_redevelopment/fisiologia-sistemas/units/unit-06.json \
+                  data/generated_units/fisiologia-sistemas/unit-06.json \
+                  tests/test_fisiologia_sistemas_unit_06_curated.py
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Materializar Fisiologia de Sistemas U6'
+          git push origin HEAD:codex/fisiologia-sistemas-u6-modelos-integradores
