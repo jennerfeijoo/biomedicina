@@ -1,0 +1,40 @@
+name: Materialize HCE U6
+
+on:
+  push:
+    branches:
+      - codex/historias-clinicas-u6-implementacion-validacion
+    paths:
+      - '.github/workflows/materialize-hce-u6.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/historias-clinicas-u6-implementacion-validacion
+          fetch-depth: 0
+      - name: Reconstruct and validate U6
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/hce_u6/part01 .tmp/hce_u6/part02 .tmp/hce_u6/part03 .tmp/hce_u6/part04 .tmp/hce_u6/part05 .tmp/hce_u6/part06 | tr -d '\n' | base64 -d | gzip -d > /tmp/unit-06.json
+          echo 'e1d285bb5215b9f7146db97b7d2be63540e4054247938ed853c67a26c52dc985  /tmp/unit-06.json' | sha256sum -c -
+          python -m json.tool /tmp/unit-06.json >/dev/null
+          cp /tmp/unit-06.json data/course_redevelopment/historias-clinicas-terminologias-estandares/units/unit-06.json
+          cp /tmp/unit-06.json data/generated_units/historias-clinicas-terminologias-estandares/unit-06.json
+          cmp data/course_redevelopment/historias-clinicas-terminologias-estandares/units/unit-06.json data/generated_units/historias-clinicas-terminologias-estandares/unit-06.json
+      - name: Commit canonical U6 and cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/course_redevelopment/historias-clinicas-terminologias-estandares/units/unit-06.json data/generated_units/historias-clinicas-terminologias-estandares/unit-06.json
+          git rm -r .tmp/hce_u6 .github/workflows/materialize-hce-u6.yml
+          git commit -m 'Curar Historias Clínicas U6'
+          git push origin HEAD:codex/historias-clinicas-u6-implementacion-validacion
