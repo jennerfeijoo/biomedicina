@@ -123,3 +123,5 @@ class LaboratorioBioinstrumentacionUnit03CuratedTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Final user-authored validation trigger after public-site synchronization.
