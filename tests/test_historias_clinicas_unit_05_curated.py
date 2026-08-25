@@ -79,7 +79,7 @@ class HistoriasClinicasUnit05CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, text)
         self.assertIn("consent técnicamente válido no prueba", text)
-        self.assertIn("no implementa un motor de autorización", text)
+        self.assertIn("tampoco implementa un motor de autorización", text)
 
     def test_audit_and_provenance_have_distinct_roles(self) -> None:
         text = json.dumps(self.unit["theory_sections"][3], ensure_ascii=False).casefold()
