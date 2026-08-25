@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Final user-authored trigger after curated U2 generation.
+
 import json
 import unittest
 from pathlib import Path
