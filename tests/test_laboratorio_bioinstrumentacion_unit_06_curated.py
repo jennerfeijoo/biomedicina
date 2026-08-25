@@ -1,3 +1,4 @@
+# Final user-authored CI trigger after public synchronization.
 from __future__ import annotations
 
 import json
