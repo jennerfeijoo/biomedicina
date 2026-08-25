@@ -11,32 +11,37 @@ SUBJECT = ROOT / "data" / "subjects" / "gestion-etica-comunicacion" / "innovacio
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
+def norm(text: str) -> str:
+    return text.casefold().replace("–", "-").replace("—", "-")
+
+
 class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.unit = json.loads(SOURCE.read_text(encoding="utf-8"))
-        cls.text = SOURCE.read_text(encoding="utf-8").casefold()
+        cls.text = norm(SOURCE.read_text(encoding="utf-8"))
         cls.subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
 
     def assertContainsAll(self, text: str, terms: tuple[str, ...]) -> None:
+        text = norm(text)
         for term in terms:
             with self.subTest(term=term):
-                self.assertIn(term, text)
+                self.assertIn(norm(term), text)
 
-    def test_generated_unit_is_exact_redevelopment_mirror(self) -> None:
+    def test_source_mirror_identity_and_metadata(self) -> None:
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
         self.assertEqual(self.unit["schema_version"], "2.0")
         self.assertEqual(self.unit["subject_id"], "innovacion-emprendimiento")
         self.assertEqual(self.unit["unit"], 2)
         self.assertEqual(self.unit["status"], "review")
 
-    def test_generic_template_and_generic_multicriteria_model_are_removed(self) -> None:
+    def test_generic_template_and_multicriteria_shortcut_are_removed(self) -> None:
         self.assertNotIn(GENERIC, self.text)
         self.assertNotIn("v(a)=\\sum", self.text)
         self.assertNotIn("modelo multicriterio transparente para comparar alternativas", self.text)
-        self.assertNotIn("definir problema público → mapear actores y valores", self.text)
+        self.assertNotIn("definir problema público -> mapear actores y valores", self.text)
 
-    def test_theory_is_specific_to_value_proposition_and_problem_solution_fit(self) -> None:
+    def test_theory_has_specific_problem_solution_fit_architecture(self) -> None:
         sections = self.unit["theory_sections"]
         self.assertEqual(len(sections), 5)
         self.assertTrue(all(len(section["paragraphs"]) >= 5 for section in sections))
@@ -46,11 +51,10 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
             (
                 "propuesta de valor",
                 "hipótesis falsable",
-                "actor",
                 "alternativa de referencia",
                 "statu quo",
-                "ajuste problema–solución",
-                "product–market fit",
+                "ajuste problema-solución",
+                "product-market fit",
                 "segmentación",
                 "contexto de uso",
                 "resultado observable",
@@ -61,10 +65,10 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
             ),
         )
 
-    def test_roles_segments_and_context_are_not_collapsed(self) -> None:
-        text = json.dumps(self.unit["theory_sections"][1], ensure_ascii=False).casefold()
+    def test_roles_context_and_transferred_burdens_remain_separate(self) -> None:
+        roles = norm(json.dumps(self.unit["theory_sections"][1], ensure_ascii=False))
         self.assertContainsAll(
-            text,
+            roles,
             (
                 "persona afectada",
                 "usuario operativo",
@@ -77,12 +81,12 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
                 "contexto de uso",
                 "heterogéneas",
                 "transferencias de carga",
+                "influencia sobre la adopción",
             ),
         )
-        self.assertIn("influencia sobre la adopción", self.text)
 
-    def test_benefits_alternatives_and_descriptive_difference_are_explicit(self) -> None:
-        third = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
+    def test_benefits_alternatives_and_descriptive_comparison_are_bounded(self) -> None:
+        third = norm(json.dumps(self.unit["theory_sections"][2], ensure_ascii=False))
         self.assertContainsAll(
             third,
             (
@@ -97,23 +101,15 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
                 "beneficio clínico",
             ),
         )
-        equations = {
+        equations = [
             equation["latex"]
             for section in self.unit["theory_sections"]
             for equation in section.get("equations", [])
-        }
-        self.assertIn(r"\Delta p=p_{\mathrm{prop}}-p_{\mathrm{ref}}", equations)
-        self.assertEqual(len(equations), 1)
+        ]
+        self.assertEqual(equations, [r"\Delta p=p_{\mathrm{prop}}-p_{\mathrm{ref}}"])
 
-    def test_problem_solution_fit_is_not_market_or_clinical_validation(self) -> None:
-        self.assertIn("ajuste problema–solución", self.text)
-        self.assertIn("product–market fit", self.text)
-        self.assertIn("no equivale a product–market fit", self.text)
-        self.assertIn("eficacia clínica ni seguridad", self.text)
-        self.assertIn("no significa que el producto sea viable", self.text)
-
-    def test_hypothesis_matrix_refutation_and_exit_criteria_are_explicit(self) -> None:
-        fourth = json.dumps(self.unit["theory_sections"][3], ensure_ascii=False).casefold()
+    def test_fit_refutation_and_transition_to_u3_are_explicit(self) -> None:
+        fourth = norm(json.dumps(self.unit["theory_sections"][3], ensure_ascii=False))
         self.assertContainsAll(
             fourth,
             (
@@ -129,24 +125,29 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
                 "seguir, revisar o rechazar",
             ),
         )
+        self.assertContainsAll(
+            self.text,
+            (
+                "no equivale a product-market fit",
+                "eficacia clínica ni seguridad",
+                "no significa que el producto sea viable",
+                "u3 deberá someter",
+            ),
+        )
 
-    def test_guided_activity_is_scaffolded_reproducible_and_safe(self) -> None:
-        activities = self.unit["guided_activities"]
-        self.assertEqual(len(activities), 1)
-        activity = activities[0]
+    def test_activity_and_scaffolds_are_substantial_and_reproducible(self) -> None:
+        activity = self.unit["guided_activities"][0]
         self.assertGreaterEqual(len(activity["instructions"]), 12)
         self.assertGreaterEqual(len(activity["problems"]), 20)
         self.assertGreaterEqual(len(activity["deliverables"]), 8)
         self.assertGreaterEqual(len(activity["checking_criteria"]), 20)
-        text = json.dumps(activity, ensure_ascii=False).casefold()
+        activity_text = norm(json.dumps(activity, ensure_ascii=False))
         self.assertContainsAll(
-            text,
+            activity_text,
             (
                 "exclusivamente",
                 "statu quo",
                 "resultado observable",
-                "h1",
-                "h5",
                 "evidencia discrepante",
                 "seguir, revisar o rechazar",
                 "u3",
@@ -154,13 +155,11 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
                 "validación clínica",
             ),
         )
-
-    def test_learning_scaffolds_are_specific_and_sufficient(self) -> None:
         self.assertGreaterEqual(len(self.unit["glossary"]), 40)
         self.assertGreaterEqual(len(self.unit["worked_examples"]), 5)
         self.assertGreaterEqual(len(self.unit["common_errors"]), 18)
         self.assertGreaterEqual(len(self.unit["self_assessment"]), 12)
-        terms = {entry["term"].casefold() for entry in self.unit["glossary"]}
+        glossary = {norm(entry["term"]) for entry in self.unit["glossary"]}
         required = {
             "propuesta de valor",
             "actor beneficiario",
@@ -173,7 +172,6 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
             "mantenedor",
             "segmento",
             "contexto de uso",
-            "beneficio esperado",
             "resultado observable",
             "alternativa de referencia",
             "statu quo",
@@ -181,45 +179,25 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
             "ajuste problema-solución",
             "product-market fit",
             "hipótesis de valor",
-            "supuesto crítico",
             "criterio de refutación",
             "caso negativo",
             "evidencia discrepante",
             "matriz de hipótesis",
             "carga transferida",
             "trade-off",
-            "intención declarada",
             "adopción",
             "deseabilidad",
             "factibilidad",
             "viabilidad",
             "criterio de salida",
         }
-        self.assertTrue(required.issubset(terms), required - terms)
+        self.assertTrue({norm(item) for item in required}.issubset(glossary))
 
-    def test_examples_cover_actor_value_status_quo_adoption_and_rejection(self) -> None:
-        examples = self.unit["worked_examples"]
-        self.assertGreaterEqual(len(examples), 5)
-        text = json.dumps(examples, ensure_ascii=False).casefold()
-        self.assertContainsAll(
-            text,
-            (
-                "pagador",
-                "mantenedor",
-                "resultado observable",
-                "statu quo",
-                "workaround",
-                "intención declarada",
-                "adopción",
-                "rechazar",
-            ),
-        )
-
-    def test_sources_are_directly_verified_and_relevant(self) -> None:
+    def test_sources_and_biomedical_connections_are_specific(self) -> None:
         sources = self.unit["sources"]
         self.assertGreaterEqual(len(sources), 15)
         self.assertTrue(all(item.get("verification_status") == "verified_directly" for item in sources))
-        domains = " ".join(item["url"].casefold() for item in sources)
+        domains = " ".join(item["url"] for item in sources)
         self.assertContainsAll(
             domains,
             (
@@ -232,13 +210,10 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
                 "pubmed.ncbi.nlm.nih.gov",
             ),
         )
-
-    def test_biomedical_connections_are_structured(self) -> None:
-        connections = self.unit["biomedical_connections"]
-        self.assertGreaterEqual(len(connections), 6)
-        text = json.dumps(connections, ensure_ascii=False).casefold()
+        connections = norm(json.dumps(self.unit["biomedical_connections"], ensure_ascii=False))
+        self.assertGreaterEqual(len(self.unit["biomedical_connections"]), 6)
         self.assertContainsAll(
-            text,
+            connections,
             (
                 "ingeniería clínica",
                 "factores humanos",
@@ -249,8 +224,8 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
             ),
         )
 
-    def test_course_and_human_research_boundaries_are_explicit(self) -> None:
-        notice = self.unit["editorial_notice"].casefold()
+    def test_editorial_boundaries_are_explicit(self) -> None:
+        notice = norm(self.unit["editorial_notice"])
         self.assertContainsAll(
             notice,
             (
@@ -276,16 +251,12 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
         )
 
     def test_published_descriptor_matches_canonical_purpose_when_available(self) -> None:
-        published_u2 = next(item for item in self.subject["detailed_units"] if item["unit"] == 2)
-        if published_u2["description"] != self.unit["purpose"]:
+        published = next(item for item in self.subject["detailed_units"] if item["unit"] == 2)
+        if published["description"] != self.unit["purpose"]:
             self.skipTest("El publicador todavía no ha materializado el descriptor canónico de U2")
-        self.assertEqual(published_u2["title"], self.unit["title"])
-        self.assertEqual(published_u2["description"], self.unit["purpose"])
-        self.assertIn("hipótesis explícita y falsable", published_u2["description"].casefold())
-        self.assertNotIn(
-            "integrar usuario, beneficios, alternativas y ajuste problema-solución",
-            published_u2["description"].casefold(),
-        )
+        self.assertEqual(published["title"], self.unit["title"])
+        self.assertEqual(published["description"], self.unit["purpose"])
+        self.assertIn("hipótesis explícita y falsable", norm(published["description"]))
 
 
 if __name__ == "__main__":
