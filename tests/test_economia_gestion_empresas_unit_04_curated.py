@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "economia-gestion-empresas" / "units" / "unit-04.json"
 MIRROR = ROOT / "data" / "generated_units" / "economia-gestion-empresas" / "unit-04.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
-# Final user-authored trigger after successful U4 curation and cleanup.
+# Final user-authored trigger after publication metadata synchronization.
 
 
 class EconomiaGestionEmpresasUnit04CuratedTests(unittest.TestCase):
