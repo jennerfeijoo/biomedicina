@@ -1,0 +1,46 @@
+name: Temporary fix Ingeniería Neurosensorial U6 placeholder
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-neurosensorial-u6-validacion-neuroetica
+    paths:
+      - '.github/workflows/tmp-fix-neurosensorial-u6-placeholder.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/ingenieria-neurosensorial-u6-validacion-neuroetica
+          fetch-depth: 0
+      - name: Replace reserved placeholder phrase
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          paths = [
+              Path('data/course_redevelopment/ingenieria-neurosensorial/units/unit-06.json'),
+              Path('data/generated_units/ingenieria-neurosensorial/unit-06.json'),
+          ]
+          old = 'Afirmar eficacia clínica por completar una tarea virtual'
+          new = 'Afirmar eficacia clínica a partir del éxito en una tarea virtual'
+          for path in paths:
+              text = path.read_text(encoding='utf-8')
+              assert old in text
+              path.write_text(text.replace(old, new), encoding='utf-8')
+          assert paths[0].read_bytes() == paths[1].read_bytes()
+          assert 'por completar' not in paths[0].read_text(encoding='utf-8').casefold()
+          PY
+          git rm .github/workflows/tmp-fix-neurosensorial-u6-placeholder.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/course_redevelopment/ingenieria-neurosensorial/units/unit-06.json data/generated_units/ingenieria-neurosensorial/unit-06.json
+          git commit -m 'Corregir marcador reservado en Ingeniería Neurosensorial U6'
+          git push
