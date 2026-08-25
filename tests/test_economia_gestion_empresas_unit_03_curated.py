@@ -43,7 +43,8 @@ class EconomiaGestionEmpresasUnit03CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         self.assertIn("throughput observado", theory)
         self.assertIn("no es sinónimo de capacidad", theory)
-        self.assertIn("probar no equivale", theory)
+        self.assertIn("la prueba pequeña es diferente de la implementación permanente", theory)
+        self.assertIn("no autoriza desplegar el cambio", theory)
         self.assertIn("no reproduce cláusulas", theory)
         self.assertIn("no sustituye", theory)
 
