@@ -134,7 +134,7 @@ class IngenieriaDatosBiomedicosUnit03Curated(unittest.TestCase):
 
     def test_scope_does_not_claim_clinical_or_production_readiness(self) -> None:
         notice = normalized(self.data["editorial_notice"])
-        for term in ("datos exclusivamente sintéticos", "no conecta", "no configura credenciales", "no interpreta datos de pacientes"):
+        for term in ("datos exclusivamente sintéticos", "no conecta", "no configura credenciales", "ni interpreta datos de pacientes"):
             self.assertIn(term, notice)
         self.assertIn("revalidar versiones", notice)
 
