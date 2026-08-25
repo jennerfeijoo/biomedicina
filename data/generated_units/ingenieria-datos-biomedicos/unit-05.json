@@ -6,387 +6,430 @@
   "slug": "orquestacion-y-observabilidad",
   "title": "Orquestación y observabilidad",
   "status": "review",
-  "purpose": "Integrar pipelines, pruebas, logs y alertas para resolver un caso de operación confiable de procesos de datos con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Operar pipelines biomédicos reproducibles como sistemas temporales observables: modelar DAG, tareas, dependencias, runs e intervalos de datos; diseñar reintentos, backfill e idempotencia sin duplicar efectos; instrumentar logs, métricas y trazas correlacionables; definir SLI, SLO, alertas y criterios de recuperación; y reconstruir incidentes con evidencia de ejecución y linaje. La unidad consume los quality gates, manifests y procedencia de U4, pero no redefine calidad de datos; reserva validación de interoperabilidad, terminologías y contratos FHIR para U6. Todo el trabajo usa pipelines y datasets sintéticos, sin acceso a EHR, PACS, LIS, credenciales ni infraestructura clínica real.",
   "learning_objectives": [
-    "Definir pipelines, pruebas y logs y alertas mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte pipelines con pruebas y delimite el papel de logs y alertas.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre operación confiable de procesos de datos con incertidumbre y límites.",
-    "Transferir el método de Orquestación y observabilidad a un escenario nuevo y justificar qué debe revalidarse."
+    "Modelar un pipeline como DAG de tareas con dependencias explícitas, runs identificables, logical date e intervalo de datos, distinguiendo definición del flujo, ejecución concreta y producto generado.",
+    "Diseñar tareas idempotentes y políticas de retry y backoff que diferencien fallos transitorios de fallos deterministas o permanentes, evitando duplicados y efectos secundarios no controlados.",
+    "Planificar backfills acotados y reproducibles sobre intervalos de datos conocidos, con límites de concurrencia, checkpoints, deduplicación y evidencia de qué particiones fueron reprocesadas.",
+    "Instrumentar logs estructurados, métricas y trazas con run_id, trace_id y atributos consistentes, explicando qué pregunta responde cada señal y cómo se correlacionan durante una investigación.",
+    "Definir SLI, SLO, error budget y alertas accionables para frescura, éxito y latencia de un pipeline sintético, evitando alertas basadas únicamente en volumen de logs o anomalías no accionables.",
+    "Reconstruir un incidente desde síntoma hasta causa confirmada, relacionando telemetría, OpenLineage, quality gates de U4, runbook, recuperación y verificación posterior sin inferir causalidad clínica."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Orquestación y observabilidad",
+      "heading": "1. Orquestación temporal: DAG, tareas, dependencias, runs e intervalos de datos",
       "paragraphs": [
-        "La unidad «Orquestación y observabilidad» sitúa pipelines, pruebas y logs y alertas dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Ingeniería de Datos Biomédicos, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Orquestación y observabilidad» en Ingeniería de Datos Biomédicos, «pipelines», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Orquestación y observabilidad», «pruebas», aporta otra dimensión al problema de Ingeniería de Datos Biomédicos: Procedimientos planificados que producen evidencia sobre cumplimiento, comportamiento o error respecto a criterios definidos. Su relación con pipelines debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Orquestación y observabilidad» en Ingeniería de Datos Biomédicos, «logs y alertas», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Un pipeline orquestado no es simplemente una lista de scripts. Se representa como un grafo dirigido acíclico en el que cada tarea tiene entradas, salidas y dependencias explícitas. En sistemas como Apache Airflow, esas dependencias determinan qué tareas pueden ejecutarse y en qué orden. U5 usa el DAG como modelo operacional: describe coordinación y precedencia, pero no sustituye el linaje de datos de U4 ni demuestra que una transformación sea científicamente correcta.",
+        "Conviene separar la definición lógica del pipeline de una ejecución concreta. El DAG o job describe qué trabajo podría realizarse; un run identifica una instancia específica con estado, parámetros y evidencia temporal. Dos runs del mismo DAG pueden procesar intervalos distintos, usar versiones diferentes o terminar con resultados diferentes. Por eso cada salida educativa debe quedar asociada a un run_id estable y no solo al nombre general del pipeline.",
+        "El tiempo de orquestación requiere distinguir momento real de ejecución, logical date e intervalo de datos. En Airflow, el intervalo representa el periodo de datos que una ejecución debe procesar y la fecha lógica se relaciona con ese intervalo, no necesariamente con el instante de reloj en que el worker comenzó. Usar now() como sustituto indiscriminado rompe reproducibilidad cuando una tarea se reejecuta días después para el mismo periodo.",
+        "Una dependencia expresa una condición operacional, no causalidad biomédica. Si una tarea de normalización depende de una tarea de ingesta, el grafo indica que no debe comenzar antes de que la entrada esté disponible bajo la regla definida. No demuestra que la ingesta cause un fenómeno clínico ni que todas las columnas del output dependan de todas las columnas del input. Esa granularidad corresponde al linaje registrado en U4.",
+        "Un pipeline robusto hace explícito qué significa éxito. Que el proceso termine con código cero puede ser insuficiente si la salida está vacía, llega tarde o quedó bloqueada por un quality gate. U5 consume los checks de U4 como precondiciones o señales de ejecución y registra su resultado, pero mantiene la distinción entre salud operacional y calidad o validez de los datos.",
+        "El diseño reproducible incluye identificadores, parámetros, versión de código, intervalo, inputs y outputs esperados antes de programar la ejecución. El scheduler decide cuándo una tarea elegible puede correr; no decide por sí mismo si el resultado es apropiado para investigación biomédica. La salida de esta sección es un DAG sintético auditable con semántica temporal explícita."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Orquestación y observabilidad.",
-        "Relacionar pipelines, pruebas y logs y alertas mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Orquestación y observabilidad» dentro de Ingeniería de Datos Biomédicos, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Ingeniería de Datos Biomédicos, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre pipelines o pruebas debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Orquestación y observabilidad», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Ingeniería de Datos Biomédicos, la incertidumbre de «Orquestación y observabilidad» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: operación confiable de procesos de datos",
-      "paragraphs": [
-        "En la unidad «Orquestación y observabilidad» de Ingeniería de Datos Biomédicos, el caso conductor es operación confiable de procesos de datos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Orquestación y observabilidad» conecta pipelines con pruebas y utiliza logs y alertas como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «operación confiable de procesos de datos» en Ingeniería de Datos Biomédicos, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Orquestación y observabilidad» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de operación confiable de procesos de datos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Un DAG expresa dependencias operacionales entre tareas definidas.",
+        "Job o DAG y run concreto son entidades diferentes.",
+        "Logical date no equivale automáticamente al reloj de ejecución.",
+        "El intervalo de datos debe permanecer estable durante un replay.",
+        "Éxito del scheduler no demuestra calidad ni validez científica.",
+        "Cada salida crítica debe enlazarse con una ejecución identificable."
       ],
       "equations": [
         {
-          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
+          "latex": "T_{lag}=t_{available}-t_{interval\\ end}",
+          "meaning": "Retraso entre el final del intervalo de datos y la disponibilidad efectiva del producto; requiere definir ambas marcas temporales.",
           "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
+            "T_{lag}": "latencia o retraso de disponibilidad",
+            "t_{available}": "momento en que la salida cumple el criterio de disponibilidad",
+            "t_{interval end}": "fin del intervalo de datos correspondiente"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de operación confiable de procesos de datos antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Reintentos, backfill e idempotencia: recuperar sin duplicar efectos",
       "paragraphs": [
-        "La reproducibilidad de «Orquestación y observabilidad» en Ingeniería de Datos Biomédicos requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Orquestación y observabilidad» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Ingeniería de Datos Biomédicos separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Orquestación y observabilidad» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de pipelines, pruebas y logs y alertas debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Ingeniería de Datos Biomédicos.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre operación confiable de procesos de datos. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Ingeniería de Datos Biomédicos como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un retry es apropiado cuando existe una razón razonable para esperar que repetir la misma operación pueda cambiar el resultado, como una interrupción temporal de red o una dependencia transitoriamente indisponible. Repetir automáticamente una transformación con esquema incompatible, una credencial inválida o un bug determinista solo consume recursos y retrasa el diagnóstico. Por ello la política de reintento debe clasificar fallos y declarar cuáles son reintentables.",
+        "La idempotencia significa que repetir una operación con las mismas entradas y el mismo contexto no introduce efectos adicionales no deseados. En pipelines de datos puede implementarse escribiendo por partición reemplazable, usando claves de deduplicación, operaciones upsert bien definidas o staging seguido de commit. No significa que toda tarea produzca bytes idénticos si intervienen fuentes no fijadas, reloj actual o aleatoriedad no controlada.",
+        "El backoff separa intentos para evitar golpear repetidamente una dependencia que está fallando. Un esquema exponencial puede aumentar el retraso por intento y un jitter controlado reduce sincronización masiva entre workers. Estos patrones no convierten un error permanente en transitorio; necesitan límites de intentos, tiempo máximo y una transición explícita a estado fallido o cuarentena.",
+        "Un backfill reprocesa intervalos históricos definidos. Debe declarar rango, orden, comportamiento frente a runs ya existentes y máximo de ejecuciones concurrentes. Reprocesar un mes completo no equivale a pulsar rerun indiscriminadamente: el operador necesita saber qué particiones se regeneran, qué versión de código se usa y cómo se evita sobrescribir silenciosamente evidencia previa.",
+        "Los efectos secundarios son el principal riesgo de un replay. Una tarea que envía mensajes, inserta filas sin clave estable o modifica un recurso externo puede producir duplicados aunque el cálculo interno sea correcto. Antes de habilitar retries o backfills, U5 exige una estrategia de idempotencia y un fixture que simule la repetición para demostrar que el estado final sigue siendo el esperado.",
+        "Los checkpoints permiten reanudar un flujo sin repetir etapas costosas o ya confirmadas, pero también pueden ocultar incompatibilidades si se reutilizan después de cambiar código o esquema. Cada checkpoint educativo registra versión, intervalo y upstream asociado. Si cambia una dependencia material, se invalida o se justifica su reutilización de forma explícita."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "Retry sirve para fallos plausiblemente transitorios y acotados.",
+        "Errores deterministas requieren corrección antes de volver a ejecutar.",
+        "Idempotencia protege frente a efectos repetidos durante replays.",
+        "Backoff reduce presión pero no repara una causa permanente.",
+        "Backfill necesita rango, concurrencia y política de reprocess explícitos.",
+        "Checkpoints deben versionarse junto con contexto e inputs relevantes."
+      ],
+      "equations": [
+        {
+          "latex": "d_n=\\min(d_{max},d_0\\,2^n)+J_n",
+          "meaning": "Ejemplo educativo de backoff exponencial acotado con jitter; no prescribe parámetros universales.",
+          "variables": {
+            "d_n": "retraso antes del intento n",
+            "d_0": "retraso base",
+            "d_max": "límite máximo",
+            "J_n": "jitter controlado del intento n"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "3. Observabilidad: logs, métricas y trazas correlacionables",
+      "paragraphs": [
+        "La observabilidad busca responder preguntas sobre el comportamiento interno de un sistema a partir de señales emitidas durante su ejecución. OpenTelemetry distingue señales como traces, metrics y logs. U5 no las trata como sinónimos: un log registra un evento, una métrica resume mediciones a lo largo del tiempo y una traza representa el recorrido y relaciones temporales de una operación distribuida mediante spans.",
+        "Los logs son más útiles cuando están estructurados y contienen campos consistentes como timestamp, severity, service, task_id, run_id, event y reason_code. Un mensaje libre puede ayudar a una persona, pero dificulta agregación y correlación automática. Registrar identificadores de pacientes o payloads sensibles no es una práctica educativa aceptable: los ejercicios usan IDs sintéticos y metadata operacional mínima.",
+        "Las métricas permiten observar tendencias y agregados sin revisar evento por evento. Counters son adecuados para totales acumulativos, gauges para estados actuales y histogramas para distribuciones como duración. Elegir un tipo incorrecto puede producir conclusiones engañosas. Por ejemplo, el número acumulado de fallos no debe interpretarse como tasa sin considerar ventana y denominador.",
+        "Las trazas conectan spans de una operación y ayudan a localizar dónde se consumió tiempo o apareció un error entre componentes. Un trace_id correlaciona el recorrido; un span_id identifica una unidad dentro de ese recorrido. En un pipeline batch, la traza puede complementar run_id y task_id, pero no reemplaza el modelo Dataset–Job–Run usado por OpenLineage para dependencias de datos.",
+        "La correlación entre señales exige convenciones comunes. El mismo run_id puede aparecer en logs, etiquetas de métricas, eventos OpenLineage y artefactos de salida; trace_id puede enlazar componentes instrumentados. Sin esa disciplina, tener muchos logs y dashboards no garantiza observabilidad. La cantidad de telemetría no es una medida de calidad de la instrumentación.",
+        "La instrumentación también necesita límites. Alta cardinalidad en etiquetas puede volver costosas o inutilizables ciertas métricas, y registrar todo puede crear ruido o riesgo de exposición. U5 exige elegir atributos por preguntas operativas definidas y mantener datos sintéticos. La ausencia de errores en logs tampoco demuestra salud: un sistema silencioso puede estar atascado y requerir señales de progreso o frescura."
+      ],
+      "key_points": [
+        "Logs registran eventos; métricas resumen medidas; trazas conectan spans.",
+        "Identificadores compartidos permiten correlacionar señales durante incidentes.",
+        "Structured logs facilitan búsqueda sin justificar registrar datos sensibles.",
+        "Counters, gauges e histogramas responden preguntas operativas diferentes.",
+        "Más telemetría no equivale automáticamente a mayor observabilidad.",
+        "Silencio en logs puede coexistir con un pipeline detenido."
+      ],
+      "equations": [
+        {
+          "latex": "R_{fail}=\\frac{N_{failed\\ runs}}{N_{eligible\\ runs}}",
+          "meaning": "Fracción de runs elegibles que terminan en fallo dentro de una ventana definida.",
+          "variables": {
+            "R_{fail}": "tasa de fallo por run",
+            "N_{failed runs}": "runs fallidos",
+            "N_{eligible runs}": "runs incluidos en la ventana y alcance"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "4. SLI, SLO y alertas: detectar síntomas accionables con bajo ruido",
+      "paragraphs": [
+        "Un Service Level Indicator es una medida elegida para representar una dimensión observable del servicio o pipeline, mientras un Service Level Objective fija un objetivo para ese indicador durante una ventana. Para un pipeline biomédico sintético pueden definirse SLI de frescura, proporción de runs exitosos o latencia de disponibilidad. U5 no convierte estos objetivos educativos en compromisos de producción ni en requisitos clínicos.",
+        "El error budget expresa el margen compatible con un SLO y ayuda a razonar sobre cuánto incumplimiento puede tolerarse en la ventana definida. Un objetivo de 99.5 % implica conceptualmente un presupuesto de 0.5 % de eventos no buenos bajo esa definición. La utilidad depende de que good event, total event, población y ventana estén especificados; cambiar el denominador cambia el significado.",
+        "Google SRE propone observar latencia, tráfico, errores y saturación como cuatro señales generales útiles. En pipelines batch deben adaptarse con cuidado: tráfico puede ser volumen de particiones o registros, latencia puede ser tiempo hasta disponibilidad, errores pueden ser runs fallidos y saturación puede representarse por cola o capacidad limitada. Copiar métricas web sin traducir el sistema produce dashboards decorativos.",
+        "Una alerta debe corresponder a una condición que requiera acción, no a cualquier rareza. Alertar por cada excepción de log genera ruido y fatiga; una señal de síntoma persistente, agotamiento de presupuesto o incumplimiento de frescura suele ser más interpretable. Prometheus permite definir condiciones y una duración for antes de marcar una alerta como firing, pero la regla concreta debe justificarse con el contexto.",
+        "Los síntomas y las causas no deben confundirse. Una alerta de frescura dice qué servicio observable está degradado; CPU saturada, dependencia lenta o retry storm pueden ser causas posibles. El dashboard debe permitir pasar del síntoma a hipótesis comprobables, pero no etiquetar automáticamente la primera correlación temporal como root cause.",
+        "Los SLO y alertas de U5 se prueban con series sintéticas que incluyen fallo sostenido, pico breve, ausencia de tráfico y dependencia lenta. El estudiante debe medir precisión operacional de la alerta y ruido esperado. Un umbral que parece útil con tráfico alto puede ser inestable con pocos eventos, por lo que también se documentan casos límite."
+      ],
+      "key_points": [
+        "SLI mide una dimensión; SLO fija un objetivo contextual.",
+        "Error budget depende de ventana, denominador y definición de evento.",
+        "Golden signals necesitan adaptación al comportamiento de pipelines batch.",
+        "Alertas deben ser accionables y minimizar ruido evitable.",
+        "Síntoma observado y causa raíz requieren evidencias diferentes.",
+        "Umbrales deben probarse con escenarios normales y casos límite."
+      ],
+      "equations": [
+        {
+          "latex": "SLI_{good}=\\frac{N_{good}}{N_{total}}",
+          "meaning": "Proporción de eventos definidos como buenos dentro de una ventana y alcance explícitos.",
+          "variables": {
+            "SLI_{good}": "indicador de eventos buenos",
+            "N_{good}": "eventos que cumplen el criterio",
+            "N_{total}": "eventos elegibles en la ventana"
+          }
+        },
+        {
+          "latex": "B_{error}=1-SLO",
+          "meaning": "Forma conceptual del error budget como fracción permitida de eventos no buenos para un objetivo expresado como proporción.",
+          "variables": {
+            "B_{error}": "presupuesto fraccional de error",
+            "SLO": "objetivo de nivel de servicio como proporción"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "5. Incidentes, RunEvent, recuperación y verificación posterior",
+      "paragraphs": [
+        "Un incidente operacional se investiga reconstruyendo una línea temporal verificable: qué síntoma apareció, qué runs y tareas estaban activos, qué cambios precedieron el evento, qué dependencias se afectaron y qué acciones modificaron el estado. U5 evita llamar root cause a la primera anomalía observada. La causa debe sostenerse con evidencia que explique el mecanismo del fallo y sea compatible con los datos.",
+        "OpenLineage permite registrar RunEvent asociados con Job, Run y datasets de entrada o salida. Estados como START, RUNNING, COMPLETE, ABORT o FAIL ayudan a reconstruir el ciclo de ejecución. Estos eventos complementan los logs y las trazas: especifican metadata de la ejecución y sus datasets, pero no sustituyen las métricas de servicio ni prueban que un output sea clínicamente válido.",
+        "Un runbook convierte una alerta conocida en pasos verificables: confirmar alcance, proteger outputs, revisar dependencias, decidir retry o quarantine, recuperar y comprobar criterios posteriores. Un runbook no debe automatizar ciegamente una acción destructiva. En la actividad educativa, toda recuperación trabaja sobre copias sintéticas y cada paso tiene precondición, resultado esperado y condición de parada.",
+        "La recuperación puede consistir en retry, replay desde checkpoint, backfill acotado, corrección de configuración o publicación de una nueva release. La elección depende de la causa y de la idempotencia demostrada. Si un quality gate de U4 bloqueó datos por contenido inválido, reintentar el mismo input sin corregirlo no es recuperación; solo repite el defecto.",
+        "Después de recuperar, se verifica el sistema y el producto. Debe comprobarse que el pipeline vuelve a progresar, que la frescura entra en rango, que no existen duplicados, que los quality gates relevantes pasan y que los outputs afectados fueron regenerados de forma trazable. Cerrar el incidente solo porque desapareció una alerta deja abierta la posibilidad de corrupción silenciosa.",
+        "El cierre incluye un postmortem educativo sin culpabilización personal: impacto técnico, timeline, causa confirmada, factores contribuyentes, señales que funcionaron o fallaron, acciones correctivas y pruebas que evitarán recurrencia. No se infiere daño a pacientes porque el escenario es sintético. U6 recibirá productos operativamente trazables para estudiar interoperabilidad y validación de contratos."
+      ],
+      "key_points": [
+        "Timeline verificable precede cualquier declaración de causa raíz.",
+        "RunEvent documenta estados de ejecución y datasets relacionados.",
+        "Runbook define acciones, precondiciones y criterios de parada.",
+        "Recuperación depende de causa, idempotencia y alcance afectado.",
+        "Desaparición de la alerta no demuestra recuperación completa.",
+        "Postmortem transforma evidencia del incidente en acciones comprobables."
+      ],
+      "equations": [
+        {
+          "latex": "MTTR=\\frac{1}{N}\\sum_{i=1}^{N}(t_{recover,i}-t_{detect,i})",
+          "meaning": "Promedio educativo del tiempo desde detección hasta recuperación para incidentes comparables; no debe ocultar distribución ni severidad.",
+          "variables": {
+            "MTTR": "tiempo medio de recuperación",
+            "t_{recover,i}": "momento de recuperación verificada",
+            "t_{detect,i}": "momento de detección del incidente i",
+            "N": "número de incidentes comparables"
+          }
+        }
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "pipelines",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "pruebas",
-      "definition": "Procedimientos planificados que producen evidencia sobre cumplimiento, comportamiento o error respecto a criterios definidos."
-    },
-    {
-      "term": "logs y alertas",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Orquestación y observabilidad",
-      "definition": "Dominio de estudio que integra pipelines, pruebas, logs y alertas para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de operación confiable de procesos de datos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"DAG","definition":"Grafo dirigido acíclico que representa tareas y dependencias sin ciclos."},
+    {"term":"task","definition":"Unidad ejecutable de trabajo dentro de un pipeline orquestado."},
+    {"term":"dependency","definition":"Relación operacional que condiciona cuándo una tarea puede ejecutarse."},
+    {"term":"scheduler","definition":"Componente que determina qué ejecuciones o tareas elegibles se programan."},
+    {"term":"job","definition":"Definición lógica de un trabajo que puede ejecutarse múltiples veces."},
+    {"term":"run","definition":"Ejecución concreta de un job o DAG con identidad y estado propios."},
+    {"term":"run_id","definition":"Identificador estable de una ejecución concreta usado para correlacionar evidencia."},
+    {"term":"logical date","definition":"Referencia lógica asociada con el intervalo procesado, distinta del reloj real de inicio."},
+    {"term":"data interval","definition":"Periodo de datos que una ejecución programada representa o procesa."},
+    {"term":"catchup","definition":"Creación programada de ejecuciones históricas faltantes según la semántica del orquestador."},
+    {"term":"retry","definition":"Nuevo intento de una operación después de un fallo bajo una política explícita."},
+    {"term":"retry budget","definition":"Límite de intentos o tiempo destinado a reintentos antes de fallar."},
+    {"term":"transient failure","definition":"Fallo temporal para el que repetir puede razonablemente cambiar el resultado."},
+    {"term":"permanent failure","definition":"Fallo que persiste sin corregir causa, configuración, código o dato."},
+    {"term":"deterministic failure","definition":"Fallo reproducible con las mismas entradas y condiciones."},
+    {"term":"backoff","definition":"Espera creciente o controlada entre reintentos para reducir presión sobre dependencias."},
+    {"term":"jitter","definition":"Variación controlada del tiempo de reintento para evitar sincronización de múltiples workers."},
+    {"term":"idempotency","definition":"Propiedad por la que repetir una operación no añade efectos secundarios no deseados."},
+    {"term":"backfill","definition":"Reprocesamiento explícito de intervalos históricos bajo reglas y límites definidos."},
+    {"term":"reprocess behavior","definition":"Política que determina qué hacer cuando ya existe un run para un intervalo histórico."},
+    {"term":"checkpoint","definition":"Estado intermedio identificable desde el que puede reanudarse una ejecución compatible."},
+    {"term":"deduplication key","definition":"Clave estable usada para reconocer efectos o registros repetidos."},
+    {"term":"worker","definition":"Proceso o recurso que ejecuta tareas programadas por el orquestador."},
+    {"term":"queue","definition":"Cola de trabajo pendiente cuya longitud puede servir como señal de saturación."},
+    {"term":"observability","definition":"Capacidad de investigar el estado interno de un sistema a partir de señales emitidas."},
+    {"term":"telemetry","definition":"Conjunto de señales operacionales como logs, métricas y trazas."},
+    {"term":"structured log","definition":"Registro de evento con campos y tipos consistentes además de un mensaje."},
+    {"term":"metric","definition":"Medida capturada en runtime y agregable a lo largo del tiempo."},
+    {"term":"counter","definition":"Métrica acumulativa adecuada para contar eventos monotónicos."},
+    {"term":"gauge","definition":"Métrica que representa un valor actual que puede subir o bajar."},
+    {"term":"histogram","definition":"Agregación de una distribución de medidas, por ejemplo duración de tareas."},
+    {"term":"trace","definition":"Representación del recorrido de una operación a través de componentes."},
+    {"term":"span","definition":"Unidad temporal dentro de una traza con atributos, inicio y final."},
+    {"term":"trace_id","definition":"Identificador que correlaciona spans pertenecientes a la misma traza."},
+    {"term":"span_id","definition":"Identificador de un span concreto dentro de una traza."},
+    {"term":"correlation_id","definition":"Identificador compartido entre señales o componentes para facilitar investigación."},
+    {"term":"OpenTelemetry","definition":"Marco abierto para generar, recolectar y exportar señales de observabilidad."},
+    {"term":"SLI","definition":"Indicador cuantitativo elegido para representar una dimensión del servicio."},
+    {"term":"SLO","definition":"Objetivo definido para un SLI durante una ventana y alcance concretos."},
+    {"term":"error budget","definition":"Margen de eventos no buenos compatible con un SLO definido."},
+    {"term":"latency","definition":"Tiempo que tarda una operación o servicio bajo una definición concreta."},
+    {"term":"traffic","definition":"Demanda o volumen que atraviesa el sistema durante una ventana."},
+    {"term":"errors","definition":"Eventos que incumplen la definición operacional de éxito."},
+    {"term":"saturation","definition":"Grado en que un recurso limitante se aproxima a su capacidad."},
+    {"term":"alert","definition":"Notificación asociada con una condición operacional que requiere atención o acción."},
+    {"term":"alert fatigue","definition":"Pérdida de atención causada por exceso de alertas poco accionables o ruidosas."},
+    {"term":"runbook","definition":"Procedimiento operativo con verificaciones y acciones para un incidente conocido."},
+    {"term":"incident","definition":"Evento operacional que degrada un servicio o producto respecto de criterios definidos."},
+    {"term":"root cause","definition":"Causa confirmada mediante evidencia suficiente para explicar el mecanismo del incidente."},
+    {"term":"contributing factor","definition":"Condición que favorece un incidente sin ser necesariamente su única causa."},
+    {"term":"recovery","definition":"Restauración verificada del comportamiento y productos dentro de criterios definidos."},
+    {"term":"postmortem","definition":"Análisis retrospectivo estructurado del incidente, evidencia y acciones correctivas."},
+    {"term":"OpenLineage","definition":"Estándar abierto para metadata de linaje y eventos de ejecución de datos."},
+    {"term":"RunEvent","definition":"Evento OpenLineage que describe un cambio de estado de una ejecución."},
+    {"term":"freshness","definition":"Desfase entre el periodo que un producto representa y su disponibilidad efectiva."},
+    {"term":"pipeline lag","definition":"Retraso operacional entre el intervalo esperado y la salida disponible."},
+    {"term":"heartbeat","definition":"Señal periódica que demuestra actividad o progreso de un componente."},
+    {"term":"quarantine","definition":"Estado en el que datos u outputs quedan separados hasta resolver un hallazgo."},
+    {"term":"quality gate","definition":"Decisión de U4 que permite, advierte, pone en cuarentena o bloquea datos según checks."},
+    {"term":"replay","definition":"Nueva ejecución de trabajo previo bajo inputs, versiones e intervalo identificados."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Orquestación y observabilidad",
-      "scenario": "Un equipo propone estudiar operación confiable de procesos de datos, pero su pregunta mezcla pipelines, pruebas y logs y alertas sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de pipelines, pruebas y logs y alertas.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-      ]
+      "title":"Retry transitorio frente a fallo determinista",
+      "scenario":"Una tarea sintética falla una vez por dependencia temporal y otra falla siempre por una columna obligatoria ausente.",
+      "steps":["Clasificar ambos errores antes de reintentar.","Aplicar un retry acotado solo al fallo temporal.","Enviar el fallo de esquema a quarantine con reason_code y evidencia."],
+      "result":"El fallo temporal se recupera; el fallo determinista se detiene sin consumir reintentos inútiles.",
+      "interpretation":"Retry es una política de recuperación condicionada, no un sustituto de corregir datos o código."
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre pipelines y pruebas en el caso de operación confiable de procesos de datos; una condición vinculada con logs y alertas podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar logs y alertas como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title":"Backfill idempotente de siete intervalos",
+      "scenario":"Siete particiones históricas deben regenerarse después de corregir una transformación sintética.",
+      "steps":["Fijar versión de código y rango histórico.","Ejecutar primero un dry run y limitar concurrencia.","Escribir cada partición con clave estable y comprobar ausencia de duplicados."],
+      "result":"Las siete particiones quedan regeneradas y cada una conserva run_id y versión.",
+      "interpretation":"El backfill es auditable porque el intervalo y la estrategia de idempotencia estaban definidos antes de ejecutar."
+    },
+    {
+      "title":"Correlación de logs, métricas y trazas",
+      "scenario":"Un pipeline presenta aumento de latencia sin incremento inicial de errores.",
+      "steps":["Localizar el SLI de latencia por run.","Usar trace_id para identificar el span lento.","Revisar logs estructurados de la dependencia asociada y contrastar saturación."],
+      "result":"La evidencia converge en una dependencia sintética lenta sin confundir la correlación con causalidad hasta reproducirla.",
+      "interpretation":"Las señales se complementan; ninguna por sí sola responde todas las preguntas."
+    },
+    {
+      "title":"Alerta de frescura accionable",
+      "scenario":"Un pipeline horario deja de publicar una salida durante tres intervalos, pero no genera excepciones nuevas en logs.",
+      "steps":["Definir freshness respecto del fin del data interval.","Configurar una alerta sintética por incumplimiento sostenido.","Comprobar heartbeat y cola para separar proceso detenido de retraso downstream."],
+      "result":"La alerta detecta el problema aunque los logs permanezcan silenciosos.",
+      "interpretation":"Ausencia de errores registrados no equivale a salud operacional."
+    },
+    {
+      "title":"Recuperación con quality gate bloqueante",
+      "scenario":"Una release sintética termina técnicamente, pero U4 marca una unidad incompatible como block.",
+      "steps":["No publicar el output aunque el scheduler marque la tarea como ejecutada.","Corregir el input y crear nueva versión sin sobrescribir la evidencia previa.","Reprocesar el intervalo y verificar quality gate, frescura y duplicados."],
+      "result":"La nueva ejecución queda operativamente saludable y supera el gate de calidad relevante.",
+      "interpretation":"Éxito operacional y calidad de datos son capas distintas que deben verificarse juntas al cerrar un incidente."
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
-      "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+      "title":"Laboratorio integrador: operar, observar y recuperar un pipeline biomédico sintético",
+      "estimated_time_minutes":480,
+      "instructions":[
+        "Trabajar exclusivamente con datasets sintéticos y servicios locales simulados; no conectar EHR, PACS, LIS ni credenciales reales.",
+        "Partir del contrato, quality gates, manifest y run_id definidos en U4 en lugar de recrear una nueva definición de calidad.",
+        "Modelar el pipeline como DAG con al menos seis tareas, dependencias y data intervals explícitos.",
+        "Separar fallos transitorios, deterministas y de calidad antes de diseñar retries.",
+        "Demostrar idempotencia mediante reejecución controlada y comparación del estado final.",
+        "Instrumentar logs estructurados, métricas y trazas usando identificadores correlacionables.",
+        "Definir SLI, SLO y umbrales exclusivamente educativos, con ventana y denominador explícitos.",
+        "Construir al menos un incidente de cada tipo: dependencia lenta, fallo transitorio, fallo permanente y quality gate bloqueante.",
+        "Aplicar recuperación sobre copias sintéticas y conservar evidencia antes y después.",
+        "Finalizar con revisión por pares del timeline, causa y verificación de recuperación."
       ],
-      "problems": [
-        "Define pipelines mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo pruebas modifica o complementa a pipelines.",
-        "Propón una prueba que distinga el papel de logs y alertas de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+      "problems":[
+        "Definir el DAG con tareas ingest, validate_gate, transform, aggregate, publish y audit.",
+        "Declarar dependencias y explicar qué condición habilita cada tarea downstream.",
+        "Asignar run_id, logical date y data interval a tres ejecuciones consecutivas.",
+        "Demostrar con un ejemplo por qué el reloj real now() no debe sustituir el data interval en un replay.",
+        "Introducir un fallo transitorio sintético y diseñar retry budget con backoff y condición de abandono.",
+        "Introducir un fallo determinista de esquema y demostrar que no debe reintentarse automáticamente.",
+        "Implementar una escritura idempotente y ejecutar dos veces el mismo intervalo.",
+        "Detectar y cuantificar cualquier duplicado producido por una implementación no idempotente de contraste.",
+        "Planificar un backfill de siete intervalos con rango, orden y límite de concurrencia.",
+        "Crear un checkpoint y documentar cuándo debe invalidarse por cambio de código o esquema.",
+        "Emitir logs estructurados con timestamp, task_id, run_id, severity, event y reason_code.",
+        "Definir al menos cuatro métricas: runs totales, runs fallidos, duración y tamaño de cola.",
+        "Instrumentar una traza sintética con trace_id y al menos cuatro spans correlacionados.",
+        "Relacionar run_id entre logs, eventos OpenLineage y artefactos de salida.",
+        "Definir un SLI de frescura con numerador, denominador y ventana.",
+        "Definir un SLI de éxito de runs y un SLO educativo para una ventana determinada.",
+        "Calcular el error budget conceptual y explicar qué eventos consumen presupuesto.",
+        "Adaptar latency, traffic, errors y saturation al pipeline batch sintético.",
+        "Crear una alerta de frescura y otra de error sostenido, justificando por qué son accionables.",
+        "Demostrar un caso en que logs sin errores coexisten con pipeline detenido.",
+        "Construir un timeline de incidente con symptom, hipótesis, evidencia, causa confirmada y acciones.",
+        "Usar RunEvent START, COMPLETE y FAIL de OpenLineage para reconstruir al menos dos ejecuciones.",
+        "Redactar un runbook con precondiciones, acciones, criterios de parada y rollback educativo.",
+        "Recuperar un fallo mediante retry y otro mediante backfill o replay, justificando la diferencia.",
+        "Verificar después de la recuperación frescura, duplicados, quality gates y outputs afectados.",
+        "Redactar un postmortem con factores contribuyentes y acciones preventivas comprobables."
       ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+      "deliverables":[
+        "Diagrama DAG con dependencias y semántica temporal.",
+        "Tabla de runs con run_id, logical date, data interval, estado y versión.",
+        "Política de retries y backoff con matriz de errores reintentables y no reintentables.",
+        "Prueba reproducible de idempotencia y reporte de duplicados.",
+        "Plan y evidencia del backfill histórico.",
+        "Esquema de logs estructurados y muestra sintética.",
+        "Catálogo de métricas con tipo, unidad, etiquetas y pregunta operacional.",
+        "Traza sintética y tabla de correlación trace_id, run_id y task_id.",
+        "Ficha SLI, SLO y error budget con ventana y denominadores.",
+        "Reglas de alerta y justificación de accionabilidad.",
+        "Timeline y runbook del incidente.",
+        "Postmortem y checklist de recuperación verificada."
       ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: operación confiable de procesos de datos",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para pipelines, pruebas y logs y alertas.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de operación confiable de procesos de datos y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte pipelines, pruebas y logs y alertas.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+      "checking_criteria":[
+        "El DAG contiene al menos seis tareas y no presenta ciclos.",
+        "Cada dependencia tiene una condición operacional explicada.",
+        "Run, job o DAG y dataset se distinguen explícitamente.",
+        "Logical date y data interval no se confunden con la hora real de inicio.",
+        "El retry budget es finito y no se aplica al fallo determinista.",
+        "Backoff se presenta como control de presión, no como corrección de causa.",
+        "La reejecución idempotente no produce efectos adicionales.",
+        "El caso no idempotente demuestra por qué el replay puede duplicar efectos.",
+        "El backfill declara rango y máximo de concurrencia.",
+        "Los checkpoints conservan versión y contexto.",
+        "Los logs son estructurados y no incluyen datos identificables.",
+        "Las métricas usan tipos apropiados y unidades documentadas.",
+        "La traza tiene trace_id y spans con relaciones coherentes.",
+        "run_id permite correlacionar al menos tres tipos de evidencia.",
+        "SLI de frescura declara evento bueno, total y ventana.",
+        "SLI de éxito distingue runs elegibles de exclusiones justificadas.",
+        "El SLO se etiqueta como educativo y no como compromiso de producción.",
+        "El error budget se deriva de una definición explícita.",
+        "Las cuatro golden signals están adaptadas al pipeline y no copiadas mecánicamente.",
+        "Las alertas son accionables y tienen condición de resolución.",
+        "Existe un ejemplo de silencio en logs con servicio degradado.",
+        "Symptom, hipótesis y root cause aparecen separados en el timeline.",
+        "OpenLineage RunEvent se usa como metadata operacional y no como verdad clínica.",
+        "El runbook incluye condiciones de parada y verificación.",
+        "La recuperación comprueba freshness, duplicados y quality gates.",
+        "El postmortem contiene acciones verificables y no atribuye daño clínico a datos sintéticos.",
+        "U4 permanece como dueño de calidad y procedencia y U6 como dueño de interoperabilidad.",
+        "No se conectan sistemas clínicos reales ni se declaran garantías de producción."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar pipelines como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar pipelines en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre pipelines y pruebas demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir logs y alertas después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Orquestación y observabilidad al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"error":"Reintentar todos los fallos","correction":"Clasificar primero si el fallo es transitorio, permanente o determinista."},
+    {"error":"Usar retries infinitos","correction":"Definir un retry budget y una salida fallida o cuarentena."},
+    {"error":"Confundir backoff con reparación","correction":"Usar backoff para reducir presión mientras la causa sigue siendo investigada."},
+    {"error":"Activar backfill sin idempotencia","correction":"Demostrar reejecución segura o usar estrategia explícita de deduplicación."},
+    {"error":"Usar now() como fecha del dato","correction":"Anclar la lógica al data interval o timestamp del evento correspondiente."},
+    {"error":"Confundir DAG con linaje de columnas","correction":"Usar el DAG para ejecución y el linaje de U4 para dependencias de datos."},
+    {"error":"Marcar éxito por exit code únicamente","correction":"Añadir criterios de output, freshness y quality gates."},
+    {"error":"Registrar payload biomédico en logs","correction":"Limitar logs a metadata operacional sintética y minimizada."},
+    {"error":"Usar counter como valor instantáneo","correction":"Elegir instrumento según semántica temporal de la medida."},
+    {"error":"Añadir labels de cardinalidad ilimitada","correction":"Restringir atributos a dimensiones operativas controladas."},
+    {"error":"Confundir logs con métricas","correction":"Usar eventos para detalle y métricas para agregados temporales."},
+    {"error":"Confundir trace con lineage","correction":"Usar trazas para recorrido operacional y lineage para dependencias de datos."},
+    {"error":"Asumir salud por ausencia de errores","correction":"Añadir heartbeat, freshness o señal de progreso."},
+    {"error":"Alertar por cada excepción","correction":"Diseñar alertas alrededor de síntomas accionables y sostenidos."},
+    {"error":"Llamar root cause a la primera correlación","correction":"Confirmar mecanismo con evidencia o reproducción."},
+    {"error":"Cerrar incidente al desaparecer la alerta","correction":"Verificar outputs, duplicados, quality gates y frescura."},
+    {"error":"Reutilizar checkpoint incompatible","correction":"Invalidarlo cuando cambien inputs, esquema o código material."},
+    {"error":"Tratar SLO educativo como contrato productivo","correction":"Declarar contexto, ventana y alcance estrictamente sintéticos."},
+    {"error":"Usar OpenLineage como prueba de causalidad clínica","correction":"Limitar RunEvent y lineage a metadata de ejecución y dependencia."},
+    {"error":"Recrear calidad en U5","correction":"Consumir los gates de U4 y reservar interoperabilidad formal para U6."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar operación confiable de procesos de datos?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan pipelines y pruebas?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; logs y alertas puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre logs y alertas?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre operación confiable de procesos de datos?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Orquestación y observabilidad?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question":"¿Qué diferencia un DAG de un run?","answer":"El DAG define trabajo y dependencias; el run es una ejecución concreta con identidad, intervalo, estado y evidencia."},
+    {"question":"¿Cuándo tiene sentido un retry?","answer":"Cuando el fallo puede ser transitorio y repetir bajo una política acotada puede cambiar el resultado."},
+    {"question":"¿Por qué la idempotencia importa en backfill?","answer":"Porque un replay puede repetir efectos y crear duplicados si la operación no es segura frente a reejecución."},
+    {"question":"¿Qué diferencia logical date de hora real?","answer":"La logical date referencia el intervalo representado por el run; la hora real describe cuándo se ejecutó físicamente."},
+    {"question":"¿Logs, métricas y trazas son intercambiables?","answer":"No. Registran eventos, agregan mediciones y conectan recorridos respectivamente, aunque puedan correlacionarse."},
+    {"question":"¿Qué demuestra un trace_id?","answer":"Permite relacionar spans de una operación; no demuestra linaje de datos ni causalidad clínica."},
+    {"question":"¿Por qué no basta que los logs no tengan errores?","answer":"Porque un pipeline puede estar detenido, retrasado o sin progreso y no emitir excepciones."},
+    {"question":"¿Qué debe definir un SLI?","answer":"Evento bueno, población total, ventana, unidad y método de medición."},
+    {"question":"¿Qué es un error budget?","answer":"El margen de eventos no buenos compatible con un SLO definido durante una ventana concreta."},
+    {"question":"¿Una alerta identifica automáticamente root cause?","answer":"No. Señala un síntoma o condición; la causa necesita investigación y evidencia adicional."},
+    {"question":"¿Qué aporta OpenLineage RunEvent en U5?","answer":"Permite reconstruir estados de una ejecución y relacionarla con Job, Run e inputs y outputs."},
+    {"question":"¿Cuándo se considera recuperado un pipeline?","answer":"Cuando vuelve a progresar y además se verifican freshness, ausencia de duplicados, gates y outputs afectados."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Operación confiable de procesos de datos."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"domain":"Datos longitudinales clínicos sintéticos","connection":"Los data intervals y backfills permiten reproducir ventanas históricas de observaciones sin usar reloj actual.","boundary":"No se conectan EHR ni se procesan pacientes reales."},
+    {"domain":"Laboratorio biomédico simulado","connection":"Retries y freshness permiten estudiar retrasos de entregas y dependencias de forma operacional.","boundary":"No se infiere validez analítica ni estado de instrumentos."},
+    {"domain":"Datos de dispositivos sintéticos","connection":"Heartbeats, colas y lag permiten observar flujos de telemetría simulados.","boundary":"No se monitorizan dispositivos médicos reales ni seguridad clínica."},
+    {"domain":"FHIR educativo","connection":"run_id y telemetry pueden acompañar transformaciones FHIR ficticias hasta U6.","boundary":"La validación FHIR y terminologías pertenecen a U6."},
+    {"domain":"Analítica biomédica reproducible","connection":"Backfills idempotentes y manifests de U4 ayudan a regenerar features con historia auditable.","boundary":"Reproducción operacional no valida modelos predictivos."},
+    {"domain":"Gobernanza e incidentes de datos","connection":"RunEvent, lineage y postmortem permiten delimitar outputs afectados por un fallo técnico.","boundary":"No se atribuye daño clínico ni cumplimiento regulatorio a escenarios sintéticos."}
   ],
   "sources": [
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos clínicos y fisiológicos para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "UMLS",
-      "organization": "National Library of Medicine",
-      "url": "https://www.nlm.nih.gov/research/umls/",
-      "type": "sistema terminológico",
-      "description": "Integración y correspondencia entre vocabularios biomédicos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Privacy Framework",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/privacy-framework",
-      "type": "marco oficial",
-      "description": "Gestión de riesgos de privacidad en sistemas de información.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "HL7 FHIR",
-      "organization": "HL7 International",
-      "url": "https://hl7.org/fhir/",
-      "type": "estándar sanitario",
-      "description": "Modelo de recursos e interfaces de interoperabilidad.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"Apache Airflow Core Concepts","organization":"Apache Software Foundation","url":"https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/","accessed":"2026-08-25"},
+    {"title":"Apache Airflow Architecture Overview","organization":"Apache Software Foundation","url":"https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html","accessed":"2026-08-25"},
+    {"title":"Apache Airflow Scheduler","organization":"Apache Software Foundation","url":"https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/scheduler.html","accessed":"2026-08-25"},
+    {"title":"Apache Airflow Backfill","organization":"Apache Software Foundation","url":"https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/backfill.html","accessed":"2026-08-25"},
+    {"title":"Apache Airflow FAQ: logical date and data interval","organization":"Apache Software Foundation","url":"https://airflow.apache.org/docs/apache-airflow/stable/faq.html","accessed":"2026-08-25"},
+    {"title":"OpenTelemetry Observability Primer","organization":"Cloud Native Computing Foundation / OpenTelemetry","url":"https://opentelemetry.io/docs/concepts/observability-primer/","accessed":"2026-08-25"},
+    {"title":"OpenTelemetry Signals","organization":"Cloud Native Computing Foundation / OpenTelemetry","url":"https://opentelemetry.io/docs/concepts/signals/","accessed":"2026-08-25"},
+    {"title":"OpenTelemetry Logs Specification","organization":"Cloud Native Computing Foundation / OpenTelemetry","url":"https://opentelemetry.io/docs/specs/otel/logs/","accessed":"2026-08-25"},
+    {"title":"OpenTelemetry Metrics","organization":"Cloud Native Computing Foundation / OpenTelemetry","url":"https://opentelemetry.io/docs/concepts/signals/metrics/","accessed":"2026-08-25"},
+    {"title":"Monitoring Distributed Systems","organization":"Google Site Reliability Engineering","url":"https://sre.google/sre-book/monitoring-distributed-systems/","accessed":"2026-08-25"},
+    {"title":"Alerting on SLOs","organization":"Google Site Reliability Engineering","url":"https://sre.google/workbook/alerting-on-slos/","accessed":"2026-08-25"},
+    {"title":"Example Error Budget Policy","organization":"Google Site Reliability Engineering","url":"https://sre.google/workbook/error-budget-policy/","accessed":"2026-08-25"},
+    {"title":"Prometheus Alerting Rules","organization":"Prometheus Authors","url":"https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/","accessed":"2026-08-25"},
+    {"title":"OpenLineage Object Model","organization":"OpenLineage","url":"https://openlineage.io/docs/next/spec/object-model/","accessed":"2026-08-25"},
+    {"title":"OpenLineage Run Cycle","organization":"OpenLineage","url":"https://openlineage.io/docs/spec/run-cycle/","accessed":"2026-08-25"},
+    {"title":"OpenLineage API","organization":"OpenLineage","url":"https://openlineage.io/apidocs/openapi/","accessed":"2026-08-25"},
+    {"title":"OpenLineage Documentation","organization":"OpenLineage","url":"https://openlineage.io/docs/","accessed":"2026-08-25"},
+    {"title":"PROV-O: The PROV Ontology","organization":"World Wide Web Consortium (W3C)","url":"https://www.w3.org/TR/prov-o/","accessed":"2026-08-25"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "professional_scope": "Unidad académica de ingeniería de datos biomédicos centrada en operación reproducible y observabilidad de pipelines sintéticos. No acredita competencia SRE productiva, operación hospitalaria, seguridad clínica, disponibilidad contractual ni conformidad regulatoria.",
+  "editorial_notice": "Todas las actividades usan datasets, servicios y fallos sintéticos o no identificables. No se conectan EHR, PACS, LIS, dispositivos, credenciales ni infraestructura clínica real. U5 consume contratos, quality gates, manifests y procedencia de U4; no declara que un run exitoso pruebe calidad o validez clínica. La validación de interoperabilidad, FHIR, terminologías y mappings se reserva para U6. SLI, SLO, alertas, error budgets, retries y runbooks son educativos y no constituyen garantías de producción."
 }
