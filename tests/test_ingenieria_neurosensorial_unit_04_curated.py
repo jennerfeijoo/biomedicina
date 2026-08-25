@@ -24,8 +24,8 @@ def test_unit_04_is_disciplinary_not_generic_template():
     assert len(unit["learning_objectives"]) >= 6
     assert len(unit["theory_sections"]) >= 5
     for section in unit["theory_sections"]:
-        assert len(section.get("paragraphs", [])) >= 5
-        assert len(section.get("key_points", [])) >= 5
+        assert len(section.get("paragraphs", [])) >= 6
+        assert len(section.get("key_points", [])) >= 6
     for forbidden in [
         "concepto de la unidad que debe definirse mediante entidades observables",
         "modelo conceptual de prótesis sensoriales",
@@ -58,18 +58,19 @@ def test_unit_04_preserves_core_sensory_prosthesis_distinctions():
 
 def test_unit_04_has_substantial_pedagogy_and_assessment():
     unit = load(SOURCE)
-    assert len(unit["glossary"]) >= 45
+    assert len(unit["glossary"]) >= 50
     assert len(unit["worked_examples"]) >= 5
     assert len(unit["guided_activities"]) >= 1
     activity = unit["guided_activities"][0]
-    assert activity["estimated_time_minutes"] >= 360
-    assert len(activity["problems"]) >= 18
-    assert len(activity["deliverables"]) >= 8
-    assert len(activity["checking_criteria"]) >= 20
-    assert len(unit["common_errors"]) >= 15
-    assert len(unit["self_assessment"]) >= 10
+    assert activity["estimated_time_minutes"] >= 480
+    assert len(activity["instructions"]) >= 10
+    assert len(activity["problems"]) >= 24
+    assert len(activity["deliverables"]) >= 12
+    assert len(activity["checking_criteria"]) >= 25
+    assert len(unit["common_errors"]) >= 18
+    assert len(unit["self_assessment"]) >= 12
     assert len(unit["biomedical_connections"]) >= 6
-    assert len(unit["sources"]) >= 15
+    assert len(unit["sources"]) >= 17
 
 
 def test_unit_04_keeps_curricular_and_clinical_boundaries():
