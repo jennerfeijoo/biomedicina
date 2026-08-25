@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unidad 3. Interoperabilidad y terminologías | Informática Biomédica | CitoNauta</title>
-  <meta name="description" content="Integrar FHIR, DICOM, SNOMED CT y LOINC para resolver un caso de intercambio semántico de información con evidencia, controles, incertidumbre y comunicación proporcional." />
+  <meta name="description" content="Construir y verificar un paquete sintético de intercambio clínico que preserve estructura, identidad y significado entre representaciones FHIR, DICOM/DICOMweb y terminologías clínicas SNOMED CT, LOINC y UCUM, distinguiendo interoperabilidad sintáctica, estructural y semántica; perfiles y versiones; códigos, conceptos y displays; mapeos y pérdidas de significado. La unidad reutiliza los workflows de U2, reserva analítica y alertas para U4, factores humanos para U5 y gobernanza/implementación para U6, y no confunde validación técnica con validez clínica." />
   <link rel="stylesheet" href="../../../assets/css/style.css" />
   <link rel="stylesheet" href="../../../assets/css/editorial.css" />
   <script>
@@ -52,7 +52,7 @@
       </div>
       <p class="eyebrow">Unidad 3 de 6</p>
       <h1>Interoperabilidad y terminologías</h1>
-      <p>Integrar FHIR, DICOM, SNOMED CT y LOINC para resolver un caso de intercambio semántico de información con evidencia, controles, incertidumbre y comunicación proporcional.</p>
+      <p>Construir y verificar un paquete sintético de intercambio clínico que preserve estructura, identidad y significado entre representaciones FHIR, DICOM/DICOMweb y terminologías clínicas SNOMED CT, LOINC y UCUM, distinguiendo interoperabilidad sintáctica, estructural y semántica; perfiles y versiones; códigos, conceptos y displays; mapeos y pérdidas de significado. La unidad reutiliza los workflows de U2, reserva analítica y alertas para U4, factores humanos para U5 y gobernanza/implementación para U6, y no confunde validación técnica con validez clínica.</p>
       <dl class="course-meta">
         <div><dt>Asignatura</dt><dd>Informática Biomédica</dd></div>
         <div><dt>Estado</dt><dd data-status="generated">Lección desarrollada · revisión experta pendiente</dd></div>
@@ -80,19 +80,20 @@
     <section id="resultados" class="section">
       <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
             <ul>
-        <li>Definir FHIR, DICOM y SNOMED CT y LOINC mediante entidades, relaciones y condiciones.</li>
-        <li>Construir un modelo que conecte FHIR con DICOM y delimite el papel de SNOMED CT y LOINC.</li>
-        <li>Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.</li>
-        <li>Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.</li>
-        <li>Resolver y comunicar un caso sobre intercambio semántico de información con incertidumbre y límites.</li>
-        <li>Transferir el método de Interoperabilidad y terminologías a un escenario nuevo y justificar qué debe revalidarse.</li>
+        <li>Distinguir interoperabilidad sintáctica, estructural y semántica, separando identificador, referencia, código, display, concepto, unidad y valor para evitar que una transmisión técnicamente válida se interprete como significado preservado.</li>
+        <li>Representar un workflow sintético de U2 mediante recursos FHIR R5 y referencias entre ellos, declarando versión, perfiles, cardinalidades y terminologías requeridas sin asumir que meta.profile o un JSON parseable demuestran conformidad.</li>
+        <li>Reconstruir la jerarquía DICOM Patient–Study–Series–Instance y relacionar IOD, SOP Class, atributos, tags, VR/VM y UIDs con un caso de imagen sintético sin interpretar píxeles ni operar infraestructura clínica.</li>
+        <li>Diferenciar en SNOMED CT concepto, SCTID, descripción, término preferido, sinónimo, relaciones y reference sets, y justificar por qué texto igual, código igual de otro sistema o jerarquía aparente no equivalen automáticamente al mismo concepto.</li>
+        <li>Seleccionar y auditar términos LOINC mediante Component, Property, Time, System, Scale y Method, y representar unidades con UCUM 2.2, manteniendo separados el identificador de la observación, el resultado, la unidad y el método de medición.</li>
+        <li>Diseñar una validación reproducible de recursos, perfiles, value sets y mapeos versionados, cuantificando cobertura y casos no equivalentes y documentando cuándo una transformación es incompleta, ambigua o deliberadamente no mapeable.</li>
       </ul>
       <h3>Mapa de contenidos</h3>
             <ul>
-        <li>Modelo conceptual de Interoperabilidad y terminologías</li>
-        <li>Método, evidencia y controles</li>
-        <li>Aplicación razonada: intercambio semántico de información</li>
-        <li>Calidad, transferencia y comunicación</li>
+        <li>1. Interoperabilidad por capas: mover bytes no garantiza preservar significado</li>
+        <li>2. FHIR R5: recursos, referencias, perfiles y terminología declarada</li>
+        <li>3. DICOM 2026c: modelo de información, atributos y jerarquía de objetos de imagen</li>
+        <li>4. SNOMED CT y LOINC: conceptos clínicos y observaciones no son texto libre intercambiable</li>
+        <li>5. Mapeo y validación: cobertura no es equivalencia semántica</li>
       </ul>
     </section>
 
@@ -104,73 +105,121 @@
             <!-- advanced-unit-renderer:v1 -->
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 1</p>
-        <h3>Modelo conceptual de Interoperabilidad y terminologías</h3>
-        <p>La unidad «Interoperabilidad y terminologías» sitúa FHIR, DICOM y SNOMED CT y LOINC dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Informática Biomédica, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.</p>
-        <p>El primer núcleo de «Interoperabilidad y terminologías» en Informática Biomédica, «FHIR», se entiende así: Estándar de HL7 que representa e intercambia información de salud mediante recursos modulares y interfaces web. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.</p>
-        <p>El segundo núcleo de «Interoperabilidad y terminologías», «DICOM», aporta otra dimensión al problema de Informática Biomédica: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con FHIR debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.</p>
-        <p>El tercer núcleo de «Interoperabilidad y terminologías» en Informática Biomédica, «SNOMED CT y LOINC», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada.</p>
+        <h3>1. Interoperabilidad por capas: mover bytes no garantiza preservar significado</h3>
+        <p>Interoperabilidad no es una propiedad binaria de dos aplicaciones. En un intercambio sanitario pueden distinguirse al menos capas sintácticas, estructurales y semánticas. La capa sintáctica pregunta si el mensaje puede analizarse; la estructural, si los elementos ocupan lugares y cardinalidades compatibles con el contrato declarado; la semántica, si emisor y receptor interpretan los conceptos, unidades, estados y relaciones de manera suficientemente equivalente para el uso previsto.</p>
+        <p>Un intercambio puede ser sintácticamente correcto y semánticamente erróneo. Un JSON válido puede contener un código de laboratorio equivocado; un recurso que pasa un esquema puede enlazar al encuentro incorrecto; una observación numérica puede perder su unidad. Por ello la validación se organiza en capas y cada capa produce evidencia diferente. Pasar una capa no autoriza a declarar que las siguientes también pasaron.</p>
+        <p>Identificador, referencia, código y display cumplen funciones distintas. Un identificador distingue una entidad dentro de un ámbito; una referencia enlaza un objeto con otro; un código representa un concepto dentro de un code system; un display es texto legible para humanos. El display no es el identificador semántico y no debe usarse para decidir equivalencia cuando existen códigos y versiones explícitos.</p>
+        <p>La versión forma parte del significado operativo. FHIR tiene releases distintos; DICOM se actualiza continuamente; SNOMED CT y LOINC publican ediciones sucesivas. Un artefacto reproducible registra la versión o paquete utilizado y no supone que una validación realizada con una edición seguirá siendo idéntica con otra. La actualización se trata como un cambio que puede requerir pruebas de regresión.</p>
+        <p>La semántica también depende del contexto. El mismo concepto clínico puede requerir una unidad, método, sitio anatómico, temporalidad o relación con otros objetos para ser interpretable. Una terminología no convierte automáticamente un registro incompleto en información suficiente. La unidad enseña a conservar tanto el concepto codificado como los atributos que delimitan su uso.</p>
+        <p>U3 reutiliza los procesos EHR–LIS–RIS/PACS–farmacia de U2 como escenarios sintéticos, pero cambia la pregunta: ahora interesa cómo expresar, restringir, codificar y verificar el intercambio. No se evalúan modelos o alertas de U4, experiencia de usuario de U5 ni políticas productivas de seguridad, privacidad o despliegue de U6.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Distinguir observación, cálculo e inferencia en Interoperabilidad y terminologías.</li>
-        <li>Relacionar FHIR, DICOM y SNOMED CT y LOINC mediante condiciones explícitas.</li>
-        <li>Declarar escala, unidad de observación y uso previsto antes del método.</li>
-        <li>Tratar supuestos y límites como parte del resultado, no como una nota final.</li>
+        <li>Interoperabilidad sintáctica, estructural y semántica son capas distintas con evidencia y fallos diferentes.</li>
+        <li>Un mensaje parseable o un recurso estructuralmente válido puede conservar un significado clínico equivocado.</li>
+        <li>Identificador, referencia, código y display tienen funciones diferentes y no deben intercambiarse.</li>
+        <li>La versión del estándar o terminología forma parte de la especificación reproducible del intercambio.</li>
+        <li>Un código necesita contexto suficiente; codificar no repara por sí solo datos incompletos o ambiguos.</li>
+        <li>U3 formaliza el intercambio de workflows de U2 sin adelantar analítica, factores humanos o gobernanza.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
-        <h3>Método, evidencia y controles</h3>
-        <p>Para «Interoperabilidad y terminologías» dentro de Informática Biomédica, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.</p>
-        <p>En esta unidad de Informática Biomédica, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre FHIR o DICOM debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.</p>
-        <p>Para evaluar «Interoperabilidad y terminologías», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.</p>
-        <p>En Informática Biomédica, la incertidumbre de «Interoperabilidad y terminologías» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece.</p>
+        <h3>2. FHIR R5: recursos, referencias, perfiles y terminología declarada</h3>
+        <p>FHIR es un estándar de HL7 para intercambio de datos sanitarios basado en recursos y APIs. La especificación R5 5.0.0 es una versión publicada de referencia, pero los sistemas reales pueden usar R4, R4B, R5 u Implementation Guides específicos. Por eso cada ejercicio fija versión y paquete; decir simplemente «FHIR» no es suficiente para reproducir una validación.</p>
+        <p>Los recursos representan objetos o hechos con identidad y relaciones. Patient, Encounter, ServiceRequest, Specimen, Observation, DiagnosticReport, ImagingStudy, MedicationRequest y MedicationAdministration permiten representar fragmentos del workflow de U2. La actividad no pretende modelar todo un hospital: usa un subconjunto mínimo y rastreable que hace visibles referencias, estados y artefactos.</p>
+        <p>Una referencia FHIR enlaza recursos, mientras Identifier expresa identificadores del mundo o sistema externo. Confundir ambos genera modelos frágiles: copiar un MRN dentro de una referencia no equivale a resolver el recurso correcto. La unidad exige documentar sistema/namespace del Identifier y comprobar que las referencias del paquete sintético resuelven hacia el tipo y objeto esperados.</p>
+        <p>Un perfil FHIR se expresa mediante StructureDefinition y restringe o extiende la especificación base: puede fijar cardinalidades, tipos, slices, invariantes y bindings terminológicos. El significado de Must Support depende del Implementation Guide que lo define y no debe interpretarse como una regla universal. Declarar un perfil en meta.profile tampoco demuestra que el recurso haya sido validado contra ese perfil.</p>
+        <p>CodeSystem describe un sistema de códigos y ValueSet define un conjunto de códigos permitidos o seleccionados para un uso. Un binding puede expresar la fuerza con que un elemento se vincula a un ValueSet. La validación terminológica requiere conocer sistema, código, versión cuando sea relevante y value set/contexto; comparar únicamente displays puede aceptar falsos equivalentes.</p>
+        <p>FHIR dispone de mecanismos de validación, incluido $validate, pero una respuesta técnica satisfactoria no demuestra corrección clínica del contenido ni adecuación para producción. U3 separa parseo JSON, validación contra base/perfil, validación terminológica, resolución de referencias y pruebas semánticas del caso. La última capa sigue siendo un ejercicio sintético, no certificación.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Elegir evidencia de acuerdo con el tipo de afirmación.</li>
-        <li>Predefinir controles y resultados esperados antes de inspeccionar la salida.</li>
-        <li>Conservar procedencia, parámetros y decisiones intermedias.</li>
-        <li>Propagar incertidumbre hasta la conclusión y la recomendación.</li>
+        <li>FHIR R5 5.0.0 se versiona explícitamente y no se supone idéntico a R4 o a perfiles locales.</li>
+        <li>Los recursos representan objetos y hechos clínicos y se enlazan mediante referencias explícitas.</li>
+        <li>Identifier y Reference no son equivalentes y requieren reglas distintas de ámbito y resolución.</li>
+        <li>StructureDefinition permite perfilar FHIR, pero meta.profile no demuestra que la instancia sea conforme.</li>
+        <li>CodeSystem y ValueSet cumplen papeles distintos dentro de la validación terminológica.</li>
+        <li>Validación FHIR técnica no equivale a corrección clínica, seguridad productiva ni certificación de interoperabilidad.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 3</p>
-        <h3>Aplicación razonada: intercambio semántico de información</h3>
-        <p>En la unidad «Interoperabilidad y terminologías» de Informática Biomédica, el caso conductor es intercambio semántico de información. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.</p>
-        <p>La resolución específica de «Interoperabilidad y terminologías» conecta FHIR con DICOM y utiliza SNOMED CT y LOINC como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.</p>
-        <p>Para el caso «intercambio semántico de información» en Informática Biomédica, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.</p>
-        <p>El cierre de «Interoperabilidad y terminologías» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de intercambio semántico de información y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados.</p>
+        <h3>3. DICOM 2026c: modelo de información, atributos y jerarquía de objetos de imagen</h3>
+        <p>DICOM no es simplemente un formato de archivo de imagen. El estándar define modelos de información, objetos, atributos, codificación y servicios para información médica digital. En la edición actual consultada, PS3.3 2026c describe Information Object Definitions y su relación con entidades del mundo real. U3 usa esa capa conceptual para entender cómo preservar identidad y contexto de un estudio.</p>
+        <p>La jerarquía habitual Patient–Study–Series–Instance organiza objetos de imagen, pero cada nivel tiene identidad y atributos propios. Study Instance UID identifica un estudio, Series Instance UID una serie y SOP Instance UID una instancia. Esos UIDs no deben sustituirse por nombres de archivo, rutas locales ni Patient ID, y un Patient ID tampoco debe asumirse globalmente único fuera de su ámbito.</p>
+        <p>Un Information Object Definition o IOD agrupa módulos y atributos que describen un tipo de objeto. Un SOP Class combina una definición de objeto con servicios aplicables. U3 no memoriza tablas enteras: enseña a localizar en la edición declarada qué IOD/SOP Class se espera y qué atributos permiten comprobar paciente, estudio, serie, instancia, modalidad y procedimiento.</p>
+        <p>Cada atributo DICOM tiene un tag y reglas de representación. PS3.5 define conceptos de Value Representation y Value Multiplicity, y PS3.6 mantiene el diccionario de elementos. Una cadena que parece legible puede ser inválida para su VR, y una multiplicidad incorrecta puede romper conformidad estructural aun cuando el contenido humano parezca razonable.</p>
+        <p>DICOM también contiene vocabularios, context groups y secuencias. La presencia de metadata rica no garantiza correspondencia semántica con una EHR o terminología externa. El ejercicio exporta solo metadatos sintéticos mínimos y verifica relaciones entre UIDs, órdenes y contexto; no procesa píxeles, no abre estudios clínicos y no infiere diagnóstico.</p>
+        <p>DICOMweb, definido en PS3.18, aporta servicios web normalizados sobre objetos DICOM. QIDO-RS se utiliza para consultar información, WADO-RS para recuperar representaciones y STOW-RS para almacenar objetos; compartir el sufijo -RS no hace intercambiables esas operaciones. Un ImagingStudy FHIR puede conservar UIDs y referencias al estudio sin sustituir los objetos DICOM ni los servicios necesarios para consultarlos o recuperarlos.</p>
+        <p>Versionar DICOM es esencial porque la norma evoluciona. La documentación actual consultada es 2026c y debe registrarse en el informe. Una implementación real puede declarar una declaración de conformidad y un subconjunto específico de SOP Classes; U3 no produce ni certifica una DICOM Conformance Statement.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>DICOM modela información médica digital y servicios; no debe reducirse a una extensión de archivo.</li>
+        <li>Patient, Study, Series e Instance forman niveles diferentes con identificadores y atributos propios.</li>
+        <li>Study, Series y SOP Instance UIDs no son nombres de archivo ni sustitutos de identidad del paciente.</li>
+        <li>IOD, módulos, atributos y SOP Classes estructuran qué objeto se representa y con qué información.</li>
+        <li>Tag, Value Representation y Value Multiplicity forman parte de la conformidad estructural del dato DICOM.</li>
+        <li>Usar DICOM 2026c como referencia no equivale a certificar una implementación ni interpretar imágenes.</li>
+        <li>QIDO-RS, WADO-RS y STOW-RS cumplen funciones diferentes de consulta, recuperación y almacenamiento dentro de DICOMweb.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 4</p>
+        <h3>4. SNOMED CT y LOINC: conceptos clínicos y observaciones no son texto libre intercambiable</h3>
+        <p>SNOMED CT es una terminología clínica basada en conceptos identificados y relacionados. Un concepto tiene un SCTID; sus descripciones proporcionan términos humanos como Fully Specified Name, preferred terms o synonyms según idioma y referencia. El concepto no es su display. Dos textos iguales pueden apuntar a conceptos distintos y un concepto puede expresarse con términos diferentes sin cambiar su identidad.</p>
+        <p>Los conceptos SNOMED CT se organizan en jerarquías y se definen mediante axiomas y relaciones. Las relaciones conectan concepto fuente, tipo y destino; los reference sets pueden representar subconjuntos, asociaciones, mapeos u otra información adicional. U3 usa un subconjunto sintético para razonar sobre identidad conceptual y navegación, no para reconstruir toda la lógica descriptiva de SNOMED CT.</p>
+        <p>SNOMED CT publica ediciones versionadas. La edición internacional de agosto de 2026 es una referencia actual para esta unidad. Un SCTID es un identificador opaco y estable para el componente, no una codificación de la semántica que el estudiante deba «leer» por sus dígitos. La versión efectiva y el módulo forman parte de la reproducibilidad cuando se comparan artefactos.</p>
+        <p>LOINC proporciona identificadores para mediciones, observaciones y documentos. Su Fully-Specified Name combina Component, Property, Time, System, Scale y, cuando corresponde, Method. La versión 2.83 fue publicada el 19 de agosto de 2026. Seleccionar un LOINC requiere comparar esas dimensiones con la observación fuente; buscar únicamente una coincidencia de palabras es insuficiente.</p>
+        <p>Un código LOINC identifica qué observación o medición se está reportando, no el valor del resultado ni su unidad. Glucosa en plasma y glucosa en orina pueden compartir palabras pero diferir en System; una concentración y una tasa pueden diferir en Property; una medición puntual y una colección de 24 h difieren en Time. La unidad y el valor deben conservarse como datos separados.</p>
+        <p>UCUM 2.2 proporciona una sintaxis computable para representar unidades de medida. LOINC identifica qué observación se expresa, UCUM codifica la unidad y el valor numérico permanece como dato separado. Cambiar una etiqueta de unidad sin convertir el valor —por ejemplo, tratar mg/dL como mmol/L— es un error semántico aunque el recurso siga siendo sintácticamente válido.</p>
+        <p>SNOMED CT y LOINC son complementarios en muchos escenarios y no deben tratarse como diccionarios de sustitución uno-a-uno. SNOMED CT suele representar conceptos clínicos amplios y relaciones; LOINC identifica observaciones, mediciones y documentos con ejes específicos. El estándar o terminología apropiado depende del elemento semántico y del contrato declarado.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>En SNOMED CT el concepto, su SCTID y sus descripciones humanas son objetos relacionados pero distintos.</li>
+        <li>Las relaciones y reference sets añaden estructura semántica y no deben inferirse a partir del texto visible.</li>
+        <li>La edición de SNOMED CT debe versionarse; los dígitos de un SCTID no codifican significado clínico legible.</li>
+        <li>LOINC identifica observaciones mediante Component, Property, Time, System, Scale y Method cuando aplica.</li>
+        <li>El LOINC no contiene el resultado ni la unidad; código, valor y unidad deben conservarse por separado.</li>
+        <li>SNOMED CT y LOINC cumplen funciones semánticas complementarias y no forman un diccionario uno-a-uno.</li>
+        <li>UCUM 2.2 representa unidades computables y no sustituye el código LOINC ni la conversión numérica requerida entre unidades.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 5</p>
+        <h3>5. Mapeo y validación: cobertura no es equivalencia semántica</h3>
+        <p>Mapear significa declarar una relación entre una representación fuente y una representación destino bajo un propósito. Una tabla local código→código puede ser útil, pero necesita sistema y versión de origen, sistema y versión de destino, relación de equivalencia, evidencia y responsable. Sin esos metadatos, una fila no es auditable y puede quedar obsoleta silenciosamente.</p>
+        <p>FHIR ConceptMap permite representar relaciones entre conceptos de distintos sistemas o contextos, pero un mapeo no debe forzarse si no existe equivalente adecuado. Relaciones más amplias, más estrechas, relacionadas o no equivalentes conservan información sobre pérdida o cambio de significado. Reducir todas a `equivalent` fabrica precisión semántica.</p>
+        <p>La cobertura de mapeo necesita denominador. U3 calcula C_map como número de elementos elegibles con una decisión de mapeo defendible dividido por el total de elementos elegibles. Un elemento declarado deliberadamente no mapeable no debe desaparecer del informe: es un resultado semántico que condiciona la interoperabilidad.</p>
+        <p>La validación reproducible se estratifica. Primero parseo y estructura; después perfiles/cardinalidades y referencias; luego terminología y bindings; finalmente pruebas semánticas del caso, incluidas unidades, estados, identidades y round-trip controlado. Cada fallo se clasifica por capa, porque corregir JSON no soluciona un código clínicamente incorrecto.</p>
+        <p>El round-trip puede descubrir pérdida: transformar A→B→A y obtener un artefacto parseable no garantiza equivalencia. Se comparan conceptos, unidades, estados y relaciones relevantes. Si una extensión, código local o detalle DICOM no tiene representación destino, la pérdida debe documentarse; no se rellena con un valor genérico para hacer pasar la prueba.</p>
+        <p>El producto final de U3 es un paquete sintético reproducible con recursos FHIR, metadata DICOM, códigos SNOMED CT/LOINC, manifiesto de versiones, validaciones y matriz de mapeo. Superar sus pruebas demuestra coherencia del ejercicio frente al contrato declarado; no certifica interoperabilidad productiva, utilidad clínica, privacidad, seguridad ni conformidad regulatoria.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[PPV=\frac{Se\,\pi}{Se\,\pi+(1-Sp)(1-\pi)}\]</div>
-            <figcaption>Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.</figcaption>
+            <div class="math-display">\[C_{map}=\frac{N_{mapeos\ defendibles}}{N_{elementos\ elegibles}}\]</div>
+            <figcaption>Cobertura de mapeo sobre los elementos que el contrato declaró elegibles antes de inspeccionar el resultado; no mide equivalencia clínica.</figcaption>
             <ul class="equation-variables">
-              <li><code>Se</code>: sensibilidad</li>
-              <li><code>Sp</code>: especificidad</li>
-              <li><code>\pi</code>: prevalencia</li>
+              <li><code>C_{map}</code>: fracción de elementos elegibles con decisión de mapeo defendible</li>
+              <li><code>N_{mapeos\ defendibles}</code>: mapeos con relación y evidencia documentadas</li>
+              <li><code>N_{elementos\ elegibles}</code>: elementos definidos como candidatos al mapeo</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[L_{rt}=\frac{N_{elementos\ no\ equivalentes\ tras\ roundtrip}}{N_{elementos\ comparados}}\]</div>
+            <figcaption>Fracción de elementos comparados que no preservan la semántica relevante después de una transformación A→B→A.</figcaption>
+            <ul class="equation-variables">
+              <li><code>L_{rt}</code>: pérdida observada en round-trip</li>
+              <li><code>N_{elementos\ no\ equivalentes\ tras\ roundtrip}</code>: elementos con concepto, unidad, estado o relación no preservados</li>
+              <li><code>N_{elementos\ comparados}</code>: elementos evaluados con criterio semántico previo</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Delimitar el caso de intercambio semántico de información antes de calcular o clasificar.</li>
-        <li>Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.</li>
-        <li>Comprobar unidades, rango, supuestos y casos límite de cada ecuación.</li>
-        <li>Comparar al menos una explicación alternativa y una prueba discriminante.</li>
-      </ul>
-      </article>
-      <article class="lesson-topic advanced-theory-section">
-        <p class="eyebrow">Desarrollo 4</p>
-        <h3>Calidad, transferencia y comunicación</h3>
-        <p>La reproducibilidad de «Interoperabilidad y terminologías» en Informática Biomédica requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.</p>
-        <p>La principal cautela disciplinar al transferir «Interoperabilidad y terminologías» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Informática Biomédica separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.</p>
-        <p>La comunicación divulgativa de «Interoperabilidad y terminologías» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de FHIR, DICOM y SNOMED CT y LOINC debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Informática Biomédica.</p>
-        <p>El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre intercambio semántico de información. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Informática Biomédica como un componente que deberá reutilizarse y revisarse en el proyecto final del curso.</p>
-        <h4>Puntos de integración</h4>
-      <ul>
-        <li>Diferenciar repetibilidad, reproducibilidad, validez y utilidad.</li>
-        <li>Separar desempeño técnico de afirmaciones clínicas o regulatorias.</li>
-        <li>Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.</li>
-        <li>Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido.</li>
+        <li>Todo mapeo declara sistemas, versiones, propósito y relación semántica en lugar de una pareja de códigos desnuda.</li>
+        <li>No existe obligación de forzar equivalencia cuando el destino es más amplio, más estrecho o no equivalente.</li>
+        <li>La cobertura de mapeo necesita un denominador de elementos elegibles definido antes de inspeccionar resultados.</li>
+        <li>Parseo, perfil, terminología, referencias y semántica se validan como capas separadas.</li>
+        <li>Un round-trip técnicamente exitoso puede seguir perdiendo concepto, unidad, estado o relación.</li>
+        <li>El paquete de U3 demuestra coherencia sintética contra un contrato y no certifica una implementación clínica.</li>
       </ul>
       </article>
     </section>
@@ -178,137 +227,155 @@
     <section id="caso" class="section">
       <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
             <article class="worked-example advanced-worked-example">
-        <h3>Del problema amplio a una evidencia verificable en Interoperabilidad y terminologías</h3>
-        <p><strong>Situación.</strong> Un equipo propone estudiar intercambio semántico de información, pero su pregunta mezcla FHIR, DICOM y SNOMED CT y LOINC sin definir unidades, referencias ni resultado admisible.</p>
+        <h3>JSON válido, código equivocado</h3>
+        <p><strong>Situación.</strong> Un Observation FHIR sintético es JSON válido y cumple el perfil estructural, pero usa un código LOINC de glucosa en orina para un resultado cuyo System declarado es plasma.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Separar necesidad, pregunta científica, decisión y producto esperado.</li>
-        <li>Definir la unidad de observación y el papel específico de FHIR, DICOM y SNOMED CT y LOINC.</li>
-        <li>Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.</li>
-        <li>Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.</li>
-        <li>Redactar una conclusión limitada y el dato que permitiría revisarla.</li>
+        <li>Confirmar que el JSON parsea y que el recurso cumple cardinalidades del perfil.</li>
+        <li>Revisar system, code y versión del Coding en vez de aceptar el display «Glucose».</li>
+        <li>Comparar los ejes LOINC, especialmente System y Property, con la observación fuente.</li>
+        <li>Clasificar el fallo como semántico/terminológico aunque las capas sintáctica y estructural hayan pasado.</li>
       </ol>
-        <p><strong>Interpretación.</strong> El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.</p>
-        <h4>Limitaciones</h4>
-      <ul>
-        <li>El caso simulado no demuestra desempeño en un entorno real.</li>
-        <li>La conclusión depende de las definiciones y controles declarados.</li>
-        <li>Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</li>
-      </ul>
       </article>
       <article class="worked-example advanced-worked-example">
-        <h3>Análisis de sensibilidad y explicación alternativa</h3>
-        <p><strong>Situación.</strong> El análisis inicial parece apoyar una relación entre FHIR y DICOM en el caso de intercambio semántico de información; una condición vinculada con SNOMED CT y LOINC podría producir el mismo patrón.</p>
+        <h3>Identifier no es Reference</h3>
+        <p><strong>Situación.</strong> Un ServiceRequest sintético contiene un MRN como Identifier y una referencia a Patient/123. Otro recurso intenta usar el MRN directamente como si fuera una referencia FHIR.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Escribir por separado el resultado observado y la explicación propuesta.</li>
-        <li>Representar SNOMED CT y LOINC como condición, covariable, perturbación o fuente de sesgo según el diseño.</li>
-        <li>Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.</li>
-        <li>Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.</li>
-        <li>Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión.</li>
+        <li>Distinguir el identificador externo del identificador lógico del recurso.</li>
+        <li>Comprobar el ámbito o system del Identifier.</li>
+        <li>Resolver la Reference contra el bundle sintético.</li>
+        <li>Mostrar que el mismo texto puede existir como identifier.value sin constituir una referencia resoluble.</li>
       </ol>
-        <p><strong>Interpretación.</strong> Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.</p>
-        <h4>Limitaciones</h4>
-      <ul>
-        <li>El análisis de sensibilidad solo cubre las perturbaciones evaluadas.</li>
-        <li>Una alternativa no descartada reduce la fuerza de la inferencia.</li>
-        <li>La transferibilidad necesita evaluación independiente.</li>
-      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Study UID no es nombre de archivo</h3>
+        <p><strong>Situación.</strong> Un exportador sintético nombra archivos `study1.dcm`, `study2.dcm`, pero dos series pertenecen al mismo Study Instance UID.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Extraer Study Instance UID, Series Instance UID y SOP Instance UID de la metadata sintética.</li>
+        <li>Agrupar por UIDs y no por nombres de archivo.</li>
+        <li>Comprobar que cada instancia pertenece a una serie y cada serie al estudio esperado.</li>
+        <li>Registrar que el nombre de archivo es una propiedad local del paquete, no identidad DICOM.</li>
+      </ol>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Dos displays iguales no garantizan el mismo concepto</h3>
+        <p><strong>Situación.</strong> Dos registros sintéticos muestran el texto «diabetes», uno con un concepto SNOMED CT específico y otro con un código local no documentado.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Separar display, system, code y version.</li>
+        <li>Resolver el SCTID en el artefacto terminológico versionado.</li>
+        <li>No asignar equivalencia al código local solo porque el display coincide.</li>
+        <li>Marcar el elemento local como no mapeado hasta disponer de evidencia semántica suficiente.</li>
+      </ol>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Round-trip con pérdida de unidad</h3>
+        <p><strong>Situación.</strong> Una transformación sintética A→FHIR→A conserva el código LOINC y el valor numérico pero pierde la unidad original.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Definir antes del round-trip qué campos deben preservarse: concepto, valor, unidad, tiempo y estado.</li>
+        <li>Ejecutar la transformación sobre el fixture sintético.</li>
+        <li>Comparar semánticamente salida y entrada, no solo igualdad de JSON.</li>
+        <li>Registrar la unidad perdida como fallo aunque el recurso resultante pase validación estructural.</li>
+      </ol>
       </article>
     </section>
 
     <section id="practica" class="section">
       <div class="section-header"><h2>Actividad aplicada</h2></div>
             <article class="guided-activity advanced-guided-activity">
-        <h3>Pausa de recuperación y explicación</h3>
+        <h3>Paquete de interoperabilidad semántica sintético y reproducible</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Responde sin consultar el texto y después corrige con un color distinto.</li>
-        <li>Dibuja las relaciones antes de escribir una definición extensa.</li>
-        <li>Marca cada elemento como observado, calculado, inferido o pendiente.</li>
-        <li>Explica la unidad a una audiencia no especialista en menos de 150 palabras.</li>
+        <li>Trabajar exclusivamente con recursos, metadata, códigos, observaciones, personas e identificadores sintéticos; no introducir datos identificables, credenciales, endpoints ni exportaciones clínicas reales.</li>
+        <li>Fijar en el manifiesto FHIR R5 5.0.0, DICOM 2026c, SNOMED CT International Edition August 2026, LOINC 2.83 y UCUM 2.2 antes de construir, mapear o validar artefactos.</li>
+        <li>Reutilizar un único workflow sintético de U2 y separar claramente identidad, estructura, terminología y significado en cada transformación.</li>
+        <li>Construir un bundle FHIR mínimo con recursos y referencias suficientes para representar orden, espécimen, observación, informe e imagen sin intentar modelar todo un EHR.</li>
+        <li>Declarar un perfil sintético o conjunto explícito de restricciones y validar por separado JSON, estructura, referencias y terminología.</li>
+        <li>Reconstruir la jerarquía DICOM Patient–Study–Series–Instance exclusivamente desde metadata sintética y UIDs.</li>
+        <li>Comparar concepto, code system, code, display, versión, unidad y contexto antes de aceptar cualquier equivalencia terminológica.</li>
+        <li>Seleccionar términos LOINC comparando Component, Property, Time, System, Scale y Method en vez de usar búsqueda textual aislada.</li>
+        <li>Construir una tabla de mapeo versionada que permita equivalent, broader, narrower, related o no-equivalent según la evidencia del ejercicio.</li>
+        <li>Ejecutar pruebas negativas y un round-trip controlado; registrar pérdidas sin rellenarlas artificialmente y cerrar con las fronteras U4–U6.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
-        <li>Define FHIR mediante entidad, relación, condición y ejemplo.</li>
-        <li>Explica cómo DICOM modifica o complementa a FHIR.</li>
-        <li>Propón una prueba que distinga el papel de SNOMED CT y LOINC de una explicación alternativa.</li>
-        <li>Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible.</li>
+        <li>Clasificar doce fallos sintéticos como sintácticos, estructurales, de referencia, terminológicos o semánticos y justificar cada clasificación.</li>
+        <li>Distinguir Identifier, Reference, Coding y display en seis fragmentos FHIR y corregir dos usos intercambiados.</li>
+        <li>Construir un bundle sintético con Patient, Encounter, ServiceRequest, Specimen, Observation y DiagnosticReport y verificar que todas las referencias internas resuelven.</li>
+        <li>Añadir ImagingStudy al caso sin duplicar la semántica del flujo de U2 y explicar qué información se deja fuera.</li>
+        <li>Definir cinco restricciones de un perfil sintético mediante cardinalidad, tipo o binding y justificar el uso previsto.</li>
+        <li>Demostrar con un fixture por qué declarar meta.profile no equivale a haber validado la instancia.</li>
+        <li>Crear una prueba negativa con cardinalidad incumplida y clasificar el error antes de corregirlo.</li>
+        <li>Crear una prueba negativa con código fuera del value set y distinguirla de un error de JSON.</li>
+        <li>Reconstruir Patient–Study–Series–Instance a partir de veinte registros de metadata DICOM desordenados.</li>
+        <li>Detectar un caso en que el nombre de archivo induce una agrupación distinta de los UIDs y explicar cuál prevalece.</li>
+        <li>Diferenciar tag, VR, VM e IOD/SOP Class en un conjunto de metadata DICOM consultando la edición declarada.</li>
+        <li>Identificar un Patient ID repetido en ámbitos distintos y explicar por qué no demuestra identidad global.</li>
+        <li>Separar concepto SNOMED CT, SCTID, Fully Specified Name, preferred term y synonym en cinco ejemplos sintéticos.</li>
+        <li>Comparar dos concepts con displays parecidos y usar relaciones/versiones, no texto, para decidir si son equivalentes.</li>
+        <li>Construir un pequeño reference set sintético y explicar qué información adicional representa respecto de la jerarquía base.</li>
+        <li>Seleccionar tres términos LOINC a partir de descripciones fuente mostrando explícitamente Component, Property, Time, System, Scale y Method.</li>
+        <li>Mostrar un par de observaciones donde solo cambia System y explicar por qué la coincidencia del Component no basta.</li>
+        <li>Separar LOINC code, result value y unit en tres observaciones y detectar una transformación que perdió la unidad.</li>
+        <li>Crear una matriz de diez mapeos con source system/version, target system/version, relación, evidencia y estado de revisión.</li>
+        <li>Marcar al menos un elemento como no-equivalent y justificar por qué forzar un código destino empeoraría la semántica.</li>
+        <li>Calcular C_map con un denominador de elementos elegibles definido antes de revisar la salida.</li>
+        <li>Ejecutar A→B→A sobre cinco fixtures y calcular L_rt usando criterios semánticos definidos antes del round-trip.</li>
+        <li>Comparar el resultado de parseo, perfil, terminología, referencias y pruebas semánticas para un mismo recurso defectuoso.</li>
+        <li>Redactar una conclusión que separe conformidad del paquete sintético de utilidad clínica, seguridad, privacidad y validación productiva reservadas a otras unidades.</li>
+        <li>Asignar QIDO-RS, WADO-RS y STOW-RS a consulta, recuperación y almacenamiento en tres escenarios DICOMweb sintéticos y justificar por qué no son operaciones intercambiables.</li>
+        <li>Detectar una observación con LOINC correcto pero unidad UCUM incompatible, corregir la unidad y convertir el valor cuando corresponda en lugar de cambiar solo la etiqueta.</li>
       </ul>
         <h4>Entregables</h4>
       <ul>
-        <li>Mapa conceptual corregido.</li>
-        <li>Explicación breve con una limitación explícita.</li>
+        <li>Manifiesto de versiones de FHIR, DICOM, SNOMED CT y LOINC.</li>
+        <li>Matriz de capas de interoperabilidad y taxonomía de fallos.</li>
+        <li>Bundle FHIR sintético con referencias resolubles.</li>
+        <li>Contrato de perfil sintético y resultados de validación positiva/negativa.</li>
+        <li>Tabla de bindings CodeSystem–ValueSet utilizada en el ejercicio.</li>
+        <li>Jerarquía DICOM Patient–Study–Series–Instance con UIDs y atributos seleccionados.</li>
+        <li>Ficha de conceptos SNOMED CT con SCTID, descripciones y relaciones pertinentes.</li>
+        <li>Ficha LOINC de seis ejes para las observaciones seleccionadas.</li>
+        <li>Matriz de mapeo versionada con relaciones semánticas y evidencia.</li>
+        <li>Cálculo de cobertura C_map con denominador defendible.</li>
+        <li>Informe de round-trip con L_rt y lista de pérdidas semánticas.</li>
+        <li>Informe final reproducible con pruebas por capa, límites y fronteras U4–U6.</li>
+        <li>Matriz DICOMweb que distingue QIDO-RS, WADO-RS y STOW-RS en el caso sintético.</li>
+        <li>Tabla LOINC–valor–UCUM que documenta observación, valor, unidad y cualquier conversión aplicada.</li>
       </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>Las relaciones tienen dirección.</li>
-        <li>No se confunde evidencia con interpretación.</li>
-        <li>La explicación conserva el mecanismo central.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Taller de evidencia: intercambio semántico de información</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.</li>
-        <li>Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.</li>
-        <li>Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.</li>
-        <li>Conserva cálculos, decisiones, resultados negativos y cambios de versión.</li>
-        <li>Compara el resultado con un baseline o una explicación alternativa.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Construye una tabla de trazabilidad para FHIR, DICOM y SNOMED CT y LOINC.</li>
-        <li>Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.</li>
-        <li>Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.</li>
-        <li>Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.</li>
-        <li>Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.</li>
-        <li>Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Prototipo reproducible con contrato de datos y plan de validación.</li>
-        <li>Datos o premisas y procedimiento reproducible.</li>
-        <li>Registro de controles y discrepancias.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>Trazabilidad completa.</li>
-        <li>Controles discriminantes.</li>
-        <li>Procedimiento reproducible.</li>
-        <li>Conclusión proporcional a la evidencia.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Reto de transferencia y revisión por pares</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.</li>
-        <li>Intercambia el producto con otra persona o utiliza una lista de revisión independiente.</li>
-        <li>Registra hallazgos por severidad: crítico, importante o editorial.</li>
-        <li>Corrige el producto y conserva una tabla antes-después con justificación.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Transfiere el método a un caso distinto de intercambio semántico de información y enumera supuestos que deben revalidarse.</li>
-        <li>Construye una explicación alternativa que también conecte FHIR, DICOM y SNOMED CT y LOINC.</li>
-        <li>Identifica una afirmación que exceda la evidencia y reescríbela.</li>
-        <li>Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.</li>
-        <li>Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Producto revisado.</li>
-        <li>Registro antes-después.</li>
-        <li>Rúbrica de transferencia.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>La revisión produce cambios verificables.</li>
-        <li>Las limitaciones son específicas.</li>
-        <li>La figura conserva unidades y procedencia.</li>
-        <li>La nueva pregunta no se responde por memorización.</li>
+        <li>Todo el material práctico es sintético y no contiene datos identificables, credenciales, endpoints ni exportaciones de producción.</li>
+        <li>El manifiesto registra explícitamente FHIR R5 5.0.0 o la versión alternativa realmente usada.</li>
+        <li>La edición DICOM utilizada queda identificada y no se mezcla silenciosamente con otra edición.</li>
+        <li>La edición SNOMED CT y la versión LOINC quedan fijadas antes del mapeo.</li>
+        <li>Sintaxis, estructura y semántica se evalúan como capas distintas.</li>
+        <li>Identifier y Reference no se tratan como sinónimos.</li>
+        <li>Code, system, version y display se conservan como campos con funciones diferentes.</li>
+        <li>Todas las referencias internas del bundle FHIR se resuelven o el fallo queda registrado explícitamente.</li>
+        <li>meta.profile no se presenta como prueba automática de conformidad.</li>
+        <li>Las restricciones del perfil tienen cardinalidad, tipo o binding verificable.</li>
+        <li>CodeSystem y ValueSet no se usan como conceptos intercambiables.</li>
+        <li>La jerarquía DICOM se reconstruye por UIDs y atributos, no por nombres de archivo.</li>
+        <li>Study Instance UID, Series Instance UID y SOP Instance UID se distinguen correctamente.</li>
+        <li>Tag, VR y VM se consultan contra la edición DICOM declarada.</li>
+        <li>Patient ID no se interpreta como identificador global fuera de su ámbito.</li>
+        <li>SNOMED CT concept, SCTID y descripción humana permanecen diferenciados.</li>
+        <li>La equivalencia SNOMED CT no se decide por coincidencia textual de displays.</li>
+        <li>LOINC se selecciona comparando Component, Property, Time, System, Scale y Method cuando corresponde.</li>
+        <li>LOINC code, result value y unit permanecen separados.</li>
+        <li>Cada mapeo incluye sistemas/versiones fuente y destino, relación y evidencia.</li>
+        <li>La tabla permite declarar no-equivalent y no fuerza una correspondencia para lograr cobertura artificial.</li>
+        <li>C_map usa un denominador de elementos elegibles fijado previamente.</li>
+        <li>El round-trip compara significado relevante y no solo JSON o códigos superficiales.</li>
+        <li>Cada fallo se clasifica por capa y mantiene suficiente procedencia para reproducirse.</li>
+        <li>La conclusión separa U3 de analítica U4, factores humanos U5 y gobernanza/implementación U6 y no afirma certificación clínica.</li>
+        <li>El manifiesto fija SNOMED CT International Edition August 2026, LOINC 2.83 y UCUM 2.2 además de FHIR R5 5.0.0 y DICOM 2026c.</li>
+        <li>QIDO-RS, WADO-RS y STOW-RS se asignan respectivamente a consulta, recuperación y almacenamiento sin tratarlos como equivalentes.</li>
+        <li>LOINC identifica la observación, UCUM la unidad y toda conversión de unidad transforma también el valor numérico cuando corresponde.</li>
       </ul>
       </article>
     </section>
@@ -318,61 +385,84 @@
             <section class="common-errors">
         <h3>Errores frecuentes y corrección</h3>
         <ul class="rich-list">
-        <li><strong>Tratar FHIR como una etiqueta autosuficiente.</strong><p>Definir entidades, escala, relaciones, observables y condiciones antes de usar FHIR en una explicación.</p></li>
-        <li><strong>Afirmar que una relación entre FHIR y DICOM demuestra mecanismo o causalidad.</strong><p>Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones.</p></li>
-        <li><strong>Añadir SNOMED CT y LOINC después de ver el resultado.</strong><p>Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio.</p></li>
-        <li><strong>Presentar solo el resultado favorable y omitir controles o discrepancias.</strong><p>Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento.</p></li>
-        <li><strong>Generalizar la conclusión de Interoperabilidad y terminologías al uso clínico o real.</strong><p>Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</p></li>
+        <li><strong>Confundir JSON válido con interoperabilidad semántica.</strong><p>Validar por capas: parseo, estructura/perfil, terminología, referencias y significado del caso.</p></li>
+        <li><strong>Usar display como identidad del concepto.</strong><p>Conservar system, code y version y tratar display como texto humano no suficiente para equivalencia.</p></li>
+        <li><strong>Usar Identifier como si fuera una Reference FHIR.</strong><p>Documentar el ámbito del identificador y resolver referencias mediante las reglas del paquete o servidor definido.</p></li>
+        <li><strong>Suponer que meta.profile prueba conformidad.</strong><p>Ejecutar validación contra StructureDefinition y terminología; la declaración del perfil no es evidencia de haberlo cumplido.</p></li>
+        <li><strong>Interpretar Must Support como obligación universal idéntica.</strong><p>Consultar el Implementation Guide o perfil que define su significado operativo.</p></li>
+        <li><strong>Tratar CodeSystem y ValueSet como sinónimos.</strong><p>Separar el sistema que define códigos del conjunto de códigos seleccionado para un contexto.</p></li>
+        <li><strong>Asumir que FHIR R5 es la versión usada por todos los sistemas.</strong><p>Fijar y registrar la release y los paquetes/IG reales del contrato evaluado.</p></li>
+        <li><strong>Reducir DICOM a archivos .dcm.</strong><p>Modelar IODs, SOP Classes, atributos, UIDs y servicios según la parte y edición pertinente.</p></li>
+        <li><strong>Agrupar objetos DICOM por nombre de archivo.</strong><p>Usar Study/Series/SOP Instance UIDs y relaciones de metadata, no rutas locales.</p></li>
+        <li><strong>Usar Patient ID como identificador universal.</strong><p>Declarar issuer/ámbito y no enlazar identidades externas solo por igualdad de texto.</p></li>
+        <li><strong>Inferir semántica a partir de los dígitos de un SCTID.</strong><p>Tratar SCTID como identificador opaco y consultar concepto, descripciones, relaciones y versión.</p></li>
+        <li><strong>Declarar equivalencia SNOMED CT por display parecido.</strong><p>Comparar conceptos identificados y relaciones semánticas; el texto humano no prueba identidad.</p></li>
+        <li><strong>Elegir LOINC solo por el nombre del analito.</strong><p>Comparar Component, Property, Time, System, Scale y Method antes de aceptar el término.</p></li>
+        <li><strong>Guardar resultado y unidad dentro del LOINC code.</strong><p>Mantener identificador de observación, valor y unidad como elementos distintos.</p></li>
+        <li><strong>Forzar todos los mapeos a equivalent.</strong><p>Permitir broader, narrower, related o no-equivalent y documentar la pérdida o incertidumbre.</p></li>
+        <li><strong>Calcular cobertura eliminando elementos difíciles.</strong><p>Definir el denominador elegible antes de mapear y conservar los no mapeables como resultado.</p></li>
+        <li><strong>Aceptar un round-trip porque el archivo final parsea.</strong><p>Comparar conceptos, unidades, estados y relaciones relevantes con criterios previos.</p></li>
+        <li><strong>Concluir que pasar un validador certifica una integración clínica.</strong><p>Limitar la conclusión al contrato sintético; utilidad clínica, seguridad, privacidad y producción requieren evaluaciones separadas.</p></li>
+        <li><strong>Confundir QIDO-RS, WADO-RS y STOW-RS como una misma operación DICOMweb.</strong><p>Separar consulta, recuperación y almacenamiento y documentar qué servicio corresponde a cada transición.</p></li>
+        <li><strong>Cambiar la etiqueta de unidad sin convertir el valor.</strong><p>Usar una unidad UCUM compatible y aplicar una conversión numérica trazable cuando cambia la unidad física representada.</p></li>
         </ul>
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Cuál es la unidad de observación adecuada para estudiar intercambio semántico de información?</summary>
-        <p><strong>Respuesta:</strong> Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes.</p>
+        <summary>1. ¿Qué diferencia hay entre interoperabilidad sintáctica y semántica?</summary>
+        <p><strong>Respuesta:</strong> La sintáctica permite analizar la representación; la semántica exige preservar suficientemente el significado para el uso declarado.</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿Cómo se relacionan FHIR y DICOM?</summary>
-        <p><strong>Respuesta:</strong> Mediante una relación con dirección, condición y evidencia verificable; SNOMED CT y LOINC puede modificar o contextualizar esa relación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Responder con una lista de definiciones sin explicar la relación.</p>
+        <summary>2. ¿Por qué Identifier y Reference no son equivalentes en FHIR?</summary>
+        <p><strong>Respuesta:</strong> Identifier representa un identificador asignado dentro de un ámbito; Reference enlaza un recurso u objeto según reglas de resolución.</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Qué dato apoya una afirmación sobre SNOMED CT y LOINC?</summary>
-        <p><strong>Respuesta:</strong> Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente.</p>
+        <summary>3. ¿Qué demuestra meta.profile?</summary>
+        <p><strong>Respuesta:</strong> Declara que la instancia afirma ajustarse a un perfil; no demuestra que se haya validado ni que realmente sea conforme.</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Qué hace que un control sea discriminante?</summary>
-        <p><strong>Respuesta:</strong> Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Añadir un control que no puede cambiar la interpretación.</p>
+        <summary>4. ¿Qué diferencia hay entre CodeSystem y ValueSet?</summary>
+        <p><strong>Respuesta:</strong> CodeSystem define o describe un sistema de códigos; ValueSet selecciona códigos permitidos o relevantes para un contexto.</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Qué debe contener un resultado reproducible?</summary>
-        <p><strong>Respuesta:</strong> Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Entregar únicamente una figura final o un archivo ejecutado.</p>
+        <summary>5. ¿Por qué debe registrarse la versión de FHIR?</summary>
+        <p><strong>Respuesta:</strong> Porque releases y paquetes pueden cambiar estructuras, cardinalidades, bindings y comportamiento; una prueba debe ser reproducible contra una versión concreta.</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Cómo se informa una conclusión sensible a un supuesto?</summary>
-        <p><strong>Respuesta:</strong> Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Elegir el escenario que confirma la conclusión y ocultar los demás.</p>
+        <summary>6. ¿Qué identifica un Study Instance UID?</summary>
+        <p><strong>Respuesta:</strong> Un estudio DICOM; no es el Patient ID, Series Instance UID ni un nombre de archivo.</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Qué afirmación no puede sostener esta unidad sobre intercambio semántico de información?</summary>
-        <p><strong>Respuesta:</strong> Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir una actividad educativa o un caso simulado con validación real.</p>
+        <summary>7. ¿Qué son VR y VM en DICOM?</summary>
+        <p><strong>Respuesta:</strong> VR describe la representación del valor de un Data Element y VM su multiplicidad; ambas forman parte de la estructura codificada.</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿Qué demuestra dominio de Interoperabilidad y terminologías?</summary>
-        <p><strong>Respuesta:</strong> Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Equiparar dominio con reconocer términos o repetir una solución.</p>
+        <summary>8. ¿Por qué un SCTID no se interpreta leyendo sus dígitos?</summary>
+        <p><strong>Respuesta:</strong> Porque es un identificador de componente; el significado está en el concepto, descripciones, axiomas/relaciones y edición terminológica.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>9. ¿Qué diferencia hay entre concepto y preferred term en SNOMED CT?</summary>
+        <p><strong>Respuesta:</strong> El concepto es la entidad semántica identificada; el preferred term es una descripción humana preferida dentro de un language reference set.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>10. ¿Cuáles son los seis ejes principales de un término LOINC?</summary>
+        <p><strong>Respuesta:</strong> Component, Property, Time, System, Scale y Method, con Method opcional cuando no es necesario distinguir el término.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>11. ¿Por qué el LOINC code no sustituye la unidad?</summary>
+        <p><strong>Respuesta:</strong> Porque identifica la observación o medición, mientras el resultado y su unidad son datos separados que deben conservarse.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>12. ¿Qué demuestra un round-trip sin pérdidas en cinco fixtures?</summary>
+        <p><strong>Respuesta:</strong> Que esos fixtures preservaron los criterios semánticos definidos bajo el contrato probado; no certifica interoperabilidad clínica general.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>13. ¿Qué diferencia funcional existe entre QIDO-RS, WADO-RS y STOW-RS?</summary>
+        <p><strong>Respuesta:</strong> QIDO-RS consulta, WADO-RS recupera y STOW-RS almacena objetos o representaciones DICOM según PS3.18.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>14. ¿Por qué LOINC y UCUM no son intercambiables?</summary>
+        <p><strong>Respuesta:</strong> LOINC identifica la observación o medición; UCUM codifica la unidad. El valor numérico sigue siendo un dato separado y debe convertirse si cambia la unidad.</p>
       </details>
       </div>
     </section>
@@ -380,18 +470,80 @@
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
-        <li><strong>FHIR</strong><p>Estándar de HL7 que representa e intercambia información de salud mediante recursos modulares y interfaces web.</p></li>
-        <li><strong>DICOM</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>SNOMED CT y LOINC</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>Interoperabilidad y terminologías</strong><p>Dominio de estudio que integra FHIR, DICOM, SNOMED CT y LOINC para resolver un problema delimitado y verificable.</p></li>
-        <li><strong>Caso de aplicación</strong><p>Escenario de intercambio semántico de información usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas.</p></li>
-        <li><strong>Unidad de observación</strong><p>Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse.</p></li>
-        <li><strong>Evidencia</strong><p>Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener.</p></li>
-        <li><strong>Control</strong><p>Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento.</p></li>
-        <li><strong>Incertidumbre</strong><p>Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse.</p></li>
-        <li><strong>Validez</strong><p>Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas.</p></li>
-        <li><strong>Reproducibilidad</strong><p>Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes.</p></li>
-        <li><strong>Transferencia</strong><p>Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian.</p></li>
+        <li><strong>Interoperabilidad</strong><p>Capacidad de sistemas para intercambiar información y utilizarla con el significado requerido por un uso definido; debe especificarse la capa evaluada.</p></li>
+        <li><strong>Interoperabilidad sintáctica</strong><p>Compatibilidad de la representación o gramática que permite analizar un mensaje o documento.</p></li>
+        <li><strong>Interoperabilidad estructural</strong><p>Compatibilidad de elementos, tipos, cardinalidades, relaciones y restricciones con un modelo o perfil declarado.</p></li>
+        <li><strong>Interoperabilidad semántica</strong><p>Preservación suficiente del significado de conceptos, unidades, estados y relaciones para un uso definido.</p></li>
+        <li><strong>Identificador</strong><p>Valor que distingue una entidad dentro de un sistema o ámbito y que no es necesariamente una referencia resoluble.</p></li>
+        <li><strong>Referencia</strong><p>Enlace desde un objeto hacia otro objeto identificado dentro del modelo de intercambio.</p></li>
+        <li><strong>Código</strong><p>Identificador de un concepto dentro de un code system declarado.</p></li>
+        <li><strong>Display</strong><p>Texto legible asociado a un código; no constituye por sí solo la identidad semántica del concepto.</p></li>
+        <li><strong>Code system</strong><p>Sistema que define códigos y su significado o propiedades dentro de un ámbito.</p></li>
+        <li><strong>Value set</strong><p>Conjunto de códigos seleccionado o definido para un uso y contexto determinados.</p></li>
+        <li><strong>Binding terminológico</strong><p>Regla que vincula un elemento de información con un value set y una fuerza de uso definida.</p></li>
+        <li><strong>Versión</strong><p>Identificador de una edición o release del estándar, terminología, perfil o paquete utilizado.</p></li>
+        <li><strong>FHIR</strong><p>Fast Healthcare Interoperability Resources, estándar de HL7 para intercambio de información sanitaria mediante recursos y mecanismos de interoperabilidad.</p></li>
+        <li><strong>FHIR R5</strong><p>Release 5 de FHIR; la especificación 5.0.0 se usa como referencia versionada en esta unidad.</p></li>
+        <li><strong>Resource</strong><p>Unidad modular de información definida por FHIR con elementos, identidad y relaciones.</p></li>
+        <li><strong>DomainResource</strong><p>Clase base de muchos recursos FHIR que añade narrativa y mecanismos como extensiones.</p></li>
+        <li><strong>Bundle</strong><p>Recurso FHIR que agrupa entradas con reglas dependientes del tipo de bundle.</p></li>
+        <li><strong>Identifier</strong><p>Datatype FHIR para representar identificadores asignados a entidades del mundo o de sistemas externos.</p></li>
+        <li><strong>Reference</strong><p>Datatype FHIR para enlazar un recurso con otro objeto o recurso.</p></li>
+        <li><strong>StructureDefinition</strong><p>Recurso FHIR que describe estructuras, perfiles, extensiones y restricciones.</p></li>
+        <li><strong>Perfil FHIR</strong><p>Conjunto de restricciones o extensiones aplicado a una estructura FHIR para un contexto específico.</p></li>
+        <li><strong>Cardinalidad</strong><p>Número mínimo y máximo de repeticiones permitidas para un elemento.</p></li>
+        <li><strong>Must Support</strong><p>Indicador cuyo significado operativo depende del Implementation Guide o perfil que lo define; no es una obligación universal idéntica.</p></li>
+        <li><strong>Extension</strong><p>Mecanismo FHIR para representar información que no forma parte de los elementos base, manteniendo una definición identificable.</p></li>
+        <li><strong>CodeSystem</strong><p>Recurso FHIR para describir un sistema de códigos y propiedades relevantes.</p></li>
+        <li><strong>ValueSet</strong><p>Recurso FHIR que define o referencia el conjunto de códigos permitido o seleccionado para un contexto.</p></li>
+        <li><strong>ConceptMap</strong><p>Recurso FHIR para representar relaciones de mapeo entre conceptos de sistemas o contextos diferentes.</p></li>
+        <li><strong>$validate</strong><p>Operación FHIR utilizada para evaluar un recurso contra reglas disponibles; su éxito no demuestra validez clínica.</p></li>
+        <li><strong>Implementation Guide</strong><p>Paquete de reglas, perfiles, terminologías y documentación para un contexto de implementación.</p></li>
+        <li><strong>DICOM</strong><p>Estándar para comunicación y gestión de información médica digital, incluidos objetos de imagen, metadatos y servicios.</p></li>
+        <li><strong>IOD</strong><p>Information Object Definition: definición DICOM de un objeto mediante módulos y atributos.</p></li>
+        <li><strong>SOP Class</strong><p>Clase DICOM que combina un Information Object Definition con servicios aplicables.</p></li>
+        <li><strong>SOP Instance UID</strong><p>UID que identifica una instancia DICOM concreta dentro del ámbito del estándar.</p></li>
+        <li><strong>Study Instance UID</strong><p>UID que identifica un estudio DICOM.</p></li>
+        <li><strong>Series Instance UID</strong><p>UID que identifica una serie dentro de un estudio DICOM.</p></li>
+        <li><strong>UID</strong><p>Unique Identifier utilizado por DICOM para identificar objetos o clases bajo reglas del estándar.</p></li>
+        <li><strong>Tag DICOM</strong><p>Par grupo-elemento que identifica un atributo DICOM.</p></li>
+        <li><strong>Data Element</strong><p>Unidad codificada de información DICOM que incluye tag, representación y valor según las reglas aplicables.</p></li>
+        <li><strong>VR</strong><p>Value Representation: tipo de representación de un Data Element DICOM.</p></li>
+        <li><strong>VM</strong><p>Value Multiplicity: número de valores permitido o esperado para un Data Element DICOM.</p></li>
+        <li><strong>Patient ID</strong><p>Identificador del paciente dentro de un ámbito DICOM; no debe asumirse globalmente único.</p></li>
+        <li><strong>SNOMED CT</strong><p>Terminología clínica basada en conceptos identificados, descripciones, relaciones y lógica descriptiva.</p></li>
+        <li><strong>SCTID</strong><p>Identificador numérico único de un componente SNOMED CT; sus dígitos no codifican un significado clínico legible.</p></li>
+        <li><strong>Concepto SNOMED CT</strong><p>Idea clínica identificada por un SCTID y definida mediante su posición y relaciones dentro del modelo.</p></li>
+        <li><strong>Descripción SNOMED CT</strong><p>Componente que contiene un término humano asociado a un concepto.</p></li>
+        <li><strong>Fully Specified Name</strong><p>Descripción SNOMED CT diseñada para expresar de manera no ambigua el significado del concepto en contexto.</p></li>
+        <li><strong>Preferred Term</strong><p>Término preferido para un concepto dentro de un language reference set determinado.</p></li>
+        <li><strong>Sinónimo</strong><p>Descripción alternativa asociada al mismo concepto SNOMED CT.</p></li>
+        <li><strong>Relación SNOMED CT</strong><p>Asociación semántica entre concepto fuente, tipo de relación y concepto destino.</p></li>
+        <li><strong>Reference set</strong><p>Formato SNOMED CT para representar subconjuntos, asociaciones, mapeos u otra información adicional sobre componentes.</p></li>
+        <li><strong>LOINC</strong><p>Terminología de identificadores para mediciones, observaciones y documentos sanitarios.</p></li>
+        <li><strong>LOINC code</strong><p>Identificador permanente de un término LOINC; no codifica por sí mismo el valor ni la unidad observada.</p></li>
+        <li><strong>Component</strong><p>Eje LOINC que representa el analito, entidad o componente observado.</p></li>
+        <li><strong>Property</strong><p>Eje LOINC que representa la propiedad o tipo de magnitud observada.</p></li>
+        <li><strong>Time</strong><p>Eje LOINC que expresa el aspecto temporal de la observación o medición.</p></li>
+        <li><strong>System</strong><p>Eje LOINC que expresa el espécimen o sistema sobre el que se realiza la observación.</p></li>
+        <li><strong>Scale</strong><p>Eje LOINC que expresa la escala del resultado, como cuantitativa, ordinal o nominal según el término.</p></li>
+        <li><strong>Method</strong><p>Eje LOINC que representa el método cuando es necesario para distinguir la observación.</p></li>
+        <li><strong>Mapeo</strong><p>Declaración versionada de una relación entre una representación fuente y una destino bajo un propósito explícito.</p></li>
+        <li><strong>Mapeo más amplio</strong><p>Relación en la que el concepto destino es semánticamente más general que el concepto fuente.</p></li>
+        <li><strong>Mapeo más estrecho</strong><p>Relación en la que el concepto destino es semánticamente más específico que el concepto fuente.</p></li>
+        <li><strong>No equivalente</strong><p>Resultado de mapeo que declara que una equivalencia adecuada no está disponible bajo el contrato evaluado.</p></li>
+        <li><strong>Cobertura de mapeo</strong><p>Fracción de elementos elegibles que tienen una decisión de mapeo defendible con denominador explícito.</p></li>
+        <li><strong>Round-trip</strong><p>Transformación A→B→A usada para comprobar qué información o semántica se preserva o se pierde.</p></li>
+        <li><strong>Pérdida semántica</strong><p>Desaparición o modificación relevante de concepto, unidad, estado, relación o contexto durante una transformación.</p></li>
+        <li><strong>Validación estructural</strong><p>Comprobación de tipos, cardinalidades, elementos y restricciones frente a una estructura o perfil.</p></li>
+        <li><strong>Validación terminológica</strong><p>Comprobación de sistemas, códigos, versiones, value sets y bindings en el contexto declarado.</p></li>
+        <li><strong>Validación semántica</strong><p>Pruebas del significado y relaciones relevantes para el caso, más allá de parseo y estructura.</p></li>
+        <li><strong>Conformidad técnica</strong><p>Cumplimiento demostrable de un contrato técnico definido; no equivale automáticamente a utilidad o validez clínica.</p></li>
+        <li><strong>DICOMweb</strong><p>Familia de servicios web DICOM especificada en PS3.18 para consulta, recuperación, almacenamiento y otras operaciones sobre información DICOM.</p></li>
+        <li><strong>QIDO-RS</strong><p>Servicio DICOMweb de consulta que permite localizar estudios, series o instancias mediante criterios compatibles con el servicio.</p></li>
+        <li><strong>WADO-RS</strong><p>Servicio DICOMweb de recuperación de estudios, series, instancias o representaciones DICOM.</p></li>
+        <li><strong>STOW-RS</strong><p>Servicio DICOMweb de almacenamiento de objetos DICOM mediante una interfaz web estandarizada.</p></li>
+        <li><strong>UCUM</strong><p>Unified Code for Units of Measure; sintaxis computable y no ambigua para unidades. U3 fija la especificación 2.2.</p></li>
       </ul>
     </section>
 
@@ -401,17 +553,35 @@
         <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
       </div>
       <ol class="rich-list advanced-sources">
-        <li><strong><a class="resource-link" href="https://loinc.org/" rel="noopener noreferrer">LOINC</a></strong><span class="course-tag">Regenstrief Institute · terminología clínica</span></li>
-        <li><strong><a class="resource-link" href="https://www.who.int/health-topics/digital-health" rel="noopener noreferrer">WHO Digital Health</a></strong><span class="course-tag">World Health Organization · recurso institucional</span></li>
-        <li><strong><a class="resource-link" href="https://physionet.org/" rel="noopener noreferrer">PhysioNet</a></strong><span class="course-tag">MIT Laboratory for Computational Physiology · datos abiertos</span></li>
-        <li><strong><a class="resource-link" href="https://www.ohdsi.org/" rel="noopener noreferrer">OHDSI</a></strong><span class="course-tag">Observational Health Data Sciences and Informatics · comunidad y estándar abierto</span></li>
-        <li><strong><a class="resource-link" href="https://www.nlm.nih.gov/research/umls/" rel="noopener noreferrer">UMLS</a></strong><span class="course-tag">National Library of Medicine · sistema terminológico</span></li>
+        <li><strong><a class="resource-link" href="https://www.hl7.org/fhir/R5/documentation.html" rel="noopener noreferrer">FHIR R5 Documentation Index</a></strong><span class="course-tag">HL7 International · estándar abierto</span></li>
+        <li><strong><a class="resource-link" href="https://www.hl7.org/fhir/R5/overview-arch.html" rel="noopener noreferrer">FHIR R5 — Architects Overview</a></strong><span class="course-tag">HL7 International · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.hl7.org/fhir/references.html" rel="noopener noreferrer">FHIR Resource References</a></strong><span class="course-tag">HL7 International · documentación normativa</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/profiling.html" rel="noopener noreferrer">FHIR Profiling</a></strong><span class="course-tag">HL7 International · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.hl7.org/fhir/structuredefinition.html" rel="noopener noreferrer">FHIR StructureDefinition</a></strong><span class="course-tag">HL7 International · recurso normativo</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/terminologies.html" rel="noopener noreferrer">FHIR Terminologies: Code Systems, Value Sets and Bindings</a></strong><span class="course-tag">HL7 International · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.hl7.org/fhir/R5/json.html" rel="noopener noreferrer">FHIR R5 JSON Representation</a></strong><span class="course-tag">HL7 International · documentación normativa</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/R5/" rel="noopener noreferrer">FHIR R5 Specification Home</a></strong><span class="course-tag">HL7 International · especificación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part01/sect_6.3.html" rel="noopener noreferrer">DICOM PS3.1 2026c — Introduction and Overview</a></strong><span class="course-tag">DICOM Standards Committee / NEMA · estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/html/part03.html" rel="noopener noreferrer">DICOM PS3.3 2026c — Information Object Definitions</a></strong><span class="course-tag">DICOM Standards Committee / NEMA · estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_6.2.html" rel="noopener noreferrer">DICOM PS3.3 2026c — Attributes</a></strong><span class="course-tag">DICOM Standards Committee / NEMA · estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/chapter_C.html" rel="noopener noreferrer">DICOM PS3.3 2026c — Information Module Definitions</a></strong><span class="course-tag">DICOM Standards Committee / NEMA · estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.nlm.nih.gov/healthit/snomedct/international.html" rel="noopener noreferrer">SNOMED CT International Edition — August 2026</a></strong><span class="course-tag">U.S. National Library of Medicine / SNOMED International · release oficial distribuida</span></li>
+        <li><strong><a class="resource-link" href="https://docs.snomed.org/snomed-international-documents/snomed-ct-glossary/s/snomed-ct-concept-definition" rel="noopener noreferrer">SNOMED CT Concept Definition</a></strong><span class="course-tag">SNOMED International · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://docs.snomed.org/snomed-international-documents/snomed-ct-glossary/s/snomed-ct-reference-set" rel="noopener noreferrer">SNOMED CT Reference Set</a></strong><span class="course-tag">SNOMED International · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://docs.snomed.org/snomed-international-documents/snomed-ct-glossary/i/identifier" rel="noopener noreferrer">SNOMED CT Identifier</a></strong><span class="course-tag">SNOMED International · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://docs.snomed.org/snomed-ct-specifications/snomed-ct-editorial-guide/readme/concept-model-overview/root-and-top-level-concepts" rel="noopener noreferrer">SNOMED CT Root and Top-level Concepts</a></strong><span class="course-tag">SNOMED International · guía editorial oficial</span></li>
+        <li><strong><a class="resource-link" href="https://loinc.org/about" rel="noopener noreferrer">About LOINC</a></strong><span class="course-tag">Regenstrief Institute · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://loinc.org/kb/users-guide/major-parts-of-a-loinc-term" rel="noopener noreferrer">Major Parts of a LOINC Term</a></strong><span class="course-tag">Regenstrief Institute · guía oficial</span></li>
+        <li><strong><a class="resource-link" href="https://loinc.org/" rel="noopener noreferrer">LOINC 2.83</a></strong><span class="course-tag">Regenstrief Institute · release y documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://loinc.org/kb/users-guide/loinc-database-structure/loinc-table-structure" rel="noopener noreferrer">LOINC Table Structure</a></strong><span class="course-tag">Regenstrief Institute · guía oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/html/part18.html" rel="noopener noreferrer">DICOM PS3.18 2026c — Web Services</a></strong><span class="course-tag">DICOM Standards Committee / NEMA · estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://ucum.org/ucum" rel="noopener noreferrer">UCUM Specification 2.2</a></strong><span class="course-tag">UCUM Organization / Regenstrief Institute · especificación oficial</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Integrar FHIR, DICOM, SNOMED CT y LOINC para resolver un caso de intercambio semántico de información con evidencia, controles, incertidumbre y comunicación proporcional. Conecta especialmente con Aplicación principal: Intercambio semántico de información, Evidencia: Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, Calidad: Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias, Límite: Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria.</p>
+      <p>Construir y verificar un paquete sintético de intercambio clínico que preserve estructura, identidad y significado entre representaciones FHIR, DICOM/DICOMweb y terminologías clínicas SNOMED CT, LOINC y UCUM, distinguiendo interoperabilidad sintáctica, estructural y semántica; perfiles y versiones; códigos, conceptos y displays; mapeos y pérdidas de significado. La unidad reutiliza los workflows de U2, reserva analítica y alertas para U4, factores humanos para U5 y gobernanza/implementación para U6, y no confunde validación técnica con validez clínica. Conecta especialmente con Historias clínicas electrónicas, Laboratorio clínico, Imagen médica, Documentación clínica. Material educativo con desarrollo interno completo y estado review. Todos los recursos, pacientes, encounters, órdenes, observaciones, estudios, UIDs, códigos, displays, value sets, mapeos y endpoints son sintéticos o referencias públicas del estándar. No se deben introducir datos identificables, credenciales, tokens, endpoints de producción ni archivos DICOM clínicos reales. La unidad no interpreta resultados, imágenes o diagnósticos, no decide tratamiento y no certifica interoperabilidad, conformidad DICOM/FHIR, licencia terminológica, privacidad, seguridad ni utilidad clínica. U4 aborda analítica y alertas; U5 factores humanos; U6 gobernanza e implementación Las versiones de referencia se verificaron el 25 de agosto de 2026 y deben revalidarse antes de reutilizar la actividad en una fecha posterior.</p>
       <div class="page-actions"><a class="btn-link secondary" href="unidad-02.html">← Unidad 2: Sistemas de información clínica</a><a class="btn-link" href="unidad-04.html">Unidad 4: Analítica y apoyo a decisiones →</a></div>
     </section>
     </article>
