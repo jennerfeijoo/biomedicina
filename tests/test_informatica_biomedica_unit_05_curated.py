@@ -109,7 +109,8 @@ class TestInformaticaBiomedicaUnit05Curated(unittest.TestCase):
         self.assertGreaterEqual(len(activity["deliverables"]), 10)
         self.assertGreaterEqual(len(activity["checking_criteria"]), 20)
         activity_text = json.dumps(activity, ensure_ascii=False).lower()
-        self.assertIn("datos sintéticos", activity_text)
+        self.assertIn("casos sintéticos", activity_text)
+        self.assertIn("sin datos clínicos reales", activity_text)
         self.assertIn("no se utilizan pacientes", activity_text)
 
     def test_curricular_boundaries_separate_u4_u5_u6(self) -> None:
@@ -145,7 +146,7 @@ class TestInformaticaBiomedicaUnit05Curated(unittest.TestCase):
             "no recluta pacientes",
             "no interpreta historias clínicas reales",
             "no diagnostica",
-            "ni demuestra seguridad o eficacia clínica",
+            "ni demostración de seguridad o eficacia clínica",
             "no constituyen human factors validation",
             "transfiere gobernanza, despliegue y supervisión institucional a u6",
         ]:
