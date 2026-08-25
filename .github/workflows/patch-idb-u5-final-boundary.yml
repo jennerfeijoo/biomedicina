@@ -1,0 +1,63 @@
+name: Patch IDB U5 final boundary
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
+          fetch-depth: 0
+      - name: Align U5 boundary and regression
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          unit_paths = [
+              Path('data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-05.json'),
+              Path('data/generated_units/ingenieria-datos-biomedicos/unit-05.json'),
+          ]
+          replacements = {
+              'U4 permanece como dueño de calidad y procedencia y U6 como dueño de interoperabilidad.':
+              'U4 permanece como dueño de calidad y procedencia y U6 como dueño de privacidad, acceso y entrega responsable de productos de datos.',
+              'Consumir los gates de U4 y reservar interoperabilidad formal para U6.':
+              'Consumir los gates de U4 y reservar seudonimización, autorización, controles de acceso y entrega responsable para U6.',
+              '"domain":"FHIR educativo","connection":"run_id y telemetry pueden acompañar transformaciones FHIR ficticias hasta U6.","boundary":"La validación FHIR y terminologías pertenecen a U6."':
+              '"domain":"Producto de datos analítico sintético","connection":"run_id y telemetría acompañan la generación del producto hasta su entrega controlada en U6.","boundary":"Seudonimización, autorización, documentación contractual y entrega responsable pertenecen a U6."',
+          }
+          for p in unit_paths:
+              text = p.read_text(encoding='utf-8')
+              for old, new in replacements.items():
+                  assert text.count(old) == 1, (p, old, text.count(old))
+                  text = text.replace(old, new)
+              p.write_text(text, encoding='utf-8')
+          assert unit_paths[0].read_bytes() == unit_paths[1].read_bytes()
+
+          test = Path('tests/test_ingenieria_datos_biomedicos_unit_05_curated.py')
+          text = test.read_text(encoding='utf-8')
+          old = "        self.assertIn('interoperabilidad', purpose)\n"
+          new = "        self.assertIn('seudonimización', purpose)\n        self.assertIn('productos de datos', purpose)\n"
+          assert text.count(old) == 1
+          text = text.replace(old, new)
+          old = "        self.assertIn('se reserva para u6', notice)\n"
+          new = "        self.assertIn('se reservan para u6', notice)\n        self.assertIn('controles de acceso', notice)\n"
+          assert text.count(old) == 1
+          text = text.replace(old, new)
+          test.write_text(text, encoding='utf-8')
+          PY
+          rm .github/workflows/patch-idb-u5-final-boundary.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-05.json data/generated_units/ingenieria-datos-biomedicos/unit-05.json tests/test_ingenieria_datos_biomedicos_unit_05_curated.py .github/workflows/patch-idb-u5-final-boundary.yml
+          git diff --cached --exit-code && exit 0 || true
+          git commit -m "Corregir frontera curricular final de Ingeniería de Datos U5"
+          git push origin HEAD:codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
