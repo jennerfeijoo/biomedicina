@@ -9,6 +9,8 @@ SOURCE = ROOT / "data" / "course_redevelopment" / "imagenes-biomedicas-avanzadas
 MIRROR = ROOT / "data" / "generated_units" / "imagenes-biomedicas-avanzadas-i" / "unit-01.json"
 SUBJECT = ROOT / "data" / "subjects" / "ingenieria-biomedica" / "imagenes-biomedicas-avanzadas-i.json"
 CATALOG = ROOT / "data" / "catalog_statuses.json"
+PUBLIC = ROOT / "ingenieria-biomedica" / "imagenes-biomedicas-avanzadas-i" / "unidades" / "unidad-01.html"
+GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
 class ImagenesBiomedicasAvanzadasIUnit01ReleaseStateTests(unittest.TestCase):
@@ -27,6 +29,17 @@ class ImagenesBiomedicasAvanzadasIUnit01ReleaseStateTests(unittest.TestCase):
             "imagenes-biomedicas-avanzadas-i",
             specificity["screened_no_known_template_marker"],
         )
+
+    def test_public_unit_exposes_curated_ct_content(self) -> None:
+        public = PUBLIC.read_text(encoding="utf-8").casefold()
+        self.assertNotIn(GENERIC, public)
+        for phrase in (
+            "transformada de radon",
+            "retroproyección filtrada",
+            "noise power spectrum",
+            "reconstruction algorithm",
+        ):
+            self.assertIn(phrase, public)
 
 
 if __name__ == "__main__":
