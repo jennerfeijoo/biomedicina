@@ -159,7 +159,7 @@ class HistoanatomiaHumanaUnit03CuratedTests(unittest.TestCase):
             "no constituye entrenamiento diagnóstico",
             "lectura clínica",
             "no establecen osteoporosis",
-            "no prescribe ejercicio",
+            "tampoco prescribe ejercicio",
             "material clínico",
         ):
             self.assertIn(phrase, notice)
