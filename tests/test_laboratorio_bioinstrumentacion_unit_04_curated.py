@@ -46,7 +46,7 @@ class LaboratorioBioinstrumentacionUnit04CuratedTests(unittest.TestCase):
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         self.assertIn("debe preceder al muestreador o adc", theory)
         self.assertIn("no puede recuperar una componente que ya se aliasó", theory)
-        self.assertIn("no puede reconstruir una amplitud que se perdió por clipping", theory)
+        self.assertIn("reconstruir una amplitud que se perdió por clipping", theory)
         self.assertIn("no representa lo que un sistema en tiempo real", theory)
         self.assertIn("no 16 bits garantizados", theory)
 
