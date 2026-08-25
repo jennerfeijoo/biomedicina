@@ -35,6 +35,14 @@ class InnovacionEmprendimientoUnit03CuratedTests(unittest.TestCase):
         self.assertNotIn("v(a)=\\sum", self.text)
         self.assertNotIn("modelo multicriterio transparente para comparar alternativas", self.text)
 
+    def test_learning_objectives_use_experiment_language(self) -> None:
+        objectives = norm(" ".join(self.unit["learning_objectives"]))
+        for phrase in ("mvp", "prototipo", "métricas", "umbrales", "criterios de análisis", "contradictoria"):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, objectives)
+        self.assertIn("criterios de decisión", self.text)
+        self.assertIn("evidencia discrepante", self.text)
+
     def test_theory_has_real_prototyping_and_experiment_content(self) -> None:
         sections = self.unit["theory_sections"]
         self.assertEqual(len(sections), 5)
