@@ -6,387 +6,347 @@
   "slug": "modelos-de-informacion",
   "title": "Modelos de información",
   "status": "review",
-  "purpose": "Integrar estructuras, contexto, identificadores y procedencia para resolver un caso de intercambio sin pérdida de significado con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Modelar información clínica sin pérdida accidental de significado mediante una separación explícita entre modelo de referencia y contenido clínico, definiendo entidades, elementos, tipos de dato, cardinalidades, contexto, identificadores, referencias, versiones, procedencia y restricciones. La unidad reutiliza la semántica longitudinal de U1 y prepara la codificación terminológica de U3 y la interoperabilidad de U4, sin confundir una estructura válida con equivalencia semántica, conformidad de intercambio o utilidad clínica.",
   "learning_objectives": [
-    "Definir estructuras, contexto y identificadores y procedencia mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte estructuras con contexto y delimite el papel de identificadores y procedencia.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre intercambio sin pérdida de significado con incertidumbre y límites.",
-    "Transferir el método de Modelos de información a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir modelo conceptual, modelo lógico, modelo de referencia, instancia de datos y serialización, explicando qué significado se conserva o se pierde en cada capa.",
+    "Definir elementos clínicos mediante ruta, tipo de dato, cardinalidad, obligatoriedad, repetición, nulabilidad o ausencia y restricciones, evitando que un campo con el mismo nombre se trate automáticamente como el mismo concepto.",
+    "Representar contexto clínico, sujeto, encuentro, autoría y temporalidad como información explícita en lugar de depender de columnas implícitas o del orden físico de una tabla.",
+    "Distinguir identificadores de negocio, identificadores técnicos y referencias entre entidades, documentando sistema emisor, ámbito, vigencia y reglas de resolución antes de enlazar registros.",
+    "Conservar versiones, auditoría y procedencia al transformar información, diferenciando identidad de la entidad, identidad de una versión y actividad que produjo el cambio.",
+    "Aplicar restricciones, arquetipos o perfiles conceptuales a un conjunto sintético y demostrar mediante casos válidos e inválidos qué controla la estructura y qué sigue requiriendo terminología, interoperabilidad, gobernanza o validación posterior."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Modelos de información",
+      "heading": "1. Capas del modelo: concepto, referencia, instancia y serialización",
       "paragraphs": [
-        "La unidad «Modelos de información» sitúa estructuras, contexto y identificadores y procedencia dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Historias Clínicas, Terminologías y Estándares, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Modelos de información» en Historias Clínicas, Terminologías y Estándares, «estructuras», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Modelos de información», «contexto», aporta otra dimensión al problema de Historias Clínicas, Terminologías y Estándares: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con estructuras debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Modelos de información» en Historias Clínicas, Terminologías y Estándares, «identificadores y procedencia», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Un modelo de información especifica cómo se representan entidades, atributos, relaciones y restricciones para que datos producidos en momentos y sistemas distintos puedan interpretarse de manera consistente. No es la base de datos concreta ni el archivo JSON que circula por una API. La misma idea clínica puede persistirse en tablas relacionales, documentos o grafos; por eso conviene separar la semántica del modelo de su representación física.",
+        "El modelo conceptual responde qué entidades existen y cómo se relacionan. El modelo lógico añade estructura computable: elementos, tipos, cardinalidades y referencias. El modelo físico decide tablas, claves, índices o formatos concretos. Saltar directamente desde una necesidad clínica a columnas de una base de datos mezcla decisiones de significado con decisiones de implementación y dificulta detectar pérdidas durante una migración.",
+        "Un modelo de referencia define un conjunto relativamente estable de clases y reglas generales que permiten construir instancias coherentes. ISO 13606-1:2019 publica un modelo de referencia para comunicar partes o la totalidad de una HCE; openEHR separa igualmente un Reference Model de definiciones clínicas de nivel superior. U2 usa esos enfoques para enseñar arquitectura de información, no para declarar que un estándar sea universalmente superior a otro.",
+        "La instancia es un conjunto concreto de datos que satisface —o viola— las reglas del modelo. Dos instancias pueden tener la misma estructura y significado clínico diferente; a la inversa, dos estructuras distintas pueden pretender representar el mismo fenómeno. Validar una instancia contra un esquema solo demuestra cumplimiento de ciertas reglas formales, no equivalencia semántica ni corrección clínica.",
+        "La serialización es una codificación externa de la instancia, por ejemplo JSON o XML. Cambiar de serialización no debería modificar el significado del modelo, pero puede introducir pérdidas si la transformación no conserva tipos, cardinalidades, identificadores, unidades o contexto. U4 tratará el transporte e intercambio; U2 se concentra en definir qué debe permanecer invariante antes de mover la información.",
+        "El enfoque de dos niveles de openEHR ofrece un ejemplo pedagógico útil: un modelo de referencia estable contiene estructuras generales y los arquetipos o plantillas restringen esas estructuras para conceptos clínicos concretos. ISO 13606-2:2019 también define un Archetype Model para representar arquetipos intercambiables. La lección no es memorizar nombres de clases, sino comprender que estructura estable y restricciones de dominio pueden evolucionar a ritmos diferentes."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Modelos de información.",
-        "Relacionar estructuras, contexto y identificadores y procedencia mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Modelo conceptual, lógico y físico resuelven preguntas diferentes y no deben colapsarse en una sola capa.",
+        "Un modelo de referencia define estructuras generales; una instancia contiene datos concretos sujetos a esas reglas.",
+        "Una serialización expresa una instancia, pero no constituye por sí sola el modelo de información.",
+        "Validar estructura no demuestra equivalencia semántica ni corrección clínica del contenido.",
+        "La transformación entre representaciones debe preservar tipos, relaciones, contexto, identificadores y restricciones relevantes.",
+        "Modelos de dos niveles permiten separar estructuras estables de restricciones clínicas que evolucionan con mayor frecuencia."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Elementos, tipos, cardinalidad y ausencia: hacer explícita la estructura",
       "paragraphs": [
-        "Para «Modelos de información» dentro de Historias Clínicas, Terminologías y Estándares, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Historias Clínicas, Terminologías y Estándares, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre estructuras o contexto debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Modelos de información», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Historias Clínicas, Terminologías y Estándares, la incertidumbre de «Modelos de información» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Un elemento de información necesita más que un nombre. Debe tener una definición, una ubicación dentro de una estructura, un tipo de dato, una cardinalidad y reglas de uso. FHIR ElementDefinition, por ejemplo, formaliza ruta, cardinalidad, tipo, definiciones, valores fijos o patrones y otras restricciones. Es un buen recordatorio de que «campo» no es sinónimo de «string opcional».",
+        "El tipo de dato restringe qué operaciones y significados son admisibles. Fecha, instante, cantidad, texto, booleano, identificador y referencia no son intercambiables aunque puedan serializarse como caracteres. Guardar todo como texto puede facilitar una importación inicial, pero traslada la ambigüedad al consumidor y hace más difícil comprobar unidades, orden temporal o integridad referencial.",
+        "La cardinalidad expresa cuántas ocurrencias están permitidas. Un elemento 0..1 puede faltar o aparecer una vez; 1..1 exige una ocurrencia; 0..* permite repetición. Obligatoriedad y repetición son dimensiones distintas. Convertir una colección de múltiples observaciones en una única celda separada por comas destruye estructura y puede perder el vínculo entre cada valor y su contexto.",
+        "Ausencia tampoco es un valor clínico ordinario. Debe distinguirse un elemento opcional no presente de una negación explícita, un valor desconocido, un dato no aplicable o un dato que existe en otro sistema. U1 ya separó dato faltante de ausencia documentada; U2 exige que el modelo pueda expresar esa diferencia sin recurrir a convenciones frágiles como cadenas vacías o números centinela.",
+        "Las unidades y cantidades muestran por qué tipo y contexto cooperan. El número 5 no informa si se trata de 5 mg, 5 mmol/L o cinco eventos. Un modelo robusto no separa arbitrariamente el valor de la unidad si esa asociación es parte de la semántica. U3 estudiará los códigos y sistemas terminológicos; U2 solo exige que la estructura permita conservar el concepto, el valor y sus calificadores sin mezclarlos.",
+        "Las restricciones pueden reducir el conjunto de instancias permitidas: fijar cardinalidades, exigir un contexto, limitar tipos o declarar invariantes. Un esquema inválido es un control negativo útil, pero un esquema válido sigue pudiendo contener un identificador equivocado, una unidad incorrecta o un concepto mal codificado. La validación estructural es necesaria en muchos flujos, pero no suficiente para garantizar significado."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "Cada elemento necesita definición, ruta, tipo, cardinalidad y reglas de uso, no solo un nombre de columna.",
+        "Tipos de dato preservan operaciones y significado que se pierden cuando todo se convierte en texto.",
+        "Obligatoriedad y repetición son dimensiones distintas expresadas mediante cardinalidades explícitas.",
+        "Dato ausente, negación explícita, desconocido y no aplicable no deben codificarse como si fueran equivalentes.",
+        "Cantidad, unidad y calificadores deben permanecer asociados cuando su relación forma parte del significado clínico.",
+        "Una instancia estructuralmente válida todavía puede ser semántica o clínicamente incorrecta."
       ]
     },
     {
-      "heading": "Aplicación razonada: intercambio sin pérdida de significado",
+      "heading": "3. Contexto y relaciones: evitar que el significado dependa de una columna implícita",
       "paragraphs": [
-        "En la unidad «Modelos de información» de Historias Clínicas, Terminologías y Estándares, el caso conductor es intercambio sin pérdida de significado. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Modelos de información» conecta estructuras con contexto y utiliza identificadores y procedencia como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «intercambio sin pérdida de significado» en Historias Clínicas, Terminologías y Estándares, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Modelos de información» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de intercambio sin pérdida de significado y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
-      ],
-      "equations": [
-        {
-          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
-          "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
-          }
-        }
+        "El mismo valor puede significar cosas distintas según sujeto, encuentro, tiempo, método, autor o foco clínico. El contexto no es decoración alrededor del dato: participa en su interpretación. Un resultado sin sujeto verificable, sin tiempo clínicamente relevante o sin relación con el evento que lo originó puede ser inutilizable aunque el valor y el tipo sean formalmente válidos.",
+        "Las estructuras jerárquicas permiten mantener proximidad entre contenido y contexto, mientras las referencias explícitas permiten relacionar entidades independientes. Ninguna estrategia elimina la necesidad de definir alcance. Embebido y referenciado son decisiones diferentes: copiar el nombre del profesional dentro de cada resultado no equivale a referenciar una entidad de profesional cuya identidad y organización puedan resolverse de forma consistente.",
+        "Una relación necesita dirección y semántica. «A refiere a B», «A deriva de B», «A pertenece al encuentro B» y «A reemplaza una versión de B» no significan lo mismo. Un modelo que guarda solo dos identificadores conectados por una clave genérica puede preservar conectividad pero perder el tipo de relación que justificaba el enlace.",
+        "El contexto temporal también requiere granularidad. U1 distinguió tiempo clínico, autoría, emisión y registro. U2 debe asignar cada tiempo al elemento o entidad apropiada, en vez de añadir una sola columna timestamp a toda la tabla. Esa decisión afecta consultas retrospectivas, reconstrucción de versiones y análisis de latencia documental.",
+        "FHIR StructureDefinition y ElementDefinition ilustran cómo el significado de un elemento depende de una ruta y un contexto de definición. openEHR organiza contenido mediante clases como Composition, Section, Entry y estructuras de datos. Estos ejemplos muestran que la posición dentro del modelo aporta semántica; no se debe asumir que dos propiedades llamadas status o code son intercambiables fuera de su contexto.",
+        "En U2 se modela un pequeño episodio sintético de U1 como grafo lógico: sujeto, encuentros, problemas, solicitudes y resultados permanecen como entidades diferenciadas, con referencias tipadas y contexto. El objetivo no es construir todavía mensajes HL7 ni recursos intercambiables por API; U4 evaluará cómo transportar ese modelo entre sistemas."
       ],
       "key_points": [
-        "Delimitar el caso de intercambio sin pérdida de significado antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Sujeto, encuentro, tiempo, autor y método pueden formar parte del significado de un dato clínico.",
+        "Embebido y referenciado son estrategias distintas y deben elegirse con reglas explícitas de identidad y actualización.",
+        "Una relación necesita tipo, dirección y condiciones; conectividad por sí sola no preserva semántica.",
+        "Cada marca temporal debe asociarse al evento que realmente representa.",
+        "La ruta y el contexto de definición participan en el significado de un elemento dentro del modelo.",
+        "U2 modela relaciones internas; U4 abordará su transporte entre sistemas y APIs."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "4. Identidad, referencias, versiones y procedencia",
       "paragraphs": [
-        "La reproducibilidad de «Modelos de información» en Historias Clínicas, Terminologías y Estándares requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Modelos de información» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Historias Clínicas, Terminologías y Estándares separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Modelos de información» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de estructuras, contexto y identificadores y procedencia debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Historias Clínicas, Terminologías y Estándares.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre intercambio sin pérdida de significado. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Historias Clínicas, Terminologías y Estándares como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un identificador de negocio identifica una entidad dentro de un sistema o ámbito emisor: número de historia, identificador de laboratorio o identificador nacional son ejemplos posibles. FHIR Identifier separa system y value y permite registrar periodo y asignador; la idea general es que el valor aislado rara vez es suficiente para garantizar unicidad fuera de su ámbito.",
+        "Un identificador técnico de una representación no necesariamente es el identificador de negocio del objeto real. FHIR distingue el identificador lógico de un recurso de los business identifiers, y sus Reference pueden contener una referencia resoluble o un Identifier cuando la representación concreta no es conocida. Confundir ambas capas produce enlaces frágiles durante migraciones, replicación o integración de fuentes.",
+        "Una referencia debe declarar qué entidad pretende señalar y qué regla permite resolverla. El enlace puede ser directo, lógico o mediado por un identificador, pero no se debe asumir que una cadena coincidente en dos sistemas representa la misma entidad. La resolución de identidad necesita ámbito, autoridad emisora y, cuando corresponda, procesos explícitos de reconciliación.",
+        "La identidad persiste mientras las versiones cambian. FHIR Resource.meta.versionId ejemplifica un identificador de versión que cambia cuando cambia el contenido del recurso. openEHR lleva esta separación más lejos mediante VERSIONED_OBJECT y VERSION, conservando estados previos y auditoría de los commits. El patrón común es distinguir «qué entidad es» de «qué estado de esa entidad estoy observando». ",
+        "Procedencia describe agentes, entidades y actividades implicadas en la creación o transformación de información. No es equivalente a historial de versiones: una versión dice que existe un estado distinto; la procedencia ayuda a explicar quién o qué proceso lo produjo y en qué actividad. U1 introdujo la reconstrucción temporal; U2 incorpora esas relaciones como parte del modelo.",
+        "Una transformación auditable debe conservar un mapa origen→destino. Si un campo se deriva de varios elementos, si una unidad se convierte o si dos registros se consolidan, debe existir evidencia para reconstruir esa operación. U5 tratará acceso, consentimiento y auditoría organizativa; aquí la procedencia se estudia como propiedad informacional y técnica."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "Un identificador necesita ámbito o sistema emisor; el valor aislado puede no ser globalmente único.",
+        "Identificador de negocio e identificador técnico de una representación cumplen funciones distintas.",
+        "Una referencia requiere reglas de resolución y no convierte automáticamente coincidencia de cadenas en identidad.",
+        "Identidad de la entidad e identidad de una versión deben permanecer separadas.",
+        "Procedencia complementa el versionado al documentar agentes, actividades y transformaciones que produjeron un estado.",
+        "Las transformaciones deben conservar un mapa auditable entre datos de origen y representación resultante."
+      ]
+    },
+    {
+      "heading": "5. Restricciones, arquetipos y contratos de datos: controlar sin confundir conformidad con significado",
+      "paragraphs": [
+        "Un modelo de referencia deliberadamente general admite muchas instancias. Para un uso concreto se necesitan restricciones adicionales: qué elementos son obligatorios, qué repeticiones se permiten, qué tipos se aceptan y qué invariantes deben cumplirse. FHIR StructureDefinition utiliza ElementDefinition para definir estructuras, extensiones y restricciones; U2 lo toma como ejemplo de contrato estructural, no como entrenamiento de perfiles interoperables de U4.",
+        "El enfoque de arquetipos formaliza restricciones de dominio separadas del modelo de referencia. ISO 13606-2:2019 define un Archetype Model para comunicar arquetipos entre repositorios y servicios. openEHR adopta un enfoque de dos niveles en el que arquetipos y plantillas restringen un Reference Model estable. Esto permite que conceptos clínicos evolucionen sin rediseñar continuamente las clases básicas del sistema.",
+        "Una plantilla puede combinar o restringir arquetipos para un contexto de uso más específico. Sin embargo, mayor restricción no siempre significa mayor interoperabilidad. Dos organizaciones pueden usar estructuras formalmente válidas pero elegir restricciones incompatibles, identificadores con ámbitos distintos o conceptos codificados de forma diferente. U3 y U4 resolverán capas que la estructura sola no puede cerrar.",
+        "El contrato de datos de U2 documenta para cada elemento: significado en lenguaje natural, ruta lógica, tipo, cardinalidad, reglas de ausencia, contexto, identificador o referencia, procedencia esperada y pruebas. Se incluyen casos positivos y negativos. El control más importante no es solo «el JSON valida», sino comprobar que una transformación no ha perdido una relación o convertido un estado desconocido en una falsa ausencia.",
+        "La evaluación de equivalencia se realiza campo por campo y relación por relación. Se distinguen pérdidas estructurales, pérdidas de contexto, pérdidas de identidad y pérdidas semánticas. Un mapeo puede ser técnicamente completo —todos los campos tienen destino— y aun así ser semánticamente inadecuado si fusiona conceptos distintos o elimina condiciones necesarias para interpretarlos.",
+        "El cierre de U2 produce un modelo lógico y un contrato de datos para un caso sintético derivado de U1. La unidad no certifica un esquema productivo ni un perfil FHIR, no asigna códigos SNOMED CT/LOINC/ICD y no diseña una API. U3 estudiará terminologías, U4 interoperabilidad, U5 gobernanza y U6 pruebas de conformidad e implementación."
+      ],
+      "key_points": [
+        "Restricciones convierten un modelo general en un contrato más específico para un contexto de uso definido.",
+        "Arquetipos separan restricciones de dominio del modelo de referencia y pueden evolucionar independientemente.",
+        "Mayor restricción estructural no garantiza por sí sola equivalencia semántica entre organizaciones.",
+        "Un contrato de datos debe especificar significado, tipo, cardinalidad, ausencia, contexto, identidad, procedencia y pruebas.",
+        "Mapeo completo de campos no equivale a mapeo semánticamente correcto ni a interoperabilidad demostrada.",
+        "U2 termina en modelo y contrato; terminologías, transporte, gobernanza y conformidad se validan en unidades posteriores."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "estructuras",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "contexto",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "identificadores y procedencia",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Modelos de información",
-      "definition": "Dominio de estudio que integra estructuras, contexto, identificadores y procedencia para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de intercambio sin pérdida de significado usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"Modelo de información","definition":"Representación explícita de entidades, elementos, relaciones, tipos y restricciones usada para dar estructura computable a información."},
+    {"term":"Modelo conceptual","definition":"Representación de conceptos y relaciones del dominio independiente de decisiones concretas de almacenamiento o serialización."},
+    {"term":"Modelo lógico","definition":"Especificación computable de entidades, elementos, tipos, cardinalidades y relaciones sin fijar necesariamente la implementación física."},
+    {"term":"Modelo físico","definition":"Diseño concreto de almacenamiento, tablas, índices, documentos u otras estructuras de persistencia."},
+    {"term":"Modelo de referencia","definition":"Conjunto general y relativamente estable de clases y reglas sobre el que pueden imponerse restricciones de dominio."},
+    {"term":"Instancia","definition":"Conjunto concreto de datos que pretende satisfacer las reglas de un modelo."},
+    {"term":"Serialización","definition":"Representación externa de una instancia en un formato como JSON o XML."},
+    {"term":"Entidad","definition":"Objeto conceptual distinguible que posee identidad o participa en relaciones del modelo."},
+    {"term":"Elemento","definition":"Unidad definida dentro de una estructura con ruta, tipo, cardinalidad y reglas de uso."},
+    {"term":"Ruta lógica","definition":"Ubicación de un elemento dentro de una jerarquía o estructura de información."},
+    {"term":"Tipo de dato","definition":"Conjunto de valores y operaciones permitidas para un elemento, como fecha, cantidad, texto, identificador o referencia."},
+    {"term":"Cardinalidad","definition":"Número mínimo y máximo de ocurrencias permitidas para un elemento o relación."},
+    {"term":"Obligatoriedad","definition":"Regla que exige la presencia de un elemento bajo las condiciones definidas."},
+    {"term":"Repetición","definition":"Capacidad de un elemento o relación para aparecer más de una vez."},
+    {"term":"Dato faltante","definition":"Información no disponible en el conjunto observado, sin implicar automáticamente ausencia clínica."},
+    {"term":"Ausencia documentada","definition":"Representación explícita de que un fenómeno o valor no estaba presente, diferente de un campo no informado."},
+    {"term":"Valor desconocido","definition":"Estado en que se sabe que debería existir una respuesta pero su valor no es conocido."},
+    {"term":"No aplicable","definition":"Estado en que una pregunta o elemento no corresponde al caso concreto."},
+    {"term":"Restricción","definition":"Regla que reduce el conjunto de instancias permitidas por un modelo más general."},
+    {"term":"Invariante","definition":"Condición lógica que debe cumplirse para que una instancia sea considerada válida bajo una especificación."},
+    {"term":"Contexto clínico","definition":"Información sobre sujeto, encuentro, tiempo, autor, método y otras condiciones necesarias para interpretar un dato."},
+    {"term":"Relación tipada","definition":"Enlace cuya dirección y significado están explícitamente definidos."},
+    {"term":"Referencia","definition":"Mecanismo para señalar otra entidad o representación sin copiar necesariamente todo su contenido."},
+    {"term":"Embebido","definition":"Contenido almacenado dentro de la estructura del objeto que lo contiene en lugar de ser referenciado como entidad independiente."},
+    {"term":"Identificador","definition":"Valor asignado para distinguir una entidad dentro de un ámbito definido."},
+    {"term":"Identificador de negocio","definition":"Identificador usado por un proceso o dominio externo al mecanismo técnico de almacenamiento o transporte."},
+    {"term":"Identificador técnico","definition":"Identificador de una representación o recurso dentro de una plataforma o sistema técnico."},
+    {"term":"Sistema de identificadores","definition":"Ámbito o namespace que da significado y unicidad contextual al valor de un identificador."},
+    {"term":"Asignador","definition":"Organización o autoridad que emite o administra un identificador."},
+    {"term":"Resolución de referencia","definition":"Proceso por el cual una referencia o identificador se vincula con la entidad representada."},
+    {"term":"Integridad referencial","definition":"Propiedad por la que los enlaces entre entidades cumplen las reglas de existencia y destino definidas por el modelo."},
+    {"term":"Versión","definition":"Estado identificable de una entidad o representación dentro de su historia de cambios."},
+    {"term":"Versionado","definition":"Mecanismo para conservar y relacionar estados sucesivos de información."},
+    {"term":"Procedencia","definition":"Información sobre agentes, entidades y actividades que participaron en la creación o transformación de datos."},
+    {"term":"Auditoría de transformación","definition":"Registro que permite reconstruir cómo datos de origen produjeron una representación derivada."},
+    {"term":"Mapa origen-destino","definition":"Correspondencia explícita entre elementos de una fuente y elementos de una representación transformada."},
+    {"term":"Arquetipo","definition":"Definición formal de restricciones de dominio aplicada sobre un modelo de referencia."},
+    {"term":"Plantilla","definition":"Composición o restricción adicional de modelos o arquetipos para un contexto de uso específico."},
+    {"term":"Contrato de datos","definition":"Especificación verificable de estructura, significado, tipos, cardinalidades, contexto, identidad y reglas esperadas para un intercambio o transformación."},
+    {"term":"Esquema","definition":"Representación formal de una estructura y parte de sus restricciones sintácticas o lógicas."},
+    {"term":"Conformidad estructural","definition":"Cumplimiento de las reglas de estructura y restricciones comprobadas por un esquema o validador."},
+    {"term":"Equivalencia semántica","definition":"Propiedad de dos representaciones que conservan el mismo significado relevante para el uso definido."},
+    {"term":"Pérdida estructural","definition":"Eliminación o alteración de elementos, cardinalidades o relaciones durante una transformación."},
+    {"term":"Pérdida de contexto","definition":"Eliminación de información necesaria sobre sujeto, tiempo, encuentro, método u otras condiciones de interpretación."},
+    {"term":"Pérdida de identidad","definition":"Alteración o ambigüedad que impide saber si dos registros representan la misma entidad."},
+    {"term":"Pérdida semántica","definition":"Transformación que conserva forma aparente pero modifica o elimina significado relevante."},
+    {"term":"Validación estructural","definition":"Comprobación de que una instancia satisface reglas formales del modelo o esquema."},
+    {"term":"Control positivo","definition":"Instancia diseñada para cumplir las reglas y demostrar que el validador acepta un caso conocido."},
+    {"term":"Control negativo","definition":"Instancia deliberadamente inválida usada para comprobar que una regla detecta un fallo esperado."},
+    {"term":"Dos niveles de modelado","definition":"Arquitectura que separa un modelo de referencia estable de restricciones o definiciones de dominio que evolucionan de forma independiente."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Modelos de información",
-      "scenario": "Un equipo propone estudiar intercambio sin pérdida de significado, pero su pregunta mezcla estructuras, contexto y identificadores y procedencia sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de estructuras, contexto y identificadores y procedencia.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-      ]
+      "title":"Misma etiqueta, distinto significado",
+      "scenario":"Dos tablas sintéticas contienen una columna status. En una describe el estado de un encuentro y en otra el estado de verificación de una condición.",
+      "reasoning_steps":["Identificar la entidad propietaria de cada campo.","Escribir una definición de cada status.","Comparar tipos y valores permitidos.","Comprobar el contexto de la ruta lógica.","Rechazar un mapeo uno-a-uno basado solo en el nombre."],
+      "conclusion":"La igualdad de etiquetas no establece equivalencia semántica; el contexto de la entidad y la definición forman parte del significado.",
+      "transfer_question":"¿Qué otros campos clínicos son especialmente peligrosos de mapear solo por nombre?"
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre estructuras y contexto en el caso de intercambio sin pérdida de significado; una condición vinculada con identificadores y procedencia podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar identificadores y procedencia como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title":"Cardinalidad que se pierde al aplanar",
+      "scenario":"Un registro sintético contiene tres identificadores válidos de un paciente, pero una exportación CSV conserva solo el primero.",
+      "reasoning_steps":["Determinar la cardinalidad del elemento origen.","Identificar que el destino permite una sola ocurrencia.","Registrar la pérdida estructural.","Evaluar si los otros identificadores tienen sistemas distintos.","Rediseñar el destino como colección o tabla relacionada."],
+      "conclusion":"Un mapeo puede copiar un valor correctamente y aun así ser incompleto si destruye la cardinalidad de la fuente.",
+      "transfer_question":"¿Cómo detectarías automáticamente pérdidas de cardinalidad en una transformación?"
+    },
+    {
+      "title":"Valor sin contexto temporal",
+      "scenario":"Una observación sintética de 120 aparece en un almacén sin tiempo clínico, aunque conserva fecha de carga.",
+      "reasoning_steps":["Distinguir valor, unidad y tiempo clínico.","Separar fecha de carga del momento de medición.","Comprobar si el origen conserva el tiempo efectivo.","Clasificar la pérdida como pérdida de contexto.","Evitar ordenar clínicamente el evento por la fecha de carga."],
+      "conclusion":"La estructura puede ser sintácticamente válida pero insuficiente para reconstruir la cronología clínica.",
+      "transfer_question":"¿Qué análisis longitudinal quedaría sesgado si la fecha de carga sustituye al tiempo clínico?"
+    },
+    {
+      "title":"Identificador coincidente en dos ámbitos",
+      "scenario":"Dos laboratorios sintéticos usan el identificador 00421 para muestras distintas.",
+      "reasoning_steps":["Separar value del sistema emisor.","Documentar el namespace o ámbito de cada laboratorio.","Construir una clave lógica compuesta por sistema y valor.","Comprobar vigencia y asignador si existen.","Evitar fusionar las muestras por coincidencia del valor."],
+      "conclusion":"Un identificador sin ámbito puede ser ambiguo; la unicidad depende del sistema en que fue emitido.",
+      "transfer_question":"¿Qué controles aplicarías al integrar identificadores de múltiples hospitales?"
+    },
+    {
+      "title":"Esquema válido, significado incorrecto",
+      "scenario":"Una transformación sintética produce JSON que valida contra el esquema, pero coloca la fecha de registro en el campo destinado al tiempo clínicamente relevante.",
+      "reasoning_steps":["Confirmar que el tipo dateTime es formalmente válido.","Comparar definiciones semánticas de origen y destino.","Detectar que el mapeo conserva tipo pero cambia significado.","Clasificar el fallo como pérdida semántica.","Añadir una prueba de contrato que compare el significado del campo, no solo el tipo."],
+      "conclusion":"La validación estructural no sustituye una validación de significado y trazabilidad del mapeo.",
+      "transfer_question":"¿Qué pruebas semánticas añadirías además del validador de esquema?"
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
-      "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+      "title":"Diseño y prueba de un modelo lógico para un episodio sintético",
+      "estimated_time_minutes":360,
+      "instructions":[
+        "Reutiliza exclusivamente el episodio sintético construido en U1; no introduzcas datos clínicos reales ni identificables.",
+        "Construye primero un modelo conceptual con sujeto, encuentro, problema, solicitud, observación e informe antes de elegir tipos o formatos.",
+        "Transforma el modelo conceptual en un modelo lógico con elementos, rutas, tipos y cardinalidades explícitas.",
+        "Documenta para cada dato las reglas de ausencia y distingue faltante, desconocido, no aplicable y ausencia documentada cuando corresponda.",
+        "Representa contexto temporal y asistencial mediante elementos o relaciones explícitas; no dependas del orden de las filas.",
+        "Define identificadores con sistema, valor, asignador o vigencia cuando sean relevantes y separa identificador de negocio de identificador técnico.",
+        "Añade referencias tipadas y especifica cómo se resolverían; no unas entidades por coincidencia de cadenas sin ámbito.",
+        "Conserva identidad, versión y procedencia como conceptos separados.",
+        "Diseña al menos tres restricciones o arquetipos conceptuales y crea controles positivos y negativos para cada uno.",
+        "Cierra con un contrato de datos que declare qué valida U2 y qué queda explícitamente para terminologías U3, interoperabilidad U4, gobernanza U5 y conformidad U6."
       ],
-      "problems": [
-        "Define estructuras mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo contexto modifica o complementa a estructuras.",
-        "Propón una prueba que distinga el papel de identificadores y procedencia de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+      "problems":[
+        "Dibuja el modelo conceptual del episodio sintético de U1.",
+        "Clasifica cada entidad como independiente, embebida o referenciada y justifica la decisión.",
+        "Define la ruta lógica de quince elementos.",
+        "Asigna tipos de dato a esos elementos y explica tres alternativas descartadas.",
+        "Define cardinalidades mínimas y máximas para diez elementos o relaciones.",
+        "Detecta una pérdida causada por convertir una colección repetible en un único campo.",
+        "Representa dato faltante, desconocido, no aplicable y ausencia documentada sin usar números centinela.",
+        "Modela cantidad y unidad sin separar su significado.",
+        "Representa sujeto, encuentro y autor como contexto explícito.",
+        "Representa tiempo clínico, autoría y registro como marcas temporales diferentes.",
+        "Define una relación tipada entre solicitud y resultado.",
+        "Define una relación que no pueda resolverse y marca su incertidumbre.",
+        "Crea tres identificadores de negocio con ámbitos distintos.",
+        "Crea un identificador técnico de representación y explica por qué no sustituye al identificador de negocio.",
+        "Detecta una colisión de identificadores y evita una fusión incorrecta.",
+        "Representa dos versiones de la misma entidad manteniendo identidad persistente.",
+        "Añade procedencia a una transformación de unidad o consolidación.",
+        "Diseña un control negativo de cardinalidad.",
+        "Diseña un control negativo de tipo de dato.",
+        "Diseña un control negativo de referencia inexistente.",
+        "Construye una restricción o arquetipo conceptual para un resultado de laboratorio sintético.",
+        "Compara una instancia estructuralmente válida pero semánticamente incorrecta con una instancia correcta.",
+        "Construye una matriz origen→destino y clasifica pérdidas estructurales, de contexto, identidad o semántica.",
+        "Redacta el contrato de datos final y las pruebas que permiten auditarlo."
       ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+      "deliverables":[
+        "Diagrama conceptual de entidades y relaciones.",
+        "Modelo lógico con rutas, tipos y cardinalidades.",
+        "Diccionario de reglas de ausencia.",
+        "Tabla de contexto clínico y temporal.",
+        "Registro de identificadores y namespaces.",
+        "Mapa de referencias y reglas de resolución.",
+        "Modelo de identidad, versiones y procedencia.",
+        "Tres restricciones o arquetipos conceptuales.",
+        "Suite de controles positivos y negativos.",
+        "Matriz origen→destino con clasificación de pérdidas.",
+        "Contrato de datos auditable.",
+        "Informe de fronteras U2→U3–U6."
       ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: intercambio sin pérdida de significado",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para estructuras, contexto y identificadores y procedencia.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de intercambio sin pérdida de significado y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte estructuras, contexto y identificadores y procedencia.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+      "checking_criteria":[
+        "Modelo conceptual y modelo lógico se presentan como capas distintas.",
+        "La serialización no se confunde con el modelo de información.",
+        "Cada elemento principal tiene definición, ruta, tipo y cardinalidad.",
+        "Los elementos repetibles no se aplanan sin documentar pérdida.",
+        "Dato faltante y ausencia documentada permanecen diferenciados.",
+        "Desconocido y no aplicable no usan el mismo valor sentinela.",
+        "Cantidad y unidad permanecen vinculadas.",
+        "Sujeto y encuentro forman parte explícita del contexto.",
+        "Tiempo clínico y tiempo de registro no se sustituyen mutuamente.",
+        "Las relaciones declaran dirección y significado.",
+        "Cada identificador de negocio declara su ámbito o sistema.",
+        "Identificador técnico y de negocio se mantienen separados.",
+        "Las referencias tienen una regla de resolución definida o se marcan como no resueltas.",
+        "La coincidencia de cadenas no basta para fusionar identidades.",
+        "La identidad de una entidad permanece estable entre versiones.",
+        "La procedencia identifica la transformación que produjo datos derivados.",
+        "Al menos un control positivo demuestra aceptación de una instancia conocida.",
+        "Al menos tres controles negativos demuestran detección de fallos previstos.",
+        "Las restricciones están vinculadas a requisitos y no se añaden de forma arbitraria.",
+        "El contrato diferencia conformidad estructural de equivalencia semántica.",
+        "La matriz detecta pérdidas de estructura, contexto, identidad y significado.",
+        "Un JSON válido no se presenta como prueba de interoperabilidad clínica.",
+        "No se introducen códigos SNOMED CT, LOINC o ICD como contenido central de U2.",
+        "No se implementan APIs o mensajería HL7 como contenido central de U2.",
+        "Todo el ejercicio usa información sintética y declara las fronteras con U3–U6."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar estructuras como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar estructuras en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre estructuras y contexto demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir identificadores y procedencia después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Modelos de información al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"error":"Confundir modelo de información con esquema JSON.","correction":"Separa semántica, modelo lógico y serialización; un esquema es solo una representación de parte de las restricciones."},
+    {"error":"Diseñar columnas antes de definir entidades y relaciones.","correction":"Construye primero el modelo conceptual y después decide estructura lógica y física."},
+    {"error":"Guardar todo como texto.","correction":"Usa tipos que preserven fechas, cantidades, identificadores y relaciones cuando el significado lo requiera."},
+    {"error":"Tratar 0..1 y 0..* como equivalentes porque ambos son opcionales.","correction":"Cardinalidad distingue obligatoriedad y repetición; documenta mínimo y máximo."},
+    {"error":"Codificar desconocido como cero.","correction":"Usa una representación explícita de ausencia o desconocimiento; cero puede ser un valor clínico real."},
+    {"error":"Usar cadena vacía como ausencia documentada.","correction":"Diferencia falta de dato de negación explícita."},
+    {"error":"Separar valor y unidad sin relación verificable.","correction":"Modela la cantidad como una estructura coherente o conserva una asociación inequívoca."},
+    {"error":"Confiar en el nombre del campo para mapear conceptos.","correction":"Compara definición, entidad, ruta, tipo, cardinalidad y contexto."},
+    {"error":"Copiar contexto en texto libre en cada fila.","correction":"Representa entidades y referencias cuando el contexto necesita identidad y actualización consistente."},
+    {"error":"Usar una relación genérica para todos los enlaces.","correction":"Declara tipo y dirección de la relación."},
+    {"error":"Tratar un identificador como globalmente único sin namespace.","correction":"Conserva sistema emisor, ámbito y valor."},
+    {"error":"Confundir identificador técnico de recurso con número clínico de negocio.","correction":"Modela ambas identidades por separado y documenta su relación."},
+    {"error":"Fusionar entidades porque comparten el mismo valor de identificador.","correction":"Comprueba el sistema o ámbito antes de decidir identidad."},
+    {"error":"Sobrescribir versiones.","correction":"Mantén identidad persistente y estados versionados con procedencia cuando el caso lo requiera."},
+    {"error":"Usar procedencia como sinónimo de versionId.","correction":"El versionado identifica estados; la procedencia describe agentes y actividades que los produjeron."},
+    {"error":"Creer que un esquema válido garantiza significado correcto.","correction":"Añade pruebas de mapeo, contexto, identidad y equivalencia semántica."},
+    {"error":"Suponer que un arquetipo o perfil resuelve la terminología.","correction":"La estructura puede restringir dónde va un código, pero U3 debe validar el sistema terminológico y el concepto."},
+    {"error":"Presentar un contrato local como interoperabilidad demostrada.","correction":"U4 debe probar transporte, perfiles, APIs y comportamiento entre sistemas reales o simulados."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar intercambio sin pérdida de significado?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan estructuras y contexto?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; identificadores y procedencia puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre identificadores y procedencia?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre intercambio sin pérdida de significado?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Modelos de información?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question":"¿Qué diferencia un modelo lógico de una serialización?","answer":"El modelo lógico define entidades, elementos, tipos y relaciones; la serialización codifica una instancia de ese modelo en un formato externo.","reasoning":"JSON o XML pueden representar modelos diferentes y no contienen por sí solos toda la semántica.","common_error":"Llamar modelo al archivo JSON."},
+    {"question":"¿Una instancia que valida contra un esquema es clínicamente correcta?","answer":"No necesariamente.","reasoning":"El esquema puede comprobar estructura sin detectar un valor, unidad, identidad o concepto incorrecto.","common_error":"Equiparar conformidad estructural con validez clínica."},
+    {"question":"¿Qué expresa 0..*?","answer":"Que un elemento puede faltar o repetirse un número no acotado de veces dentro de las reglas del modelo.","reasoning":"Combina mínimo cero con máximo múltiple.","common_error":"Interpretarlo solo como opcional."},
+    {"question":"¿Por qué no conviene guardar desconocido como cero?","answer":"Porque cero puede ser un valor real y se pierde la distinción entre dato observado y dato ausente.","reasoning":"La ausencia necesita semántica propia.","common_error":"Usar valores centinela sin contrato."},
+    {"question":"¿Dos campos llamados status son equivalentes?","answer":"No por el nombre solamente.","reasoning":"Debe compararse la entidad, definición, ruta, valores y contexto.","common_error":"Mapeo por coincidencia de etiquetas."},
+    {"question":"¿Qué diferencia identificador de negocio de identificador técnico?","answer":"El primero identifica una entidad dentro de un proceso o ámbito de negocio; el segundo identifica una representación dentro de una plataforma técnica.","reasoning":"Ambos pueden coexistir y tener ciclos de vida distintos.","common_error":"Usar el id técnico como identidad clínica universal."},
+    {"question":"¿El valor 00421 identifica una entidad de forma global?","answer":"No sin conocer su sistema o ámbito emisor.","reasoning":"El mismo valor puede reutilizarse en namespaces distintos.","common_error":"Ignorar el namespace."},
+    {"question":"¿Qué diferencia versión de procedencia?","answer":"La versión identifica un estado; la procedencia documenta agentes, actividades y entidades relacionadas con su creación o transformación.","reasoning":"Son capas complementarias.","common_error":"Reducir procedencia a versionId."},
+    {"question":"¿Qué aporta un arquetipo?","answer":"Restricciones de dominio aplicadas sobre un modelo de referencia.","reasoning":"Permite especificar contenido clínico sin rediseñar las clases básicas.","common_error":"Tratar el arquetipo como una base de datos o terminología."},
+    {"question":"¿Un mapeo que cubre el 100 % de campos es necesariamente semánticamente completo?","answer":"No.","reasoning":"Puede mapear campos a destinos con significado diferente o eliminar contexto y relaciones.","common_error":"Medir calidad solo por porcentaje de campos mapeados."},
+    {"question":"¿Qué debe contener un contrato de datos auditable?","answer":"Definiciones, tipos, cardinalidades, ausencia, contexto, identidad, procedencia, restricciones y pruebas vinculadas al uso.","reasoning":"El contrato debe permitir verificar tanto estructura como transformaciones relevantes.","common_error":"Limitarlo a nombres y tipos de columnas."},
+    {"question":"¿Qué demuestra dominio de U2?","answer":"Poder diseñar y probar un modelo lógico que preserve estructura, contexto, identidad, versión y procedencia, declarando pérdidas y fronteras con terminología e interoperabilidad.","reasoning":"La competencia central es preservar significado mediante estructura verificable.","common_error":"Memorizar nombres de clases de un estándar sin justificar el modelo."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Intercambio sin pérdida de significado."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"topic":"Ingeniería de datos clínicos","connection":"ETL y almacenes longitudinales necesitan modelos explícitos de cardinalidad, contexto, identidad y versionado para evitar pérdidas silenciosas."},
+    {"topic":"Interoperabilidad semántica","connection":"La estructura correcta es una condición necesaria pero no suficiente; U3 y U4 añaden terminología y transporte interoperable."},
+    {"topic":"Sistemas de ayuda a la decisión","connection":"Reglas clínicas dependen de tipos, estados, referencias y contexto coherentes; un campo mal modelado puede activar lógica sobre información incorrecta."},
+    {"topic":"Investigación con HCE","connection":"Transformaciones que cambian unidades, tiempos o identidad pueden introducir sesgo antes de cualquier análisis estadístico."},
+    {"topic":"Trazabilidad de dispositivos y muestras","connection":"Identificadores con ámbito, referencias y procedencia son necesarios para relacionar mediciones con dispositivos, muestras y procesos sin fusioniones incorrectas."},
+    {"topic":"Validación de software sanitario","connection":"Esquemas y restricciones permiten controles automáticos, pero la validación completa debe incluir significado, uso previsto y comportamiento del sistema."}
   ],
   "sources": [
-    {
-      "title": "SNOMED CT",
-      "organization": "SNOMED International",
-      "url": "https://www.snomed.org/",
-      "type": "terminología clínica",
-      "description": "Conceptos y relaciones clínicas computables.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "LOINC",
-      "organization": "Regenstrief Institute",
-      "url": "https://loinc.org/",
-      "type": "terminología clínica",
-      "description": "Identificadores de observaciones, mediciones y documentos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "WHO Digital Health",
-      "organization": "World Health Organization",
-      "url": "https://www.who.int/health-topics/digital-health",
-      "type": "recurso institucional",
-      "description": "Estrategia, gobernanza y equidad en salud digital.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos clínicos y fisiológicos para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"ISO 13606-1:2019 — Health informatics — Electronic health record communication — Part 1: Reference model","organization":"ISO","url":"https://www.iso.org/standard/67868.html","type":"estándar internacional","description":"Modelo de referencia publicado para comunicación de información de HCE; base para distinguir modelo de referencia e implementación.","verification_status":"verified_directly"},
+    {"title":"ISO 13606-2:2019 — Health informatics — Electronic health record communication — Part 2: Archetype interchange specification","organization":"ISO","url":"https://www.iso.org/standard/62305.html","type":"estándar internacional","description":"Archetype Model para representación e intercambio de arquetipos; confirmado como vigente tras revisión de 2024.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Documentation Index","organization":"HL7 International","url":"https://hl7.org/fhir/R5/documentation.html","type":"estándar sanitario","description":"Índice oficial de FHIR R5 usado para ubicar tipos, recursos y metadatos; U2 lo usa como ejemplo de modelado, no como curso de APIs.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Datatypes","organization":"HL7 International","url":"https://hl7.org/fhir/R5/datatypes.html","type":"estándar sanitario","description":"Definición oficial de tipos de dato, incluido Identifier con system, value, period y assigner.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 ElementDefinition","organization":"HL7 International","url":"https://hl7.org/fhir/R5/elementdefinition.html","type":"estándar sanitario","description":"Define ruta, cardinalidad, tipos, restricciones, bindings y otras propiedades de elementos.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 StructureDefinition","organization":"HL7 International","url":"https://hl7.org/fhir/structuredefinition.html","type":"estándar sanitario","description":"Recurso para describir recursos, tipos, extensiones y restricciones; ejemplo de contrato estructural.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Resource","organization":"HL7 International","url":"https://hl7.org/fhir/resource.html","type":"estándar sanitario","description":"Modelo base de recurso y metadatos, incluido versionId para diferenciar versiones de contenido.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Reference datatype","organization":"HL7 International","url":"https://hl7.org/fhir/R5/references.html","type":"estándar sanitario","description":"Definición de referencias literales y lógicas y relación con Identifier.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Provenance","organization":"HL7 International","url":"https://hl7.org/fhir/provenance.html","type":"estándar sanitario","description":"Modelo de agentes, entidades y actividades que influyen en la generación o transformación de información.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Provenance — Detailed Descriptions","organization":"HL7 International","url":"https://hl7.org/fhir/R5/provenance-definitions.html","type":"estándar sanitario","description":"Definiciones detalladas de targets, occurred, recorded, agents y entidades de procedencia.","verification_status":"verified_directly"},
+    {"title":"openEHR Reference Model — current released component","organization":"openEHR International","url":"https://specifications.openehr.org/releases/RM/latest","type":"especificación abierta","description":"Modelo de referencia openEHR y sus componentes de EHR, Common, Data Structures y Data Types.","verification_status":"verified_directly"},
+    {"title":"openEHR EHR Information Model","organization":"openEHR International","url":"https://specifications.openehr.org/releases/RM/latest/ehr.html","type":"especificación abierta","description":"Modelo del EHR con Compositions y estructuras versionadas.","verification_status":"verified_directly"},
+    {"title":"openEHR Common Information Model","organization":"openEHR International","url":"https://specifications.openehr.org/releases/RM/latest/common.html","type":"especificación abierta","description":"VERSIONED_OBJECT, VERSION, auditoría y otras estructuras comunes de versionado y procedencia.","verification_status":"verified_directly"},
+    {"title":"openEHR Data Types Information Model","organization":"openEHR International","url":"https://specifications.openehr.org/releases/RM/latest/data_types.html","type":"especificación abierta","description":"Tipos de datos clínicos y generales usados por el Reference Model.","verification_status":"verified_directly"},
+    {"title":"openEHR Data Structures Information Model","organization":"openEHR International","url":"https://specifications.openehr.org/releases/RM/latest/data_structures.html","type":"especificación abierta","description":"Estructuras de elementos, clusters, árboles e historias temporales.","verification_status":"verified_directly"},
+    {"title":"openEHR Archetype Model Component","organization":"openEHR International","url":"https://specifications.openehr.org/releases/AM/latest","type":"especificación abierta","description":"Modelo formal para arquetipos y plantillas dentro del enfoque de dos niveles.","verification_status":"verified_directly"},
+    {"title":"openEHR Architecture Overview — Archetypes and Templates","organization":"openEHR International","url":"https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html","type":"especificación abierta","description":"Explicación arquitectónica de separación entre Reference Model y definiciones de dominio.","verification_status":"verified_directly"},
+    {"title":"openEHR Specifications — All Components","organization":"openEHR International","url":"https://specifications.openehr.org/components","type":"índice oficial de especificaciones","description":"Estado de componentes y releases de Reference Model, Archetype Model y especificaciones de implementación.","verification_status":"verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo en estado review y basado exclusivamente en datos sintéticos. No constituye diseño de una HCE productiva, perfil FHIR, arquetipo clínico aprobado, especificación contractual para un proveedor, asesoría regulatoria, validación de interoperabilidad ni decisión clínica. Los estándares se usan para enseñar principios de modelado y sus ediciones deben verificarse para cualquier implementación real. U2 no asigna terminologías clínicas ni demuestra equivalencia semántica entre sistemas; esas capas se desarrollan y prueban en U3–U6. No se deben introducir datos identificables de pacientes."
 }
