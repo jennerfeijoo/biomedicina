@@ -79,7 +79,7 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
                 "transferencias de carga",
             ),
         )
-        self.assertIn("alta influencia", self.text)
+        self.assertIn("influencia sobre la adopción", self.text)
 
     def test_benefits_alternatives_and_descriptive_difference_are_explicit(self) -> None:
         third = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
@@ -109,8 +109,8 @@ class InnovacionEmprendimientoUnit02CuratedTests(unittest.TestCase):
         self.assertIn("ajuste problema–solución", self.text)
         self.assertIn("product–market fit", self.text)
         self.assertIn("no equivale a product–market fit", self.text)
-        self.assertIn("no demuestra seguridad", self.text)
-        self.assertIn("no demuestra que el producto sea viable", self.text)
+        self.assertIn("eficacia clínica ni seguridad", self.text)
+        self.assertIn("no significa que el producto sea viable", self.text)
 
     def test_hypothesis_matrix_refutation_and_exit_criteria_are_explicit(self) -> None:
         fourth = json.dumps(self.unit["theory_sections"][3], ensure_ascii=False).casefold()
