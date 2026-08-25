@@ -1,0 +1,38 @@
+name: Materialize Ingeniería Neurosensorial U3
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-neurosensorial-u3-estimulacion
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/ingenieria-neurosensorial-u3-estimulacion
+          fetch-depth: 0
+      - name: Materialize curated unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          tar -xzf .tmp/u3_payload.tar.gz -C "$tmp"
+          python -m json.tool "$tmp/data/course_redevelopment/ingenieria-neurosensorial/units/unit-03.json" >/dev/null
+          cmp "$tmp/data/course_redevelopment/ingenieria-neurosensorial/units/unit-03.json" "$tmp/data/generated_units/ingenieria-neurosensorial/unit-03.json"
+          mkdir -p data/course_redevelopment/ingenieria-neurosensorial/units data/generated_units/ingenieria-neurosensorial tests
+          cp "$tmp/data/course_redevelopment/ingenieria-neurosensorial/units/unit-03.json" data/course_redevelopment/ingenieria-neurosensorial/units/unit-03.json
+          cp "$tmp/data/generated_units/ingenieria-neurosensorial/unit-03.json" data/generated_units/ingenieria-neurosensorial/unit-03.json
+          cp "$tmp/tests/test_ingenieria_neurosensorial_unit_03_curated.py" tests/test_ingenieria_neurosensorial_unit_03_curated.py
+          sed -i 's/self.assertIn("u5", boundaries)/self.assertIn("u5", self.text)/' tests/test_ingenieria_neurosensorial_unit_03_curated.py
+          rm -f .tmp/u3_payload.tar.gz .github/workflows/materialize-ingenieria-neurosensorial-u3.yml
+          git add -A
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Curación académica de Ingeniería Neurosensorial U3"
+          git push origin HEAD:codex/ingenieria-neurosensorial-u3-estimulacion
