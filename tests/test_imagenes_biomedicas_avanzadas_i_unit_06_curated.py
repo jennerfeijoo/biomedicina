@@ -8,6 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data/course_redevelopment/imagenes-biomedicas-avanzadas-i/units/unit-06.json"
 MIRROR = ROOT / "data/generated_units/imagenes-biomedicas-avanzadas-i/unit-06.json"
+DESCRIPTOR = ROOT / "data/subjects/ingenieria-biomedica/imagenes-biomedicas-avanzadas-i.json"
+CATALOG = ROOT / "data/catalog_statuses.json"
 
 
 def load_json(path: Path) -> dict:
@@ -19,6 +21,8 @@ class TestImagenesBiomedicasAvanzadasIUnit06Curated(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = load_json(SOURCE)
         cls.mirror = load_json(MIRROR)
+        cls.descriptor = load_json(DESCRIPTOR)
+        cls.catalog = load_json(CATALOG)
         cls.text = json.dumps(cls.unit, ensure_ascii=False).lower()
 
     def test_source_and_generated_mirror_are_identical(self) -> None:
@@ -147,6 +151,24 @@ class TestImagenesBiomedicasAvanzadasIUnit06Curated(unittest.TestCase):
             "no cualifica un biomarcador",
         ]:
             self.assertIn(phrase, notice)
+
+    def test_published_descriptor_matches_canonical_u6_purpose(self) -> None:
+        published = next(
+            item for item in self.descriptor["detailed_units"] if item["unit"] == 6
+        )
+        self.assertEqual(published["title"], self.unit["title"])
+        self.assertEqual(published["description"], self.unit["purpose"])
+
+    def test_course_remains_outside_template_detected_after_publication(self) -> None:
+        specificity = self.catalog["dimensions"]["specificity"]
+        self.assertIn(
+            "imagenes-biomedicas-avanzadas-i",
+            specificity["screened_no_known_template_marker"],
+        )
+        self.assertNotIn(
+            "imagenes-biomedicas-avanzadas-i",
+            specificity["template_detected"],
+        )
 
 
 if __name__ == "__main__":
