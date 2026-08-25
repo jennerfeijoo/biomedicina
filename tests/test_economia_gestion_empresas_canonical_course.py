@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = ROOT / "data" / "courses" / "economia-gestion-empresas"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
+# Final user-authored validation trigger after canonical closure synchronization.
 
 class EconomiaGestionCanonicalCourseTests(unittest.TestCase):
     @classmethod
