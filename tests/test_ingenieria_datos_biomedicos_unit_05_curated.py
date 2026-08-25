@@ -107,17 +107,17 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
             self.assertIn(family, source_text)
         self.assertTrue(all(s.get('accessed') == '2026-08-25' for s in self.data['sources']))
 
-    def test_publication_matches_when_present(self):
-        if DESCRIPTOR.exists():
-            descriptor = json.loads(DESCRIPTOR.read_text(encoding='utf-8'))
-            unit = next(item for item in descriptor['detailed_units'] if item['unit'] == 5)
-            if unit['description'] == self.data['purpose']:
-                self.assertEqual(unit['title'], self.data['title'])
-        if PUBLIC.exists():
-            public_text = PUBLIC.read_text(encoding='utf-8').lower()
-            if 'retry budget' in public_text:
-                for marker in ['data interval', 'idempot', 'opentelemetry', 'error budget', 'runevent']:
-                    self.assertIn(marker, public_text)
+    def test_publication_matches_canonical_unit(self):
+        self.assertTrue(DESCRIPTOR.exists())
+        descriptor = json.loads(DESCRIPTOR.read_text(encoding='utf-8'))
+        unit = next(item for item in descriptor['detailed_units'] if item['unit'] == 5)
+        self.assertEqual(unit['title'], self.data['title'])
+        self.assertEqual(unit['description'], self.data['purpose'])
+
+        self.assertTrue(PUBLIC.exists())
+        public_text = PUBLIC.read_text(encoding='utf-8').lower()
+        for marker in ['retry budget', 'data interval', 'idempot', 'opentelemetry', 'error budget', 'runevent']:
+            self.assertIn(marker, public_text)
 
 
 if __name__ == '__main__':
