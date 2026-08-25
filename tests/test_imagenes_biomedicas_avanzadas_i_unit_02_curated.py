@@ -61,8 +61,8 @@ class ImagenesBiomedicasAvanzadasIUnit02CuratedTests(unittest.TestCase):
         for phrase in (
             "señal compleja",
             "frecuencia espacial",
-            "phase encoding",
-            "frequency encoding",
+            "codificación de fase",
+            "gradiente de lectura",
             "zero filling",
             "no significa que cada punto de k-space corresponda a una región anatómica concreta",
             "no debe llamar raw k-space a una imagen dicom de magnitud",
@@ -135,9 +135,11 @@ class ImagenesBiomedicasAvanzadasIUnit02CuratedTests(unittest.TestCase):
             "arterial input function",
             "no es una lectura directa de 'permeabilidad' universal",
             "no deben compararse como una misma escala",
+            "dicom enhanced mr",
+            "asl context",
+            "b-value/direction",
         ):
             self.assertIn(phrase, text)
-        self.assertIn("mr arterial spin labeling macro", text)
 
     def test_glossary_is_disciplinary_and_multimodal_within_mri(self) -> None:
         glossary = {x["term"].casefold() for x in self.unit["glossary"]}
