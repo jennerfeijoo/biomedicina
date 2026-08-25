@@ -52,6 +52,11 @@ class FisiologiaSistemasUnit04CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, self.text)
 
+    def test_diuresis_and_natriuresis_are_not_equated(self) -> None:
+        errors = json.dumps(self.unit["common_errors"], ensure_ascii=False).casefold()
+        self.assertIn("interpretar diuresis como natriuresis", errors)
+        self.assertIn("flujo de orina y excreción de sodio son magnitudes diferentes", errors)
+
     def test_balance_equations_replace_placeholder(self) -> None:
         equations = {
             equation["latex"]
