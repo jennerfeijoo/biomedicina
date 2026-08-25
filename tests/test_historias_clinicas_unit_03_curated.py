@@ -57,9 +57,10 @@ class HistoriasClinicasUnit03CuratedTests(unittest.TestCase):
         for phrase in (
             "concept identifier", "fully specified name", "is a", "finding site",
             "concept model", "dominios", "rangos", "reference sets",
-            "pre-coordinación", "postcoordinación", "julio de 2026",
+            "pre-coordinación", "postcoordinación", "agosto de 2026", "20260801",
         ):
             self.assertIn(phrase, text)
+        self.assertNotIn("julio de 2026", text)
         self.assertIn("no autoriza combinaciones libres", text)
 
     def test_loinc_requires_six_parts_not_name_matching(self) -> None:
@@ -124,6 +125,9 @@ class HistoriasClinicasUnit03CuratedTests(unittest.TestCase):
     def test_sources_assessment_connections_and_boundary(self) -> None:
         self.assertGreaterEqual(len(self.unit["sources"]), 18)
         self.assertTrue(all(x["verification_status"] == "verified_directly" for x in self.unit["sources"]))
+        sources = " ".join(x["title"] + " " + x["url"] for x in self.unit["sources"]).casefold()
+        self.assertIn("snomed ct august 2026 international edition release notes", sources)
+        self.assertNotIn("snomed ct july 2026 international edition release notes", sources)
         self.assertGreaterEqual(len(self.unit["self_assessment"]), 12)
         self.assertGreaterEqual(len(self.unit["biomedical_connections"]), 6)
         notice = self.unit["editorial_notice"].casefold()
