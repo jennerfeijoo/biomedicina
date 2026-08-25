@@ -1,0 +1,58 @@
+name: Assemble Historia Filosofia U6
+
+on:
+  push:
+    branches:
+      - codex/historia-filosofia-ciencia-u6-contemporanea
+    paths:
+      - .github/workflows/assemble-hfc-u6.yml
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/historia-filosofia-ciencia-u6-contemporanea
+          fetch-depth: 0
+      - name: Assemble and validate U6
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64, gzip, hashlib, json
+          root = Path('.')
+          payload = ''.join((root / f'.tmp/hfc_u6/unit.b64.0{i}').read_text().strip() for i in range(1,5))
+          unit = gzip.decompress(base64.b64decode(payload)).decode('utf-8')
+          assert hashlib.sha256(unit.encode()).hexdigest() == '0af58aacf82c80e3a2e9b763b86aa65575b3aad53b91890111f72c3c2973d7f1'
+          json.loads(unit)
+          test_payload = (root / '.tmp/hfc_u6/test.b64').read_text().strip()
+          test = gzip.decompress(base64.b64decode(test_payload)).decode('utf-8')
+          assert hashlib.sha256(test.encode()).hexdigest() == '6d9f33b1bd24db27e527b89345e7070b22a7f34e4926e5054294e97b6f0fca5d'
+          source = root / 'data/course_redevelopment/historia-filosofia-ciencia/units/unit-06.json'
+          mirror = root / 'data/generated_units/historia-filosofia-ciencia/unit-06.json'
+          test_path = root / 'tests/test_historia_filosofia_ciencia_unit_06_curated.py'
+          source.parent.mkdir(parents=True, exist_ok=True)
+          mirror.parent.mkdir(parents=True, exist_ok=True)
+          source.write_text(unit, encoding='utf-8')
+          mirror.write_text(unit, encoding='utf-8')
+          test_path.write_text(test, encoding='utf-8')
+          assert source.read_bytes() == mirror.read_bytes()
+          PY
+          python -m json.tool data/course_redevelopment/historia-filosofia-ciencia/units/unit-06.json >/dev/null
+          python -m unittest tests.test_historia_filosofia_ciencia_unit_06_curated
+      - name: Commit curated unit and remove assembler
+        run: |
+          set -euo pipefail
+          git config user.name "JennerFeijoo"
+          git config user.email "65651751+jennerfeijoo@users.noreply.github.com"
+          git add data/course_redevelopment/historia-filosofia-ciencia/units/unit-06.json
+          git add data/generated_units/historia-filosofia-ciencia/unit-06.json
+          git add tests/test_historia_filosofia_ciencia_unit_06_curated.py
+          git rm -r .tmp/hfc_u6
+          git rm .github/workflows/assemble-hfc-u6.yml
+          git commit -m "Curar Historia y Filosofía de la Ciencia U6"
+          git push origin HEAD:codex/historia-filosofia-ciencia-u6-contemporanea
