@@ -127,9 +127,13 @@ class TestInformaticaBiomedicaUnit04Curated(unittest.TestCase):
         self.assertIn("cambios de población, software o workflow pueden exigir revalidación", self.text)
 
     def test_curricular_boundaries_reserve_u5_and_u6(self) -> None:
-        purpose = self.unit["purpose"].lower()
-        self.assertIn("reserva factores humanos para u5", purpose)
-        self.assertIn("gobernanza/implementación para u6", purpose)
+        self.assertIn("se desarrolla específicamente en u5", self.text)
+        self.assertIn("factores humanos", self.text)
+        self.assertIn("gobernanza", self.text)
+        unit5 = next(item for item in self.descriptor["detailed_units"] if item["unit"] == 5)
+        unit6 = next(item for item in self.descriptor["detailed_units"] if item["unit"] == 6)
+        self.assertEqual(unit5["title"], "Interacción y factores humanos")
+        self.assertEqual(unit6["title"], "Gobernanza e implementación")
 
     def test_examples_and_self_assessment_are_reasoned(self) -> None:
         for example in self.unit["worked_examples"]:
