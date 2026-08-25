@@ -22,6 +22,9 @@ class EticaResponsabilidadSocialUnit06CuratedTests(unittest.TestCase):
         self.assertEqual(self.unit["subject_id"], "etica-responsabilidad-social")
         self.assertEqual(self.unit["unit"], 6)
         self.assertEqual(self.unit["status"], "review")
+        purpose = self.unit["purpose"].casefold()
+        self.assertIn("integrar el razonamiento ético del curso", purpose)
+        self.assertIn("no sustituir comités de ética", purpose)
 
     def test_generic_template_and_generic_mcdm_equation_are_removed(self) -> None:
         self.assertNotIn(GENERIC, self.text)
