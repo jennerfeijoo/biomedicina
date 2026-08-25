@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-05.json'
 MIRROR = ROOT / 'data/generated_units/ingenieria-datos-biomedicos/unit-05.json'
+U6_SOURCE = ROOT / 'data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-06.json'
 DESCRIPTOR = ROOT / 'data/subjects/ingenieria-biomedica/ingenieria-datos-biomedicos.json'
 PUBLIC = ROOT / 'ingenieria-biomedica/ingenieria-datos-biomedicos/unidades/unidad-05.html'
 TEMP_REPAIR_WORKFLOWS = [
@@ -75,12 +76,16 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertIn('quality gates', purpose)
         for concept in ['privacidad', 'seudonimización', 'minimización', 'autorización', 'productos de datos']:
             self.assertIn(concept, purpose)
-        self.assertNotIn('interoperabilidad', purpose)
+        self.assertNotIn('interoperabilidad', self.text)
         self.assertIn('no se conectan ehr', notice)
         self.assertIn('no declara que un run exitoso pruebe calidad', notice)
         self.assertIn('se reservan para u6', notice)
         self.assertIn('controles de acceso', notice)
-        self.assertIn('no garantías de disponibilidad ni de corrección biomédica en producción', notice)
+        self.assertIn('no constituyen garantías de producción', notice)
+
+        u6 = json.loads(U6_SOURCE.read_text(encoding='utf-8'))
+        self.assertEqual(u6['unit'], 6)
+        self.assertEqual(u6['title'], 'Privacidad y productos de datos')
 
     def test_academic_depth(self):
         self.assertGreaterEqual(len(self.data['learning_objectives']), 6)
