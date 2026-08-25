@@ -1,0 +1,57 @@
+name: Assemble Historia U6
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp-assemble-history-u6.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/historia-filosofia-ciencia-u6-contemporanea
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Decode and validate payload
+        run: |
+          python - <<'PY'
+          import base64
+          import io
+          import json
+          import tarfile
+          from pathlib import Path
+
+          raw = base64.b64decode(Path('.tmp/history_u6_payload.b64').read_text(encoding='utf-8').strip())
+          with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as tf:
+              members = tf.getmembers()
+              allowed = {
+                  'data/course_redevelopment/historia-filosofia-ciencia/units/unit-06.json',
+                  'data/generated_units/historia-filosofia-ciencia/unit-06.json',
+                  'tests/test_historia_filosofia_ciencia_unit_06_curated.py',
+              }
+              names = {m.name for m in members}
+              assert names == allowed, (names, allowed)
+              tf.extractall('.')
+
+          source = Path('data/course_redevelopment/historia-filosofia-ciencia/units/unit-06.json')
+          mirror = Path('data/generated_units/historia-filosofia-ciencia/unit-06.json')
+          json.loads(source.read_text(encoding='utf-8'))
+          json.loads(mirror.read_text(encoding='utf-8'))
+          assert source.read_bytes() == mirror.read_bytes()
+          PY
+          python -m unittest tests.test_historia_filosofia_ciencia_unit_06_curated
+      - name: Commit curated unit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/course_redevelopment/historia-filosofia-ciencia/units/unit-06.json \
+                  data/generated_units/historia-filosofia-ciencia/unit-06.json \
+                  tests/test_historia_filosofia_ciencia_unit_06_curated.py
+          git diff --cached --quiet || git commit -m "Curar Historia y Filosofía de la Ciencia U6"
+          git push
