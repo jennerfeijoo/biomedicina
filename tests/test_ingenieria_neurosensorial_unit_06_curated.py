@@ -8,6 +8,7 @@ SOURCE = ROOT / "data/course_redevelopment/ingenieria-neurosensorial/units/unit-
 MIRROR = ROOT / "data/generated_units/ingenieria-neurosensorial/unit-06.json"
 DESCRIPTOR = ROOT / "data/subjects/ingenieria-biomedica/ingenieria-neurosensorial.json"
 PUBLIC = ROOT / "ingenieria-biomedica/ingenieria-neurosensorial/unidades/unidad-06.html"
+CATALOG = ROOT / "data/catalog_statuses.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -165,11 +166,20 @@ def test_u6_publication_matches_after_promotion():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(unit for unit in descriptor["detailed_units"] if unit["unit"] == 6)
-    if detail["description"] == source["purpose"] and PUBLIC.exists():
-        public = PUBLIC.read_text(encoding="utf-8").casefold()
-        for marker in ("validación centrada", "co-adaptación", "shared control", "seudonimización", "monitoreo posterior"):
-            assert marker in public
-        assert GENERIC not in public
+    assert detail["description"] == source["purpose"]
+    assert PUBLIC.exists()
+    public = PUBLIC.read_text(encoding="utf-8").casefold()
+    for marker in ("validación centrada", "co-adaptación", "shared control", "seudonimización", "monitoreo posterior"):
+        assert marker in public
+    assert GENERIC not in public
+
+
+def test_u6_course_is_closed_in_editorial_catalog():
+    catalog = load(CATALOG)
+    template = set(catalog["dimensions"]["specificity"]["template_detected"])
+    screened = set(catalog["dimensions"]["specificity"]["screened_no_known_template_marker"])
+    assert "ingenieria-neurosensorial" not in template
+    assert "ingenieria-neurosensorial" in screened
 
 
 if __name__ == "__main__":
