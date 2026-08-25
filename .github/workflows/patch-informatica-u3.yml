@@ -1,0 +1,99 @@
+name: Patch Informatica U3 current standards
+on:
+  push:
+    branches:
+      - codex/informatica-biomedica-u3-interoperabilidad-terminologias
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/informatica-biomedica-u3-interoperabilidad-terminologias
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Patch canonical and mirror
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          paths=[Path('data/course_redevelopment/informatica-biomedica/units/unit-03.json'),Path('data/generated_units/informatica-biomedica/unit-03.json')]
+          u=json.loads(paths[0].read_text(encoding='utf-8'))
+          u['purpose']=u['purpose'].replace('representaciones FHIR, DICOM y terminologías clínicas','representaciones FHIR, DICOM/DICOMweb y terminologías clínicas SNOMED CT, LOINC y UCUM')
+          u['learning_objectives'][4]='Seleccionar y auditar términos LOINC mediante Component, Property, Time, System, Scale y Method, y representar unidades con UCUM 2.2, manteniendo separados el identificador de la observación, el resultado, la unidad y el método de medición.'
+          s3=u['theory_sections'][2]
+          if not any('QIDO-RS' in p for p in s3['paragraphs']):
+              s3['paragraphs'].insert(5,'DICOMweb, definido en PS3.18, aporta servicios web normalizados sobre objetos DICOM. QIDO-RS se utiliza para consultar información, WADO-RS para recuperar representaciones y STOW-RS para almacenar objetos; compartir el sufijo -RS no hace intercambiables esas operaciones. Un ImagingStudy FHIR puede conservar UIDs y referencias al estudio sin sustituir los objetos DICOM ni los servicios necesarios para consultarlos o recuperarlos.')
+              s3['key_points'].append('QIDO-RS, WADO-RS y STOW-RS cumplen funciones diferentes de consulta, recuperación y almacenamiento dentro de DICOMweb.')
+          s4=u['theory_sections'][3]
+          s4['paragraphs']=[p.replace('edición internacional de julio de 2026','edición internacional de agosto de 2026') for p in s4['paragraphs']]
+          if not any('UCUM 2.2' in p for p in s4['paragraphs']):
+              s4['paragraphs'].insert(5,'UCUM 2.2 proporciona una sintaxis computable para representar unidades de medida. LOINC identifica qué observación se expresa, UCUM codifica la unidad y el valor numérico permanece como dato separado. Cambiar una etiqueta de unidad sin convertir el valor —por ejemplo, tratar mg/dL como mmol/L— es un error semántico aunque el recurso siga siendo sintácticamente válido.')
+              s4['key_points'].append('UCUM 2.2 representa unidades computables y no sustituye el código LOINC ni la conversión numérica requerida entre unidades.')
+          terms={x['term'].casefold() for x in u['glossary']}
+          additions=[
+            ('DICOMweb','Familia de servicios web DICOM especificada en PS3.18 para consulta, recuperación, almacenamiento y otras operaciones sobre información DICOM.'),
+            ('QIDO-RS','Servicio DICOMweb de consulta que permite localizar estudios, series o instancias mediante criterios compatibles con el servicio.'),
+            ('WADO-RS','Servicio DICOMweb de recuperación de estudios, series, instancias o representaciones DICOM.'),
+            ('STOW-RS','Servicio DICOMweb de almacenamiento de objetos DICOM mediante una interfaz web estandarizada.'),
+            ('UCUM','Unified Code for Units of Measure; sintaxis computable y no ambigua para unidades. U3 fija la especificación 2.2.')]
+          for term,definition in additions:
+              if term.casefold() not in terms:
+                  u['glossary'].append({'term':term,'definition':definition})
+          a=u['guided_activities'][0]
+          a['instructions'][1]='Fijar en el manifiesto FHIR R5 5.0.0, DICOM 2026c, SNOMED CT International Edition August 2026, LOINC 2.83 y UCUM 2.2 antes de construir, mapear o validar artefactos.'
+          if not any('QIDO-RS' in p for p in a['problems']):
+              a['problems'].append('Asignar QIDO-RS, WADO-RS y STOW-RS a consulta, recuperación y almacenamiento en tres escenarios DICOMweb sintéticos y justificar por qué no son operaciones intercambiables.')
+          if not any('UCUM' in p for p in a['problems']):
+              a['problems'].append('Detectar una observación con LOINC correcto pero unidad UCUM incompatible, corregir la unidad y convertir el valor cuando corresponda en lugar de cambiar solo la etiqueta.')
+          if not any('DICOMweb' in d for d in a['deliverables']):
+              a['deliverables'].append('Matriz DICOMweb que distingue QIDO-RS, WADO-RS y STOW-RS en el caso sintético.')
+          if not any('UCUM' in d for d in a['deliverables']):
+              a['deliverables'].append('Tabla LOINC–valor–UCUM que documenta observación, valor, unidad y cualquier conversión aplicada.')
+          criteria=[
+            'El manifiesto fija SNOMED CT International Edition August 2026, LOINC 2.83 y UCUM 2.2 además de FHIR R5 5.0.0 y DICOM 2026c.',
+            'QIDO-RS, WADO-RS y STOW-RS se asignan respectivamente a consulta, recuperación y almacenamiento sin tratarlos como equivalentes.',
+            'LOINC identifica la observación, UCUM la unidad y toda conversión de unidad transforma también el valor numérico cuando corresponde.'
+          ]
+          for c in criteria:
+              if c not in a['checking_criteria']: a['checking_criteria'].append(c)
+          errors=[
+            ('Confundir QIDO-RS, WADO-RS y STOW-RS como una misma operación DICOMweb.','Separar consulta, recuperación y almacenamiento y documentar qué servicio corresponde a cada transición.'),
+            ('Cambiar la etiqueta de unidad sin convertir el valor.','Usar una unidad UCUM compatible y aplicar una conversión numérica trazable cuando cambia la unidad física representada.')]
+          current={x['error'] for x in u['common_errors']}
+          for e,c in errors:
+              if e not in current: u['common_errors'].append({'error':e,'correction':c})
+          if not any('DICOMweb' in q['question'] for q in u['self_assessment']):
+              u['self_assessment'].append({'question':'¿Qué diferencia funcional existe entre QIDO-RS, WADO-RS y STOW-RS?','answer':'QIDO-RS consulta, WADO-RS recupera y STOW-RS almacena objetos o representaciones DICOM según PS3.18.'})
+          if not any('UCUM' in q['question'] for q in u['self_assessment']):
+              u['self_assessment'].append({'question':'¿Por qué LOINC y UCUM no son intercambiables?','answer':'LOINC identifica la observación o medición; UCUM codifica la unidad. El valor numérico sigue siendo un dato separado y debe convertirse si cambia la unidad.'})
+          # Replace obsolete SNOMED source and add PS3.18/UCUM sources.
+          sources=[]
+          for x in u['sources']:
+              if 'SNOMED CT July 2026 International Edition Release Notes' in x['title']:
+                  x={'title':'SNOMED CT International Edition — August 2026','organization':'U.S. National Library of Medicine / SNOMED International','url':'https://www.nlm.nih.gov/healthit/snomedct/international.html','type':'release oficial distribuida','verification_status':'verified_directly'}
+              sources.append(x)
+          titles={x['title'] for x in sources}
+          if 'DICOM PS3.18 2026c — Web Services' not in titles:
+              sources.append({'title':'DICOM PS3.18 2026c — Web Services','organization':'DICOM Standards Committee / NEMA','url':'https://dicom.nema.org/medical/dicom/current/output/html/part18.html','type':'estándar oficial','verification_status':'verified_directly'})
+          if 'UCUM Specification 2.2' not in titles:
+              sources.append({'title':'UCUM Specification 2.2','organization':'UCUM Organization / Regenstrief Institute','url':'https://ucum.org/ucum','type':'especificación oficial','verification_status':'verified_directly'})
+          u['sources']=sources
+          u['editorial_notice']=u['editorial_notice'].rstrip('.')+' Las versiones de referencia se verificaron el 25 de agosto de 2026 y deben revalidarse antes de reutilizar la actividad en una fecha posterior.'
+          text=json.dumps(u,ensure_ascii=False,separators=(',',':'))+'\n'
+          for p in paths: p.write_text(text,encoding='utf-8')
+          assert paths[0].read_bytes()==paths[1].read_bytes()
+          json.loads(paths[0].read_text(encoding='utf-8'))
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/course_redevelopment/informatica-biomedica/units/unit-03.json data/generated_units/informatica-biomedica/unit-03.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Actualizar estándares de interoperabilidad en Informática Biomédica U3'
+          git push origin HEAD:codex/informatica-biomedica-u3-interoperabilidad-terminologias
