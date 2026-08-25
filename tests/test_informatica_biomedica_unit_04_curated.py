@@ -126,6 +126,11 @@ class TestInformaticaBiomedicaUnit04Curated(unittest.TestCase):
         self.assertIn("antes-después puede confundir intervención con tendencias y cointervenciones", self.text)
         self.assertIn("cambios de población, software o workflow pueden exigir revalidación", self.text)
 
+    def test_curricular_boundaries_reserve_u5_and_u6(self) -> None:
+        purpose = self.unit["purpose"].lower()
+        self.assertIn("reserva factores humanos para u5", purpose)
+        self.assertIn("gobernanza/implementación para u6", purpose)
+
     def test_examples_and_self_assessment_are_reasoned(self) -> None:
         for example in self.unit["worked_examples"]:
             self.assertGreaterEqual(len(example["reasoning_steps"]), 5)
