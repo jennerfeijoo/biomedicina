@@ -1,0 +1,41 @@
+name: Assemble Innovacion U3 payload
+
+on:
+  push:
+    branches:
+      - codex/innovacion-emprendimiento-u3-prototipo-experimentos
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/innovacion-emprendimiento-u3-prototipo-experimentos
+          fetch-depth: 0
+      - name: Assemble and validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/innovacion_u3/payload.part00 .tmp/innovacion_u3/payload.part01 .tmp/innovacion_u3/payload.part02 .tmp/innovacion_u3/payload.part03 > /tmp/payload.b64
+          test "$(wc -c < /tmp/payload.b64)" -eq 23516
+          base64 -d /tmp/payload.b64 > /tmp/payload.tar.gz
+          tar -xzf /tmp/payload.tar.gz -C .
+          cp data/course_redevelopment/innovacion-emprendimiento/units/unit-03.json data/generated_units/innovacion-emprendimiento/unit-03.json
+          python -m json.tool data/course_redevelopment/innovacion-emprendimiento/units/unit-03.json >/dev/null
+          cmp data/course_redevelopment/innovacion-emprendimiento/units/unit-03.json data/generated_units/innovacion-emprendimiento/unit-03.json
+          python -m py_compile tests/test_innovacion_emprendimiento_unit_03_curated.py
+          rm -rf .tmp/innovacion_u3 .github/workflows/assemble-innovacion-u3.yml tests/__pycache__
+      - name: Commit canonical U3
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Materializar curación académica de Innovación y Emprendimiento U3"
+          git push origin HEAD:codex/innovacion-emprendimiento-u3-prototipo-experimentos
