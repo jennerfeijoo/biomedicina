@@ -142,7 +142,7 @@ class IngenieriaDatosBiomedicosUnit01CuratedTests(unittest.TestCase):
         joined = " ".join(activity["instructions"] + activity["problems"] + activity["checking_criteria"]).casefold()
         for phrase in (
             "effective/occurrence", "ingest time", "duración nominal", "n y f_s", "r_raw",
-            "patient–study–series–instance", "bioproject/biosample–experiment–run",
+            "patient–study–series–instance", "study/bioproject–biosample–experiment–run",
             "quarantine", "reintento", "u2", "u3", "u4", "u5", "u6",
         ):
             self.assertIn(phrase, joined)
@@ -183,7 +183,7 @@ class IngenieriaDatosBiomedicosUnit01CuratedTests(unittest.TestCase):
         notice = self.unit["editorial_notice"].casefold()
         for phrase in (
             "exclusivamente sintéticos",
-            "no ingiere sistemas ehr institucionales",
+            "no ingiere ehr, dicom, waveforms u ómicas de pacientes reales",
             "no interpreta resultados clínicos",
             "25 de agosto de 2026",
             "u2 aborda etl/elt",
