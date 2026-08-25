@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unidad 3. Almacenamiento y modelado | Ingeniería de Datos Biomédicos | CitoNauta</title>
-  <meta name="description" content="Integrar relacional, lago de datos, series temporales para resolver un caso de selección de arquitectura según uso y escala con evidencia, controles, incertidumbre y comunicación proporcional." />
+  <meta name="description" content="Diseñar y justificar arquitecturas de almacenamiento para datos biomédicos normalizados, separando modelo lógico, formato físico y motor de consulta. La unidad compara tablas relacionales con restricciones explícitas, archivos columnares en lagos de datos y formatos de tabla analítica, y patrones de series temporales/longitudinales según carga de trabajo, escala, mutabilidad y semántica temporal. Enseña claves, normalización y desnormalización controlada, índices, particionado, Parquet, snapshots de tabla, effective/issued/ingest time y benchmarking reproducible. Reutiliza las salidas transformadas de U2; reserva calidad, linaje y versionado profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6." />
   <link rel="stylesheet" href="../../../assets/css/style.css" />
   <link rel="stylesheet" href="../../../assets/css/editorial.css" />
   <script>
@@ -52,7 +52,7 @@
       </div>
       <p class="eyebrow">Unidad 3 de 6</p>
       <h1>Almacenamiento y modelado</h1>
-      <p>Integrar relacional, lago de datos, series temporales para resolver un caso de selección de arquitectura según uso y escala con evidencia, controles, incertidumbre y comunicación proporcional.</p>
+      <p>Diseñar y justificar arquitecturas de almacenamiento para datos biomédicos normalizados, separando modelo lógico, formato físico y motor de consulta. La unidad compara tablas relacionales con restricciones explícitas, archivos columnares en lagos de datos y formatos de tabla analítica, y patrones de series temporales/longitudinales según carga de trabajo, escala, mutabilidad y semántica temporal. Enseña claves, normalización y desnormalización controlada, índices, particionado, Parquet, snapshots de tabla, effective/issued/ingest time y benchmarking reproducible. Reutiliza las salidas transformadas de U2; reserva calidad, linaje y versionado profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6.</p>
       <dl class="course-meta">
         <div><dt>Asignatura</dt><dd>Ingeniería de Datos Biomédicos</dd></div>
         <div><dt>Estado</dt><dd data-status="generated">Lección desarrollada · revisión experta pendiente</dd></div>
@@ -80,19 +80,20 @@
     <section id="resultados" class="section">
       <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
             <ul>
-        <li>Definir relacional, lago de datos y series temporales mediante entidades, relaciones y condiciones.</li>
-        <li>Construir un modelo que conecte relacional con lago de datos y delimite el papel de series temporales.</li>
-        <li>Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.</li>
-        <li>Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.</li>
-        <li>Resolver y comunicar un caso sobre selección de arquitectura según uso y escala con incertidumbre y límites.</li>
-        <li>Transferir el método de Almacenamiento y modelado a un escenario nuevo y justificar qué debe revalidarse.</li>
+        <li>Modelar entidades biomédicas en un esquema relacional con claves primarias/foráneas, restricciones y relaciones uno-a-muchos o muchos-a-muchos, distinguiendo identidad lógica de orden físico.</li>
+        <li>Comparar almacenamiento orientado a filas y columnar mediante cargas de trabajo sintéticas, explicando cuándo Parquet reduce lectura de columnas y cuándo una base relacional favorece consultas selectivas y actualizaciones.</li>
+        <li>Distinguir archivo de datos, lago de objetos, catálogo y formato de tabla analítica, usando snapshots y evolución de esquema/partición como propiedades del nivel tabla y no del archivo Parquet aislado.</li>
+        <li>Modelar eventos y mediciones longitudinales conservando subject_id, code, value/unit, effective/event time, issued time e ingest time, y diferenciar punto, intervalo, muestra periódica, corrección y repetición legítima.</li>
+        <li>Diseñar índices y particiones a partir de patrones de consulta, medir latencia, bytes leídos y compresión, y demostrar por benchmark que una optimización puede beneficiar una carga mientras perjudica otra.</li>
+        <li>Entregar una decisión arquitectónica reproducible para un escenario biomédico sintético, declarando supuestos, workload, escala, límites y responsabilidades que continúan en U4–U6.</li>
       </ul>
       <h3>Mapa de contenidos</h3>
             <ul>
-        <li>Modelo conceptual de Almacenamiento y modelado</li>
-        <li>Método, evidencia y controles</li>
-        <li>Aplicación razonada: selección de arquitectura según uso y escala</li>
-        <li>Calidad, transferencia y comunicación</li>
+        <li>1. Modelo relacional biomédico: identidad, relaciones y restricciones antes del almacenamiento físico</li>
+        <li>2. Del modelo lógico al acceso físico: filas, columnas, índices, particiones y Parquet</li>
+        <li>3. Lago de datos y formato de tabla: archivo, catálogo, snapshot y evolución son capas distintas</li>
+        <li>4. Modelado temporal biomédico: eventos, intervalos, series irregulares y correcciones</li>
+        <li>5. Selección arquitectónica reproducible: workload primero, tecnología después</li>
       </ul>
     </section>
 
@@ -104,73 +105,128 @@
             <!-- advanced-unit-renderer:v1 -->
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 1</p>
-        <h3>Modelo conceptual de Almacenamiento y modelado</h3>
-        <p>La unidad «Almacenamiento y modelado» sitúa relacional, lago de datos y series temporales dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Ingeniería de Datos Biomédicos, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.</p>
-        <p>El primer núcleo de «Almacenamiento y modelado» en Ingeniería de Datos Biomédicos, «relacional», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.</p>
-        <p>El segundo núcleo de «Almacenamiento y modelado», «lago de datos», aporta otra dimensión al problema de Ingeniería de Datos Biomédicos: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con relacional debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.</p>
-        <p>El tercer núcleo de «Almacenamiento y modelado» en Ingeniería de Datos Biomédicos, «series temporales», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada.</p>
+        <h3>1. Modelo relacional biomédico: identidad, relaciones y restricciones antes del almacenamiento físico</h3>
+        <p>El modelo relacional representa información mediante relaciones —tablas— cuyos registros se identifican y conectan con claves. En U3 la primera decisión no es PostgreSQL, Parquet ni una marca de nube: es qué entidades existen y qué relaciones deben mantenerse. Un escenario sintético puede separar person, encounter, measurement y device, evitando repetir datos demográficos en cada medición. El esquema lógico debe poder explicar qué significa cada fila antes de optimizar cómo se guarda.</p>
+        <p>Una clave primaria identifica de forma única una fila dentro de una relación; una clave foránea expresa una referencia hacia otra relación. PostgreSQL documenta restricciones PRIMARY KEY, UNIQUE, FOREIGN KEY, NOT NULL y CHECK como mecanismos distintos. Una restricción evita ciertos estados inválidos del almacenamiento, pero no demuestra corrección clínica. Por ejemplo, una foreign key puede garantizar que measurement.person_id exista sin probar que la medición pertenezca realmente a esa persona.</p>
+        <p>Las claves naturales provienen del dominio fuente y las claves sustitutas son identificadores generados por el sistema. Ninguna estrategia es universalmente superior. Un identificador hospitalario puede cambiar entre instituciones o reutilizarse bajo reglas locales; una clave sustituta puede facilitar joins internos pero necesita conservar el identificador fuente y su namespace para mantener trazabilidad. U3 exige declarar la identidad de negocio que una clave técnica está representando.</p>
+        <p>Normalizar reduce redundancia estructural separando hechos que tienen dependencias distintas. Una relación muchos-a-muchos suele expresarse mediante una tabla de asociación. Sin embargo, normalización no significa fragmentar cada atributo en una tabla propia. El criterio es preservar dependencias e invariantes sin introducir joins innecesarios para el workload. La desnormalización puede ser una optimización de lectura, pero debe derivarse de una fuente canónica y documentar cómo se refresca.</p>
+        <p>Modelos clínicos estandarizados muestran que una arquitectura relacional puede separar dominios. OMOP CDM, por ejemplo, distingue PERSON, VISIT_OCCURRENCE, MEASUREMENT y OBSERVATION y utiliza claves explícitas entre tablas. U3 usa este ejemplo para razonar sobre granularidad e identidad; no enseña que OMOP sea la única representación válida ni que mapear datos a un CDM garantice calidad clínica o comparabilidad automática.</p>
+        <p>El modelo lógico y el modelo físico se evalúan por separado. Una tabla puede estar correctamente normalizada y aun responder lentamente a un workload; una tabla desnormalizada puede ser rápida y semánticamente ambigua. Antes de crear índices o particiones, el estudiante define las consultas relevantes: búsqueda puntual por identificador, ventana temporal de una persona, cohorte por código, agregación de muchas filas sobre pocas columnas o carga incremental. Esa matriz de acceso guía las decisiones físicas.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Distinguir observación, cálculo e inferencia en Almacenamiento y modelado.</li>
-        <li>Relacionar relacional, lago de datos y series temporales mediante condiciones explícitas.</li>
-        <li>Declarar escala, unidad de observación y uso previsto antes del método.</li>
-        <li>Tratar supuestos y límites como parte del resultado, no como una nota final.</li>
+        <li>La arquitectura empieza por entidades, identidad y relaciones, no por elegir un producto de almacenamiento.</li>
+        <li>Primary key, foreign key, unique, not-null y check protegen invariantes diferentes y no sustituyen validación clínica.</li>
+        <li>Una clave sustituta necesita conservar identidad y namespace de la fuente para no borrar procedencia.</li>
+        <li>Normalización controla redundancia lógica; desnormalización debe justificarse por workload y mantenerse desde una fuente canónica.</li>
+        <li>OMOP sirve como ejemplo de granularidad relacional y no como prueba automática de calidad o interoperabilidad.</li>
+        <li>Índices y particiones se diseñan después de definir consultas, escala y patrón de escritura.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
-        <h3>Método, evidencia y controles</h3>
-        <p>Para «Almacenamiento y modelado» dentro de Ingeniería de Datos Biomédicos, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.</p>
-        <p>En esta unidad de Ingeniería de Datos Biomédicos, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre relacional o lago de datos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.</p>
-        <p>Para evaluar «Almacenamiento y modelado», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.</p>
-        <p>En Ingeniería de Datos Biomédicos, la incertidumbre de «Almacenamiento y modelado» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece.</p>
-        <h4>Puntos de integración</h4>
-      <ul>
-        <li>Elegir evidencia de acuerdo con el tipo de afirmación.</li>
-        <li>Predefinir controles y resultados esperados antes de inspeccionar la salida.</li>
-        <li>Conservar procedencia, parámetros y decisiones intermedias.</li>
-        <li>Propagar incertidumbre hasta la conclusión y la recomendación.</li>
-      </ul>
-      </article>
-      <article class="lesson-topic advanced-theory-section">
-        <p class="eyebrow">Desarrollo 3</p>
-        <h3>Aplicación razonada: selección de arquitectura según uso y escala</h3>
-        <p>En la unidad «Almacenamiento y modelado» de Ingeniería de Datos Biomédicos, el caso conductor es selección de arquitectura según uso y escala. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.</p>
-        <p>La resolución específica de «Almacenamiento y modelado» conecta relacional con lago de datos y utiliza series temporales como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.</p>
-        <p>Para el caso «selección de arquitectura según uso y escala» en Ingeniería de Datos Biomédicos, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.</p>
-        <p>El cierre de «Almacenamiento y modelado» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de selección de arquitectura según uso y escala y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados.</p>
+        <h3>2. Del modelo lógico al acceso físico: filas, columnas, índices, particiones y Parquet</h3>
+        <p>Un motor relacional orientado a filas suele ser eficiente cuando las operaciones recuperan o modifican registros concretos con varias columnas. Un archivo columnar organiza valores por columnas o chunks de columnas, lo que puede reducir lectura para análisis que recorren muchas filas pero pocas variables. Apache Parquet es un formato de archivo columnar con row groups, column chunks y metadatos; no es una base de datos, no ejecuta transacciones por sí mismo y no reemplaza un catálogo.</p>
+        <p>Parquet puede comprimir de forma eficiente porque valores de una misma columna suelen compartir tipo y distribución. Su metadata permite a lectores localizar column chunks y aplicar column pruning; algunas implementaciones también usan estadísticas o índices de páginas para saltar datos. Estas optimizaciones dependen del writer, del tamaño de row groups, de estadísticas disponibles y del patrón de filtros. Guardar un CSV como Parquet no garantiza una aceleración universal.</p>
+        <p>Un índice relacional crea una estructura adicional para localizar filas sin recorrer toda la tabla. PostgreSQL advierte que los índices aceleran ciertas búsquedas pero añaden coste de almacenamiento y mantenimiento. Por ello, indexar todas las columnas no es una estrategia válida. La decisión se relaciona con selectividad, orden, frecuencia de lectura, coste de escritura y consultas reales medidas con EXPLAIN o benchmark.</p>
+        <p>Particionar divide una tabla lógica grande en piezas físicas según una regla. PostgreSQL documenta particionado declarativo y partition pruning; el beneficio aparece cuando las consultas pueden excluir muchas particiones o cuando operaciones de mantenimiento se alinean con ellas. Una partición diaria para un dataset pequeño puede añadir complejidad sin beneficio. U3 exige justificar la clave de partición por workload y volumen, no por costumbre.</p>
+        <p>En archivos analíticos también se usa particionado por directorios o metadatos, pero una partición excesivamente fina genera demasiados archivos pequeños y coste de planificación. El objetivo no es maximizar número de particiones, sino reducir lectura innecesaria manteniendo archivos de tamaño manejable. U3 compara al menos dos esquemas —por fecha y por combinación de fecha/sitio— y mide bytes escaneados y número de archivos tocados.</p>
+        <p>La comparación física debe ser reproducible. Se fija dataset sintético, hardware o entorno, versión de motor, cold/warm cache si aplica, consultas, número de repeticiones y estadísticos de latencia. La conclusión se restringe a ese workload. Una base relacional puede ganar en point lookup y perder en scans columnares; ese resultado no convierte a una arquitectura en superior para todas las tareas.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[PPV=\frac{Se\,\pi}{Se\,\pi+(1-Sp)(1-\pi)}\]</div>
-            <figcaption>Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.</figcaption>
+            <div class="math-display">\[CR=\frac{B_{raw}}{B_{stored}}\]</div>
+            <figcaption>Razón de compresión: compara bytes de una representación de referencia con bytes almacenados. Debe informarse junto con formato, codec y dataset.</figcaption>
             <ul class="equation-variables">
-              <li><code>Se</code>: sensibilidad</li>
-              <li><code>Sp</code>: especificidad</li>
-              <li><code>\pi</code>: prevalencia</li>
+              <li><code>CR</code>: razón de compresión</li>
+              <li><code>B_{raw}</code>: bytes de referencia</li>
+              <li><code>B_{stored}</code>: bytes efectivamente almacenados</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[A_{scan}=\frac{B_{read}}{B_{result}}\]</div>
+            <figcaption>Amplificación de lectura: cuantifica cuántos bytes se leen por cada byte devuelto en una consulta; es específica del workload y de cómo se mide I/O.</figcaption>
+            <ul class="equation-variables">
+              <li><code>A_{scan}</code>: amplificación de lectura</li>
+              <li><code>B_{read}</code>: bytes leídos o escaneados</li>
+              <li><code>B_{result}</code>: bytes del resultado</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Delimitar el caso de selección de arquitectura según uso y escala antes de calcular o clasificar.</li>
-        <li>Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.</li>
-        <li>Comprobar unidades, rango, supuestos y casos límite de cada ecuación.</li>
-        <li>Comparar al menos una explicación alternativa y una prueba discriminante.</li>
+        <li>Parquet es un formato columnar de archivos; no es por sí solo un motor transaccional ni un catálogo.</li>
+        <li>Column pruning y estadísticas pueden reducir I/O, pero su efecto depende del writer y de la consulta.</li>
+        <li>Un índice acelera patrones concretos a cambio de almacenamiento y coste de mantenimiento en escrituras.</li>
+        <li>Particionar ayuda cuando el predicado permite podar particiones; más particiones no implica más rendimiento.</li>
+        <li>Small files pueden degradar planificación y lectura aun cuando el formato columnar sea adecuado.</li>
+        <li>El benchmark necesita workload, entorno y repeticiones definidos antes de afirmar qué opción es más eficiente.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>3. Lago de datos y formato de tabla: archivo, catálogo, snapshot y evolución son capas distintas</h3>
+        <p>Un data lake se entiende en U3 como una colección gobernada de objetos y metadatos capaz de conservar datasets de gran volumen y formatos diversos. Un directorio lleno de archivos sin contrato, catálogo ni reglas de publicación es solo almacenamiento de objetos. La capa lake puede contener raw de U1/U2 y representaciones analíticas, pero U3 no permite que el nombre &#x27;lake&#x27; sustituya preguntas sobre esquema, identidad, partición, mutabilidad y descubrimiento.</p>
+        <p>El formato de archivo responde cómo se codifican registros dentro de un archivo; el formato de tabla responde cómo múltiples archivos forman el estado lógico de una tabla. Apache Iceberg mantiene metadata de tabla, schema, partition specs, manifests y snapshots, y usa formatos inmutables como Parquet, Avro u ORC para los datos. Esta separación permite hablar de una tabla analítica sin confundirla con una carpeta concreta.</p>
+        <p>Un snapshot representa un estado coherente de la tabla en un momento y referencia el conjunto de archivos que la componen. Iceberg crea nueva metadata cuando cambia el estado y conserva una secuencia de snapshots hasta que políticas posteriores los expiran. U3 usa snapshots para enseñar atomicidad lógica y lectura histórica; U4 profundizará versionado, linaje y reglas de retención, y U6 tratará controles de acceso y privacidad.</p>
+        <p>La evolución de esquema en un formato de tabla puede añadir, eliminar, renombrar o reordenar campos bajo reglas definidas. Iceberg usa field IDs para evitar que un rename sea interpretado como drop+add. Esto no autoriza cambios semánticos silenciosos: renombrar heart_rate a pulse_rate puede ser técnicamente posible pero necesita revisión del significado. Evolución física y equivalencia biomédica siguen siendo preguntas diferentes.</p>
+        <p>La evolución de partición permite cambiar cómo se agrupan archivos nuevos sin reescribir necesariamente todo lo antiguo. El lector planifica usando metadata de cada spec. Esta capacidad ilustra una ventaja de separar particionado lógico de rutas de directorio, pero no elimina el coste operacional. Un diseño con demasiados snapshots, manifests o archivos pequeños todavía necesita mantenimiento; ese mantenimiento se tratará operacionalmente en U5.</p>
+        <p>Un catálogo asocia nombres lógicos con metadata y permite descubrir tablas. No debe confundirse con un vocabulario clínico ni con el catálogo de datos de gobernanza profunda. En U3 basta documentar table identifier, schema, snapshot o versión de lectura y ubicación física. La selección de tecnología se mantiene portable: el estudiante explica qué propiedad necesita —snapshot, evolución, pruning— antes de nombrar una implementación.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Un lago de datos necesita contratos y metadatos; una carpeta de archivos no constituye una arquitectura analítica completa.</li>
+        <li>Formato de archivo y formato de tabla resuelven capas diferentes y deben nombrarse por separado.</li>
+        <li>Snapshots representan estados de una tabla y no equivalen automáticamente a copias de seguridad.</li>
+        <li>Schema evolution técnica no demuestra equivalencia semántica de una variable biomédica.</li>
+        <li>Partition evolution cambia organización física sin convertir particionado en una decisión sin coste.</li>
+        <li>La decisión tecnológica debe justificarse por propiedades requeridas y no por una etiqueta de moda.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 4</p>
-        <h3>Calidad, transferencia y comunicación</h3>
-        <p>La reproducibilidad de «Almacenamiento y modelado» en Ingeniería de Datos Biomédicos requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.</p>
-        <p>La principal cautela disciplinar al transferir «Almacenamiento y modelado» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Ingeniería de Datos Biomédicos separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.</p>
-        <p>La comunicación divulgativa de «Almacenamiento y modelado» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de relacional, lago de datos y series temporales debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Ingeniería de Datos Biomédicos.</p>
-        <p>El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre selección de arquitectura según uso y escala. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Ingeniería de Datos Biomédicos como un componente que deberá reutilizarse y revisarse en el proyecto final del curso.</p>
+        <h3>4. Modelado temporal biomédico: eventos, intervalos, series irregulares y correcciones</h3>
+        <p>Los datos longitudinales biomédicos no son solo pares timestamp–value. Una observación necesita sujeto, tipo o código, valor y unidad o categoría, además de contexto temporal. FHIR Observation distingue effective[x] —tiempo clínicamente relevante— de issued —momento en que esa versión se hizo disponible—. U1/U2 ya preservaron effective, issued e ingest time; U3 decide cómo representarlos e indexarlos sin colapsarlos.</p>
+        <p>Un evento puntual, un intervalo y una muestra periódica tienen modelos diferentes. Una presión arterial puntual puede usar effectiveDateTime; una exposición puede abarcar un intervalo; una señal muestreada regularmente puede modelarse como un bloque con periodo de muestreo y datos asociados en vez de millones de filas si el uso lo permite. El diseño debe preservar granularidad necesaria para las consultas previstas.</p>
+        <p>Las series clínicas suelen ser irregulares. Interpolar a una cuadrícula regular es una transformación analítica, no una operación neutral de almacenamiento. U3 conserva los tiempos observados y cualquier resampling se almacena como derivado con método y parámetros; U4 evaluará calidad y linaje y los cursos de señales o ML decidirán si la interpolación es adecuada para su análisis.</p>
+        <p>Dos mediciones idénticas en tiempos distintos no son duplicados. Dos filas con mismo valor y timestamp pueden representar un reenvío, una corrección o dos observaciones distintas dependiendo de identidad fuente. El modelo usa identificadores de evento o registro y, cuando existe, relación de reemplazo o estado. FHIR Observation contempla estados como preliminary, final y amended, lo que ayuda a separar valor clínico de lifecycle del registro.</p>
+        <p>Un esquema long con subject_id, code, effective_time, value y unit facilita añadir tipos de medición y consultar ventanas temporales, mientras una tabla wide facilita algunas extracciones con columnas fijas. Ninguno es universal. OMOP CDM ilustra tablas de eventos como MEASUREMENT asociadas a PERSON y VISIT. U3 compara long y wide por cardinalidad, sparsity, joins y workload, sin afirmar que uno represente mejor toda la clínica.</p>
+        <p>El particionado temporal debe evitar dos extremos: una tabla monolítica imposible de podar y miles de particiones por paciente o minuto. Para una cohorte sintética, el estudiante prueba partición por mes y un índice compuesto subject_id/effective_time, y compara con alternativas. La conclusión debe indicar qué consultas se benefician y qué operaciones de escritura o mantenimiento empeoran.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Diferenciar repetibilidad, reproducibilidad, validez y utilidad.</li>
-        <li>Separar desempeño técnico de afirmaciones clínicas o regulatorias.</li>
-        <li>Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.</li>
-        <li>Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido.</li>
+        <li>Effective, issued e ingest time responden preguntas diferentes y permanecen almacenados por separado.</li>
+        <li>Evento puntual, intervalo y bloque muestreado requieren modelos temporales distintos.</li>
+        <li>Resampling e interpolación crean datos derivados y no deben confundirse con observaciones originales.</li>
+        <li>Valores iguales no son duplicados si representan eventos distintos; identidad y lifecycle deben conservarse.</li>
+        <li>Long y wide son representaciones con trade-offs de sparsity, joins y workload, no jerarquías de calidad.</li>
+        <li>Partición temporal e índice por sujeto se evalúan juntos contra consultas longitudinales definidas.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 5</p>
+        <h3>5. Selección arquitectónica reproducible: workload primero, tecnología después</h3>
+        <p>Una decisión de almacenamiento se formula como un Architecture Decision Record pequeño: contexto, alternativas, criterios, evidencia, decisión, consecuencias y condiciones de revisión. U3 no acepta &#x27;usar data lake porque escala&#x27; o &#x27;usar SQL porque es seguro&#x27;. Cada alternativa se evalúa contra un workload sintético: point lookup, ventana temporal por sujeto, cohorte por código, agregación columnar y carga incremental.</p>
+        <p>La escala se expresa con magnitudes observables: número de sujetos, filas o eventos, columnas, bytes, tasa de llegada y proporción de actualizaciones. &#x27;Big data&#x27; no es un requisito medible. Un millón de filas estrechas puede caber cómodamente en una base relacional; unas pocas imágenes grandes pueden dominar capacidad aunque haya pocas filas. La unidad separa volumen lógico de volumen físico.</p>
+        <p>Latencia debe resumirse con distribución, no con un único tiempo. El estudiante repite consultas y reporta mediana y percentil 95 cuando hay suficientes repeticiones, además de variabilidad y condiciones de cache. Un benchmark educativo no prueba rendimiento productivo; sirve para comparar hipótesis bajo un entorno definido.</p>
+        <p>El coste de escritura también importa. Índices adicionales, actualizaciones en múltiples tablas o compactación de archivos pueden mejorar lecturas y encarecer ingestión. U3 registra tiempo de carga y tamaño almacenado junto con latencia de lectura. Si una optimización solo mueve coste a otra fase, la decisión debe hacerlo visible.</p>
+        <p>Una arquitectura híbrida puede ser razonable: metadatos e identidad en tablas relacionales, cohortes analíticas en Parquet o table format y señal bruta en objetos, unidos por identificadores y manifests. Híbrido no significa duplicar sin control. Cada copia derivada necesita origen, regla de materialización y criterio de refresco; U4 formalizará linaje/versionado y U5 operación del pipeline.</p>
+        <p>La conclusión de U3 es técnica y contextual. Un benchmark rápido, un esquema correcto o una tabla reproducible no demuestran utilidad clínica, privacidad, cumplimiento regulatorio ni seguridad operacional. U6 añadirá controles de producto de datos; cualquier uso asistencial requiere validación y gobernanza fuera del alcance de esta unidad.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[T=\frac{N_{rows}}{t}\]</div>
+            <figcaption>Throughput de procesamiento para un benchmark sintético, informado junto con tamaño de filas, operación y entorno.</figcaption>
+            <ul class="equation-variables">
+              <li><code>T</code>: filas procesadas por unidad de tiempo</li>
+              <li><code>N_{rows}</code>: filas procesadas</li>
+              <li><code>t</code>: tiempo medido</li>
+            </ul>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>La carga de trabajo y la escala medible preceden a la selección de motor, formato o patrón arquitectónico.</li>
+        <li>Un ADR pequeño obliga a declarar alternativas, criterios, consecuencias y condiciones de revisión.</li>
+        <li>Latencia se reporta como distribución y bajo condiciones de cache y repetición documentadas.</li>
+        <li>Rendimiento de lectura debe compararse junto con coste de escritura, almacenamiento y mantenimiento.</li>
+        <li>Una arquitectura híbrida necesita identidades y reglas de materialización, no copias independientes sin control.</li>
+        <li>Desempeño técnico de almacenamiento no demuestra utilidad clínica, privacidad ni readiness productiva.</li>
       </ul>
       </article>
     </section>
@@ -178,41 +234,88 @@
     <section id="caso" class="section">
       <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
             <article class="worked-example advanced-worked-example">
-        <h3>Del problema amplio a una evidencia verificable en Almacenamiento y modelado</h3>
-        <p><strong>Situación.</strong> Un equipo propone estudiar selección de arquitectura según uso y escala, pero su pregunta mezcla relacional, lago de datos y series temporales sin definir unidades, referencias ni resultado admisible.</p>
+        <h3>Esquema relacional para laboratorio longitudinal</h3>
+        <p><strong>Situación.</strong> Un dataset sintético contiene 1 000 personas, 4 000 encuentros y 120 000 mediciones de laboratorio normalizadas por U2.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Separar necesidad, pregunta científica, decisión y producto esperado.</li>
-        <li>Definir la unidad de observación y el papel específico de relacional, lago de datos y series temporales.</li>
-        <li>Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.</li>
-        <li>Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.</li>
-        <li>Redactar una conclusión limitada y el dato que permitiría revisarla.</li>
+        <li>Definir person_id interno y source_person_id+namespace como identidad de origen.</li>
+        <li>Crear encounter con foreign key a person y measurement con foreign keys cuando corresponda.</li>
+        <li>Usar measurement_id como identidad del registro y CHECK para invariantes estructurales simples.</li>
+        <li>Evitar guardar sexo o fecha de nacimiento repetidos en measurement.</li>
+        <li>Definir consultas de point lookup y cohorte antes de decidir índices.</li>
       </ol>
-        <p><strong>Interpretación.</strong> El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.</p>
+        <p><strong>Interpretación.</strong> La normalización reduce redundancia y hace explícitas relaciones, pero no valida que cada asociación sea clínicamente correcta.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>El caso simulado no demuestra desempeño en un entorno real.</li>
-        <li>La conclusión depende de las definiciones y controles declarados.</li>
-        <li>Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</li>
+        <li>Datos sintéticos; no reproduce todas las tablas ni convenciones de OMOP o FHIR.</li>
       </ul>
       </article>
       <article class="worked-example advanced-worked-example">
-        <h3>Análisis de sensibilidad y explicación alternativa</h3>
-        <p><strong>Situación.</strong> El análisis inicial parece apoyar una relación entre relacional y lago de datos en el caso de selección de arquitectura según uso y escala; una condición vinculada con series temporales podría producir el mismo patrón.</p>
+        <h3>Point lookup frente a scan columnar</h3>
+        <p><strong>Situación.</strong> La misma tabla sintética se materializa en una base relacional y en archivos Parquet; se comparan una búsqueda por measurement_id y una agregación de dos columnas sobre muchas filas.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Escribir por separado el resultado observado y la explicación propuesta.</li>
-        <li>Representar series temporales como condición, covariable, perturbación o fuente de sesgo según el diseño.</li>
-        <li>Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.</li>
-        <li>Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.</li>
-        <li>Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión.</li>
+        <li>Crear índice sobre measurement_id para la consulta selectiva.</li>
+        <li>Escribir Parquet con columnas, codec y row groups documentados.</li>
+        <li>Ejecutar ambas consultas varias veces bajo condiciones de cache declaradas.</li>
+        <li>Registrar latencia y bytes leídos cuando sea posible.</li>
+        <li>Evitar generalizar desde una sola consulta.</li>
       </ol>
-        <p><strong>Interpretación.</strong> Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.</p>
+        <p><strong>Interpretación.</strong> Las arquitecturas se comparan por workload; no existe una jerarquía universal fila frente a columna.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>El análisis de sensibilidad solo cubre las perturbaciones evaluadas.</li>
-        <li>Una alternativa no descartada reduce la fuerza de la inferencia.</li>
-        <li>La transferibilidad necesita evaluación independiente.</li>
+        <li>Benchmark educativo; no representa hardware, concurrencia ni motores productivos.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Parquet no es una tabla con snapshots</h3>
+        <p><strong>Situación.</strong> Un equipo guarda varios archivos Parquet por mes y afirma que ya tiene time travel, commits atómicos y schema evolution segura.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Reconocer que Parquet define estructura columnar y metadata de archivos.</li>
+        <li>Separar lista de archivos actual de un snapshot coherente.</li>
+        <li>Introducir metadata de tabla y manifest como capa conceptual.</li>
+        <li>Comparar carpeta de archivos con un table format como Iceberg.</li>
+        <li>Declarar que backup, retención y lineage profundo siguen siendo problemas separados.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Nombrar correctamente cada capa evita atribuir propiedades inexistentes a un formato.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No despliega un catálogo ni clúster distribuido real.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Corrección temporal sin crear un evento falso</h3>
+        <p><strong>Situación.</strong> Una Observation sintética tiene effective_time 08:15, issued_time 08:25 e ingest_time 08:27. A las 09:00 se publica una versión amended con el mismo fenómeno y valor corregido.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Conservar effective_time como tiempo del fenómeno.</li>
+        <li>Registrar issued_time de cada versión y su ingest_time.</li>
+        <li>Usar identidad, versión o relación de reemplazo para vincular la corrección.</li>
+        <li>No contar automáticamente la versión amended como nueva medición fisiológica.</li>
+        <li>Definir qué consulta pide latest-record-state y cuál pide history-of-record.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Tiempo clínico, tiempo de publicación y lifecycle de registro responden preguntas distintas.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No define reglas institucionales de corrección ni uso asistencial.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>ADR para arquitectura híbrida de una cohorte sintética</h3>
+        <p><strong>Situación.</strong> Un proyecto educativo combina metadatos, laboratorios longitudinales y archivos grandes de señal; necesita búsquedas por sujeto, cohortes analíticas y acceso a señal bruta.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Listar workloads y escala en filas, bytes y tasa de llegada.</li>
+        <li>Asignar identidad y metadatos relacionales a consultas selectivas.</li>
+        <li>Proponer Parquet o table format para cohortes columnares y objetos para señal bruta.</li>
+        <li>Definir identificadores estables que conecten capas.</li>
+        <li>Registrar materializaciones derivadas y responsabilidades futuras U4–U6.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Híbrido es válido cuando cada capa tiene propósito, identidad y regla de sincronización; no cuando duplica datos sin control.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No incluye costes comerciales, alta disponibilidad, privacidad productiva ni operación 24/7.</li>
       </ul>
       </article>
     </section>
@@ -220,95 +323,90 @@
     <section id="practica" class="section">
       <div class="section-header"><h2>Actividad aplicada</h2></div>
             <article class="guided-activity advanced-guided-activity">
-        <h3>Pausa de recuperación y explicación</h3>
+        <h3>Laboratorio reproducible: seleccionar almacenamiento para un dataset biomédico longitudinal sintético</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Responde sin consultar el texto y después corrige con un color distinto.</li>
-        <li>Dibuja las relaciones antes de escribir una definición extensa.</li>
-        <li>Marca cada elemento como observado, calculado, inferido o pendiente.</li>
-        <li>Explica la unidad a una audiencia no especialista en menos de 150 palabras.</li>
+        <li>Trabaja únicamente con datos sintéticos o no identificables y parte de una salida normalizada de U2.</li>
+        <li>Define primero cinco workloads: point lookup, ventana temporal por sujeto, cohorte por código, agregación columnar y carga incremental.</li>
+        <li>Modela entidades y relaciones antes de elegir formato o motor.</li>
+        <li>Conserva source identifiers y namespaces; no uses un surrogate como sustituto de toda identidad de origen.</li>
+        <li>Compara una representación relacional con una representación columnar Parquet usando el mismo contenido lógico.</li>
+        <li>Documenta versión de motor o librerías, hardware o entorno, tamaño del dataset, cache y número de repeticiones.</li>
+        <li>Prueba al menos un índice y una estrategia de partición y compara contra baseline.</li>
+        <li>Mantén effective, issued e ingest time en campos separados y no interpoles series para facilitar almacenamiento.</li>
+        <li>Diferencia formato de archivo de formato y catálogo de tabla en el diagrama arquitectónico.</li>
+        <li>No implementes reglas profundas de calidad y linaje U4, scheduling y alertas U5 ni controles productivos de acceso y privacidad U6.</li>
+        <li>Registra resultados negativos: una optimización que no mejora debe conservarse y explicarse.</li>
+        <li>Entrega un ADR con decisión contextual y condiciones bajo las cuales debería revisarse.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
-        <li>Define relacional mediante entidad, relación, condición y ejemplo.</li>
-        <li>Explica cómo lago de datos modifica o complementa a relacional.</li>
-        <li>Propón una prueba que distinga el papel de series temporales de una explicación alternativa.</li>
-        <li>Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible.</li>
+        <li>Define entidades person, encounter, measurement y device para un dataset sintético y justifica la granularidad de cada fila.</li>
+        <li>Propón una clave primaria y una identidad fuente para person; explica por qué no son necesariamente la misma cosa.</li>
+        <li>Modela una relación muchos-a-muchos simple mediante tabla de asociación.</li>
+        <li>Define al menos cuatro restricciones estructurales y explica qué error clínico no detectaría cada una.</li>
+        <li>Normaliza un esquema que repite atributos de person en cada measurement y señala qué redundancia eliminaste.</li>
+        <li>Propón una desnormalización útil para lectura y define de qué tabla canónica se materializa.</li>
+        <li>Crea una consulta point lookup y otra de cohorte que representen workloads distintos.</li>
+        <li>Justifica un índice para una de las consultas y predice su coste sobre escritura.</li>
+        <li>Compara baseline sin índice frente a índice usando varias repeticiones y registra mediana y p95 si el tamaño muestral lo permite.</li>
+        <li>Materializa el mismo dataset en Parquet y registra columnas, row group aproximado y codec usado.</li>
+        <li>Ejecuta una consulta que seleccione pocas columnas sobre muchas filas y compara bytes o latencia con la representación relacional.</li>
+        <li>Calcula CR para una representación base y la versión almacenada; documenta qué significa raw en tu comparación.</li>
+        <li>Calcula A_scan cuando puedas medir bytes leídos y explica cuándo la métrica no es observable en tu herramienta.</li>
+        <li>Diseña partición mensual y compárala con una alternativa demasiado fina; predice número de archivos o particiones tocados.</li>
+        <li>Explica por qué particionar por person_id puede ser problemático con muchas personas aunque ayude algunas ventanas individuales.</li>
+        <li>Dibuja las capas objeto, Parquet, table metadata y catálogo y ubica schema, snapshot y manifest donde corresponda.</li>
+        <li>Simula una evolución de esquema compatible en una tabla analítica y un cambio semántico que deba rechazarse pese a ser técnicamente posible.</li>
+        <li>Modela effective, issued e ingest time para tres observaciones y construye dos órdenes temporales distintos.</li>
+        <li>Representa una corrección amended sin contarla automáticamente como nueva medición.</li>
+        <li>Compara modelo long y wide para cinco tipos de medición con sparsity distinta.</li>
+        <li>Escribe un ADR que elija arquitectura relacional, columnar o híbrida para el escenario y cite los resultados del benchmark.</li>
+        <li>Enumera qué decisiones quedarían invalidadas si el volumen creciera 100 veces o si el workload cambiara de batch analítico a escritura interactiva.</li>
       </ul>
         <h4>Entregables</h4>
       <ul>
-        <li>Mapa conceptual corregido.</li>
-        <li>Explicación breve con una limitación explícita.</li>
+        <li>Diagrama lógico con entidades, claves y cardinalidades.</li>
+        <li>DDL o pseudocódigo relacional con restricciones e índices justificados.</li>
+        <li>Tabla de workload con operación, frecuencia, escala y criterio de aceptación.</li>
+        <li>Dataset sintético versionado usado por todas las comparaciones.</li>
+        <li>Representación relacional reproducible.</li>
+        <li>Representación Parquet reproducible con metadata de escritura.</li>
+        <li>Plan de partición y comparación con una alternativa.</li>
+        <li>Reporte de benchmark con repeticiones, latencia y condiciones de cache.</li>
+        <li>Tabla de tamaño y compresión y, cuando sea posible, bytes escaneados.</li>
+        <li>Modelo temporal con effective, issued, ingest y caso amended.</li>
+        <li>Diagrama que diferencie archivo, table format, snapshot y catálogo.</li>
+        <li>Architecture Decision Record final con consecuencias, límites y trigger de revisión.</li>
       </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>Las relaciones tienen dirección.</li>
-        <li>No se confunde evidencia con interpretación.</li>
-        <li>La explicación conserva el mecanismo central.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Taller de evidencia: selección de arquitectura según uso y escala</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.</li>
-        <li>Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.</li>
-        <li>Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.</li>
-        <li>Conserva cálculos, decisiones, resultados negativos y cambios de versión.</li>
-        <li>Compara el resultado con un baseline o una explicación alternativa.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Construye una tabla de trazabilidad para relacional, lago de datos y series temporales.</li>
-        <li>Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.</li>
-        <li>Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.</li>
-        <li>Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.</li>
-        <li>Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.</li>
-        <li>Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Prototipo reproducible con contrato de datos y plan de validación.</li>
-        <li>Datos o premisas y procedimiento reproducible.</li>
-        <li>Registro de controles y discrepancias.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>Trazabilidad completa.</li>
-        <li>Controles discriminantes.</li>
-        <li>Procedimiento reproducible.</li>
-        <li>Conclusión proporcional a la evidencia.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Reto de transferencia y revisión por pares</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.</li>
-        <li>Intercambia el producto con otra persona o utiliza una lista de revisión independiente.</li>
-        <li>Registra hallazgos por severidad: crítico, importante o editorial.</li>
-        <li>Corrige el producto y conserva una tabla antes-después con justificación.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Transfiere el método a un caso distinto de selección de arquitectura según uso y escala y enumera supuestos que deben revalidarse.</li>
-        <li>Construye una explicación alternativa que también conecte relacional, lago de datos y series temporales.</li>
-        <li>Identifica una afirmación que exceda la evidencia y reescríbela.</li>
-        <li>Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.</li>
-        <li>Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Producto revisado.</li>
-        <li>Registro antes-después.</li>
-        <li>Rúbrica de transferencia.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>La revisión produce cambios verificables.</li>
-        <li>Las limitaciones son específicas.</li>
-        <li>La figura conserva unidades y procedencia.</li>
-        <li>La nueva pregunta no se responde por memorización.</li>
+        <li>Cada tabla tiene una granularidad declarada y no mezcla entidades incompatibles.</li>
+        <li>Primary keys y foreign keys se usan para identidad e integridad estructural, no como prueba clínica.</li>
+        <li>Identificadores fuente y namespaces se preservan junto a claves internas.</li>
+        <li>Las relaciones muchos-a-muchos no se codifican como listas ambiguas sin contrato.</li>
+        <li>La normalización elimina una redundancia demostrable.</li>
+        <li>La desnormalización propuesta declara fuente canónica y mecanismo conceptual de refresco.</li>
+        <li>El workload se define antes de seleccionar índice, partición o formato.</li>
+        <li>El índice elegido se relaciona con una consulta concreta y se reconoce su coste de escritura.</li>
+        <li>Particionado se justifica por pruning esperado y no por una regla arbitraria.</li>
+        <li>Parquet se describe como formato de archivo columnar y no como base de datos completa.</li>
+        <li>Row groups y column chunks se distinguen correctamente.</li>
+        <li>El benchmark usa el mismo contenido lógico entre alternativas.</li>
+        <li>Las repeticiones y condiciones de cache están documentadas.</li>
+        <li>CR usa una definición de B_raw reproducible.</li>
+        <li>A_scan no se inventa si la herramienta no expone bytes leídos.</li>
+        <li>Un resultado negativo del benchmark se conserva y discute.</li>
+        <li>Formato de archivo y formato de tabla aparecen como capas distintas.</li>
+        <li>Snapshot no se presenta como sinónimo de backup.</li>
+        <li>Schema evolution técnica se separa de equivalencia semántica.</li>
+        <li>Effective, issued e ingest time permanecen diferenciados.</li>
+        <li>Una corrección amended no se cuenta automáticamente como nuevo evento fisiológico.</li>
+        <li>Long y wide se comparan por workload y sparsity y no por preferencia estética.</li>
+        <li>Small files y coste de metadata se consideran en particionado de archivos.</li>
+        <li>El ADR compara al menos dos alternativas y registra consecuencias.</li>
+        <li>La conclusión se limita al dataset y workload sintético evaluado.</li>
+        <li>Se declaran fronteras explícitas con U4 calidad y linaje, U5 operación y U6 privacidad y productos.</li>
       </ul>
       </article>
     </section>
@@ -318,61 +416,98 @@
             <section class="common-errors">
         <h3>Errores frecuentes y corrección</h3>
         <ul class="rich-list">
-        <li><strong>Tratar relacional como una etiqueta autosuficiente.</strong><p>Definir entidades, escala, relaciones, observables y condiciones antes de usar relacional en una explicación.</p></li>
-        <li><strong>Afirmar que una relación entre relacional y lago de datos demuestra mecanismo o causalidad.</strong><p>Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones.</p></li>
-        <li><strong>Añadir series temporales después de ver el resultado.</strong><p>Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio.</p></li>
-        <li><strong>Presentar solo el resultado favorable y omitir controles o discrepancias.</strong><p>Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento.</p></li>
-        <li><strong>Generalizar la conclusión de Almacenamiento y modelado al uso clínico o real.</strong><p>Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</p></li>
+        <li><strong>Elegir NoSQL o data lake porque los datos biomédicos son grandes.</strong><p>Cuantificar volumen y workload; una etiqueta no sustituye requisitos medibles.</p></li>
+        <li><strong>Pensar que una primary key demuestra que la fila pertenece al paciente correcto.</strong><p>La clave asegura unicidad e integridad técnica; identidad clínica requiere evidencia adicional.</p></li>
+        <li><strong>Eliminar identificadores fuente al crear surrogate keys.</strong><p>Conservar source identifier y namespace para reconstruir identidad y procedencia.</p></li>
+        <li><strong>Normalizar cada atributo en una tabla separada.</strong><p>Normalizar dependencias reales y evaluar coste de joins según workload.</p></li>
+        <li><strong>Desnormalizar sin registrar fuente canónica.</strong><p>Toda copia o materialización derivada necesita origen y regla de refresco.</p></li>
+        <li><strong>Indexar todas las columnas por si acaso.</strong><p>Diseñar índices desde predicados y orden reales y medir coste de escritura y almacenamiento.</p></li>
+        <li><strong>Particionar siempre por día.</strong><p>Elegir partición por escala y filtros; particiones pequeñas pueden empeorar planificación.</p></li>
+        <li><strong>Tratar Parquet como una base de datos transaccional.</strong><p>Parquet define archivos columnares; transacciones, catálogos y snapshots requieren otras capas.</p></li>
+        <li><strong>Asumir que Parquet siempre es más rápido que SQL.</strong><p>Comparar workload: scans columnares y point lookups tienen perfiles distintos.</p></li>
+        <li><strong>Confundir carpeta de archivos con data lake gobernado.</strong><p>Definir contratos, metadata, catálogo y estados publicables, no solo ubicación física.</p></li>
+        <li><strong>Confundir snapshot de tabla con backup.</strong><p>Snapshot referencia un estado lógico; durabilidad, retención y recuperación requieren políticas propias.</p></li>
+        <li><strong>Cambiar nombre de columna y asumir que schema evolution garantiza mismo significado.</strong><p>Separar compatibilidad técnica de equivalencia semántica biomédica.</p></li>
+        <li><strong>Colapsar effective, issued e ingest time en un timestamp.</strong><p>Mantener relojes distintos porque ordenan fenómeno, publicación y recepción.</p></li>
+        <li><strong>Eliminar mediciones iguales como duplicados.</strong><p>Usar identidad y lifecycle; valores iguales pueden ser eventos legítimamente distintos.</p></li>
+        <li><strong>Regularizar series temporales durante almacenamiento para facilitar consultas.</strong><p>Preservar observaciones originales; resampling es un derivado analítico explícito.</p></li>
+        <li><strong>Medir una sola consulta y declarar ganadora una arquitectura.</strong><p>Predefinir workload, repetir mediciones y restringir conclusión al escenario.</p></li>
+        <li><strong>Reportar solo latencia de lectura.</strong><p>Incluir coste de escritura, tamaño, mantenimiento y bytes o archivos tocados cuando sea posible.</p></li>
+        <li><strong>Presentar buen rendimiento como dataset listo para clínica.</strong><p>Rendimiento técnico no demuestra calidad, privacidad, validez clínica ni seguridad productiva.</p></li>
         </ul>
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Cuál es la unidad de observación adecuada para estudiar selección de arquitectura según uso y escala?</summary>
-        <p><strong>Respuesta:</strong> Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes.</p>
+        <summary>1. ¿Qué diferencia hay entre clave primaria e identidad clínica de origen?</summary>
+        <p><strong>Respuesta:</strong> La primaria identifica una fila en el esquema; la identidad de origen incluye identificador y namespace que representan al sujeto o evento en la fuente.</p>
+        <p><strong>Razonamiento:</strong> Una surrogate key puede ser única sin explicar qué identidad de negocio representa.</p>
+        <p><strong>Error que evita:</strong> Borrar source identifiers porque ya existe un integer id.</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿Cómo se relacionan relacional y lago de datos?</summary>
-        <p><strong>Respuesta:</strong> Mediante una relación con dirección, condición y evidencia verificable; series temporales puede modificar o contextualizar esa relación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Responder con una lista de definiciones sin explicar la relación.</p>
+        <summary>2. ¿Qué protege una foreign key?</summary>
+        <p><strong>Respuesta:</strong> Integridad referencial entre relaciones bajo el esquema.</p>
+        <p><strong>Razonamiento:</strong> Evita referencias inexistentes, pero no demuestra que la relación sea clínicamente correcta.</p>
+        <p><strong>Error que evita:</strong> Confundir integridad técnica con veracidad.</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Qué dato apoya una afirmación sobre series temporales?</summary>
-        <p><strong>Respuesta:</strong> Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente.</p>
+        <summary>3. ¿Por qué Parquet puede beneficiar scans analíticos?</summary>
+        <p><strong>Respuesta:</strong> Porque es columnar y permite leer solo columnas o chunks necesarios, además de compresión y metadata.</p>
+        <p><strong>Razonamiento:</strong> Reduce I/O en workloads que recorren muchas filas y pocas columnas.</p>
+        <p><strong>Error que evita:</strong> Afirmar que siempre será más rápido.</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Qué hace que un control sea discriminante?</summary>
-        <p><strong>Respuesta:</strong> Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Añadir un control que no puede cambiar la interpretación.</p>
+        <summary>4. ¿Qué coste introduce un índice?</summary>
+        <p><strong>Respuesta:</strong> Espacio adicional y trabajo de mantenimiento durante inserciones o actualizaciones.</p>
+        <p><strong>Razonamiento:</strong> La aceleración de lectura tiene trade-offs.</p>
+        <p><strong>Error que evita:</strong> Crear índices para todas las columnas.</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Qué debe contener un resultado reproducible?</summary>
-        <p><strong>Respuesta:</strong> Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Entregar únicamente una figura final o un archivo ejecutado.</p>
+        <summary>5. ¿Cuándo ayuda particionar?</summary>
+        <p><strong>Respuesta:</strong> Cuando consultas y mantenimiento pueden excluir u operar sobre subconjuntos alineados con la clave de partición.</p>
+        <p><strong>Razonamiento:</strong> Partition pruning evita leer piezas irrelevantes.</p>
+        <p><strong>Error que evita:</strong> Particionar datasets pequeños por granularidad extrema.</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Cómo se informa una conclusión sensible a un supuesto?</summary>
-        <p><strong>Respuesta:</strong> Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Elegir el escenario que confirma la conclusión y ocultar los demás.</p>
+        <summary>6. ¿Qué diferencia hay entre Parquet e Iceberg en esta unidad?</summary>
+        <p><strong>Respuesta:</strong> Parquet es formato de archivo columnar; Iceberg es formato de tabla que organiza múltiples archivos mediante metadata, snapshots y specs.</p>
+        <p><strong>Razonamiento:</strong> Resuelven niveles arquitectónicos distintos.</p>
+        <p><strong>Error que evita:</strong> Atribuir time travel al archivo Parquet aislado.</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Qué afirmación no puede sostener esta unidad sobre selección de arquitectura según uso y escala?</summary>
-        <p><strong>Respuesta:</strong> Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir una actividad educativa o un caso simulado con validación real.</p>
+        <summary>7. ¿Por qué un snapshot no es necesariamente un backup?</summary>
+        <p><strong>Respuesta:</strong> Porque describe un estado lógico referenciando archivos cuya retención puede cambiar; backup implica objetivos de recuperación y durabilidad adicionales.</p>
+        <p><strong>Razonamiento:</strong> Estado histórico y estrategia de recuperación son problemas diferentes.</p>
+        <p><strong>Error que evita:</strong> Suponer que conservar metadata garantiza recuperación.</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿Qué demuestra dominio de Almacenamiento y modelado?</summary>
-        <p><strong>Respuesta:</strong> Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Equiparar dominio con reconocer términos o repetir una solución.</p>
+        <summary>8. ¿Qué diferencia hay entre effective e issued time en FHIR Observation?</summary>
+        <p><strong>Respuesta:</strong> Effective representa el tiempo clínicamente relevante; issued cuándo esa versión se hizo disponible.</p>
+        <p><strong>Razonamiento:</strong> Fenómeno y publicación pueden ocurrir en momentos distintos.</p>
+        <p><strong>Error que evita:</strong> Ordenar ambos por ingest_time.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>9. ¿Por qué dos valores idénticos no son necesariamente duplicados?</summary>
+        <p><strong>Respuesta:</strong> Pueden corresponder a eventos distintos, repeticiones legítimas o versiones diferentes.</p>
+        <p><strong>Razonamiento:</strong> La identidad del evento no se deduce del valor.</p>
+        <p><strong>Error que evita:</strong> Usar drop_duplicates por value y timestamp sin contrato.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>10. ¿Qué significa small-files problem?</summary>
+        <p><strong>Respuesta:</strong> Que demasiados archivos pequeños aumentan metadata, planificación y aperturas y pueden degradar scans.</p>
+        <p><strong>Razonamiento:</strong> Particionado excesivo tiene coste físico.</p>
+        <p><strong>Error que evita:</strong> Maximizar número de particiones para acelerar todo.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>11. ¿Qué debe incluir un benchmark reproducible?</summary>
+        <p><strong>Respuesta:</strong> Dataset, workload, entorno y versiones, cache, repeticiones y métricas definidas.</p>
+        <p><strong>Razonamiento:</strong> Sin condiciones no se puede atribuir una diferencia a la arquitectura.</p>
+        <p><strong>Error que evita:</strong> Comparar un tiempo aislado.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>12. ¿Qué no demuestra una U3 técnicamente rápida?</summary>
+        <p><strong>Respuesta:</strong> No demuestra calidad y linaje completos, privacidad, utilidad clínica ni operación segura.</p>
+        <p><strong>Razonamiento:</strong> Esas capas pertenecen a U4–U6 y a validaciones externas.</p>
+        <p><strong>Error que evita:</strong> Confundir performance con readiness asistencial.</p>
       </details>
       </div>
     </section>
@@ -380,18 +515,58 @@
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
-        <li><strong>relacional</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>lago de datos</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>series temporales</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>Almacenamiento y modelado</strong><p>Dominio de estudio que integra relacional, lago de datos, series temporales para resolver un problema delimitado y verificable.</p></li>
-        <li><strong>Caso de aplicación</strong><p>Escenario de selección de arquitectura según uso y escala usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas.</p></li>
-        <li><strong>Unidad de observación</strong><p>Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse.</p></li>
-        <li><strong>Evidencia</strong><p>Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener.</p></li>
-        <li><strong>Control</strong><p>Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento.</p></li>
-        <li><strong>Incertidumbre</strong><p>Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse.</p></li>
-        <li><strong>Validez</strong><p>Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas.</p></li>
-        <li><strong>Reproducibilidad</strong><p>Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes.</p></li>
-        <li><strong>Transferencia</strong><p>Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian.</p></li>
+        <li><strong>modelo lógico</strong><p>Representación de entidades, atributos, relaciones e invariantes independiente del mecanismo físico concreto de almacenamiento.</p></li>
+        <li><strong>modelo físico</strong><p>Decisiones sobre archivos, tablas, índices, particiones, orden y otras estructuras usadas para ejecutar el modelo lógico.</p></li>
+        <li><strong>relación</strong><p>Tabla del modelo relacional compuesta por atributos y tuplas bajo un esquema definido.</p></li>
+        <li><strong>tupla</strong><p>Fila o registro de una relación.</p></li>
+        <li><strong>clave primaria</strong><p>Atributo o conjunto de atributos que identifica de forma única una fila y no admite null en ese papel.</p></li>
+        <li><strong>clave foránea</strong><p>Referencia desde una relación hacia una clave de otra relación para expresar integridad referencial.</p></li>
+        <li><strong>clave natural</strong><p>Identificador cuyo significado procede del dominio o sistema fuente.</p></li>
+        <li><strong>clave sustituta</strong><p>Identificador generado para uso interno que no debe borrar la identidad de negocio o namespace de origen.</p></li>
+        <li><strong>restricción</strong><p>Regla computable que limita estados permitidos, como UNIQUE, CHECK, NOT NULL o FOREIGN KEY.</p></li>
+        <li><strong>normalización</strong><p>Organización del esquema para reducir redundancia y dependencias anómalas entre atributos.</p></li>
+        <li><strong>desnormalización</strong><p>Duplicación o materialización deliberada de información para una carga de lectura, con fuente y refresco explícitos.</p></li>
+        <li><strong>tabla de asociación</strong><p>Relación intermedia usada para representar una relación muchos-a-muchos.</p></li>
+        <li><strong>índice</strong><p>Estructura auxiliar que acelera ciertos accesos a cambio de almacenamiento y coste de mantenimiento.</p></li>
+        <li><strong>selectividad</strong><p>Proporción de filas que satisface un predicado; influye en la utilidad potencial de algunos índices.</p></li>
+        <li><strong>partición</strong><p>Subconjunto físico de una tabla o colección definido por una regla de particionado.</p></li>
+        <li><strong>partition pruning</strong><p>Exclusión de particiones que no pueden contener filas compatibles con un predicado.</p></li>
+        <li><strong>almacenamiento orientado a filas</strong><p>Organización física que mantiene juntos los valores de una fila o registro.</p></li>
+        <li><strong>almacenamiento columnar</strong><p>Organización que agrupa valores por columna y favorece ciertos scans analíticos.</p></li>
+        <li><strong>Parquet</strong><p>Formato abierto de archivo columnar para almacenamiento y recuperación eficiente de datos tabulares complejos.</p></li>
+        <li><strong>row group</strong><p>Bloque horizontal de filas en un archivo Parquet que contiene chunks por columna.</p></li>
+        <li><strong>column chunk</strong><p>Segmento de una columna dentro de un row group Parquet.</p></li>
+        <li><strong>column pruning</strong><p>Lectura solo de las columnas requeridas por una consulta cuando formato y motor lo permiten.</p></li>
+        <li><strong>predicate pruning</strong><p>Uso de metadata o estadísticas para evitar leer regiones que no pueden satisfacer un filtro.</p></li>
+        <li><strong>compresión</strong><p>Reducción del tamaño almacenado mediante codificación; debe medirse junto con coste de lectura y escritura.</p></li>
+        <li><strong>data lake</strong><p>Colección gobernada de objetos, datasets y metadata capaz de mantener representaciones heterogéneas a escala.</p></li>
+        <li><strong>formato de archivo</strong><p>Especificación de cómo se codifican datos y metadata dentro de un archivo individual.</p></li>
+        <li><strong>formato de tabla</strong><p>Capa de metadata que define cómo múltiples archivos representan estados y operaciones de una tabla analítica.</p></li>
+        <li><strong>snapshot</strong><p>Estado coherente de una tabla identificado por metadata y un conjunto determinado de archivos.</p></li>
+        <li><strong>manifest</strong><p>Metadata que enumera archivos y propiedades usadas para planificar lecturas en formatos de tabla como Iceberg.</p></li>
+        <li><strong>schema evolution</strong><p>Cambio controlado de campos o tipos de un esquema bajo reglas de compatibilidad.</p></li>
+        <li><strong>partition evolution</strong><p>Cambio de la especificación de particionado para datos nuevos manteniendo capacidad de leer estados previos.</p></li>
+        <li><strong>catálogo</strong><p>Servicio o metadata que asocia nombres lógicos de datasets o tablas con su esquema y ubicación.</p></li>
+        <li><strong>serie temporal</strong><p>Secuencia de observaciones asociadas a tiempos, regulares o irregulares, con identidad y semántica explícitas.</p></li>
+        <li><strong>effective time</strong><p>Momento o periodo en que una observación es clínicamente relevante o representa el fenómeno.</p></li>
+        <li><strong>issued time</strong><p>Momento en que una versión de una observación fue puesta a disposición.</p></li>
+        <li><strong>ingest time</strong><p>Momento en que el pipeline recibió o persistió el registro.</p></li>
+        <li><strong>evento puntual</strong><p>Hecho modelado con un instante o fecha y tiempo efectivo.</p></li>
+        <li><strong>intervalo</strong><p>Hecho que abarca un periodo con inicio y fin o duración.</p></li>
+        <li><strong>sampling period</strong><p>Intervalo nominal entre muestras en una señal periódicamente muestreada.</p></li>
+        <li><strong>resampling</strong><p>Creación de una representación en una rejilla temporal distinta; es una transformación derivada.</p></li>
+        <li><strong>modelo long</strong><p>Representación donde el tipo de variable aparece como código en filas repetibles por sujeto y tiempo.</p></li>
+        <li><strong>modelo wide</strong><p>Representación donde variables diferentes ocupan columnas separadas en una fila o periodo.</p></li>
+        <li><strong>workload</strong><p>Conjunto definido de operaciones, frecuencias, tamaños y patrones de acceso usado para evaluar una arquitectura.</p></li>
+        <li><strong>point lookup</strong><p>Consulta que busca uno o pocos registros por una clave altamente selectiva.</p></li>
+        <li><strong>scan analítico</strong><p>Lectura de muchas filas para seleccionar, filtrar o agregar un subconjunto de columnas.</p></li>
+        <li><strong>latencia p95</strong><p>Percentil 95 de tiempos observados bajo un benchmark definido.</p></li>
+        <li><strong>throughput</strong><p>Cantidad procesada por unidad de tiempo bajo una operación y entorno explícitos.</p></li>
+        <li><strong>amplificación de lectura</strong><p>Relación entre bytes leídos y bytes útiles devueltos por una consulta.</p></li>
+        <li><strong>small files</strong><p>Gran cantidad de archivos pequeños que puede aumentar coste de metadata, planificación y apertura.</p></li>
+        <li><strong>Architecture Decision Record</strong><p>Registro breve de contexto, alternativas, criterios, decisión, consecuencias y condiciones de revisión.</p></li>
+        <li><strong>OMOP CDM</strong><p>Modelo común de datos de OHDSI usado aquí como ejemplo de entidades clínicas relacionales y granularidad.</p></li>
+        <li><strong>FHIR Observation</strong><p>Recurso FHIR para mediciones y afirmaciones simples; diferencia effective[x], issued, status y otros metadatos.</p></li>
       </ul>
     </section>
 
@@ -401,17 +576,26 @@
         <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
       </div>
       <ol class="rich-list advanced-sources">
-        <li><strong><a class="resource-link" href="https://loinc.org/" rel="noopener noreferrer">LOINC</a></strong><span class="course-tag">Regenstrief Institute · terminología clínica</span></li>
-        <li><strong><a class="resource-link" href="https://www.who.int/health-topics/digital-health" rel="noopener noreferrer">WHO Digital Health</a></strong><span class="course-tag">World Health Organization · recurso institucional</span></li>
-        <li><strong><a class="resource-link" href="https://physionet.org/" rel="noopener noreferrer">PhysioNet</a></strong><span class="course-tag">MIT Laboratory for Computational Physiology · datos abiertos</span></li>
-        <li><strong><a class="resource-link" href="https://www.ohdsi.org/" rel="noopener noreferrer">OHDSI</a></strong><span class="course-tag">Observational Health Data Sciences and Informatics · comunidad y estándar abierto</span></li>
-        <li><strong><a class="resource-link" href="https://www.nlm.nih.gov/research/umls/" rel="noopener noreferrer">UMLS</a></strong><span class="course-tag">National Library of Medicine · sistema terminológico</span></li>
+        <li><strong><a class="resource-link" href="https://www.postgresql.org/docs/18/ddl-constraints.html" rel="noopener noreferrer">PostgreSQL 18 Documentation – Constraints</a></strong><span class="course-tag">PostgreSQL Global Development Group · documentación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.postgresql.org/docs/current/indexes.html" rel="noopener noreferrer">PostgreSQL 18 Documentation – Indexes</a></strong><span class="course-tag">PostgreSQL Global Development Group · documentación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.postgresql.org/18/ddl-partitioning.html" rel="noopener noreferrer">PostgreSQL 18 Documentation – Table Partitioning</a></strong><span class="course-tag">PostgreSQL Global Development Group · documentación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.postgresql.org/docs/18/using-explain.html" rel="noopener noreferrer">PostgreSQL 18 Documentation – EXPLAIN</a></strong><span class="course-tag">PostgreSQL Global Development Group · documentación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://parquet.apache.org/docs/overview/" rel="noopener noreferrer">Apache Parquet – Overview</a></strong><span class="course-tag">Apache Software Foundation · documentación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://parquet.apache.org/docs/file-format/" rel="noopener noreferrer">Apache Parquet – File Format</a></strong><span class="course-tag">Apache Software Foundation · especificación y documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://iceberg.apache.org/spec/" rel="noopener noreferrer">Apache Iceberg Table Specification</a></strong><span class="course-tag">Apache Software Foundation · especificación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://iceberg.apache.org/docs/latest/schemas/" rel="noopener noreferrer">Apache Iceberg – Schemas</a></strong><span class="course-tag">Apache Software Foundation · documentación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/R5/observation.html" rel="noopener noreferrer">HL7 FHIR R5 Observation</a></strong><span class="course-tag">HL7 International · estándar sanitario</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/R5/datatypes.html#SampledData" rel="noopener noreferrer">HL7 FHIR R5 SampledData</a></strong><span class="course-tag">HL7 International · estándar sanitario</span></li>
+        <li><strong><a class="resource-link" href="https://ohdsi.github.io/CommonDataModel/cdm54.html" rel="noopener noreferrer">OMOP Common Data Model v5.4</a></strong><span class="course-tag">OHDSI · modelo común de datos</span></li>
+        <li><strong><a class="resource-link" href="https://ohdsi.github.io/CommonDataModel/" rel="noopener noreferrer">OMOP Common Data Model documentation</a></strong><span class="course-tag">OHDSI · documentación técnica oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dl.acm.org/doi/10.1145/362384.362685" rel="noopener noreferrer">A Relational Model of Data for Large Shared Data Banks</a></strong><span class="course-tag">E. F. Codd / Communications of the ACM · artículo fundacional</span></li>
+        <li><strong><a class="resource-link" href="https://www.nature.com/articles/sdata201618" rel="noopener noreferrer">The FAIR Guiding Principles for scientific data management and stewardship</a></strong><span class="course-tag">Wilkinson et al., Scientific Data · artículo científico</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Integrar relacional, lago de datos, series temporales para resolver un caso de selección de arquitectura según uso y escala con evidencia, controles, incertidumbre y comunicación proporcional. Conecta especialmente con Aplicación principal: Selección de arquitectura según uso y escala, Evidencia: Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, Calidad: Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias, Límite: Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria.</p>
+      <p>Diseñar y justificar arquitecturas de almacenamiento para datos biomédicos normalizados, separando modelo lógico, formato físico y motor de consulta. La unidad compara tablas relacionales con restricciones explícitas, archivos columnares en lagos de datos y formatos de tabla analítica, y patrones de series temporales/longitudinales según carga de trabajo, escala, mutabilidad y semántica temporal. Enseña claves, normalización y desnormalización controlada, índices, particionado, Parquet, snapshots de tabla, effective/issued/ingest time y benchmarking reproducible. Reutiliza las salidas transformadas de U2; reserva calidad, linaje y versionado profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6. Conecta especialmente con Resultados de laboratorio longitudinales, Monitorización de dispositivos, Cohortes multicéntricas, Ómicas y matrices de alta dimensionalidad. Material educativo de ingeniería de datos con datos exclusivamente sintéticos o recursos abiertos no identificables. U3 no diseña infraestructura asistencial real, no conecta EHR, PACS o dispositivos institucionales, no configura credenciales ni interpreta datos de pacientes. PostgreSQL 18, Apache Parquet, Apache Iceberg, FHIR R5 y OMOP CDM se usan como referencias técnicas consultadas el 25 de agosto de 2026; una implementación productiva debe revalidar versiones, motores, seguridad, gobernanza, adopción institucional y requisitos regulatorios. U1 cubre fuentes y source-to-landing; U2 ingesta y transformación; U4 calidad, linaje y versionado profundo; U5 orquestación y observabilidad; U6 privacidad, acceso, contratos y productos de datos.</p>
       <div class="page-actions"><a class="btn-link secondary" href="unidad-02.html">← Unidad 2: Ingesta y transformación</a><a class="btn-link" href="unidad-04.html">Unidad 4: Calidad y procedencia →</a></div>
     </section>
     </article>
