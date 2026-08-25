@@ -9,7 +9,8 @@ SOURCE = ROOT / "data" / "course_redevelopment" / "historias-clinicas-terminolog
 MIRROR = ROOT / "data" / "generated_units" / "historias-clinicas-terminologias-estandares" / "unit-06.json"
 SUBJECT = ROOT / "data" / "subjects" / "ingenieria-biomedica" / "historias-clinicas-terminologias-estandares.json"
 CATALOG = ROOT / "data" / "catalog_statuses.json"
-TEMP_WORKFLOW = ROOT / ".github" / "workflows" / "patch-pr479-coverage.yml"
+TEMP_COVERAGE_WORKFLOW = ROOT / ".github" / "workflows" / "patch-pr479-coverage.yml"
+TEMP_LATEX_WORKFLOW = ROOT / ".github" / "workflows" / "fix-pr479-latex.yml"
 
 
 class HistoriasClinicasUnit06ReleaseStateTests(unittest.TestCase):
@@ -31,7 +32,21 @@ class HistoriasClinicasUnit06ReleaseStateTests(unittest.TestCase):
             "historias-clinicas-terminologias-estandares",
             specificity["template_detected"],
         )
-        self.assertFalse(TEMP_WORKFLOW.exists())
+
+        coverage_equations = [
+            equation
+            for section in unit["theory_sections"]
+            for equation in section.get("equations", [])
+            if "Cobertura" in equation.get("latex", "")
+        ]
+        self.assertEqual(len(coverage_equations), 1)
+        self.assertEqual(
+            coverage_equations[0]["latex"],
+            r"\mathrm{Cobertura}_{req}=\frac{N_{req\,con\,prueba\,ejecutada}}{N_{req\,verificables}}",
+        )
+
+        self.assertFalse(TEMP_COVERAGE_WORKFLOW.exists())
+        self.assertFalse(TEMP_LATEX_WORKFLOW.exists())
 
 
 if __name__ == "__main__":
