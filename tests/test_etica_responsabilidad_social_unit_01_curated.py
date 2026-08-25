@@ -1,3 +1,4 @@
+# Final user-authored trigger after generated public-site synchronization.
 from __future__ import annotations
 
 import json
