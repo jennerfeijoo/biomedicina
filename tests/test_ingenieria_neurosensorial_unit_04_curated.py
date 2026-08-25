@@ -80,6 +80,8 @@ def test_unit_04_keeps_curricular_and_clinical_boundaries():
     for marker in ["program", "cirug", "parámetros", "clínic"]:
         assert marker in scope
     assert "usuarios virtuales" in text or "sintétic" in text
+    assert "no especifica sitios, intensidades, formas de pulso ni procedimientos invasivos" in text
+    assert "no programan implantes" in text
 
 
 def test_unit_04_uses_verified_sources_for_all_three_modalities():
