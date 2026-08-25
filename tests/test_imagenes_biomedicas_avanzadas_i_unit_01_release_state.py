@@ -12,7 +12,7 @@ CATALOG = ROOT / "data" / "catalog_statuses.json"
 
 
 class ImagenesBiomedicasAvanzadasIUnit01ReleaseStateTests(unittest.TestCase):
-    def test_unit_01_is_published_without_closing_remaining_template_debt(self) -> None:
+    def test_unit_01_remains_published_after_course_template_closure(self) -> None:
         unit = json.loads(SOURCE.read_text(encoding="utf-8"))
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
@@ -22,8 +22,8 @@ class ImagenesBiomedicasAvanzadasIUnit01ReleaseStateTests(unittest.TestCase):
         self.assertEqual(detailed[1]["description"], unit["purpose"])
 
         specificity = catalog["dimensions"]["specificity"]
-        self.assertIn("imagenes-biomedicas-avanzadas-i", specificity["template_detected"])
-        self.assertNotIn(
+        self.assertNotIn("imagenes-biomedicas-avanzadas-i", specificity["template_detected"])
+        self.assertIn(
             "imagenes-biomedicas-avanzadas-i",
             specificity["screened_no_known_template_marker"],
         )
