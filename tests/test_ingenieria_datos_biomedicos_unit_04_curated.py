@@ -108,6 +108,7 @@ class IngenieriaDatosBiomedicosUnit04Curated(unittest.TestCase):
     def test_published_descriptor_and_html_match_canonical_purpose(self):
         descriptor = json.loads(DESCRIPTOR.read_text(encoding='utf-8'))
         unit = next(item for item in descriptor['detailed_units'] if item['unit'] == 4)
+        self.assertEqual(unit['title'], self.data['title'])
         self.assertEqual(unit['description'], self.data['purpose'])
         self.assertTrue(PUBLIC.exists(), 'La página pública de U4 debe existir.')
         public_text = PUBLIC.read_text(encoding='utf-8')
