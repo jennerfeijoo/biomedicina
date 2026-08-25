@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Human-authored validation trigger after generated public pages were synchronized.
+# Final human-authored trigger after public pages and curricular descriptor synchronization.
 
 import json
 import unittest
