@@ -1,0 +1,46 @@
+name: Patch IDB U5 curricular boundary
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
+    paths:
+      - .github/workflows/patch-idb-u5-boundary.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
+          fetch-depth: 0
+      - name: Correct U5 to U6 curricular boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          paths = [
+              Path('data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-05.json'),
+              Path('data/generated_units/ingenieria-datos-biomedicos/unit-05.json'),
+          ]
+          old1 = 'reserva validación de interoperabilidad, terminologías y contratos FHIR para U6.'
+          new1 = 'reserva seudonimización, minimización, autorización, controles de acceso, documentación contractual y entrega responsable de productos de datos para U6.'
+          old2 = 'U6 recibirá productos operativamente trazables para estudiar interoperabilidad y validación de contratos.'
+          new2 = 'U6 recibirá productos operativamente trazables para estudiar privacidad, seudonimización, autorización, documentación contractual y entrega responsable de productos de datos.'
+          for p in paths:
+              text = p.read_text(encoding='utf-8')
+              assert text.count(old1) == 1, (p, 'old1', text.count(old1))
+              assert text.count(old2) == 1, (p, 'old2', text.count(old2))
+              text = text.replace(old1, new1).replace(old2, new2)
+              p.write_text(text, encoding='utf-8')
+          assert paths[0].read_bytes() == paths[1].read_bytes()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-05.json data/generated_units/ingenieria-datos-biomedicos/unit-05.json
+          git diff --cached --exit-code && exit 0 || true
+          git commit -m "Corregir frontera curricular de Ingeniería de Datos U5"
+          git push origin HEAD:codex/ingenieria-datos-biomedicos-u5-orquestacion-observabilidad
