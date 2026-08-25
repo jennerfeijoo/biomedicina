@@ -1,0 +1,119 @@
+import json
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = ROOT / 'data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-04.json'
+MIRROR = ROOT / 'data/generated_units/ingenieria-datos-biomedicos/unit-04.json'
+DESCRIPTOR = ROOT / 'data/subjects/ingenieria-biomedica/ingenieria-datos-biomedicos.json'
+PUBLIC = ROOT / 'ingenieria-biomedica/ingenieria-datos-biomedicos/unidades/unidad-04.html'
+
+
+class IngenieriaDatosBiomedicosUnit04Curated(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.data = json.loads(SOURCE.read_text(encoding='utf-8'))
+        cls.text = json.dumps(cls.data, ensure_ascii=False).lower()
+
+    def test_identity_and_exact_mirror(self):
+        self.assertEqual(self.data['subject_id'], 'ingenieria-datos-biomedicos')
+        self.assertEqual(self.data['unit'], 4)
+        self.assertEqual(self.data['slug'], 'calidad-y-procedencia')
+        self.assertEqual(self.data['title'], 'Calidad y procedencia')
+        self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
+
+    def test_generic_template_and_irrelevant_ppv_are_removed(self):
+        self.assertNotIn('concepto de la unidad que debe definirse mediante entidades observables', self.text)
+        self.assertNotIn('ppv=', self.text)
+        self.assertNotIn('valor predictivo positivo', self.text)
+
+    def test_quality_is_fit_for_use_with_explicit_dimensions(self):
+        for concept in ['fitness for purpose', 'completitud', 'conformidad', 'consistencia', 'plausibilidad', 'unicidad', 'actualidad', 'denominador', 'población evaluada']:
+            self.assertIn(concept, self.text)
+        equations = ' '.join(e.get('latex', '') for s in self.data['theory_sections'] for e in s.get('equations', []))
+        for token in ['N_{present}', 'N_{expected}', 'N_{invalid}', 'N_{assessed}', 'N_{orphan}']:
+            self.assertIn(token, equations)
+
+    def test_verification_validation_and_negative_fixtures_are_distinguished(self):
+        for concept in ['verificación', 'validación externa', 'negative fixture', 'foreign key', 'baseline', 'drift de calidad']:
+            self.assertIn(concept, self.text)
+        self.assertIn('no prueba', self.text)
+        self.assertIn('defecto conocido', self.text)
+
+    def test_provenance_and_lineage_models_are_distinguished(self):
+        for concept in ['w3c prov', 'entity', 'activity', 'agent', 'openlineage', 'dataset', 'job', 'run', 'run_id', 'fhir provenance', 'column lineage', 'upstream', 'downstream']:
+            self.assertIn(concept, self.text)
+        self.assertIn('logs', self.text)
+        self.assertIn('linaje', self.text)
+        self.assertIn('causalidad clínica', self.text)
+
+    def test_versioning_reproducibility_and_hash_limits(self):
+        for concept in ['versión de datos', 'versión de esquema', 'versión de vocabulario', 'versión de código', 'versión de regla', 'snapshot', 'release', 'release manifest', 'hash', 'changelog', 'supersesión', 'reproducibilidad', 'latest']:
+            self.assertIn(concept, self.text)
+        self.assertIn('identidad/integridad de bytes', self.text)
+        self.assertIn('no mide calidad', self.text)
+
+    def test_quality_gate_and_impact_analysis_are_explicit(self):
+        for concept in ['quality gate', 'quarantine', 'reason_code', 'severidad', 'root cause', 'impact analysis', 'coverage de linaje']:
+            self.assertIn(concept, self.text)
+        self.assertIn('no usa un promedio opaco', self.text)
+
+    def test_curricular_boundaries_and_safety_are_explicit(self):
+        purpose = self.data['purpose'].lower()
+        for unit in ['u2', 'u3', 'u5', 'u6']:
+            self.assertIn(unit, purpose)
+        notice = self.data['editorial_notice'].lower()
+        self.assertIn('datasets exclusivamente sintéticos', notice)
+        self.assertIn('no conecta ehr', notice)
+        self.assertIn('u5', notice)
+        self.assertIn('u6', notice)
+        self.assertIn('no certifica exactitud clínica', notice)
+
+    def test_academic_depth(self):
+        self.assertGreaterEqual(len(self.data['learning_objectives']), 6)
+        self.assertGreaterEqual(len(self.data['theory_sections']), 5)
+        for section in self.data['theory_sections']:
+            self.assertGreaterEqual(len(section['paragraphs']), 6)
+            self.assertGreaterEqual(len(section['key_points']), 6)
+            for paragraph in section['paragraphs']:
+                self.assertGreaterEqual(len(paragraph.split()), 20)
+            for point in section['key_points']:
+                self.assertGreaterEqual(len(point.split()), 4)
+        self.assertGreaterEqual(len(self.data['glossary']), 50)
+        self.assertGreaterEqual(len(self.data['worked_examples']), 5)
+        self.assertGreaterEqual(len(self.data['common_errors']), 18)
+        self.assertGreaterEqual(len(self.data['self_assessment']), 12)
+        self.assertGreaterEqual(len(self.data['biomedical_connections']), 6)
+        self.assertGreaterEqual(len(self.data['sources']), 14)
+
+    def test_guided_activity_is_substantive_and_reproducible(self):
+        activity = self.data['guided_activities'][0]
+        self.assertGreaterEqual(activity['estimated_time_minutes'], 420)
+        self.assertGreaterEqual(len(activity['problems']), 20)
+        self.assertGreaterEqual(len(activity['deliverables']), 10)
+        self.assertGreaterEqual(len(activity['checking_criteria']), 24)
+        joined = ' '.join(activity['problems'] + activity['deliverables'] + activity['checking_criteria']).lower()
+        for concept in ['denominador', 'negative fixture', 'quality gate', 'quarantine', 'prov', 'openlineage', 'fhir provenance', 'manifest', 'hash', 'root cause', 'impact analysis']:
+            self.assertIn(concept, joined)
+
+    def test_glossary_and_sources_cover_core_families(self):
+        terms = {g['term'].lower() for g in self.data['glossary']}
+        for term in ['calidad de datos', 'completitud', 'conformidad', 'plausibilidad', 'w3c prov', 'fhir provenance', 'openlineage', 'quality gate', 'fair']:
+            self.assertIn(term, terms)
+        source_text = ' '.join(s['title'] + ' ' + s['organization'] for s in self.data['sources']).lower()
+        for family in ['w3c', 'fhir', 'openlineage', 'kahn', 'ohdsi', 'fair', 'ucum']:
+            self.assertIn(family, source_text)
+        self.assertTrue(all(s.get('accessed') == '2026-08-25' for s in self.data['sources']))
+
+    def test_published_descriptor_and_html_match_canonical_purpose(self):
+        descriptor = json.loads(DESCRIPTOR.read_text(encoding='utf-8'))
+        unit = next(item for item in descriptor['detailed_units'] if item['unit'] == 4)
+        self.assertEqual(unit['title'], self.data['title'])
+        self.assertEqual(unit['description'], self.data['purpose'])
+        self.assertTrue(PUBLIC.exists(), 'La página pública de U4 debe existir.')
+        public_text = PUBLIC.read_text(encoding='utf-8')
+        self.assertIn(self.data['purpose'], public_text)
+
+
+if __name__ == '__main__':
+    unittest.main()
