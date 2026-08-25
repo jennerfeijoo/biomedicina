@@ -183,7 +183,7 @@ class IngenieriaDatosBiomedicosUnit01CuratedTests(unittest.TestCase):
         notice = self.unit["editorial_notice"].casefold()
         for phrase in (
             "exclusivamente sintéticos",
-            "no ingiere ehr",
+            "no ingiere sistemas ehr institucionales",
             "no interpreta resultados clínicos",
             "25 de agosto de 2026",
             "u2 aborda etl/elt",
