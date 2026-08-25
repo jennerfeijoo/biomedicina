@@ -6,6 +6,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data/course_redevelopment/historia-filosofia-ciencia/units/unit-05.json"
 MIRROR = ROOT / "data/generated_units/historia-filosofia-ciencia/unit-05.json"
+DESCRIPTOR = ROOT / "data/subjects/gestion-etica-comunicacion/historia-filosofia-ciencia.json"
 GENERIC_MARKERS = (
     "Concepto de la unidad que debe definirse mediante entidades observables",
     "V(a)=\\sum_{i=1}^{k} w_i r_i(a)",
@@ -18,6 +19,7 @@ class HistoriaFilosofiaCienciaUnit05CuratedTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = json.loads(SOURCE.read_text(encoding="utf-8"))
         cls.mirror = json.loads(MIRROR.read_text(encoding="utf-8"))
+        cls.descriptor = json.loads(DESCRIPTOR.read_text(encoding="utf-8"))
 
     def test_source_and_mirror_are_exact(self) -> None:
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
@@ -117,6 +119,10 @@ class HistoriaFilosofiaCienciaUnit05CuratedTests(unittest.TestCase):
             "no recomienda decisiones clínicas", "u6 cubrirá reproducibilidad",
         ):
             self.assertIn(phrase, notice)
+
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
+        published = next(item for item in self.descriptor["detailed_units"] if item["unit"] == 5)
+        self.assertEqual(published["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
