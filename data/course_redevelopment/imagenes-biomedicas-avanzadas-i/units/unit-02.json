@@ -6,386 +6,401 @@
   "slug": "mri-avanzada",
   "title": "MRI avanzada",
   "status": "review",
-  "purpose": "Integrar espacio k, secuencias, difusión y perfusión para resolver un caso de caracterización funcional y microestructural con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Reconstruir y auditar experimentos de MRI avanzada con datos sintéticos, conectando magnetización y codificación espacial con k-space, secuencias y contraste; analizar muestreo, aceleración y artefactos; estimar difusión mediante b-values y ADC y diferenciar estrategias de perfusión ASL, DSC y DCE, conservando metadatos, supuestos, incertidumbre y límites antes de interpretar cualquier parámetro como sustituto microestructural, hemodinámico o clínico.",
   "learning_objectives": [
-    "Definir espacio k, secuencias y difusión y perfusión mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte espacio k con secuencias y delimite el papel de difusión y perfusión.",
-    "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-    "Resolver y comunicar un caso sobre caracterización funcional y microestructural con incertidumbre y límites.",
-    "Transferir el método de MRI avanzada a un escenario nuevo y justificar qué debe revalidarse."
+    "Explicar cómo gradientes y radiofrecuencia codifican posición en fase y frecuencia, relacionar la trayectoria de k-space con la transformada de Fourier y distinguir datos complejos adquiridos de imagen de magnitud reconstruida.",
+    "Comparar spin echo, gradient echo, inversion recovery y EPI mediante TR, TE, TI, flip angle y mecanismos de refocalización, justificando cómo esos parámetros cambian contraste, SNR, sensibilidad a T2* y tiempo de adquisición.",
+    "Analizar FOV, matriz, resolución nominal, Nyquist, aliasing, partial Fourier, parallel imaging y compressed sensing, separando aceleración nominal de preservación de información y de validez de una reconstrucción.",
+    "Formular difusión MRI con señal dependiente de b-value, estimar ADC bajo un modelo monoexponencial y reconocer dependencia de protocolo, SNR, direcciones, distorsión EPI, movimiento y modelos alternativos.",
+    "Diferenciar ASL, DSC y DCE por fuente de contraste, señal observada, parámetros derivados y supuestos, evitando tratar CBF, rCBV o Ktrans como magnitudes intercambiables o comparables sin protocolo y modelo.",
+    "Diseñar un pipeline reproducible exclusivamente sintético que preserve metadatos DICOM relevantes, parámetros de secuencia, esquema de muestreo, ajustes de modelos, incertidumbre y fronteras entre rendimiento técnico, interpretación fisiológica y validez clínica."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de MRI avanzada",
+      "heading": "De magnetización y gradientes a k-space",
       "paragraphs": [
-        "La unidad «MRI avanzada» sitúa espacio k, secuencias y difusión y perfusión dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Imágenes Biomédicas Avanzadas I, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «MRI avanzada» en Imágenes Biomédicas Avanzadas I, «espacio k», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «MRI avanzada», «secuencias», aporta otra dimensión al problema de Imágenes Biomédicas Avanzadas I: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con espacio k debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «MRI avanzada» en Imágenes Biomédicas Avanzadas I, «difusión y perfusión», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en MRI avanzada.",
-        "Relacionar espacio k, secuencias y difusión y perfusión mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «MRI avanzada» dentro de Imágenes Biomédicas Avanzadas I, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Imágenes Biomédicas Avanzadas I, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre espacio k o secuencias debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «MRI avanzada», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Imágenes Biomédicas Avanzadas I, la incertidumbre de «MRI avanzada» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: caracterización funcional y microestructural",
-      "paragraphs": [
-        "En la unidad «MRI avanzada» de Imágenes Biomédicas Avanzadas I, el caso conductor es caracterización funcional y microestructural. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «MRI avanzada» conecta espacio k con secuencias y utiliza difusión y perfusión como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «caracterización funcional y microestructural» en Imágenes Biomédicas Avanzadas I, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «MRI avanzada» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de caracterización funcional y microestructural y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "MRI no adquiere directamente una fotografía del tejido. Tras la excitación por radiofrecuencia, la magnetización transversal induce una señal compleja en las bobinas receptoras. Los gradientes de campo modifican la frecuencia y la fase de esa señal según posición. En un modelo ideal, la señal medida a una coordenada k es una suma compleja de contribuciones espaciales; por ello imagen y k-space forman un par de transformadas de Fourier bajo supuestos de codificación y reconstrucción que deben declararse.",
+        "La coordenada k depende de la integral temporal del gradiente. Un gradiente de lectura hace avanzar la trayectoria durante el muestreo; un gradiente de codificación de fase desplaza la línea o posición que se adquirirá. El centro de k-space concentra información de baja frecuencia espacial y contribuye de forma importante al contraste y a la intensidad global, mientras la periferia contiene componentes espaciales más altas relacionadas con transiciones finas. Esto no significa que cada punto de k-space corresponda a una región anatómica concreta.",
+        "Una adquisición cartesiana rellena una rejilla de k-space mediante múltiples excitaciones y pasos de fase. Trayectorias radiales o espirales muestrean el dominio con geometrías diferentes y exigen reconstrucciones coherentes con esa trayectoria. La unidad utiliza primero un modelo cartesiano 2D porque permite relacionar FOV, matriz y FFT de forma explícita; después exige señalar qué conclusiones dependen de esa simplificación y cuáles se transfieren a adquisiciones no cartesianas.",
+        "La señal MRI es compleja: amplitud y fase transportan información. Reconstruir solo magnitud evita algunos problemas de fase pero cambia la distribución del ruido y descarta información que puede ser necesaria en aplicaciones como field mapping, phase-contrast o corrección de distorsión. Por eso el pipeline debe indicar si opera con datos complejos, real/imaginary, magnitude/phase o imágenes ya derivadas, y no debe llamar raw k-space a una imagen DICOM de magnitud.",
+        "FOV y muestreo están ligados. El espaciado entre muestras de k-space condiciona el FOV libre de aliasing, mientras la extensión máxima recorrida en k-space condiciona la resolución nominal. Aumentar matriz sin adquirir frecuencias espaciales adicionales puede interpolar o remuestrear sin aumentar la resolución efectiva. Del mismo modo, zero filling puede producir una rejilla de píxeles más densa sin crear información de alta frecuencia que no se midió.",
+        "La auditoría de MRI empieza por separar adquisición, reconstrucción y representación. Una secuencia determina RF, gradientes, tiempos y trayectoria; la reconstrucción combina datos de una o varias bobinas y aplica transformaciones o regularización; el DICOM resultante conserva solo parte de esa procedencia. U2 reutiliza la disciplina de U1: cada imagen debe poder remontarse al dato, transformación, parámetro y supuesto que la produjo."
       ],
       "equations": [
         {
-          "latex": "CNR=\\frac{|\\mu_1-\\mu_2|}{\\sigma_n}",
-          "meaning": "Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.",
-          "variables": {
-            "\\mu": "media regional",
-            "\\sigma_n": "desviación del ruido"
-          }
+          "latex": "\\mathbf{k}(t)=\\frac{\\gamma}{2\\pi}\\int_0^t \\mathbf{G}(\\tau)\\,d\\tau",
+          "meaning": "Relación ideal entre la integral del gradiente y la posición recorrida en k-space.",
+          "variables": {"\\mathbf{k}": "vector de frecuencia espacial", "\\gamma": "relación giromagnética", "\\mathbf{G}": "gradiente aplicado", "t": "tiempo"}
+        },
+        {
+          "latex": "S(\\mathbf{k})=\\int \\rho(\\mathbf{r})e^{-i2\\pi\\mathbf{k}\\cdot\\mathbf{r}}d\\mathbf{r}",
+          "meaning": "Modelo simplificado que muestra la relación de Fourier entre señal espacialmente codificada y distribución efectiva de señal.",
+          "variables": {"S": "señal compleja en k-space", "\\rho": "distribución efectiva de señal", "\\mathbf{r}": "posición espacial"}
         }
       ],
       "key_points": [
-        "Delimitar el caso de caracterización funcional y microestructural antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "k-space es un dominio de frecuencia espacial y no un mapa anatómico por coordenadas.",
+        "Los gradientes controlan fase y frecuencia para codificar posición antes de la reconstrucción.",
+        "Centro y periferia de k-space aportan bandas de frecuencia diferentes, no órganos diferentes.",
+        "Datos complejos, magnitud y fase no son representaciones intercambiables sin consecuencias.",
+        "FOV depende del espaciado de muestreo y resolución nominal de la extensión adquirida en k-space.",
+        "Zero filling o matriz mayor no crean frecuencias espaciales que nunca fueron medidas."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Secuencias, relajación y contraste: qué se prepara antes de leer k-space",
       "paragraphs": [
-        "La reproducibilidad de «MRI avanzada» en Imágenes Biomédicas Avanzadas I requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «MRI avanzada» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Imágenes Biomédicas Avanzadas I separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «MRI avanzada» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de espacio k, secuencias y difusión y perfusión debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Imágenes Biomédicas Avanzadas I.",
-        "El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre caracterización funcional y microestructural. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Imágenes Biomédicas Avanzadas I como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Una pulse sequence organiza excitaciones RF, pulsos de refocalización, gradientes, esperas y readouts. El contraste no pertenece a una etiqueta como T1 o T2 de manera absoluta: emerge de propiedades del objeto y de parámetros de adquisición. TR controla cuánto tiempo transcurre entre excitaciones equivalentes; TE define cuándo se observa el eco; TI es relevante tras una preparación de inversión; el flip angle controla cuánto se inclina la magnetización. Cambiar uno puede modificar simultáneamente señal, contraste, tiempo y sensibilidad a artefactos.",
+        "Spin echo usa una excitación seguida de refocalización para recuperar dephasing reversible por inhomogeneidad estática y formar un eco cuya pérdida está más vinculada a T2 que a T2*. Gradient echo produce el eco mediante inversión de gradiente y suele permitir TR y flip angles menores, pero conserva sensibilidad a susceptibilidad e inhomogeneidad, por lo que su contraste se relaciona con T2*. La elección no se reduce a 'SE tiene más calidad' o 'GRE es más rápido': depende de tarea, tiempo y mecanismo de contraste.",
+        "Inversion recovery añade una preparación de 180° y espera TI antes de la excitación/readout. Elegir TI puede atenuar una componente cuyo longitudinal magnetization cruza cerca de cero, pero el punto de nulled signal depende de T1, secuencia y condiciones. La familia incluye estrategias como suppression de grasa o líquido, pero la unidad no memoriza nombres comerciales: exige identificar preparación, readout, parámetros y tejido o señal objetivo.",
+        "Echo-planar imaging adquiere muchas líneas de k-space tras una excitación mediante un tren rápido de gradientes. Su velocidad la hace central en difusión y perfusión, pero la larga lectura y la codificación de fase estrecha pueden aumentar distorsión geométrica, ghosting y sensibilidad a off-resonance. Un mapa ADC técnicamente correcto en fórmula puede seguir estando espacialmente mal registrado si su DWI de origen está distorsionada.",
+        "La ponderación T1, T2, T2* o proton density es un resultado de sensibilidad relativa, no una medición pura de una única constante. Dos secuencias etiquetadas T1-weighted pueden usar parámetros distintos y producir diferente contraste. Para cuantificación se necesitan adquisiciones/modelos específicamente diseñados, calibración y control de confusores; una imagen 'weighted' no debe convertirse automáticamente en un mapa cuantitativo de T1 o T2.",
+        "DICOM ofrece atributos para describir pulse sequence, acquisition type y familias como spin, gradient o EPI, además de parámetros clásicos. Sin embargo, un nombre de secuencia puede ser vendor-specific y el estándar no revela necesariamente todos los detalles internos. La trazabilidad debe conservar valores disponibles sin inventar parámetros ausentes ni inferir equivalencia exacta entre nombres comerciales."
+      ],
+      "equations": [
+        {
+          "latex": "S_{SE}\\propto \\rho\\left(1-e^{-TR/T_1}\\right)e^{-TE/T_2}",
+          "meaning": "Modelo simplificado de señal spin-echo útil para razonar cómo TR, TE, T1, T2 y densidad protónica condicionan señal; no sustituye la ecuación completa de una secuencia real.",
+          "variables": {"S_{SE}": "señal spin-echo aproximada", "\\rho": "densidad efectiva de protones", "TR": "repetition time", "TE": "echo time", "T_1": "relajación longitudinal", "T_2": "relajación transversal"}
+        }
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido."
+        "El contraste MRI depende conjuntamente de propiedades tisulares y parámetros de secuencia.",
+        "Spin echo refocaliza dephasing reversible; gradient echo mantiene mayor sensibilidad a T2* e inhomogeneidad.",
+        "TI prepara contraste por inversión y no es una etiqueta universal de supresión tisular.",
+        "EPI acelera lectura de k-space pero aumenta sensibilidad a off-resonance, ghosting y distorsión.",
+        "Imagen ponderada y mapa cuantitativo son productos distintos con requisitos de validación distintos.",
+        "DICOM mejora procedencia de secuencia, pero no garantiza transparencia completa de implementaciones propietarias."
+      ]
+    },
+    {
+      "heading": "Muestreo, aceleración y reconstrucción: menos datos exige más supuestos",
+      "paragraphs": [
+        "El teorema de muestreo aparece en MRI de forma espacial. Si se separan demasiado las líneas de k-space en phase encoding, el FOV representable disminuye y puede aparecer wrap-around. Si se reduce kmax, los bordes se ensanchan porque faltan altas frecuencias. Acelerar no consiste solo en adquirir menos puntos: hay que definir qué redundancia, sensibilidad de bobina o prior permite recuperar una imagen útil y qué error puede introducirse.",
+        "Partial Fourier explota simetría conjugada aproximada del k-space de un objeto real para adquirir algo más de la mitad y estimar lo faltante usando información de fase. La simetría deja de ser perfecta cuando la fase espacial es compleja, por lo que el método requiere correcciones y puede alterar SNR o resolución. Zero filling, en cambio, rellena con ceros sin inferir información nueva y sirve principalmente para interpolación de la rejilla reconstruida.",
+        "Parallel imaging usa múltiples bobinas receptoras con sensibilidades espaciales diferentes como codificación adicional. Métodos image-domain como SENSE y k-space-domain como GRAPPA resuelven el undersampling de forma diferente, pero ambos pagan un precio de ruido y conditioning. Un acceleration factor R no equivale a una reducción idéntica de tiempo total ni garantiza la misma SNR; secuencia, calibration lines, g-factor y otras restricciones importan.",
+        "Compressed sensing combina undersampling incoherente, una representación sparse o compressible y reconstrucción no lineal regularizada. La recuperación depende de sampling pattern, transform domain, regularization weight y stopping. Una imagen visualmente limpia puede contener pérdida de textura o small features si el prior domina. Por ello el laboratorio comparará error contra una referencia sintética conocida y no evaluará compressed sensing solo por artefactos visibles.",
+        "Reconstrucción deep learning amplía el repertorio de priors aprendidos y puede incorporar data consistency, unrolled optimization u otros diseños. U2 la presenta como extensión, no como sustituto de los fundamentos. La generalización puede fallar ante cambios de contraste, anatomía, sampling, coil configuration o ruido; un output plausible no demuestra que el contenido ausente de k-space haya sido recuperado fielmente. Los datos de referencia y perturbaciones controladas siguen siendo necesarios.",
+        "La comparación de aceleraciones debe conservar la tarea. Se registrarán sampling mask, fraction sampled, coil assumptions si se simulan, método de reconstrucción, regularización, semilla y métricas de error. PSNR o SSIM pueden describir similitud global, pero no demuestran preservación de una pequeña señal relevante. La decisión final incluirá al menos una métrica task-specific y una inspección de residual o difference map."
+      ],
+      "equations": [
+        {
+          "latex": "\\Delta x\\approx \\frac{1}{2k_{max}},\\qquad FOV\\approx \\frac{1}{\\Delta k}",
+          "meaning": "Relaciones aproximadas del caso cartesiano ideal entre extensión de k-space, resolución nominal, espaciado de k-space y FOV.",
+          "variables": {"\\Delta x": "resolución nominal", "k_{max}": "máxima frecuencia espacial muestreada", "FOV": "field of view", "\\Delta k": "espaciado de muestras en k-space"}
+        },
+        {
+          "latex": "\\hat{x}=\\arg\\min_x\\left(\\|PFx-y\\|_2^2+\\lambda R(x)\\right)",
+          "meaning": "Forma educativa de reconstrucción regularizada desde k-space undersampled, con operador de Fourier F y máscara P.",
+          "variables": {"x": "imagen", "F": "operador de Fourier", "P": "máscara de muestreo", "y": "datos adquiridos", "R": "regularizador", "\\lambda": "peso del prior"}
+        }
+      ],
+      "key_points": [
+        "Undersampling cambia el problema de reconstrucción y exige información o supuestos adicionales.",
+        "Partial Fourier estima datos usando estructura de fase; zero filling solo interpola la rejilla.",
+        "Parallel imaging usa sensibilidad de bobinas y puede amplificar ruido mediante conditioning desfavorable.",
+        "Compressed sensing necesita incoherencia, sparsity o compressibility y una regularización explícita.",
+        "Deep reconstruction puede producir imágenes plausibles sin garantizar fidelidad ante distribución nueva.",
+        "Aceleración debe evaluarse contra una tarea y referencia, no solo mediante apariencia o SSIM global."
+      ]
+    },
+    {
+      "heading": "Difusión MRI: de b-value y señal a ADC sin convertir un modelo en histología",
+      "paragraphs": [
+        "Diffusion-weighted MRI sensibiliza la señal al movimiento microscópico de agua mediante gradientes. El factor b resume parte de la sensitization, aunque la información completa puede requerir dirección y b-matrix. En el modelo monoexponencial más simple, la señal disminuye como S(b)=S0 exp(-b·ADC). ADC es por tanto un parámetro ajustado bajo un modelo y un conjunto de b-values, no una medición directa de tamaño celular ni una propiedad fija independiente del protocolo.",
+        "El b-value y su distribución condicionan el ajuste. Valores muy bajos pueden incluir contribuciones de perfusión microvascular; valores altos reducen señal y acercan la medida al noise floor. Ajustar dos puntos es sencillo pero ofrece poca capacidad para detectar desviaciones del modelo. Añadir más b-values permite inspeccionar residual y explorar modelos alternativos, pero más parámetros también aumentan riesgo de sobreajuste e identificabilidad pobre.",
+        "La imagen de magnitud tiene ruido no gaussiano a bajo SNR y puede presentar un floor positivo. Esto sesga el log-signal y puede subestimar ADC cuando el high-b signal se acerca al ruido. Por ello la regresión lineal sobre ln S no debe aplicarse ciegamente después de eliminar puntos negativos o bajos. El laboratorio añadirá ruido sintético a datos complejos y comparará el ADC estimado con el valor verdadero conocido.",
+        "Diffusion encoding direccional permite estudiar anisotropía. Diffusion tensor imaging estima un tensor simétrico a partir de múltiples direcciones y produce eigenvalues/eigenvectors y métricas como fractional anisotropy. FA alta no identifica por sí sola una vía neural ni una microestructura única; crossing fibers, partial volume, edema, SNR y preprocessing pueden cambiarla. La unidad presenta DTI como extensión para entender por qué una sola dirección no caracteriza difusión anisotrópica.",
+        "DWI suele usar EPI y hereda distorsión por susceptibility, eddy currents, ghosting y motion. Además, cada diffusion gradient puede inducir desplazamientos o deformaciones diferentes. Un mapa ADC exige correspondencia espacial entre imágenes de distintos b-values; si el registro o correction falla, el ajuste mezcla posiciones distintas. Antes de interpretar un voxel se debe auditar geometría, motion y máscara.",
+        "QIBA trata ADC como quantitative imaging biomarker con requisitos de repeatability y protocolo. La lección metodológica es general: una diferencia numérica solo es interpretable frente a variación de medición y contexto. El curso no aplicará umbrales clínicos por órgano ni clasificará lesiones; usará phantom/synthetic ADC con valores conocidos para separar bias técnico, variance y model mismatch."
+      ],
+      "equations": [
+        {
+          "latex": "S(b)=S_0e^{-b\\,ADC}",
+          "meaning": "Modelo monoexponencial educativo de señal de difusión; su validez depende de régimen, protocolo y ruido.",
+          "variables": {"S(b)": "señal a b-value dado", "S_0": "señal de referencia", "b": "factor de sensitización s/mm²", "ADC": "apparent diffusion coefficient"}
+        },
+        {
+          "latex": "ADC=-\\frac{\\ln[S(b_2)/S(b_1)]}{b_2-b_1}",
+          "meaning": "Estimador de dos puntos bajo modelo monoexponencial ideal; no captura curvatura ni noise-floor bias.",
+          "variables": {"b_1,b_2": "b-values", "S(b_1),S(b_2)": "señales correspondientes"}
+        }
+      ],
+      "key_points": [
+        "ADC es un parámetro de modelo dependiente de b-values, SNR, procesamiento y objeto medido.",
+        "High b-value aumenta sensitización a difusión pero reduce señal y puede amplificar sesgo por noise floor.",
+        "Más b-values permiten comprobar curvatura, aunque no garantizan identificabilidad de modelos complejos.",
+        "DTI necesita múltiples direcciones y FA no identifica de forma única una arquitectura tisular.",
+        "Distorsión EPI, eddy currents y movimiento pueden sesgar mapas antes de cualquier ajuste de ADC.",
+        "Un cambio de ADC requiere contexto de repeatability antes de convertirse en afirmación biomédica."
+      ]
+    },
+    {
+      "heading": "Perfusión MRI y cuantificación: ASL, DSC y DCE no miden lo mismo",
+      "paragraphs": [
+        "Perfusion MRI reúne familias con mecanismos distintos. Arterial spin labeling usa magnetización de sangre arterial como tracer endógeno: se alternan condiciones label/control y su pequeña diferencia de señal se modela para estimar cerebral blood flow bajo supuestos de labeling efficiency, T1, timing y arterial transit time. La señal ASL es baja y sensible a motion; background suppression, PLD y readout condicionan la cuantificación.",
+        "Dynamic susceptibility contrast observa cambios rápidos de T2/T2* durante el paso de un bolus de agente paramagnético y deriva curvas de concentración relativa. Integrar o deconvolver esas curvas permite estimar parámetros como relative cerebral blood volume o flow bajo supuestos de arterial input function, leakage correction y relaxivity. rCBV es relativo por definición en muchos pipelines y no debe tratarse como la misma magnitud que CBF absoluto de ASL.",
+        "Dynamic contrast-enhanced MRI explota cambios predominantemente T1 durante entrada y distribución de contraste. Modelos pharmacokinetic como Tofts relacionan tissue concentration curve con una arterial input function y estiman parámetros como Ktrans y ve. Ktrans combina efectos de flow, permeability y surface area según el régimen; no es una lectura directa de 'permeabilidad' universal. T1 baseline, temporal resolution, AIF y modelo elegidos pueden cambiar el valor.",
+        "Las tres familias enfrentan problemas de timing. ASL depende de labeling duration y post-labeling delay; multi-timepoint ASL puede modelar arterial transit time. DSC y DCE necesitan temporal sampling suficiente para capturar bolus dynamics y una referencia arterial adecuada. Comparar mapas sin conservar timing, injection/context o labeling protocol elimina información necesaria para reproducir el parámetro.",
+        "DICOM Enhanced MR incluye macros que pueden representar diffusion b-value/direction y ASL context, además de atributos de pulse sequence. Esa trazabilidad es útil, pero un dataset derivado puede perder parámetros del postprocessing. El pipeline de U2 mantendrá un sidecar metodológico con ecuación, unidades, software, baseline, correction y parámetros no disponibles, sin inventar valores faltantes.",
+        "La validación final separa señal, parámetro técnico e inferencia fisiológica. Un CBF sintético recuperado con bajo error valida el código bajo ese modelo; no demuestra precisión in vivo. Un ADC reproducible no prueba una etiología tisular. Un Ktrans estable no demuestra respuesta terapéutica. U2 termina exigiendo esta separación antes de pasar a ultrasonido avanzado en U3."
+      ],
+      "equations": [
+        {
+          "latex": "\\Delta M=M_{control}-M_{label}",
+          "meaning": "Señal diferencial básica de ASL; la conversión a CBF requiere un modelo y parámetros adicionales.",
+          "variables": {"M_{control}": "señal control", "M_{label}": "señal labeled", "\\Delta M": "diferencia ASL"}
+        },
+        {
+          "latex": "C_t(t)=K^{trans}\\int_0^t C_p(\\tau)e^{-K^{trans}(t-\\tau)/v_e}d\\tau",
+          "meaning": "Forma educativa del modelo de Tofts para DCE; los parámetros dependen del modelo, AIF y condiciones de adquisición.",
+          "variables": {"C_t": "concentración tisular modelada", "C_p": "arterial/plasma input", "K^{trans}": "transfer constant", "v_e": "fracción extravascular-extracelular"}
+        }
+      ],
+      "key_points": [
+        "ASL usa un tracer magnético endógeno y depende fuertemente de timing y labeling efficiency.",
+        "DSC explota susceptibilidad durante un bolus y sus parámetros dependen de AIF y leakage correction.",
+        "DCE explota dinámica T1 y Ktrans es un parámetro de modelo, no una permeabilidad pura universal.",
+        "CBF, rCBV y Ktrans representan magnitudes diferentes y no deben compararse como una misma escala.",
+        "Metadatos de adquisición deben acompañarse de parámetros de postprocesado para reproducir cuantificación.",
+        "Recuperar correctamente un parámetro sintético valida el pipeline bajo el modelo, no una interpretación clínica."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "espacio k",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "secuencias",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "difusión y perfusión",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "MRI avanzada",
-      "definition": "Dominio de estudio que integra espacio k, secuencias, difusión y perfusión para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de caracterización funcional y microestructural usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term": "magnetización longitudinal", "definition": "Componente de magnetización paralela al campo principal cuya recuperación se caracteriza idealmente mediante T1."},
+    {"term": "magnetización transversal", "definition": "Componente coherente perpendicular al campo principal que induce señal en recepción y decae por procesos T2/T2*."},
+    {"term": "radiofrecuencia", "definition": "Campo RF aplicado cerca de la frecuencia de resonancia para manipular la magnetización."},
+    {"term": "gradiente", "definition": "Variación espacial controlada del campo magnético usada para selección y codificación espacial o sensitización."},
+    {"term": "k-space", "definition": "Dominio de frecuencia espacial donde se muestrea la señal MRI codificada antes de reconstruir la imagen."},
+    {"term": "trayectoria de k-space", "definition": "Ruta temporal recorrida en el dominio k según gradientes y esquema de muestreo."},
+    {"term": "frequency encoding", "definition": "Codificación espacial durante readout mediante un gradiente que hace depender frecuencia de posición."},
+    {"term": "phase encoding", "definition": "Codificación espacial mediante acumulación de fase dependiente de posición antes del readout."},
+    {"term": "readout", "definition": "Intervalo en que se digitaliza la señal, normalmente bajo un gradiente de lectura."},
+    {"term": "FFT", "definition": "Fast Fourier Transform, algoritmo para transformar datos cartesianos de k-space al dominio imagen y viceversa."},
+    {"term": "FOV", "definition": "Field of view representado sin aliasing bajo un esquema de muestreo definido."},
+    {"term": "kmax", "definition": "Máxima frecuencia espacial muestreada, relacionada con la resolución nominal alcanzable."},
+    {"term": "zero filling", "definition": "Relleno de muestras no adquiridas con ceros para interpolar una rejilla; no crea nueva información espacial."},
+    {"term": "TR", "definition": "Repetition time entre eventos de excitación equivalentes relevantes para recuperación longitudinal y tiempo de adquisición."},
+    {"term": "TE", "definition": "Echo time entre excitación y centro del eco leído, relevante para ponderación T2/T2*."},
+    {"term": "TI", "definition": "Inversion time entre preparación de inversión y evento posterior usado para controlar contraste."},
+    {"term": "flip angle", "definition": "Ángulo de rotación de magnetización producido idealmente por un pulso RF."},
+    {"term": "spin echo", "definition": "Familia de secuencias que usa refocalización RF para formar un eco menos sensible a dephasing estático T2*."},
+    {"term": "gradient echo", "definition": "Familia que forma el eco mediante gradientes y mantiene mayor sensibilidad a susceptibilidad e inhomogeneidad."},
+    {"term": "inversion recovery", "definition": "Preparación que invierte magnetización longitudinal y utiliza TI para modificar o nullear contraste."},
+    {"term": "EPI", "definition": "Echo-planar imaging, lectura rápida de muchas líneas de k-space con sensibilidad a off-resonance y distorsión."},
+    {"term": "T1 weighted", "definition": "Imagen cuyo contraste muestra sensibilidad predominante a diferencias T1 bajo parámetros concretos; no es un mapa T1."},
+    {"term": "T2 weighted", "definition": "Imagen cuyo contraste muestra sensibilidad predominante a diferencias T2 bajo parámetros concretos; no es un mapa T2."},
+    {"term": "T2*", "definition": "Constante aparente transversal que incluye dephasing irreversible T2 y contribuciones de inhomogeneidad/susceptibilidad."},
+    {"term": "aliasing", "definition": "Superposición de contenido causada por muestreo insuficiente respecto al FOV o banda de frecuencias representada."},
+    {"term": "partial Fourier", "definition": "Adquisición parcial que explota simetría conjugada aproximada y estimación de fase para recuperar datos faltantes."},
+    {"term": "parallel imaging", "definition": "Aceleración que usa sensibilidades espaciales diferentes de múltiples bobinas como codificación adicional."},
+    {"term": "SENSE", "definition": "Método clásico de parallel imaging que resuelve aliasing principalmente en dominio imagen usando coil sensitivities."},
+    {"term": "GRAPPA", "definition": "Método clásico de parallel imaging que estima muestras faltantes de k-space usando calibración multicoil."},
+    {"term": "g-factor", "definition": "Factor que describe amplificación de ruido condicionada por geometría en parallel imaging."},
+    {"term": "compressed sensing", "definition": "Reconstrucción desde undersampling incoherente usando sparsity/compressibility y optimización regularizada."},
+    {"term": "data consistency", "definition": "Restricción o término que obliga a una reconstrucción a permanecer compatible con muestras realmente adquiridas."},
+    {"term": "undersampling mask", "definition": "Patrón que especifica qué posiciones de k-space se adquirieron y cuáles faltan."},
+    {"term": "b-value", "definition": "Factor de sensitización de diffusion weighting, expresado típicamente en s/mm²."},
+    {"term": "b-matrix", "definition": "Representación tensorial más completa de sensitización a difusión que incorpora magnitud y direcciones de gradiente."},
+    {"term": "DWI", "definition": "Diffusion-weighted imaging: imágenes cuya señal ha sido sensibilizada al movimiento microscópico del agua."},
+    {"term": "ADC", "definition": "Apparent diffusion coefficient estimado bajo un modelo y conjunto de b-values; depende del protocolo y procesamiento."},
+    {"term": "DTI", "definition": "Diffusion tensor imaging: modelo tensorial de difusión estimado desde múltiples direcciones."},
+    {"term": "fractional anisotropy", "definition": "Métrica escalar derivada de eigenvalues del tensor de difusión que resume anisotropía relativa sin identificar una microestructura única."},
+    {"term": "noise floor", "definition": "Sesgo positivo de magnitud a bajo SNR que puede distorsionar ajustes de difusión."},
+    {"term": "eddy currents", "definition": "Corrientes inducidas por cambios de gradiente que pueden alterar campos y geometría entre diffusion encodings."},
+    {"term": "ASL", "definition": "Arterial spin labeling: perfusión MRI que usa magnetización de sangre arterial como tracer endógeno."},
+    {"term": "label/control", "definition": "Par de condiciones ASL cuya diferencia de señal contiene información de perfusión."},
+    {"term": "PLD", "definition": "Post-labeling delay entre labeling y adquisición, relevante para llegada de sangre marcada."},
+    {"term": "arterial transit time", "definition": "Tiempo de tránsito arterial que puede confundir o ser estimado en ASL según el protocolo."},
+    {"term": "CBF", "definition": "Cerebral blood flow; parámetro de flujo que puede estimarse con ASL bajo un modelo y unidades declaradas."},
+    {"term": "DSC", "definition": "Dynamic susceptibility contrast MRI, perfusión basada en cambios T2/T2* durante paso de contraste."},
+    {"term": "rCBV", "definition": "Relative cerebral blood volume derivado frecuentemente de DSC y dependiente de referencia/correcciones."},
+    {"term": "DCE", "definition": "Dynamic contrast-enhanced MRI, adquisición dinámica sensible principalmente a cambios T1 tras contraste."},
+    {"term": "AIF", "definition": "Arterial input function usada por modelos de perfusión dinámica para representar entrada vascular."},
+    {"term": "Ktrans", "definition": "Transfer constant de modelos DCE como Tofts, dependiente de flujo/permeabilidad/superficie y régimen fisiológico."},
+    {"term": "ve", "definition": "Fracción extravascular-extracelular usada en modelos pharmacokinetic DCE."},
+    {"term": "MR Pulse Sequence Module", "definition": "Módulo DICOM que registra atributos destinados a identificar pulse sequence y sus variaciones."},
+    {"term": "MR Diffusion Macro", "definition": "Macro DICOM Enhanced MR que puede registrar b-value y directionality de difusión por frame."},
+    {"term": "MR Arterial Spin Labeling Macro", "definition": "Macro DICOM Enhanced MR para describir contexto y atributos de arterial spin labeling."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en MRI avanzada",
-      "scenario": "Un equipo propone estudiar caracterización funcional y microestructural, pero su pregunta mezcla espacio k, secuencias y difusión y perfusión sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de espacio k, secuencias y difusión y perfusión.",
-        "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.",
-        "Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-      ]
+      "title": "Mover una línea de k-space no mueve una línea anatómica",
+      "scenario": "Se genera un fantoma 2D y se elimina una banda central o periférica de su FFT.",
+      "reasoning": "Se reconstruye cada caso y se relaciona la frecuencia eliminada con cambios globales de contraste o detalle, evitando mapear una coordenada k a una región anatómica.",
+      "result": "La pérdida central altera información de baja frecuencia de forma global; la pérdida periférica degrada bordes y detalle.",
+      "limits": "Fantoma cartesiano 2D, una bobina ideal y ausencia de phase errors."
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre espacio k y secuencias en el caso de caracterización funcional y microestructural; una condición vinculada con difusión y perfusión podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar difusión y perfusión como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title": "TR y TE cambian contraste sin cambiar el objeto",
+      "scenario": "Dos tejidos sintéticos con T1/T2 conocidos se simulan bajo cuatro combinaciones de TR/TE usando un modelo spin-echo simplificado.",
+      "reasoning": "Se calculan señales relativas y se comparan contrastes manteniendo iguales propiedades del objeto.",
+      "result": "La misma anatomía puede producir contrastes distintos por parámetros de secuencia.",
+      "limits": "Modelo de señal simplificado; no incluye B1, multicomponentes ni slice profile."
+    },
+    {
+      "title": "Undersampling y regularización: menos artefacto visible no siempre es menor error",
+      "scenario": "Se undersamplea k-space con una máscara conocida y se comparan zero-filled FFT y reconstrucción regularizada con tres λ.",
+      "reasoning": "Se usan mapa de error, small-feature contrast y residual en muestras adquiridas.",
+      "result": "Un λ alto puede limpiar aliasing y al mismo tiempo borrar una inclusión pequeña conocida.",
+      "limits": "No reproduce SENSE/GRAPPA o deep reconstruction de un fabricante."
+    },
+    {
+      "title": "ADC verdadero frente a ADC sesgado por noise floor",
+      "scenario": "Se simula señal monoexponencial con ADC conocido en varios b-values y se añade ruido complejo antes de formar magnitud.",
+      "reasoning": "Se ajusta ADC con todos los puntos y se repite al reducir SNR; se inspecciona residual y high-b floor.",
+      "result": "El estimador se sesga cuando high-b signal se acerca al ruido aunque la fórmula sea correcta.",
+      "limits": "No modela difusión multicompartmental ni un órgano específico."
+    },
+    {
+      "title": "Tres mapas de perfusión, tres modelos",
+      "scenario": "Se proporcionan curvas sintéticas label/control ASL, DSC y DCE generadas con parámetros conocidos.",
+      "reasoning": "El estudiante identifica qué señal y supuestos originan CBF, rCBV y Ktrans y prueba una perturbación de timing o AIF.",
+      "result": "Los parámetros responden de forma distinta porque representan modelos y mecanismos diferentes.",
+      "limits": "No se administra contraste ni se usan umbrales clínicos; las curvas son exclusivamente simuladas."
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Laboratorio reproducible: de k-space a difusión y perfusión sintéticas",
+      "estimated_time_minutes": 360,
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Usar únicamente fantomas, arrays y curvas sintéticas o recursos abiertos no identificables; no operar un escáner ni usar datos de pacientes.",
+        "Definir antes del análisis tres tareas: preservar una inclusión pequeña, recuperar ADC conocido y recuperar un parámetro de perfusión simulado.",
+        "Guardar el objeto de referencia y los parámetros verdaderos en un archivo separado de los resultados reconstruidos.",
+        "Fijar matriz, FOV, sampling mask, semilla de ruido, TR/TE/TI simulados y unidades antes de observar resultados.",
+        "Conservar k-space complejo antes de generar magnitude images y etiquetar cada transformación.",
+        "Cambiar un solo factor por experimento siempre que sea posible y documentar la perturbación.",
+        "Predefinir ROIs, métricas de error, residual y criterio de aceptación para cada tarea.",
+        "No usar nombres comerciales de secuencias como sustituto de sus parámetros físicos o de adquisición.",
+        "Registrar en una ficha DICOM-like los atributos disponibles y marcar desconocido aquello que el modelo no representa.",
+        "Cerrar cada comparación con resultado técnico, interpretación permitida, alternativa y dato necesario para transferencia."
       ],
       "problems": [
-        "Define espacio k mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo secuencias modifica o complementa a espacio k.",
-        "Propón una prueba que distinga el papel de difusión y perfusión de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Generar un fantoma 2D de al menos cuatro regiones y calcular su k-space complejo mediante FFT.",
+        "Visualizar magnitud y fase de k-space y explicar por qué ninguna coordenada corresponde a un píxel anatómico único.",
+        "Eliminar frecuencias periféricas y medir el cambio en perfil de borde de una inclusión.",
+        "Eliminar una región central equivalente en número de muestras y comparar el efecto global con el caso periférico.",
+        "Cambiar Δk manteniendo kmax y demostrar el cambio de FOV/aliasing esperado.",
+        "Cambiar kmax manteniendo Δk y distinguir resolución nominal de tamaño de píxel reconstruido.",
+        "Aplicar zero filling y demostrar que aumenta densidad de rejilla sin recuperar el detalle eliminado.",
+        "Simular dos tejidos con T1/T2 diferentes y calcular señal spin-echo aproximada para cuatro pares TR/TE.",
+        "Construir un ejemplo de inversion recovery sintético y localizar un TI que reduzca la señal de un componente bajo el modelo simplificado.",
+        "Crear una máscara de undersampling cartesiano y reconstruir por inverse FFT con ceros; localizar el patrón de aliasing.",
+        "Resolver una reconstrucción regularizada educativa con tres valores de λ y comparar small-feature error y data consistency.",
+        "Comparar una métrica global con el error de la inclusión pequeña y documentar un caso en que discrepen.",
+        "Simular DWI monoexponencial con al menos cinco b-values y recuperar ADC por ajuste.",
+        "Repetir el ajuste con solo dos b-values y comparar incertidumbre/residual con el ajuste multipunto.",
+        "Añadir ruido complejo antes de magnitude reconstruction y cuantificar bias de ADC a medida que baja el SNR.",
+        "Introducir un outlier que represente motion en un b-value y comparar ajuste robusto o exclusión predefinida con ajuste ciego.",
+        "Simular seis direcciones de difusión anisotrópica y explicar por qué una sola dirección no identifica el tensor.",
+        "Generar pares ASL label/control sintéticos, calcular ΔM y mostrar el efecto de una perturbación de transit time en un modelo simplificado.",
+        "Generar una curva DSC y una DCE sintéticas, modificar la AIF/timing y observar qué parámetros cambian.",
+        "Construir una tabla final que compare ADC, CBF-ASL, rCBV-DSC y Ktrans-DCE por señal fuente, modelo, unidades, confusores y límites."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Fantoma, parámetros verdaderos y semillas versionados.",
+        "Archivo de k-space complejo de referencia y visualizaciones de magnitud/fase.",
+        "Notebook o script reproducible de FFT, sampling y reconstrucción regularizada educativa.",
+        "Panel de FOV, kmax, zero filling y undersampling con mapas de diferencia.",
+        "Tabla de señal sintética para TR/TE/TI con interpretación de contraste.",
+        "Dataset DWI sintético con b-values, señales, ADC verdadero, ADC estimado y residuos.",
+        "Análisis de sensibilidad de ADC frente a b-values, SNR y un outlier de movimiento.",
+        "Curvas y parámetros sintéticos de ASL, DSC y DCE con perturbación controlada.",
+        "Ficha DICOM-like de pulse sequence, diffusion y ASL con valores conocidos/desconocidos.",
+        "Informe final de máximo cuatro páginas que conecte adquisición, reconstrucción, cuantificación, incertidumbre y límites."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: caracterización funcional y microestructural",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para espacio k, secuencias y difusión y perfusión.",
-        "Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Pipeline de imagen reproducible con informe cuantitativo.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de caracterización funcional y microestructural y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte espacio k, secuencias y difusión y perfusión.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "El fantoma verdadero se conserva separado de todas las imágenes derivadas.",
+        "k-space se trata como señal compleja y no como anatomía espacial directa.",
+        "La relación entre gradiente y coordenada k se usa con unidades o convenciones declaradas.",
+        "FOV y resolución nominal se modifican mediante parámetros distintos y se interpretan por separado.",
+        "Zero filling no se presenta como recuperación de información no adquirida.",
+        "TR, TE, TI y flip angle se describen como parámetros de secuencia, no como propiedades del tejido.",
+        "Spin echo y gradient echo se distinguen por mecanismo de formación/refocalización del eco.",
+        "EPI se asocia a lectura rápida y a riesgo de off-resonance/distorsión, no solo a velocidad.",
+        "La máscara de undersampling queda guardada junto a cada reconstrucción acelerada.",
+        "La reconstrucción regularizada declara función objetivo, λ, stopping y datos realmente observados.",
+        "Al menos una métrica task-specific acompaña a cualquier métrica global de similitud.",
+        "La inclusión pequeña se evalúa contra la referencia y no solo por apariencia visual.",
+        "El esquema DWI registra b-values y unidades; si se simulan direcciones, se conserva su orientación.",
+        "ADC se estima bajo un modelo declarado y no se interpreta como medición directa de celularidad.",
+        "Se demuestra un efecto de SNR/noise floor o se declara explícitamente por qué no puede modelarse.",
+        "El outlier de movimiento no se elimina después de mirar el resultado sin una regla documentada.",
+        "ASL usa label/control y diferencia claramente señal observada de CBF modelado.",
+        "DSC y DCE se diferencian por mecanismo de contraste y no comparten parámetros como si fueran equivalentes.",
+        "Ktrans se describe como parámetro de modelo dependiente de AIF y supuestos, no como permeabilidad pura.",
+        "CBF, rCBV, ADC y Ktrans conservan unidades y contexto de protocolo en la tabla final.",
+        "La ficha DICOM-like no inventa sequence details ausentes.",
+        "Las perturbaciones de sampling, SNR, timing o AIF se cambian de manera controlada y trazable.",
+        "Cada conclusión separa rendimiento técnico, interpretación fisiológica e inferencia clínica.",
+        "No se usan recomendaciones de seguridad, administración de contraste, diagnóstico o parámetros de escaneo en personas.",
+        "El paquete puede volver a ejecutarse y reproduce resultados compatibles bajo la misma semilla/configuración."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar espacio k como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar espacio k en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre espacio k y secuencias demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir difusión y perfusión después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de MRI avanzada al uso clínico o real.",
-      "correction": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-    }
+    {"error": "Creer que el centro de k-space corresponde al centro anatómico de la imagen.", "correction": "El centro contiene bajas frecuencias espaciales globales; una coordenada k no representa una localización anatómica única."},
+    {"error": "Afirmar que aumentar matriz siempre aumenta resolución real.", "correction": "Sin ampliar kmax o mejorar la respuesta del sistema, puede solo cambiar el muestreo/rejilla reconstruida."},
+    {"error": "Confundir zero filling con adquisición de nuevas frecuencias.", "correction": "Zero filling interpola la reconstrucción; no recupera información que nunca se midió."},
+    {"error": "Llamar T1 map a cualquier imagen T1-weighted.", "correction": "Ponderación y cuantificación son productos diferentes; el mapa exige un modelo y adquisición cuantitativa específica."},
+    {"error": "Decir que gradient echo corrige inhomogeneidad como un spin echo.", "correction": "GRE mantiene sensibilidad a T2* y a dephasing por inhomogeneidad/susceptibilidad."},
+    {"error": "Tratar EPI únicamente como una secuencia rápida sin coste geométrico.", "correction": "Su lectura rápida puede ser especialmente sensible a off-resonance, ghosting y distorsión."},
+    {"error": "Equiparar acceleration factor con reducción exacta del tiempo total.", "correction": "Calibration, sequence timing, preparation y otros bloques pueden impedir una proporción uno-a-uno."},
+    {"error": "Suponer que parallel imaging no cambia ruido.", "correction": "La geometría de bobinas y g-factor pueden amplificar ruido y variar espacialmente."},
+    {"error": "Interpretar una reconstrucción compressed sensing más limpia como recuperación garantizada de detalle.", "correction": "La regularización puede eliminar señales pequeñas; debe compararse con referencia y tarea."},
+    {"error": "Concluir que deep reconstruction recuperó datos faltantes porque la imagen parece plausible.", "correction": "Plausibilidad no demuestra fidelidad; se necesitan data consistency, referencias, perturbaciones y evaluación de generalización."},
+    {"error": "Interpretar ADC como tamaño celular o celularidad medida directamente.", "correction": "ADC resume decaimiento de señal bajo modelo, b-values, SNR y procesamiento; múltiples microestructuras pueden producir valores parecidos."},
+    {"error": "Comparar ADC de protocolos distintos sin revisar b-values y preprocessing.", "correction": "Esos factores alteran la estimación y deben formar parte de la procedencia cuantitativa."},
+    {"error": "Ignorar noise floor a high b-value.", "correction": "Magnitude noise puede sesgar el decaimiento y el ADC cuando la señal se aproxima al floor."},
+    {"error": "Usar FA alta como prueba de una única población de fibras.", "correction": "FA es una métrica tensorial no específica y puede variar por crossing fibers, partial volume, SNR y patología."},
+    {"error": "Tratar ASL, DSC y DCE como tres métodos que entregan la misma perfusión.", "correction": "Usan mecanismos, señales, modelos y parámetros diferentes; sus outputs no son intercambiables."},
+    {"error": "Definir Ktrans simplemente como permeabilidad.", "correction": "Ktrans depende del modelo y puede reflejar combinación de flow, permeability y surface area según el régimen."},
+    {"error": "Interpretar un CBF sintético exacto como validación clínica de ASL.", "correction": "Solo valida implementación bajo ese modelo; in vivo añade labeling efficiency, transit time, T1, motion y otros factores."},
+    {"error": "Inventar parámetros de secuencia que no aparecen en DICOM.", "correction": "Se conserva lo disponible y se marca lo desconocido; nombres comerciales o imágenes derivadas no revelan necesariamente la implementación completa."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar caracterización funcional y microestructural?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan espacio k y secuencias?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; difusión y perfusión puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre difusión y perfusión?",
-      "answer": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre caracterización funcional y microestructural?",
-      "answer": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de MRI avanzada?",
-      "answer": "Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question": "¿Qué representa una muestra de k-space?", "answer": "Una componente compleja de frecuencia espacial resultante de la codificación; no una localización anatómica única."},
+    {"question": "¿Qué controla aproximadamente Δk en una adquisición cartesiana ideal?", "answer": "El FOV representable sin aliasing, mientras kmax condiciona resolución nominal."},
+    {"question": "¿Por qué zero filling no aumenta resolución física?", "answer": "Porque agrega ceros/interpolación pero no mide nuevas frecuencias espaciales."},
+    {"question": "¿Qué diferencia de mecanismo hay entre spin echo y gradient echo?", "answer": "Spin echo usa refocalización RF para compensar dephasing estático reversible; gradient echo forma el eco con gradientes y conserva mayor sensibilidad T2*."},
+    {"question": "¿Por qué una imagen T1-weighted no es un mapa T1?", "answer": "Su intensidad depende de múltiples parámetros y scaling; cuantificar T1 requiere adquisición y modelo específicos."},
+    {"question": "¿Qué información adicional usa parallel imaging?", "answer": "Las sensibilidades espaciales diferentes de múltiples bobinas receptoras."},
+    {"question": "¿Qué tres condiciones conceptuales hacen posible compressed sensing MRI?", "answer": "Undersampling incoherente, representación sparse/compressible y reconstrucción no lineal regularizada."},
+    {"question": "¿Qué representa el b-value?", "answer": "El grado de sensitización de la adquisición a difusión bajo una secuencia/gradientes definidos, típicamente en s/mm²."},
+    {"question": "¿Por qué ADC puede cambiar si cambia el esquema de b-values?", "answer": "Porque ADC es un ajuste de modelo sobre señal que puede no ser monoexponencial y además depende de SNR y confusores."},
+    {"question": "¿Qué diferencia esencial existe entre ASL y DSC?", "answer": "ASL etiqueta magnéticamente sangre endógena y usa label/control; DSC observa susceptibilidad durante paso de contraste exógeno."},
+    {"question": "¿Qué significa Ktrans en DCE?", "answer": "Un transfer constant del modelo pharmacokinetic elegido, condicionado por AIF y régimen; no una permeabilidad pura universal."},
+    {"question": "¿Qué demuestra recuperar exactamente un ADC o CBF sintético?", "answer": "Que el pipeline funciona bajo los datos y supuestos simulados; no demuestra precisión clínica, causalidad biológica ni validez en pacientes."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Caracterización funcional y microestructural."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-    }
+    "k-space y secuencias conectan física MR con reconstrucción, por lo que cambios de sampling o contraste pueden propagarse a segmentación, radiomics y modelos de IA posteriores.",
+    "Diffusion MRI produce parámetros cuantitativos usados en investigación de microestructura, pero su reproducibilidad depende de adquisición y preprocessing; esto enlaza con validación de biomarcadores de U6.",
+    "ASL proporciona un ejemplo de quantitative MRI sin tracer exógeno y muestra cómo timing y modelo transforman una pequeña diferencia de señal en un parámetro fisiológico.",
+    "DSC y DCE muestran cómo agentes de contraste pueden producir métricas diferentes según sensibilidad T2*/T1 y modelo, conectando instrumentación, farmacocinética e imagen cuantitativa.",
+    "DICOM Enhanced MR permite trazar pulse sequence, diffusion y ASL attributes y enlaza MRI avanzada con informática biomédica e interoperabilidad.",
+    "Undersampling, parallel imaging, compressed sensing y deep reconstruction muestran que aceleración es un problema inverso con trade-offs, preparando evaluaciones task-based y reproducibilidad de U6."
   ],
   "sources": [
-    {
-      "title": "3D Slicer documentation",
-      "organization": "3D Slicer community",
-      "url": "https://slicer.readthedocs.io/",
-      "type": "documentación",
-      "description": "Visualización, segmentación y flujos reproducibles.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "ITK documentation",
-      "organization": "Insight Toolkit community",
-      "url": "https://docs.itk.org/",
-      "type": "documentación",
-      "description": "Registro, filtrado y segmentación de imágenes.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "NIBIB Science Topics",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics",
-      "type": "recurso oficial",
-      "description": "Principios de modalidades y tecnologías de imagen.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "The Cancer Imaging Archive",
-      "organization": "National Cancer Institute",
-      "url": "https://www.cancerimagingarchive.net/",
-      "type": "datos abiertos",
-      "description": "Colecciones de imagen con metadatos de investigación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "MONAI documentation",
-      "organization": "MONAI Consortium",
-      "url": "https://docs.monai.io/",
-      "type": "documentación",
-      "description": "Flujos reproducibles de aprendizaje profundo en imagen médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title": "Magnetic Resonance Imaging (MRI)", "organization": "National Institute of Biomedical Imaging and Bioengineering", "url": "https://www.nibib.nih.gov/science-education/science-topics/magnetic-resonance-imaging-mri", "type": "official_overview", "verification_status": "verified_directly"},
+    {"title": "Magnetic Resonance Imaging — Medical Imaging Systems", "organization": "NCBI Bookshelf", "url": "https://www.ncbi.nlm.nih.gov/books/NBK546152/", "type": "open_textbook", "verification_status": "verified_directly"},
+    {"title": "Magnetic Resonance Imaging — Mathematics and Physics of Emerging Biomedical Imaging", "organization": "NCBI Bookshelf", "url": "https://www.ncbi.nlm.nih.gov/books/NBK232486/", "type": "open_textbook", "verification_status": "verified_directly"},
+    {"title": "DICOM PS3.3 2026c — MR Pulse Sequence Module", "organization": "DICOM Standards Committee", "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_c.8.13.4.html", "type": "standard", "verification_status": "verified_directly"},
+    {"title": "DICOM PS3.3 — MR Diffusion Macro", "organization": "DICOM Standards Committee", "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.13.5.9.html", "type": "standard", "verification_status": "verified_directly"},
+    {"title": "DICOM PS3.3 — MR Arterial Spin Labeling Macro", "organization": "DICOM Standards Committee", "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.13.5.14.html", "type": "standard", "verification_status": "verified_directly"},
+    {"title": "Encoding and reconstruction in parallel MRI", "organization": "NMR in Biomedicine / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/16705635/", "type": "peer_reviewed_review", "verification_status": "verified_directly"},
+    {"title": "Sparse MRI: The application of compressed sensing for rapid MR imaging", "organization": "Magnetic Resonance in Medicine / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/17969013/", "type": "peer_reviewed_study", "verification_status": "verified_directly"},
+    {"title": "Physics-based reconstruction methods for magnetic resonance imaging", "organization": "Philosophical Transactions A / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/33966457/", "type": "peer_reviewed_review", "verification_status": "verified_directly"},
+    {"title": "Emerging Trends in Fast MRI Using Deep-Learning Reconstruction on Undersampled k-Space Data", "organization": "Bioengineering / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/37760114/", "type": "peer_reviewed_systematic_review", "verification_status": "verified_directly"},
+    {"title": "The QIBA Profile for Diffusion-Weighted MRI: Apparent Diffusion Coefficient as a Quantitative Imaging Biomarker", "organization": "QIBA / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/39377680/", "type": "peer_reviewed_profile_report", "verification_status": "verified_directly"},
+    {"title": "Quantitative diffusion MRI of the abdomen and pelvis", "organization": "Magnetic Resonance Materials in Physics, Biology and Medicine / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/34554579/", "type": "peer_reviewed_review", "verification_status": "verified_directly"},
+    {"title": "Recommended implementation of arterial spin-labeled perfusion MRI for clinical applications", "organization": "ISMRM Perfusion Study Group / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/24715426/", "type": "consensus_statement", "verification_status": "verified_directly"},
+    {"title": "ASL lexicon and reporting recommendations", "organization": "ISMRM OSIPI / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/37876299/", "type": "consensus_statement", "verification_status": "verified_directly"},
+    {"title": "Recommendations for quantitative cerebral perfusion MRI using multi-timepoint arterial spin labeling", "organization": "ISMRM Perfusion Study Group / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/38594906/", "type": "consensus_recommendations", "verification_status": "verified_directly"},
+    {"title": "Consensus recommendations for a dynamic susceptibility contrast MRI protocol for use in high-grade gliomas", "organization": "Neuro-Oncology / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/32516388/", "type": "consensus_recommendations", "verification_status": "verified_directly"},
+    {"title": "ESR Essentials: Perfusion MRI-practice recommendations", "organization": "European Society for Magnetic Resonance in Medicine and Biology / PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/41591472/", "type": "practice_recommendations", "verification_status": "verified_directly"},
+    {"title": "QIBA Profile: DCE-MRI Quantification v2.0", "organization": "RSNA Quantitative Imaging Biomarkers Alliance", "url": "https://qibawiki.rsna.org/images/e/e9/QIBA_DCE-Profile_-_v2.0_-_Consensus_Document.pdf", "type": "professional_profile", "verification_status": "verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad educativa de MRI avanzada basada exclusivamente en modelos, fantomas, arrays, k-space y curvas sintéticas o recursos abiertos no identificables. No opera escáneres, no define parámetros de seguridad para personas, no administra gadolinio u otros agentes, no interpreta estudios clínicos, no diagnostica y no establece umbrales de ADC, CBF, rCBV o Ktrans para decisiones asistenciales. DICOM se usa para enseñar trazabilidad y no para inferir detalles propietarios ausentes. Las simulaciones de parallel imaging, compressed sensing o deep reconstruction no certifican aceleración clínica ni preservación diagnóstica. U1 cubre CT; U3 continúa con ultrasonido avanzado; U4 con imagen nuclear cuantitativa; U5 con registro/fusión y U6 con control de calidad cuantitativo."
 }
