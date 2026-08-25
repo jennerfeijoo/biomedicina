@@ -30,7 +30,7 @@ class HistoriaFilosofiaCienciaUnit02CuratedTests(unittest.TestCase):
         objectives = " ".join(self.unit["learning_objectives"]).casefold()
         for phrase in (
             "validez deductiva",
-            "inducción",
+            "fuerza inductiva",
             "abducción",
             "supuestos auxiliares",
             "predicción y explicación",
@@ -87,7 +87,7 @@ class HistoriaFilosofiaCienciaUnit02CuratedTests(unittest.TestCase):
             "explicaciones estadísticas",
             "intervencionistas",
             "explicaciones mecanísticas",
-            "componentes, actividades, organización",
+            "entidades, actividades, organización",
         ):
             self.assertIn(phrase, text)
         self.assertIn("buen desempeño predictivo no demuestra una explicación causal", text)
@@ -141,7 +141,7 @@ class HistoriaFilosofiaCienciaUnit02CuratedTests(unittest.TestCase):
         self.assertGreaterEqual(len(self.unit["biomedical_connections"]), 6)
         notice = self.unit["editorial_notice"].casefold()
         for phrase in (
-            "no establezca una teoría filosófica única",
+            "no establece una teoría filosófica única",
             "diagramas causales codifican supuestos",
             "no constituyen diagnóstico",
             "u3 abordará",
