@@ -1,1 +1,811 @@
-{"schema_version":"2.0","subject_id":"fisiologia-sistemas","area_id":"biologicas-medicas","unit":6,"slug":"modelos-integradores-y-datos","title":"Modelos integradores y datos","status":"review","purpose":"Integrar U1–U5 mediante modelos fisiológicos dinámicos y datos sintéticos, distinguiendo estados, entradas, salidas, perturbaciones, identificabilidad, calibración, verificación, validación, incertidumbre y reproducibilidad. La unidad culmina en un modelo multiorgánico reducido y auditable sin confundir buen ajuste con mecanismo verdadero ni reproducibilidad con utilidad clínica.","learning_objectives":["Traducir un diagrama fisiológico a un modelo dinámico reducido con estados, entradas, salidas, parámetros, condiciones iniciales, unidades y fronteras explícitas.","Analizar series temporales distinguiendo muestreo, sincronización, ruido, transición, estado estable y aliasing antes de inferir mecanismos.","Diseñar perturbaciones sintéticas que discriminen modelos candidatos que comparten el mismo estado basal.","Distinguir identificabilidad estructural de identificabilidad práctica y sensibilidad de identificabilidad.","Separar calibración, verificación de implementación, validación independiente e incertidumbre para un contexto de uso definido.","Construir un paquete reproducible con ecuaciones, parámetros, condiciones iniciales, protocolo de simulación, datos, versiones y resultados."],"theory_sections":[{"heading":"1. Del mapa fisiológico al modelo de estados","paragraphs":["Un modelo integrador empieza por una pregunta y una frontera. Una variable de estado conserva memoria necesaria para la evolución; una entrada representa una perturbación o condición exógena; una salida es una magnitud observable o calculable. Clasificar estas funciones evita convertir toda señal medida en estado.","Una forma general es dx/dt=f(x,u,θ,t) y y=g(x,θ,t)+ε. El primer término representa dinámica interna y el segundo un modelo de observación. Esta notación obliga a separar aquello que el organismo hace de aquello que el instrumento o dataset permite observar.","Los balances de U3 y U4 siguen siendo restricciones: cambio de una cantidad = entradas − salidas + producción − consumo. Si el modelo viola conservación sin declarar fuente, sumidero o aproximación, una curva bien ajustada puede seguir siendo fisiológicamente incoherente.","Un modelo reducido omite procesos deliberadamente. Añadir estados aumenta flexibilidad pero puede destruir identificabilidad; reducir demasiado puede eliminar la dinámica que responde a la pregunta. La complejidad se justifica por el uso y los datos.","Los módulos de U1–U5 operan en escalas distintas: segundos para respuestas cardiorrespiratorias, minutos-horas para ejes endocrinos, horas-días para balance renal y días para reparación. Cada acoplamiento debe declarar variable de interfaz, unidad y escala.","U6 no pretende construir un gemelo digital. Reutiliza los mecanismos ya desarrollados para aprender a hacer predicciones falsables, detectar ambigüedad y documentar límites."],"equations":[{"latex":"\\frac{d\\mathbf{x}}{dt}=\\mathbf{f}(\\mathbf{x},\\mathbf{u},\\boldsymbol{\\theta},t)","meaning":"Modelo dinámico general.","variables":{"\\mathbf{x}":"estados","\\mathbf{u}":"entradas","\\boldsymbol{\\theta}":"parámetros","t":"tiempo"}},{"latex":"\\mathbf{y}=\\mathbf{g}(\\mathbf{x},\\boldsymbol{\\theta},t)+\\boldsymbol{\\varepsilon}","meaning":"Modelo de observación.","variables":{"\\mathbf{y}":"salidas","\\boldsymbol{\\varepsilon}":"error/discrepancia"}},{"latex":"\\frac{dM}{dt}=J_{in}-J_{out}+P-C","meaning":"Balance de una cantidad.","variables":{"M":"cantidad","J_{in}":"entrada","J_{out}":"salida","P":"producción","C":"consumo"}}],"key_points":["Estado, entrada, parámetro y salida son funciones distintas.","La frontera define balances y omisiones.","Unidades y conservación prueban coherencia.","Más variables no implican mejor modelo.","El acoplamiento exige interfaces y escalas.","El modelo es una hipótesis cuantitativa, no una copia del organismo."]},{"heading":"2. Series temporales y perturbaciones","paragraphs":["Una serie temporal depende de frecuencia de muestreo, sincronización, datos faltantes y preprocesamiento. Si una dinámica relevante ocurre más rápido que el muestreo, puede aparecer aliasing; una relación temporal aparente puede ser un artefacto.","Transición y estado estable contienen información diferente. Promediar un transitorio borra latencias y constantes de tiempo que ayudan a distinguir mecanismos; comparar ventanas no alineadas puede fabricar discrepancias.","Una perturbación sintética desplaza al sistema fuera de una condición donde muchos modelos se parecen. Escalones y pulsos permiten observar ganancia, retardo, sobreimpulso y recuperación sin experimentar con personas.","Dos arquitecturas pueden compartir equilibrio y divergir después de una perturbación. La mejor perturbación es la que produce predicciones diferentes entre modelos candidatos, no simplemente la que genera una señal grande.","Filtrar o suavizar datos puede reducir ruido pero también dinámica. Toda transformación debe registrarse y aplicarse de forma coherente al dominio de comparación entre datos y simulación.","Correlación o desfase temporal no demuestran causalidad. Una entrada común no observada o el propio filtro pueden producir relaciones aparentes; el mecanismo requiere predicciones discriminantes."],"equations":[{"latex":"f_s>2f_{max}","meaning":"Criterio idealizado de Nyquist.","variables":{"f_s":"muestreo","f_{max}":"máxima frecuencia relevante"}},{"latex":"\\tau\\frac{dz}{dt}+z=Ku(t)","meaning":"Respuesta reducida de primer orden.","variables":{"\\tau":"constante de tiempo","K":"ganancia","u":"entrada","z":"salida"}}],"key_points":["Muestreo condiciona inferencia.","Transitorio y estable no son equivalentes.","Perturbaciones revelan dinámica.","El filtrado forma parte del método.","Correlación no prueba mecanismo.","Las perturbaciones de U6 son exclusivamente sintéticas."]},{"heading":"3. Parámetros, sensibilidad e identificabilidad","paragraphs":["Calibrar consiste en elegir parámetros compatibles con datos según un criterio. Un mínimo de la función objetivo no demuestra que cada parámetro se estime de forma única ni que coincida con una constante fisiológica real.","La identificabilidad estructural pregunta si el modelo ideal permitiría distinguir parámetros con datos perfectos. La identificabilidad práctica incorpora ruido, duración, muestreo y amplitud de perturbaciones.","La sensibilidad describe cuánto cambia una salida al variar un parámetro alrededor de un punto. Sensibilidad alta no garantiza identificabilidad: dos parámetros pueden producir efectos casi colineales y compensarse.","Los residuos deben inspeccionarse en el tiempo. Sesgo, autocorrelación o errores concentrados en una fase sugieren dinámica omitida o un modelo de observación inadecuado aunque el error promedio sea pequeño.","La no identificabilidad es un resultado. Puede abordarse fijando un parámetro con evidencia independiente, midiendo otra salida, diseñando otra perturbación o reduciendo la estructura.","U6 prefiere modelos parsimoniosos que predicen una condición no usada en calibración antes que modelos grandes que solo interpolan el dataset de ajuste."],"equations":[{"latex":"r_i=y_i^{obs}-y_i^{sim}(\\boldsymbol{\\theta})","meaning":"Residuo.","variables":{"r_i":"residuo","y_i^{obs}":"observación","y_i^{sim}":"simulación"}},{"latex":"J(\\boldsymbol{\\theta})=\\sum_i w_i r_i^2","meaning":"Ejemplo de objetivo de calibración.","variables":{"J":"objetivo","w_i":"peso","r_i":"residuo"}},{"latex":"S_{ij}=\\frac{\\partial y_i}{\\partial\\theta_j}\\frac{\\theta_j}{y_i}","meaning":"Sensibilidad local normalizada.","variables":{"S_{ij}":"sensibilidad","y_i":"salida","\\theta_j":"parámetro"}}],"key_points":["Buen ajuste no implica parámetros identificables.","Estructural y práctica son distintas.","Sensibilidad no equivale a identificabilidad.","Los residuos contienen estructura temporal.","La ambigüedad debe reportarse.","Una nueva perturbación puede aportar más información que más puntos basales."]},{"heading":"4. Calibración, verificación y validación","paragraphs":["Calibración, verificación y validación responden a preguntas distintas. Calibrar selecciona parámetros; verificar comprueba que el código implementa las ecuaciones previstas; validar confronta predicciones con observaciones independientes para un contexto de uso.","Los datos de validación no deben haber guiado estructura ni parámetros. En series temporales, dividir puntos vecinos al azar puede producir optimismo; reservar una perturbación o intervalo completo suele ser más exigente.","Los criterios deben fijarse antes de abrir la validación: error, signo de respuesta, amplitud, constante de tiempo, conservación y patrón de residuos. Una sola métrica no resume credibilidad fisiológica.","La incertidumbre incluye parámetros, condiciones iniciales, entradas, medición y estructura. Una banda que solo varía parámetros no es incertidumbre total y debe declararse como tal.","Un modelo puede ser computacionalmente reproducible y fisiológicamente incorrecto. También puede ser plausible pero irreproducible por parámetros o condiciones faltantes. Ambas dimensiones se evalúan por separado.","La validación está ligada al contexto de uso. Reproducir una perturbación docente no valida diagnóstico, pronóstico, dosificación, control terapéutico ni uso regulatorio."],"equations":[{"latex":"RMSE=\\sqrt{\\frac{1}{n}\\sum_{i=1}^{n}(y_i^{obs}-y_i^{pred})^2}","meaning":"Métrica de error predictivo.","variables":{"RMSE":"error","n":"observaciones","y_i^{obs}":"dato","y_i^{pred}":"predicción"}},{"latex":"e(t)=y^{obs}(t)-y^{pred}(t)","meaning":"Error temporal.","variables":{"e(t)":"error temporal","y^{obs}":"observación","y^{pred}":"predicción"}}],"key_points":["Calibración, verificación y validación no son sinónimos.","La validación debe ser independiente.","Una perturbación reservada es útil.","RMSE no sustituye análisis dinámico.","La incertidumbre estructural debe declararse.","La validez depende del contexto de uso."]},{"heading":"5. Integración multiescala y reproducibilidad","paragraphs":["Integrar U1–U5 no significa sumar todas sus variables. Cada interfaz entre módulos debe declarar dirección, unidad, escala temporal y evidencia o supuesto. El modelo final conserva solo los acoplamientos necesarios para su pregunta.","Si dos módulos operan en escalas muy distintas puede usarse separación de escalas, por ejemplo considerando casi estacionario el módulo rápido mientras evoluciona el lento. La aproximación debe comprobarse en el rango simulado.","Reproducibilidad exige ecuaciones, parámetros, condiciones iniciales, entradas, versión de código, solver, tolerancias, preprocesamiento, semillas y salidas esperadas. Compartir solo un script no basta.","CellML permite representar modelos matemáticos y unidades; SED-ML describe experimentos de simulación; COMBINE/OMEX puede empaquetar modelos, protocolos y metadatos. Estos estándares favorecen interoperabilidad y auditoría.","BioModels y Physiome muestran que la curation y la reproducción de simulaciones son tareas distintas de juzgar la corrección científica. Un formato estándar o una simulación repetible no certifican un mecanismo.","El producto final es un modelo reducido y auditable con dos hipótesis candidatas, calibración, perturbación reservada, sensibilidad, identificabilidad, validación e incertidumbre. Debe terminar indicando qué observación podría refutarlo."],"key_points":["Integrar no significa incluir todo.","Interfaces requieren unidades y escalas.","Separación de escalas es una aproximación comprobable.","Reproducibilidad necesita modelo y protocolo completos.","Estándares no garantizan verdad científica.","Un modelo útil declara cómo podría fallar."]}],"glossary":[{"term":"Variable de estado","definition":"Variable que conserva memoria interna necesaria para la evolución del modelo."},{"term":"Entrada","definition":"Perturbación o condición impuesta desde fuera de la frontera."},{"term":"Salida","definition":"Magnitud calculada que puede compararse con datos."},{"term":"Parámetro","definition":"Cantidad que caracteriza una relación del modelo durante una simulación."},{"term":"Condición inicial","definition":"Valor de un estado al inicio de la simulación."},{"term":"Frontera del sistema","definition":"Límite que define qué se modela internamente."},{"term":"Balance de masa","definition":"Relación entre cambio de una cantidad y sus flujos, producción y consumo."},{"term":"Modelo de observación","definition":"Regla que conecta estados internos con una medición."},{"term":"Modelo reducido","definition":"Representación que omite procesos de forma explícita para una pregunta concreta."},{"term":"Serie temporal","definition":"Observaciones indexadas en tiempo con referencia y resolución definidas."},{"term":"Frecuencia de muestreo","definition":"Número de observaciones por unidad de tiempo."},{"term":"Aliasing","definition":"Distorsión causada por muestreo insuficiente."},{"term":"Sincronización","definition":"Alineación temporal entre señales."},{"term":"Estado estable","definition":"Régimen donde las variables cambian poco bajo un criterio definido."},{"term":"Transición","definition":"Periodo de ajuste posterior a una perturbación."},{"term":"Perturbación","definition":"Cambio controlado o simulado usado para revelar dinámica."},{"term":"Ganancia","definition":"Relación entre cambio de salida y entrada bajo condiciones definidas."},{"term":"Constante de tiempo","definition":"Escala característica de la respuesta dinámica."},{"term":"Calibración","definition":"Estimación de parámetros usando datos de ajuste."},{"term":"Residuo","definition":"Diferencia entre observación y simulación."},{"term":"Sensibilidad","definition":"Cambio de una salida ante variación de un parámetro."},{"term":"Identificabilidad estructural","definition":"Posibilidad teórica de determinar parámetros con datos ideales."},{"term":"Identificabilidad práctica","definition":"Capacidad de estimar parámetros con los datos y ruido disponibles."},{"term":"No identificabilidad","definition":"Compatibilidad de múltiples parámetros o mecanismos con las mismas observaciones."},{"term":"Parsimonia","definition":"Preferencia por la complejidad mínima suficiente para la pregunta."},{"term":"Verificación","definition":"Comprobación de que la implementación representa las ecuaciones especificadas."},{"term":"Validación","definition":"Comparación de predicciones con evidencia independiente para un contexto de uso."},{"term":"Datos de calibración","definition":"Datos usados para elegir estructura o parámetros."},{"term":"Datos de validación","definition":"Datos reservados para evaluar predicciones después del ajuste."},{"term":"Incertidumbre paramétrica","definition":"Incertidumbre asociada a parámetros compatibles con la evidencia."},{"term":"Incertidumbre estructural","definition":"Incertidumbre debida a modelos alternativos plausibles."},{"term":"Contexto de uso","definition":"Pregunta y condiciones para las que se pretende usar una predicción."},{"term":"Multiescala","definition":"Representación que conecta procesos de escalas temporales o espaciales distintas."},{"term":"Acoplamiento","definition":"Relación por la que un módulo modifica la dinámica de otro."},{"term":"Separación de escalas","definition":"Aproximación que explota diferencias grandes de velocidad entre procesos."}],"worked_examples":[{"title":"Mismo basal, distinta perturbación","scenario":"Dos modelos reguladores comparten equilibrio pero tienen dinámica diferente.","reasoning_steps":["Ajustar ambos al basal.","Aplicar un escalón sintético.","Comparar latencia y recuperación.","Identificar una predicción discriminante.","Limitar la conclusión."],"conclusion":"El basal no identifica por sí solo la arquitectura.","transfer_question":"¿Qué perturbación de U2–U5 podría separar modelos análogos?"},{"title":"Parámetros compensatorios","scenario":"Dos parámetros producen ajustes casi equivalentes.","reasoning_steps":["Comparar residuos.","Explorar combinaciones.","Revisar sensibilidad.","Proponer otra salida.","Reportar no identificabilidad."],"conclusion":"Un óptimo no garantiza parámetros únicos.","transfer_question":"¿Qué evidencia externa permitiría fijar un parámetro?"},{"title":"Validación con perturbación reservada","scenario":"El modelo se calibra en una condición y predice otra no usada.","reasoning_steps":["Congelar estructura.","Predecir antes de mirar.","Calcular error.","Inspeccionar residuos.","Limitar rango validado."],"conclusion":"La validación exige evidencia independiente.","transfer_question":"¿Por qué separar puntos vecinos al azar es más débil?"},{"title":"Acoplamiento rápido-lento","scenario":"Un módulo cardiorrespiratorio rápido se acopla a uno renal lento.","reasoning_steps":["Definir interfaz.","Asignar unidades.","Simular módulos aislados.","Acoplar.","Comprobar la separación temporal."],"conclusion":"El acoplamiento multiescala requiere interfaces explícitas.","transfer_question":"¿Cuándo fallaría la aproximación cuasi-estacionaria?"},{"title":"Reproducible pero no válido","scenario":"El código reproduce curvas pero falla ante datos independientes.","reasoning_steps":["Confirmar ecuaciones.","Repetir ejecución.","Evaluar validación.","Localizar sesgo.","Proponer revisión estructural."],"conclusion":"Reproducibilidad y validez son dimensiones distintas.","transfer_question":"¿Puede un modelo válido en un uso fallar al transferirse?"}],"guided_activities":[{"title":"Proyecto integrador: modelo fisiológico multiorgánico reducido","estimated_time_minutes":420,"instructions":["Usa solo datos y perturbaciones sintéticos.","Selecciona al menos tres módulos de U1–U5.","Define estados, entradas, salidas, parámetros y frontera.","Documenta unidades y condiciones iniciales.","Escribe ecuaciones y balances.","Construye dos modelos candidatos con el mismo basal.","Reserva una perturbación independiente para validación.","Documenta muestreo, ruido y filtrado.","Calibra solo con el conjunto autorizado.","Analiza residuos y sensibilidad.","Identifica al menos un problema de identificabilidad.","Congela estructura y parámetros antes de validar.","Evalúa la perturbación reservada.","Propaga dos fuentes de incertidumbre.","Documenta solver, tolerancias, versiones y semillas.","Explica cómo CellML/SED-ML mejorarían la reproducibilidad.","Cierra con afirmación, evidencia, supuesto, límite y prueba siguiente."],"problems":["Clasifica diez elementos como estado, entrada, parámetro o salida.","Corrige dos incoherencias dimensionales.","Escribe un balance de masa.","Construye dos modelos con el mismo equilibrio.","Diseña una perturbación discriminante.","Demuestra aliasing con muestreo insuficiente.","Compara transición y estado estable.","Calcula residuos de calibración.","Construye una función objetivo.","Aproxima sensibilidad de cinco parámetros.","Detecta dos parámetros compensatorios.","Genera dos ajustes casi equivalentes.","Propón una observación que aumente identificabilidad.","Congela parámetros y predice validación.","Calcula RMSE de validación.","Construye un caso con RMSE bajo pero sesgo temporal.","Distingue fallo de implementación, calibración o estructura.","Propaga incertidumbre de parámetros y condición inicial.","Declara incertidumbre estructural no propagada.","Acopla un módulo rápido y uno lento.","Redacta una prueba de reproducibilidad.","Explica por qué compartir solo código no basta."],"deliverables":["Diagrama causal.","Diccionario de variables y unidades.","Ecuaciones y balance dimensional.","Dos modelos candidatos.","Datos sintéticos separados de calibración/validación.","Script o procedimiento reproducible.","Gráficos y residuos.","Análisis de sensibilidad e identificabilidad.","Validación reservada.","Análisis de incertidumbre.","Manifiesto de reproducibilidad.","Informe final con límites."],"checking_criteria":["Estados y salidas se diferencian.","Frontera y omisiones están declaradas.","Unidades son coherentes.","Se reutilizan U1–U5 sin duplicarlas.","Los modelos divergen bajo perturbación.","Muestreo es adecuado.","Transición y estable se separan.","Filtrado está documentado.","Calibración usa solo datos autorizados.","Residuos se inspeccionan temporalmente.","Sensibilidad no se usa como identificabilidad.","No identificabilidad se reporta.","Se propone una prueba discriminante.","Parámetros se congelan antes de validar.","Validación usa condición independiente.","RMSE se interpreta con dinámica.","Verificación y validación se separan.","Se propagan dos fuentes de incertidumbre.","Se declara incertidumbre estructural.","El acoplamiento declara interfaz y escala.","Se documentan condiciones iniciales.","Se documentan solver y versiones.","Los estándares no se presentan como certificación científica.","No se afirma diagnóstico, pronóstico, tratamiento ni control terapéutico."]}],"common_errors":[{"error":"Tratar toda variable medida como estado.","correction":"Distingue estados internos de salidas observadas."},{"error":"Agregar módulos sin interfaz explícita.","correction":"Declara dirección, unidad y escala temporal."},{"error":"Violar conservación sin fuente o sumidero.","correction":"Revisa balances y frontera."},{"error":"Suponer que más parámetros hacen el modelo mejor.","correction":"La complejidad debe ser identificable y necesaria."},{"error":"Ignorar aliasing.","correction":"Relaciona muestreo con dinámica relevante."},{"error":"Promediar transición y estado estable.","correction":"Conserva ventanas y retardos."},{"error":"Interpretar correlación temporal como causalidad.","correction":"Usa perturbaciones y modelos candidatos."},{"error":"Ajustar solo el basal y declarar identificado el mecanismo.","correction":"Prueba dinámica fuera del equilibrio."},{"error":"Confundir sensibilidad alta con identificabilidad.","correction":"Busca compensación y correlación entre parámetros."},{"error":"Reportar un único óptimo cuando hay soluciones equivalentes.","correction":"Reporta no identificabilidad."},{"error":"Usar los mismos datos para calibrar y validar.","correction":"Reserva una condición independiente."},{"error":"Dividir puntos vecinos al azar y llamarlo validación independiente.","correction":"Reserva intervalos o perturbaciones completas."},{"error":"Decir que el modelo está validado porque tiene RMSE bajo.","correction":"Evalúa dinámica, residuos, rango y contexto."},{"error":"Confundir verificación con validación.","correction":"Código correcto no demuestra fisiología correcta."},{"error":"Llamar incertidumbre total a variar solo parámetros.","correction":"Declara fuentes incluidas y excluidas."},{"error":"Suponer que un modelo reproducible es fisiológicamente verdadero.","correction":"La reproducibilidad no sustituye validación."},{"error":"Suponer que CellML, SED-ML o un repositorio certifican corrección científica.","correction":"Los estándares ayudan a especificar y reproducir, no a demostrar mecanismo."},{"error":"Llamar gemelo digital a cualquier modelo multiorgánico.","correction":"U6 construye un modelo reducido educativo."}],"self_assessment":[{"question":"¿Estado y salida son lo mismo?","answer":"No.","reasoning":"Una salida puede ser función de estados y no tener dinámica propia.","common_error":"Convertir cada señal en estado."},{"question":"¿Por qué el basal no identifica un mecanismo?","answer":"Modelos distintos pueden compartir equilibrio.","reasoning":"Las diferencias aparecen bajo perturbación.","common_error":"Equiparar basal con mecanismo demostrado."},{"question":"¿Sensibilidad alta implica identificabilidad?","answer":"No.","reasoning":"Dos parámetros pueden tener efectos casi iguales.","common_error":"Ordenar sensibilidad como certeza de parámetros."},{"question":"¿Qué diferencia identificabilidad estructural y práctica?","answer":"La primera es teórica; la segunda depende de datos, ruido y diseño.","reasoning":"Un parámetro puede ser identificable en teoría y no en un experimento.","common_error":"Usarlas como sinónimos."},{"question":"¿Calibración y validación son equivalentes?","answer":"No.","reasoning":"Calibración ajusta; validación prueba una predicción independiente.","common_error":"Llamar validación al error de entrenamiento."},{"question":"¿Qué comprueba la verificación?","answer":"Que la implementación corresponde al modelo especificado.","reasoning":"No prueba validez fisiológica.","common_error":"Confundir ejecución con ciencia."},{"question":"¿RMSE bajo basta para validar?","answer":"No.","reasoning":"Puede ocultar errores de fase o estructura.","common_error":"Elegir solo por una métrica."},{"question":"¿Qué debe acompañar una banda de incertidumbre?","answer":"Las fuentes propagadas y las omitidas.","reasoning":"Una banda estrecha puede excluir incertidumbre estructural.","common_error":"Llamarla total sin alcance."},{"question":"¿Qué exige un acoplamiento multiescala?","answer":"Interfaces, unidades y escalas temporales explícitas.","reasoning":"Conectar nombres no garantiza coherencia.","common_error":"Sumar módulos sin probarlos."},{"question":"¿Qué aportan CellML y SED-ML?","answer":"CellML representa el modelo y SED-ML el experimento de simulación.","reasoning":"Son capas reproducibles diferentes.","common_error":"Pensar que uno sustituye al otro."},{"question":"¿Un formato estándar prueba corrección científica?","answer":"No.","reasoning":"Mejora interoperabilidad y auditoría, no la validez del mecanismo.","common_error":"Confundir estandarización con validación."},{"question":"¿Qué demuestra completar U6?","answer":"Capacidad de construir y contrastar modelos educativos reducidos.","reasoning":"No demuestra capacidad para diagnóstico, pronóstico o tratamiento.","common_error":"Transferir el proyecto a pacientes."}],"biomedical_connections":[{"topic":"Modelado multiorgánico","connection":"Conecta módulos neuroendocrinos, cardiorrespiratorios, renal-metabólicos e inflamatorios."},{"topic":"Ingeniería biomédica","connection":"Convierte diagramas fisiológicos en modelos auditables para simulación y diseño."},{"topic":"Pharmacometrics","connection":"Calibración e identificabilidad son relevantes cuando parámetros fisiológicos son parcialmente observables."},{"topic":"Digital twins","connection":"U6 aporta fundamentos, pero un modelo educativo no es un gemelo digital individual."},{"topic":"Investigación reproducible","connection":"CellML, SED-ML, COMBINE, BioModels y Physiome apoyan intercambio y auditoría."},{"topic":"Modelos híbridos e IA","connection":"Separar modelo mecanístico, observación, calibración y validación evita confundir ajuste con causalidad."}],"sources":[{"title":"About Physiome Journal","organization":"Physiome Journal / Physiome Project","url":"https://journal.physiomeproject.org/about","type":"recurso institucional","description":"Reproducibilidad y reusabilidad de modelos fisiológicos.","verification_status":"verified_directly"},{"title":"The Physiome Project","organization":"Physiome Project","url":"https://journal.physiomeproject.org/physiome-project","type":"recurso institucional","description":"Modelos fisiológicos cuantitativos multiescala.","verification_status":"verified_directly"},{"title":"Reproducibility in Systems Biology Modelling","organization":"BioModels / EMBL-EBI","url":"https://www.ebi.ac.uk/biomodels/reproducibility","type":"recurso institucional","description":"Elementos necesarios para reproducir modelos.","verification_status":"verified_directly"},{"title":"BioModels FAQ","organization":"BioModels / EMBL-EBI","url":"https://www.ebi.ac.uk/biomodels/faq","type":"recurso institucional","description":"Curation y límites de corrección científica.","verification_status":"verified_directly"},{"title":"CellML 2.0 Specification","organization":"CellML / Physiome Project","url":"https://www.cellml.org/specifications/cellml_2.0/","type":"estándar abierto","description":"Representación de modelos y unidades.","verification_status":"verified_directly"},{"title":"SED-ML","organization":"SED-ML / COMBINE","url":"https://sed-ml.org/","type":"estándar abierto","description":"Descripción reproducible de simulaciones.","verification_status":"verified_directly"},{"title":"COMBINE standards","organization":"COMBINE","url":"https://co.mbine.org/standards/","type":"estándares","description":"OMEX y estándares de modelado.","verification_status":"verified_directly"},{"title":"BioModels","organization":"BioModels","url":"https://www.ebi.ac.uk/biomodels/","type":"repositorio","description":"Repositorio de modelos biológicos.","verification_status":"verified_directly"},{"title":"Reproducibility in systems biology modelling","organization":"Molecular Systems Biology / BioModels","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC7901289/","type":"artículo","description":"Análisis sistemático de reproducibilidad.","verification_status":"verified_directly"},{"title":"Structural and practical identifiability analysis of partially observed dynamical models by exploiting the profile likelihood","organization":"Bioinformatics / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/19505944/","type":"artículo","description":"Identificabilidad estructural y práctica.","verification_status":"verified_directly"},{"title":"A protocol for dynamic model calibration","organization":"Briefings in Bioinformatics / PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC8769694/","type":"artículo","description":"Calibración e identificabilidad de modelos dinámicos.","verification_status":"verified_directly"},{"title":"Credible practice of modeling and simulation in healthcare: ten rules from a multidisciplinary perspective","organization":"Journal of Translational Medicine / PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC7526418/","type":"guía metodológica","description":"Credibilidad, contexto y documentación.","verification_status":"verified_directly"},{"title":"Assessing the Credibility of Computational Modeling and Simulation in Medical Device Submissions","organization":"U.S. Food and Drug Administration","url":"https://www.fda.gov/regulatory-information/search-fda-guidance-documents/assessing-credibility-computational-modeling-and-simulation-medical-device-submissions","type":"guía","description":"Credibilidad ligada al contexto de uso.","verification_status":"verified_directly"},{"title":"The FAIR Guiding Principles for scientific data management and stewardship","organization":"Scientific Data / PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC4792175/","type":"artículo","description":"Principios FAIR.","verification_status":"verified_directly"},{"title":"Physiome Model Repository","organization":"Physiome Project","url":"https://models.physiomeproject.org/welcome","type":"repositorio","description":"Modelos fisiológicos reproducibles y reutilizables.","verification_status":"verified_directly"}],"editorial_notice":"Material educativo en estado review. U6 integra U1–U5 mediante modelos matemáticos reducidos y perturbaciones exclusivamente sintéticas. No constituye modelo clínico individual, gemelo digital validado, algoritmo diagnóstico o pronóstico, sistema de control terapéutico ni herramienta para indicar tratamientos. Calibración, verificación, reproducibilidad y validación se mantienen separadas; un buen ajuste, un formato estándar o una simulación reproducible no prueban corrección fisiológica ni utilidad clínica. Las referencias regulatorias se usan solo para ilustrar que la credibilidad depende del contexto de uso. Cualquier transferencia a personas o decisiones asistenciales requiere nueva evidencia, gobernanza, validación y competencia profesional."}
+{
+  "schema_version": "2.0",
+  "subject_id": "fisiologia-sistemas",
+  "area_id": "biologicas-medicas",
+  "unit": 6,
+  "slug": "modelos-integradores-y-datos",
+  "title": "Modelos integradores y datos",
+  "status": "review",
+  "purpose": "Integrar U1–U5 mediante modelos fisiológicos dinámicos y datos sintéticos, distinguiendo estados, entradas, salidas, perturbaciones, identificabilidad, calibración, verificación, validación, incertidumbre y reproducibilidad. La unidad culmina en un modelo multiorgánico reducido y auditable sin confundir buen ajuste con mecanismo verdadero ni reproducibilidad con utilidad clínica.",
+  "learning_objectives": [
+    "Traducir un diagrama fisiológico a un modelo dinámico reducido con estados, entradas, salidas, parámetros, condiciones iniciales, unidades y fronteras explícitas.",
+    "Analizar series temporales distinguiendo muestreo, sincronización, ruido, transición, estado estable y aliasing antes de inferir mecanismos.",
+    "Diseñar perturbaciones sintéticas que discriminen modelos candidatos que comparten el mismo estado basal.",
+    "Distinguir identificabilidad estructural de identificabilidad práctica y sensibilidad de identificabilidad.",
+    "Separar calibración, verificación de implementación, validación independiente e incertidumbre para un contexto de uso definido.",
+    "Construir un paquete reproducible con ecuaciones, parámetros, condiciones iniciales, protocolo de simulación, datos, versiones y resultados."
+  ],
+  "theory_sections": [
+    {
+      "heading": "1. Del mapa fisiológico al modelo de estados",
+      "paragraphs": [
+        "Un modelo integrador empieza por una pregunta y una frontera. Una variable de estado conserva memoria necesaria para la evolución; una entrada representa una perturbación o condición exógena; una salida es una magnitud observable o calculable. Clasificar estas funciones evita convertir toda señal medida en estado.",
+        "Una forma general es dx/dt=f(x,u,θ,t) y y=g(x,θ,t)+ε. El primer término representa dinámica interna y el segundo un modelo de observación. Esta notación obliga a separar aquello que el organismo hace de aquello que el instrumento o dataset permite observar.",
+        "Los balances de U3 y U4 siguen siendo restricciones: cambio de una cantidad = entradas − salidas + producción − consumo. Si el modelo viola conservación sin declarar fuente, sumidero o aproximación, una curva bien ajustada puede seguir siendo fisiológicamente incoherente.",
+        "Un modelo reducido omite procesos deliberadamente. Añadir estados aumenta flexibilidad pero puede destruir identificabilidad; reducir demasiado puede eliminar la dinámica que responde a la pregunta. La complejidad se justifica por el uso y los datos.",
+        "Los módulos de U1–U5 operan en escalas distintas: segundos para respuestas cardiorrespiratorias, minutos-horas para ejes endocrinos, horas-días para balance renal y días para reparación. Cada acoplamiento debe declarar variable de interfaz, unidad y escala.",
+        "U6 no pretende construir un gemelo digital. Reutiliza los mecanismos ya desarrollados para aprender a hacer predicciones falsables, detectar ambigüedad y documentar límites."
+      ],
+      "equations": [
+        {
+          "latex": "\\frac{d\\mathbf{x}}{dt}=\\mathbf{f}(\\mathbf{x},\\mathbf{u},\\boldsymbol{\\theta},t)",
+          "meaning": "Modelo dinámico general.",
+          "variables": {
+            "\\mathbf{x}": "estados",
+            "\\mathbf{u}": "entradas",
+            "\\boldsymbol{\\theta}": "parámetros",
+            "t": "tiempo"
+          }
+        },
+        {
+          "latex": "\\mathbf{y}=\\mathbf{g}(\\mathbf{x},\\boldsymbol{\\theta},t)+\\boldsymbol{\\varepsilon}",
+          "meaning": "Modelo de observación.",
+          "variables": {
+            "\\mathbf{y}": "salidas",
+            "\\boldsymbol{\\varepsilon}": "error/discrepancia"
+          }
+        },
+        {
+          "latex": "\\frac{dM}{dt}=J_{in}-J_{out}+P-C",
+          "meaning": "Balance de una cantidad.",
+          "variables": {
+            "M": "cantidad",
+            "J_{in}": "entrada",
+            "J_{out}": "salida",
+            "P": "producción",
+            "C": "consumo"
+          }
+        }
+      ],
+      "key_points": [
+        "Estado, entrada, parámetro y salida cumplen funciones matemáticas y fisiológicas diferentes dentro de un modelo dinámico.",
+        "La frontera del sistema determina qué balances se conservan, qué flujos cruzan el límite y qué mecanismos quedan omitidos.",
+        "Unidades consistentes y balances de conservación son pruebas mínimas de coherencia antes de calibrar parámetros.",
+        "Agregar variables y parámetros aumenta complejidad y no garantiza mayor capacidad explicativa, predictiva ni identificabilidad.",
+        "El acoplamiento entre subsistemas exige declarar interfaces, unidades, dirección de influencia y escala temporal.",
+        "El modelo es una hipótesis cuantitativa revisable y no una copia exhaustiva del organismo real."
+      ]
+    },
+    {
+      "heading": "2. Series temporales y perturbaciones",
+      "paragraphs": [
+        "Una serie temporal depende de frecuencia de muestreo, sincronización, datos faltantes y preprocesamiento. Si una dinámica relevante ocurre más rápido que el muestreo, puede aparecer aliasing; una relación temporal aparente puede ser un artefacto.",
+        "Transición y estado estable contienen información diferente. Promediar un transitorio borra latencias y constantes de tiempo que ayudan a distinguir mecanismos; comparar ventanas no alineadas puede fabricar discrepancias.",
+        "Una perturbación sintética desplaza al sistema fuera de una condición donde muchos modelos se parecen. Escalones y pulsos permiten observar ganancia, retardo, sobreimpulso y recuperación sin experimentar con personas.",
+        "Dos arquitecturas pueden compartir equilibrio y divergir después de una perturbación. La mejor perturbación es la que produce predicciones diferentes entre modelos candidatos, no simplemente la que genera una señal grande.",
+        "Filtrar o suavizar datos puede reducir ruido pero también dinámica. Toda transformación debe registrarse y aplicarse de forma coherente al dominio de comparación entre datos y simulación.",
+        "Correlación o desfase temporal no demuestran causalidad. Una entrada común no observada o el propio filtro pueden producir relaciones aparentes; el mecanismo requiere predicciones discriminantes."
+      ],
+      "equations": [
+        {
+          "latex": "f_s>2f_{max}",
+          "meaning": "Criterio idealizado de Nyquist.",
+          "variables": {
+            "f_s": "muestreo",
+            "f_{max}": "máxima frecuencia relevante"
+          }
+        },
+        {
+          "latex": "\\tau\\frac{dz}{dt}+z=Ku(t)",
+          "meaning": "Respuesta reducida de primer orden.",
+          "variables": {
+            "\\tau": "constante de tiempo",
+            "K": "ganancia",
+            "u": "entrada",
+            "z": "salida"
+          }
+        }
+      ],
+      "key_points": [
+        "La frecuencia, regularidad y ventana de muestreo condicionan qué dinámica fisiológica puede inferirse de una serie temporal.",
+        "Un transitorio y un estado aproximadamente estable responden a preguntas distintas y no deben mezclarse sin justificación.",
+        "Las perturbaciones informativas revelan ganancias y constantes de tiempo que un estado basal puede ocultar.",
+        "Filtrado, interpolación y remuestreo forman parte del método y pueden modificar amplitud, fase, retardos y variabilidad.",
+        "Correlación o precedencia temporal entre variables no demuestra por sí sola un mecanismo causal entre subsistemas.",
+        "Las perturbaciones de U6 son exclusivamente sintéticas y se usan para comparar modelos, no para intervenir personas."
+      ]
+    },
+    {
+      "heading": "3. Parámetros, sensibilidad e identificabilidad",
+      "paragraphs": [
+        "Calibrar consiste en elegir parámetros compatibles con datos según un criterio. Un mínimo de la función objetivo no demuestra que cada parámetro se estime de forma única ni que coincida con una constante fisiológica real.",
+        "La identificabilidad estructural pregunta si el modelo ideal permitiría distinguir parámetros con datos perfectos. La identificabilidad práctica incorpora ruido, duración, muestreo y amplitud de perturbaciones.",
+        "La sensibilidad describe cuánto cambia una salida al variar un parámetro alrededor de un punto. Sensibilidad alta no garantiza identificabilidad: dos parámetros pueden producir efectos casi colineales y compensarse.",
+        "Los residuos deben inspeccionarse en el tiempo. Sesgo, autocorrelación o errores concentrados en una fase sugieren dinámica omitida o un modelo de observación inadecuado aunque el error promedio sea pequeño.",
+        "La no identificabilidad es un resultado. Puede abordarse fijando un parámetro con evidencia independiente, midiendo otra salida, diseñando otra perturbación o reduciendo la estructura.",
+        "U6 prefiere modelos parsimoniosos que predicen una condición no usada en calibración antes que modelos grandes que solo interpolan el dataset de ajuste."
+      ],
+      "equations": [
+        {
+          "latex": "r_i=y_i^{obs}-y_i^{sim}(\\boldsymbol{\\theta})",
+          "meaning": "Residuo.",
+          "variables": {
+            "r_i": "residuo",
+            "y_i^{obs}": "observación",
+            "y_i^{sim}": "simulación"
+          }
+        },
+        {
+          "latex": "J(\\boldsymbol{\\theta})=\\sum_i w_i r_i^2",
+          "meaning": "Ejemplo de objetivo de calibración.",
+          "variables": {
+            "J": "objetivo",
+            "w_i": "peso",
+            "r_i": "residuo"
+          }
+        },
+        {
+          "latex": "S_{ij}=\\frac{\\partial y_i}{\\partial\\theta_j}\\frac{\\theta_j}{y_i}",
+          "meaning": "Sensibilidad local normalizada.",
+          "variables": {
+            "S_{ij}": "sensibilidad",
+            "y_i": "salida",
+            "\\theta_j": "parámetro"
+          }
+        }
+      ],
+      "key_points": [
+        "Un buen ajuste de las salidas observadas no implica que los parámetros individuales sean identificables de forma única.",
+        "Identificabilidad estructural e identificabilidad práctica responden a limitaciones matemáticas y de datos diferentes.",
+        "Una sensibilidad local alta no garantiza identificabilidad cuando varios parámetros producen efectos compensatorios sobre las salidas.",
+        "La estructura temporal de los residuos puede revelar dinámica omitida aunque una métrica global de error parezca aceptable.",
+        "La ambigüedad entre parámetros o mecanismos debe cuantificarse, documentarse y conservarse explícitamente en la conclusión.",
+        "Una perturbación nueva puede aportar más información sobre parámetros que aumentar puntos redundantes alrededor del mismo basal."
+      ]
+    },
+    {
+      "heading": "4. Calibración, verificación y validación",
+      "paragraphs": [
+        "Calibración, verificación y validación responden a preguntas distintas. Calibrar selecciona parámetros; verificar comprueba que el código implementa las ecuaciones previstas; validar confronta predicciones con observaciones independientes para un contexto de uso.",
+        "Los datos de validación no deben haber guiado estructura ni parámetros. En series temporales, dividir puntos vecinos al azar puede producir optimismo; reservar una perturbación o intervalo completo suele ser más exigente.",
+        "Los criterios deben fijarse antes de abrir la validación: error, signo de respuesta, amplitud, constante de tiempo, conservación y patrón de residuos. Una sola métrica no resume credibilidad fisiológica.",
+        "La incertidumbre incluye parámetros, condiciones iniciales, entradas, medición y estructura. Una banda que solo varía parámetros no es incertidumbre total y debe declararse como tal.",
+        "Un modelo puede ser computacionalmente reproducible y fisiológicamente incorrecto. También puede ser plausible pero irreproducible por parámetros o condiciones faltantes. Ambas dimensiones se evalúan por separado.",
+        "La validación está ligada al contexto de uso. Reproducir una perturbación docente no valida diagnóstico, pronóstico, dosificación, control terapéutico ni uso regulatorio."
+      ],
+      "equations": [
+        {
+          "latex": "RMSE=\\sqrt{\\frac{1}{n}\\sum_{i=1}^{n}(y_i^{obs}-y_i^{pred})^2}",
+          "meaning": "Métrica de error predictivo.",
+          "variables": {
+            "RMSE": "error",
+            "n": "observaciones",
+            "y_i^{obs}": "dato",
+            "y_i^{pred}": "predicción"
+          }
+        },
+        {
+          "latex": "e(t)=y^{obs}(t)-y^{pred}(t)",
+          "meaning": "Error temporal.",
+          "variables": {
+            "e(t)": "error temporal",
+            "y^{obs}": "observación",
+            "y^{pred}": "predicción"
+          }
+        }
+      ],
+      "key_points": [
+        "Calibración, verificación y validación responden a preguntas distintas y no deben utilizarse como sinónimos.",
+        "La validación requiere datos, condiciones o perturbaciones independientes de las utilizadas durante la calibración.",
+        "Reservar una perturbación fuera del ajuste permite evaluar si el modelo transfiere correctamente su comportamiento dinámico.",
+        "Un RMSE bajo no sustituye el análisis de residuos, conservación, dinámica ni predicciones fuera de la calibración.",
+        "La incertidumbre estructural debe declararse cuando modelos alternativos explican de forma semejante las observaciones disponibles.",
+        "La suficiencia de una validación depende del contexto de uso, la pregunta científica y el riesgo de la inferencia propuesta."
+      ]
+    },
+    {
+      "heading": "5. Integración multiescala y reproducibilidad",
+      "paragraphs": [
+        "Integrar U1–U5 no significa sumar todas sus variables. Cada interfaz entre módulos debe declarar dirección, unidad, escala temporal y evidencia o supuesto. El modelo final conserva solo los acoplamientos necesarios para su pregunta.",
+        "Si dos módulos operan en escalas muy distintas puede usarse separación de escalas, por ejemplo considerando casi estacionario el módulo rápido mientras evoluciona el lento. La aproximación debe comprobarse en el rango simulado.",
+        "Reproducibilidad exige ecuaciones, parámetros, condiciones iniciales, entradas, versión de código, solver, tolerancias, preprocesamiento, semillas y salidas esperadas. Compartir solo un script no basta.",
+        "CellML permite representar modelos matemáticos y unidades; SED-ML describe experimentos de simulación; COMBINE/OMEX puede empaquetar modelos, protocolos y metadatos. Estos estándares favorecen interoperabilidad y auditoría.",
+        "BioModels y Physiome muestran que la curation y la reproducción de simulaciones son tareas distintas de juzgar la corrección científica. Un formato estándar o una simulación repetible no certifican un mecanismo.",
+        "El producto final es un modelo reducido y auditable con dos hipótesis candidatas, calibración, perturbación reservada, sensibilidad, identificabilidad, validación e incertidumbre. Debe terminar indicando qué observación podría refutarlo."
+      ],
+      "key_points": [
+        "Integrar escalas no significa incluir todos los mecanismos; exige conservar los acoplamientos relevantes para la pregunta planteada.",
+        "Cada interfaz multiescala requiere unidades compatibles, dirección de influencia declarada y escalas temporales explícitas.",
+        "La separación de escalas es una aproximación comprobable cuya validez depende de las constantes de tiempo del sistema.",
+        "La reproducibilidad computacional requiere especificar tanto el modelo como el protocolo experimental y de simulación.",
+        "Los estándares de intercambio facilitan reproducción y reutilización, pero no garantizan la verdad científica del modelo.",
+        "Un modelo útil declara condiciones de fallo, límites de extrapolación y observaciones capaces de refutar sus predicciones."
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Variable de estado",
+      "definition": "Variable que conserva memoria interna necesaria para la evolución del modelo."
+    },
+    {
+      "term": "Entrada",
+      "definition": "Perturbación o condición impuesta desde fuera de la frontera."
+    },
+    {
+      "term": "Salida",
+      "definition": "Magnitud calculada que puede compararse con datos."
+    },
+    {
+      "term": "Parámetro",
+      "definition": "Cantidad que caracteriza una relación del modelo durante una simulación."
+    },
+    {
+      "term": "Condición inicial",
+      "definition": "Valor de un estado al inicio de la simulación."
+    },
+    {
+      "term": "Frontera del sistema",
+      "definition": "Límite que define qué se modela internamente."
+    },
+    {
+      "term": "Balance de masa",
+      "definition": "Relación entre cambio de una cantidad y sus flujos, producción y consumo."
+    },
+    {
+      "term": "Modelo de observación",
+      "definition": "Regla que conecta estados internos con una medición."
+    },
+    {
+      "term": "Modelo reducido",
+      "definition": "Representación que omite procesos de forma explícita para una pregunta concreta."
+    },
+    {
+      "term": "Serie temporal",
+      "definition": "Observaciones indexadas en tiempo con referencia y resolución definidas."
+    },
+    {
+      "term": "Frecuencia de muestreo",
+      "definition": "Número de observaciones por unidad de tiempo."
+    },
+    {
+      "term": "Aliasing",
+      "definition": "Distorsión causada por muestreo insuficiente."
+    },
+    {
+      "term": "Sincronización",
+      "definition": "Alineación temporal entre señales."
+    },
+    {
+      "term": "Estado estable",
+      "definition": "Régimen donde las variables cambian poco bajo un criterio definido."
+    },
+    {
+      "term": "Transición",
+      "definition": "Periodo de ajuste posterior a una perturbación."
+    },
+    {
+      "term": "Perturbación",
+      "definition": "Cambio controlado o simulado usado para revelar dinámica."
+    },
+    {
+      "term": "Ganancia",
+      "definition": "Relación entre cambio de salida y entrada bajo condiciones definidas."
+    },
+    {
+      "term": "Constante de tiempo",
+      "definition": "Escala característica de la respuesta dinámica."
+    },
+    {
+      "term": "Calibración",
+      "definition": "Estimación de parámetros usando datos de ajuste."
+    },
+    {
+      "term": "Residuo",
+      "definition": "Diferencia entre observación y simulación."
+    },
+    {
+      "term": "Sensibilidad",
+      "definition": "Cambio de una salida ante variación de un parámetro."
+    },
+    {
+      "term": "Identificabilidad estructural",
+      "definition": "Posibilidad teórica de determinar parámetros con datos ideales."
+    },
+    {
+      "term": "Identificabilidad práctica",
+      "definition": "Capacidad de estimar parámetros con los datos y ruido disponibles."
+    },
+    {
+      "term": "No identificabilidad",
+      "definition": "Compatibilidad de múltiples parámetros o mecanismos con las mismas observaciones."
+    },
+    {
+      "term": "Parsimonia",
+      "definition": "Preferencia por la complejidad mínima suficiente para la pregunta."
+    },
+    {
+      "term": "Verificación",
+      "definition": "Comprobación de que la implementación representa las ecuaciones especificadas."
+    },
+    {
+      "term": "Validación",
+      "definition": "Comparación de predicciones con evidencia independiente para un contexto de uso."
+    },
+    {
+      "term": "Datos de calibración",
+      "definition": "Datos usados para elegir estructura o parámetros."
+    },
+    {
+      "term": "Datos de validación",
+      "definition": "Datos reservados para evaluar predicciones después del ajuste."
+    },
+    {
+      "term": "Incertidumbre paramétrica",
+      "definition": "Incertidumbre asociada a parámetros compatibles con la evidencia."
+    },
+    {
+      "term": "Incertidumbre estructural",
+      "definition": "Incertidumbre debida a modelos alternativos plausibles."
+    },
+    {
+      "term": "Contexto de uso",
+      "definition": "Pregunta y condiciones para las que se pretende usar una predicción."
+    },
+    {
+      "term": "Multiescala",
+      "definition": "Representación que conecta procesos de escalas temporales o espaciales distintas."
+    },
+    {
+      "term": "Acoplamiento",
+      "definition": "Relación por la que un módulo modifica la dinámica de otro."
+    },
+    {
+      "term": "Separación de escalas",
+      "definition": "Aproximación que explota diferencias grandes de velocidad entre procesos."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Mismo basal, distinta perturbación",
+      "scenario": "Dos modelos reguladores comparten equilibrio pero tienen dinámica diferente.",
+      "reasoning_steps": [
+        "Ajustar ambos al basal.",
+        "Aplicar un escalón sintético.",
+        "Comparar latencia y recuperación.",
+        "Identificar una predicción discriminante.",
+        "Limitar la conclusión."
+      ],
+      "conclusion": "El basal no identifica por sí solo la arquitectura.",
+      "transfer_question": "¿Qué perturbación de U2–U5 podría separar modelos análogos?"
+    },
+    {
+      "title": "Parámetros compensatorios",
+      "scenario": "Dos parámetros producen ajustes casi equivalentes.",
+      "reasoning_steps": [
+        "Comparar residuos.",
+        "Explorar combinaciones.",
+        "Revisar sensibilidad.",
+        "Proponer otra salida.",
+        "Reportar no identificabilidad."
+      ],
+      "conclusion": "Un óptimo no garantiza parámetros únicos.",
+      "transfer_question": "¿Qué evidencia externa permitiría fijar un parámetro?"
+    },
+    {
+      "title": "Validación con perturbación reservada",
+      "scenario": "El modelo se calibra en una condición y predice otra no usada.",
+      "reasoning_steps": [
+        "Congelar estructura.",
+        "Predecir antes de mirar.",
+        "Calcular error.",
+        "Inspeccionar residuos.",
+        "Limitar rango validado."
+      ],
+      "conclusion": "La validación exige evidencia independiente.",
+      "transfer_question": "¿Por qué separar puntos vecinos al azar es más débil?"
+    },
+    {
+      "title": "Acoplamiento rápido-lento",
+      "scenario": "Un módulo cardiorrespiratorio rápido se acopla a uno renal lento.",
+      "reasoning_steps": [
+        "Definir interfaz.",
+        "Asignar unidades.",
+        "Simular módulos aislados.",
+        "Acoplar.",
+        "Comprobar la separación temporal."
+      ],
+      "conclusion": "El acoplamiento multiescala requiere interfaces explícitas.",
+      "transfer_question": "¿Cuándo fallaría la aproximación cuasi-estacionaria?"
+    },
+    {
+      "title": "Reproducible pero no válido",
+      "scenario": "El código reproduce curvas pero falla ante datos independientes.",
+      "reasoning_steps": [
+        "Confirmar ecuaciones.",
+        "Repetir ejecución.",
+        "Evaluar validación.",
+        "Localizar sesgo.",
+        "Proponer revisión estructural."
+      ],
+      "conclusion": "Reproducibilidad y validez son dimensiones distintas.",
+      "transfer_question": "¿Puede un modelo válido en un uso fallar al transferirse?"
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Proyecto integrador: modelo fisiológico multiorgánico reducido",
+      "estimated_time_minutes": 420,
+      "instructions": [
+        "Usa solo datos y perturbaciones sintéticos.",
+        "Selecciona al menos tres módulos de U1–U5.",
+        "Define estados, entradas, salidas, parámetros y frontera.",
+        "Documenta unidades y condiciones iniciales.",
+        "Escribe ecuaciones y balances.",
+        "Construye dos modelos candidatos con el mismo basal.",
+        "Reserva una perturbación independiente para validación.",
+        "Documenta muestreo, ruido y filtrado.",
+        "Calibra solo con el conjunto autorizado.",
+        "Analiza residuos y sensibilidad.",
+        "Identifica al menos un problema de identificabilidad.",
+        "Congela estructura y parámetros antes de validar.",
+        "Evalúa la perturbación reservada.",
+        "Propaga dos fuentes de incertidumbre.",
+        "Documenta solver, tolerancias, versiones y semillas.",
+        "Explica cómo CellML/SED-ML mejorarían la reproducibilidad.",
+        "Cierra con afirmación, evidencia, supuesto, límite y prueba siguiente."
+      ],
+      "problems": [
+        "Clasifica diez elementos como estado, entrada, parámetro o salida.",
+        "Corrige dos incoherencias dimensionales.",
+        "Escribe un balance de masa.",
+        "Construye dos modelos con el mismo equilibrio.",
+        "Diseña una perturbación discriminante.",
+        "Demuestra aliasing con muestreo insuficiente.",
+        "Compara transición y estado estable.",
+        "Calcula residuos de calibración.",
+        "Construye una función objetivo.",
+        "Aproxima sensibilidad de cinco parámetros.",
+        "Detecta dos parámetros compensatorios.",
+        "Genera dos ajustes casi equivalentes.",
+        "Propón una observación que aumente identificabilidad.",
+        "Congela parámetros y predice validación.",
+        "Calcula RMSE de validación.",
+        "Construye un caso con RMSE bajo pero sesgo temporal.",
+        "Distingue fallo de implementación, calibración o estructura.",
+        "Propaga incertidumbre de parámetros y condición inicial.",
+        "Declara incertidumbre estructural no propagada.",
+        "Acopla un módulo rápido y uno lento.",
+        "Redacta una prueba de reproducibilidad.",
+        "Explica por qué compartir solo código no basta."
+      ],
+      "deliverables": [
+        "Diagrama causal.",
+        "Diccionario de variables y unidades.",
+        "Ecuaciones y balance dimensional.",
+        "Dos modelos candidatos.",
+        "Datos sintéticos separados de calibración/validación.",
+        "Script o procedimiento reproducible.",
+        "Gráficos y residuos.",
+        "Análisis de sensibilidad e identificabilidad.",
+        "Validación reservada.",
+        "Análisis de incertidumbre.",
+        "Manifiesto de reproducibilidad.",
+        "Informe final con límites."
+      ],
+      "checking_criteria": [
+        "Estados y salidas se diferencian.",
+        "Frontera y omisiones están declaradas.",
+        "Unidades son coherentes.",
+        "Se reutilizan U1–U5 sin duplicarlas.",
+        "Los modelos divergen bajo perturbación.",
+        "Muestreo es adecuado.",
+        "Transición y estable se separan.",
+        "Filtrado está documentado.",
+        "Calibración usa solo datos autorizados.",
+        "Residuos se inspeccionan temporalmente.",
+        "Sensibilidad no se usa como identificabilidad.",
+        "No identificabilidad se reporta.",
+        "Se propone una prueba discriminante.",
+        "Parámetros se congelan antes de validar.",
+        "Validación usa condición independiente.",
+        "RMSE se interpreta con dinámica.",
+        "Verificación y validación se separan.",
+        "Se propagan dos fuentes de incertidumbre.",
+        "Se declara incertidumbre estructural.",
+        "El acoplamiento declara interfaz y escala.",
+        "Se documentan condiciones iniciales.",
+        "Se documentan solver y versiones.",
+        "Los estándares no se presentan como certificación científica.",
+        "No se afirma diagnóstico, pronóstico, tratamiento ni control terapéutico."
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Tratar toda variable medida como estado.",
+      "correction": "Distingue estados internos de salidas observadas."
+    },
+    {
+      "error": "Agregar módulos sin interfaz explícita.",
+      "correction": "Declara dirección, unidad y escala temporal."
+    },
+    {
+      "error": "Violar conservación sin fuente o sumidero.",
+      "correction": "Revisa balances y frontera."
+    },
+    {
+      "error": "Suponer que más parámetros hacen el modelo mejor.",
+      "correction": "La complejidad debe ser identificable y necesaria."
+    },
+    {
+      "error": "Ignorar aliasing.",
+      "correction": "Relaciona muestreo con dinámica relevante."
+    },
+    {
+      "error": "Promediar transición y estado estable.",
+      "correction": "Conserva ventanas y retardos."
+    },
+    {
+      "error": "Interpretar correlación temporal como causalidad.",
+      "correction": "Usa perturbaciones y modelos candidatos."
+    },
+    {
+      "error": "Ajustar solo el basal y declarar identificado el mecanismo.",
+      "correction": "Prueba dinámica fuera del equilibrio."
+    },
+    {
+      "error": "Confundir sensibilidad alta con identificabilidad.",
+      "correction": "Busca compensación y correlación entre parámetros."
+    },
+    {
+      "error": "Reportar un único óptimo cuando hay soluciones equivalentes.",
+      "correction": "Reporta no identificabilidad."
+    },
+    {
+      "error": "Usar los mismos datos para calibrar y validar.",
+      "correction": "Reserva una condición independiente."
+    },
+    {
+      "error": "Dividir puntos vecinos al azar y llamarlo validación independiente.",
+      "correction": "Reserva intervalos o perturbaciones completas."
+    },
+    {
+      "error": "Decir que el modelo está validado porque tiene RMSE bajo.",
+      "correction": "Evalúa dinámica, residuos, rango y contexto."
+    },
+    {
+      "error": "Confundir verificación con validación.",
+      "correction": "Código correcto no demuestra fisiología correcta."
+    },
+    {
+      "error": "Llamar incertidumbre total a variar solo parámetros.",
+      "correction": "Declara fuentes incluidas y excluidas."
+    },
+    {
+      "error": "Suponer que un modelo reproducible es fisiológicamente verdadero.",
+      "correction": "La reproducibilidad no sustituye validación."
+    },
+    {
+      "error": "Suponer que CellML, SED-ML o un repositorio certifican corrección científica.",
+      "correction": "Los estándares ayudan a especificar y reproducir, no a demostrar mecanismo."
+    },
+    {
+      "error": "Llamar gemelo digital a cualquier modelo multiorgánico.",
+      "correction": "U6 construye un modelo reducido educativo."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Estado y salida son lo mismo?",
+      "answer": "No.",
+      "reasoning": "Una salida puede ser función de estados y no tener dinámica propia.",
+      "common_error": "Convertir cada señal en estado."
+    },
+    {
+      "question": "¿Por qué el basal no identifica un mecanismo?",
+      "answer": "Modelos distintos pueden compartir equilibrio.",
+      "reasoning": "Las diferencias aparecen bajo perturbación.",
+      "common_error": "Equiparar basal con mecanismo demostrado."
+    },
+    {
+      "question": "¿Sensibilidad alta implica identificabilidad?",
+      "answer": "No.",
+      "reasoning": "Dos parámetros pueden tener efectos casi iguales.",
+      "common_error": "Ordenar sensibilidad como certeza de parámetros."
+    },
+    {
+      "question": "¿Qué diferencia identificabilidad estructural y práctica?",
+      "answer": "La primera es teórica; la segunda depende de datos, ruido y diseño.",
+      "reasoning": "Un parámetro puede ser identificable en teoría y no en un experimento.",
+      "common_error": "Usarlas como sinónimos."
+    },
+    {
+      "question": "¿Calibración y validación son equivalentes?",
+      "answer": "No.",
+      "reasoning": "Calibración ajusta; validación prueba una predicción independiente.",
+      "common_error": "Llamar validación al error de entrenamiento."
+    },
+    {
+      "question": "¿Qué comprueba la verificación?",
+      "answer": "Que la implementación corresponde al modelo especificado.",
+      "reasoning": "No prueba validez fisiológica.",
+      "common_error": "Confundir ejecución con ciencia."
+    },
+    {
+      "question": "¿RMSE bajo basta para validar?",
+      "answer": "No.",
+      "reasoning": "Puede ocultar errores de fase o estructura.",
+      "common_error": "Elegir solo por una métrica."
+    },
+    {
+      "question": "¿Qué debe acompañar una banda de incertidumbre?",
+      "answer": "Las fuentes propagadas y las omitidas.",
+      "reasoning": "Una banda estrecha puede excluir incertidumbre estructural.",
+      "common_error": "Llamarla total sin alcance."
+    },
+    {
+      "question": "¿Qué exige un acoplamiento multiescala?",
+      "answer": "Interfaces, unidades y escalas temporales explícitas.",
+      "reasoning": "Conectar nombres no garantiza coherencia.",
+      "common_error": "Sumar módulos sin probarlos."
+    },
+    {
+      "question": "¿Qué aportan CellML y SED-ML?",
+      "answer": "CellML representa el modelo y SED-ML el experimento de simulación.",
+      "reasoning": "Son capas reproducibles diferentes.",
+      "common_error": "Pensar que uno sustituye al otro."
+    },
+    {
+      "question": "¿Un formato estándar prueba corrección científica?",
+      "answer": "No.",
+      "reasoning": "Mejora interoperabilidad y auditoría, no la validez del mecanismo.",
+      "common_error": "Confundir estandarización con validación."
+    },
+    {
+      "question": "¿Qué demuestra completar U6?",
+      "answer": "Capacidad de construir y contrastar modelos educativos reducidos.",
+      "reasoning": "No demuestra capacidad para diagnóstico, pronóstico o tratamiento.",
+      "common_error": "Transferir el proyecto a pacientes."
+    }
+  ],
+  "biomedical_connections": [
+    {
+      "topic": "Modelado multiorgánico",
+      "connection": "Conecta módulos neuroendocrinos, cardiorrespiratorios, renal-metabólicos e inflamatorios."
+    },
+    {
+      "topic": "Ingeniería biomédica",
+      "connection": "Convierte diagramas fisiológicos en modelos auditables para simulación y diseño."
+    },
+    {
+      "topic": "Pharmacometrics",
+      "connection": "Calibración e identificabilidad son relevantes cuando parámetros fisiológicos son parcialmente observables."
+    },
+    {
+      "topic": "Digital twins",
+      "connection": "U6 aporta fundamentos, pero un modelo educativo no es un gemelo digital individual."
+    },
+    {
+      "topic": "Investigación reproducible",
+      "connection": "CellML, SED-ML, COMBINE, BioModels y Physiome apoyan intercambio y auditoría."
+    },
+    {
+      "topic": "Modelos híbridos e IA",
+      "connection": "Separar modelo mecanístico, observación, calibración y validación evita confundir ajuste con causalidad."
+    }
+  ],
+  "sources": [
+    {
+      "title": "About Physiome Journal",
+      "organization": "Physiome Journal / Physiome Project",
+      "url": "https://journal.physiomeproject.org/about",
+      "type": "recurso institucional",
+      "description": "Reproducibilidad y reusabilidad de modelos fisiológicos.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "The Physiome Project",
+      "organization": "Physiome Project",
+      "url": "https://journal.physiomeproject.org/physiome-project",
+      "type": "recurso institucional",
+      "description": "Modelos fisiológicos cuantitativos multiescala.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Reproducibility in Systems Biology Modelling",
+      "organization": "BioModels / EMBL-EBI",
+      "url": "https://www.ebi.ac.uk/biomodels/reproducibility",
+      "type": "recurso institucional",
+      "description": "Elementos necesarios para reproducir modelos.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "BioModels FAQ",
+      "organization": "BioModels / EMBL-EBI",
+      "url": "https://www.ebi.ac.uk/biomodels/faq",
+      "type": "recurso institucional",
+      "description": "Curation y límites de corrección científica.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "CellML 2.0 Specification",
+      "organization": "CellML / Physiome Project",
+      "url": "https://www.cellml.org/specifications/cellml_2.0/",
+      "type": "estándar abierto",
+      "description": "Representación de modelos y unidades.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "SED-ML",
+      "organization": "SED-ML / COMBINE",
+      "url": "https://sed-ml.org/",
+      "type": "estándar abierto",
+      "description": "Descripción reproducible de simulaciones.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "COMBINE standards",
+      "organization": "COMBINE",
+      "url": "https://co.mbine.org/standards/",
+      "type": "estándares",
+      "description": "OMEX y estándares de modelado.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "BioModels",
+      "organization": "BioModels",
+      "url": "https://www.ebi.ac.uk/biomodels/",
+      "type": "repositorio",
+      "description": "Repositorio de modelos biológicos.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Reproducibility in systems biology modelling",
+      "organization": "Molecular Systems Biology / BioModels",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7901289/",
+      "type": "artículo",
+      "description": "Análisis sistemático de reproducibilidad.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Structural and practical identifiability analysis of partially observed dynamical models by exploiting the profile likelihood",
+      "organization": "Bioinformatics / PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19505944/",
+      "type": "artículo",
+      "description": "Identificabilidad estructural y práctica.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "A protocol for dynamic model calibration",
+      "organization": "Briefings in Bioinformatics / PMC",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8769694/",
+      "type": "artículo",
+      "description": "Calibración e identificabilidad de modelos dinámicos.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Credible practice of modeling and simulation in healthcare: ten rules from a multidisciplinary perspective",
+      "organization": "Journal of Translational Medicine / PMC",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7526418/",
+      "type": "guía metodológica",
+      "description": "Credibilidad, contexto y documentación.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Assessing the Credibility of Computational Modeling and Simulation in Medical Device Submissions",
+      "organization": "U.S. Food and Drug Administration",
+      "url": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/assessing-credibility-computational-modeling-and-simulation-medical-device-submissions",
+      "type": "guía",
+      "description": "Credibilidad ligada al contexto de uso.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "The FAIR Guiding Principles for scientific data management and stewardship",
+      "organization": "Scientific Data / PMC",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4792175/",
+      "type": "artículo",
+      "description": "Principios FAIR.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Physiome Model Repository",
+      "organization": "Physiome Project",
+      "url": "https://models.physiomeproject.org/welcome",
+      "type": "repositorio",
+      "description": "Modelos fisiológicos reproducibles y reutilizables.",
+      "verification_status": "verified_directly"
+    }
+  ],
+  "editorial_notice": "Material educativo en estado review. U6 integra U1–U5 mediante modelos matemáticos reducidos y perturbaciones exclusivamente sintéticas. No constituye modelo clínico individual, gemelo digital validado, algoritmo diagnóstico o pronóstico, sistema de control terapéutico ni herramienta para indicar tratamientos. Calibración, verificación, reproducibilidad y validación se mantienen separadas; un buen ajuste, un formato estándar o una simulación reproducible no prueban corrección fisiológica ni utilidad clínica. Las referencias regulatorias se usan solo para ilustrar que la credibilidad depende del contexto de uso. Cualquier transferencia a personas o decisiones asistenciales requiere nueva evidencia, gobernanza, validación y competencia profesional."
+}
