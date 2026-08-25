@@ -6,386 +6,354 @@
   "slug": "registro-neural",
   "title": "Registro neural",
   "status": "review",
-  "purpose": "Integrar electrodos, EEG y potenciales evocados, ruido para resolver un caso de adquisición segura de actividad nerviosa con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar y auditar una cadena de registro electrofisiológico no invasivo sobre datos sintéticos o abiertos, conectando origen bioeléctrico, electrodos e interfaz, referencia/montaje, amplificación diferencial, muestreo, filtrado, artefactos, eventos y promediado de potenciales relacionados con eventos. La unidad enseña que EEG es una medición diferencial dependiente de referencia y procesamiento, no una lectura directa de neuronas individuales; exige conservar señal cruda, metadatos y decisiones reproducibles. No realiza adquisición en personas ni prescribe configuraciones clínicas; U3 queda reservada a estimulación y seguridad de intervención.",
   "learning_objectives": [
-    "Definir electrodos, EEG y potenciales evocados y ruido mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte electrodos con EEG y potenciales evocados y delimite el papel de ruido.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre adquisición segura de actividad nerviosa con incertidumbre y límites.",
-    "Transferir el método de Registro neural a un escenario nuevo y justificar qué debe revalidarse."
+    "Explicar qué contribuciones bioeléctricas puede reflejar el EEG de superficie y por qué no debe interpretarse como registro directo de potenciales de acción individuales.",
+    "Distinguir electrodo, canal, referencia, tierra/common-mode y montaje, y predecir cómo una rereferencia modifica amplitud y topografía sin crear una referencia eléctricamente neutra universal.",
+    "Especificar una cadena de adquisición con rango, ganancia, resolución, impedancia de entrada, rechazo de modo común, frecuencia de muestreo y filtrado anti-aliasing coherentes con la banda de interés.",
+    "Reconocer y documentar interferencia de red, deriva, saturación, movimiento, actividad ocular, muscular y canales defectuosos, diferenciando artefacto de actividad neural sin borrar automáticamente toda señal coincidente.",
+    "Construir potenciales relacionados con eventos a partir de EEG continuo mediante eventos temporizados, épocas, baseline documentado, rechazo/corrección de artefactos y promediado, evaluando latencia, amplitud e incertidumbre.",
+    "Entregar un registro reproducible compatible conceptualmente con EEG-BIDS que documente referencia, electrodos/coordenadas, canales, unidades, frecuencia de muestreo, frecuencia de red, filtros, eventos y procedencia, sin afirmar validez clínica."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Registro neural",
+      "heading": "1. Qué mide un EEG: origen bioeléctrico, volumen conductor y diferencia de potencial",
       "paragraphs": [
-        "La unidad «Registro neural» sitúa electrodos, EEG y potenciales evocados y ruido dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Ingeniería Neurosensorial, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Registro neural» en Ingeniería Neurosensorial, «electrodos», se entiende así: Conductores que permiten intercambio de carga con un medio electrónico, iónico o biológico mediante una interfaz. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Registro neural», «EEG y potenciales evocados», aporta otra dimensión al problema de Ingeniería Neurosensorial: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con electrodos debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Registro neural» en Ingeniería Neurosensorial, «ruido», completa la unidad: Variación no deseada que se superpone a una medición y limita la recuperación de la información de interés. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "El EEG de superficie registra diferencias de potencial eléctrico entre ubicaciones de medición a través de un volumen conductor formado por cerebro, líquido cefalorraquídeo, cráneo y cuero cabelludo. La señal macroscópica refleja principalmente actividad sincrónica de poblaciones neuronales y corrientes postsinápticas con geometría favorable; no es un contador directo de potenciales de acción de neuronas individuales. Esta distinción fija el nivel fisiológico de la unidad.",
+        "Las fuentes corticales se propagan por conducción de volumen y se mezclan espacialmente antes de alcanzar el cuero cabelludo. Un canal puede contener contribuciones de múltiples fuentes, y una misma fuente puede contribuir a varios electrodos. Por eso una forma de onda sobre un electrodo no identifica de manera única una localización cerebral ni una causa fisiológica.",
+        "Todo canal EEG es una diferencia de potencial. Si se escribe V_i(t)=V(electrodo_i,t)-V(referencia,t), cambiar la referencia cambia matemáticamente la serie de cada canal. No existe un electrodo de referencia físicamente 'cero' para todas las fuentes; la referencia forma parte de la definición de la medición y debe documentarse.",
+        "Electrodo y canal tampoco son sinónimos. El electrodo es la interfaz física; el canal es una señal adquirida o derivada que puede involucrar uno o varios electrodos. Un montaje bipolar, por ejemplo, representa diferencias entre pares, mientras una referencia común compara múltiples electrodos con una referencia compartida.",
+        "Las posiciones estandarizadas como los sistemas 10-20 y 10-10 permiten comunicar ubicación de electrodos mediante relaciones con puntos anatómicos del cráneo. La etiqueta de un electrodo no sustituye sus coordenadas cuando se requiere análisis espacial; densidad, cobertura y geometría condicionan qué patrones pueden observarse.",
+        "El modelo mínimo de U2 es fuente bioeléctrica → volumen conductor → interfaz electrodo → medición diferencial → amplificación/adquisición → datos digitales. Cada etapa introduce sensibilidad, mezcla, ruido, límites de rango y metadatos. La interpretación comienza después de declarar esa cadena, no antes."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Registro neural.",
-        "Relacionar electrodos, EEG y potenciales evocados y ruido mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "EEG de superficie refleja actividad poblacional y conducción de volumen, no spikes neuronales individuales.",
+        "Cada canal es una diferencia de potencial definida respecto de una referencia explícita.",
+        "Electrodo, canal, referencia y montaje son entidades distintas dentro de la cadena de registro.",
+        "La conducción de volumen impide asignar una forma de onda a una fuente única por inspección directa.",
+        "Posiciones estandarizadas facilitan reproducibilidad pero no garantizan resolución espacial suficiente.",
+        "La interpretación debe conservar la cadena física desde fuente hasta muestra digital."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Electrodos, interfaz, referencia y rechazo de modo común",
       "paragraphs": [
-        "Para «Registro neural» dentro de Ingeniería Neurosensorial, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Ingeniería Neurosensorial, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre electrodos o EEG y potenciales evocados debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Registro neural», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Ingeniería Neurosensorial, la incertidumbre de «Registro neural» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "La interfaz electrodo-piel conecta un conductor electrónico con un medio iónico. Su comportamiento puede variar con material, área de contacto, preparación, movimiento, polarización y frecuencia. Para análisis educativo se representa mediante impedancias y fuentes equivalentes, pero el modelo no debe confundirse con una medición completa de seguridad o biocompatibilidad.",
+        "Una impedancia de contacto elevada o muy desigual puede aumentar sensibilidad a interferencias y convertir corrientes de entrada o acoplamientos en diferencias observables. Sin embargo, un valor bajo de impedancia no demuestra por sí solo buena calidad de señal: todavía pueden existir movimiento, mala referencia, saturación, interferencia, errores de canal o artefactos fisiológicos.",
+        "Los amplificadores EEG miden diferencialmente y buscan rechazar señales comunes a ambas entradas. La razón de rechazo de modo común describe esa capacidad bajo condiciones especificadas, pero su desempeño real depende también del desequilibrio de impedancias, cables, entorno y frecuencia. Un CMRR nominal alto no convierte automáticamente una adquisición real en libre de ruido.",
+        "Referencia y electrodo de tierra o common-mode cumplen funciones diferentes. La referencia participa en la señal diferencial que se reporta; la conexión de ground/common-mode depende de la arquitectura del equipo y puede utilizarse para estabilizar el potencial común o reducir interferencia. No debe equipararse automáticamente con tierra de protección ni usarse como un concepto anatómico.",
+        "Rereferenciar es una transformación matemática de canales existentes. Referencia promedio, mastoides u otras opciones cambian amplitudes y topografías y pueden ser apropiadas para preguntas diferentes. La rereferencia no recupera información que nunca fue adquirida y puede propagar un canal contaminado si se incluye de forma acrítica en una media.",
+        "U2 usa únicamente modelos eléctricos, archivos abiertos y señales sintéticas. No enseña a conectar hardware a una persona, no propone circuitos caseros ni umbrales de seguridad. La competencia buscada es auditar cómo la interfaz y la referencia condicionan datos ya registrados y qué metadatos hacen reproducible esa interpretación."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "La interfaz electrodo-piel es dependiente de frecuencia, contacto, material y movimiento.",
+        "Impedancia baja ayuda en ciertos contextos pero no equivale por sí sola a señal válida.",
+        "El rechazo de modo común depende del amplificador y también del equilibrio real de entradas.",
+        "Referencia y ground/common-mode cumplen funciones diferentes y deben documentarse por separado.",
+        "La rereferencia transforma la señal y puede cambiar topografía, amplitud y ruido compartido.",
+        "La unidad analiza registros existentes; no instruye conexión de hardware a personas."
       ]
     },
     {
-      "heading": "Aplicación razonada: adquisición segura de actividad nerviosa",
+      "heading": "3. De la señal analógica al archivo digital: rango, muestreo, aliasing y filtros",
       "paragraphs": [
-        "En la unidad «Registro neural» de Ingeniería Neurosensorial, el caso conductor es adquisición segura de actividad nerviosa. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Registro neural» conecta electrodos con EEG y potenciales evocados y utiliza ruido como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «adquisición segura de actividad nerviosa» en Ingeniería Neurosensorial, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Registro neural» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de adquisición segura de actividad nerviosa y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
-      ],
-      "equations": [
-        {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
-          "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
-          }
-        }
+        "Antes de digitalizar una señal se define la banda fisiológica y técnica de interés, el rango de amplitud esperado y los posibles transitorios. El acondicionamiento debe evitar saturación y utilizar el rango del convertidor de forma razonable. Ganancia excesiva puede recortar artefactos grandes; ganancia insuficiente puede desperdiciar resolución efectiva.",
+        "La frecuencia de muestreo debe ser coherente con la banda analógica que alcanza el convertidor. El criterio de Nyquist exige f_s mayor que 2·f_max para una señal estrictamente limitada en banda, pero esa desigualdad no elimina por sí sola componentes analógicos superiores. Por eso el filtrado anti-aliasing debe ocurrir antes de la conversión analógico-digital.",
+        "Aliasing transforma contenido por encima de Nyquist en componentes aparentes dentro de la banda digital y después puede ser imposible distinguirlo del contenido original. Aumentar la frecuencia de muestreo después de adquirir los datos no repara aliasing ya ocurrido. La documentación del filtro de hardware y de la frecuencia de muestreo forma parte de la procedencia.",
+        "Los filtros digitales high-pass, low-pass, band-pass o notch pueden ser útiles, pero alteran la señal. Sus transitorios, respuesta de fase, pendiente y efectos cerca de discontinuidades pueden cambiar amplitud, latencia o forma de ondas. Un notch de red no sustituye investigar el origen de interferencia, y filtrar agresivamente no constituye evidencia de que lo restante sea neural.",
+        "La cuantización convierte amplitudes continuas en niveles digitales. La resolución nominal en bits, el rango del ADC y la ganancia determinan el tamaño aproximado de cada paso; aun así, el número de bits no equivale directamente a resolución fisiológica útil porque intervienen ruido del sistema, rango efectivo y acondicionamiento.",
+        "Una cadena reproducible conserva el archivo crudo sin sobrescribir, registra filtros de hardware/software, unidades, ganancia, frecuencia de muestreo y conversiones posteriores. Si se remuestrea, filtra o rereferencia, cada derivación debe poder reconstruirse desde el original."
       ],
       "key_points": [
-        "Delimitar el caso de adquisición segura de actividad nerviosa antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Rango y ganancia deben evitar saturación sin desperdiciar innecesariamente resolución digital.",
+        "Nyquist requiere una señal limitada en banda y no reemplaza al filtro analógico anti-aliasing.",
+        "El aliasing ocurrido antes o durante adquisición no se corrige aumentando después la frecuencia de muestreo.",
+        "Filtros digitales pueden cambiar amplitud, forma y latencia de los fenómenos estudiados.",
+        "Bits de ADC y resolución fisiológica útil no son conceptos equivalentes.",
+        "El archivo crudo y todos los parámetros de transformación deben conservarse para reproducibilidad."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "4. Ruido y artefactos: identificar, modelar y documentar antes de corregir",
       "paragraphs": [
-        "La reproducibilidad de «Registro neural» en Ingeniería Neurosensorial requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Registro neural» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Ingeniería Neurosensorial separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Registro neural» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de electrodos, EEG y potenciales evocados y ruido debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Ingeniería Neurosensorial.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre adquisición segura de actividad nerviosa. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Ingeniería Neurosensorial como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "No todo lo que no interesa es ruido aleatorio. En EEG conviene separar interferencia electromagnética, deriva instrumental, saturación, movimiento, problemas de contacto y señales fisiológicas no cerebrales como actividad ocular, cardiaca o muscular. Cada clase tiene estructura temporal y espacial distinta y requiere evidencia diferente antes de atribuirla.",
+        "La interferencia de red puede aparecer cerca de 50 o 60 Hz y armónicos según el entorno, pero un pico espectral no identifica automáticamente su mecanismo. Deben revisarse frecuencia local de red, espectro, canales afectados, referencia, cables y condiciones del registro. BIDS trata PowerLineFrequency como metadato necesario precisamente porque el contexto importa.",
+        "Parpadeos y movimientos oculares producen campos eléctricos que pueden dominar canales frontales; actividad muscular puede añadir potencia de banda ancha y patrones localizados; movimiento de cables/electrodos puede producir transitorios lentos o abruptos. Una correlación con EOG, EMG u otros canales auxiliares puede apoyar la clasificación, pero no convierte una corrección automática en verdad de referencia.",
+        "Marcar canales o segmentos como malos, rechazar ensayos, interpolar canales o aplicar ICA/regresión son decisiones diferentes. Cada una modifica qué datos contribuyen al resultado. Una componente independiente con topografía y curso temporal compatibles con ojos puede ser candidata a corrección, pero ICA no etiqueta por sí sola la fisiología y eliminar componentes cerebrales sigue siendo posible.",
+        "La limpieza debe ser trazable: conservar señal cruda, registrar criterios previos, canales excluidos, segmentos, componentes y parámetros, y mostrar sensibilidad del resultado a decisiones razonables. El objetivo no es maximizar una apariencia visual lisa sino preservar información compatible con la pregunta y declarar lo que se eliminó.",
+        "Una señal residual no se vuelve neural solo porque pasó filtros y algoritmos de corrección. La evidencia debe combinar topografía, temporalidad, relación con eventos/condiciones, replicación y controles. U2 enseña una jerarquía de explicaciones y no una lista de botones de software."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Interferencia, artefactos fisiológicos y ruido instrumental requieren mecanismos y controles diferentes.",
+        "Un pico de 50/60 Hz debe interpretarse con el contexto de red y adquisición.",
+        "EOG, EMG y canales auxiliares ayudan a clasificar artefactos pero no ofrecen etiquetas infalibles.",
+        "Rechazo, interpolación, regresión e ICA son transformaciones distintas con supuestos propios.",
+        "Toda limpieza debe ser reproducible desde datos crudos y registrar exactamente qué se excluyó.",
+        "Una señal procesada no queda demostrada como neural por el mero hecho de sobrevivir al pipeline."
+      ]
+    },
+    {
+      "heading": "5. Potenciales evocados y ERP: eventos, épocas, promediado y metadatos reproducibles",
+      "paragraphs": [
+        "Un potencial evocado o relacionado con eventos se estudia alineando EEG con eventos definidos y analizando cambios reproducibles en el tiempo. El evento necesita un reloj y una marca temporal cuya latencia y precisión se conozcan. Un trigger incorrecto desplaza o dispersa la respuesta aunque el EEG esté técnicamente bien registrado.",
+        "El EEG continuo suele dividirse en épocas alrededor del evento. La ventana preevento puede usarse para inspección o corrección de baseline, pero restar una media preevento es una transformación con supuestos y no una eliminación física del ruido. La duración de época y baseline deben definirse antes de comparar condiciones.",
+        "El promediado de ensayos puede aumentar la visibilidad de actividad consistente y time-locked cuando las contribuciones no relacionadas se cancelan parcialmente. Sin embargo, el promedio puede ocultar variabilidad entre ensayos, latencia variable y subpoblaciones. Más ensayos no arreglan sistemáticamente un sesgo de trigger, un filtro inapropiado o un artefacto correlacionado con la condición.",
+        "Amplitud y latencia de un componente ERP dependen de cómo se define el componente, electrodos/ROI, ventana temporal, referencia, filtros, baseline y algoritmo de medida. Comparar números entre pipelines sin conservar esas decisiones produce una falsa precisión. Recursos abiertos como ERP CORE permiten practicar esta sensibilidad de manera reproducible.",
+        "EEG-BIDS proporciona una estructura para conservar metadatos esenciales: referencia EEG, frecuencia de muestreo, frecuencia de red, filtros, canales y unidades, posiciones/coordenadas de electrodos y eventos. Adoptar un formato estándar mejora trazabilidad e interoperabilidad de investigación, pero no garantiza calidad fisiológica ni validez del experimento.",
+        "El producto final de U2 es un expediente reproducible de adquisición y ERP sobre datos abiertos/sintéticos. Debe mostrar señal cruda, metadatos, controles, pipeline versionado, comparación antes/después, criterios de calidad y límites. La estimulación eléctrica o magnética y sus riesgos quedan fuera: U3 aborda intervención, no U2."
+      ],
+      "key_points": [
+        "La precisión del evento y del reloj condiciona directamente la latencia de un ERP.",
+        "Epoching y baseline son decisiones analíticas que deben documentarse y justificarse.",
+        "Promediar mejora ciertos componentes time-locked pero puede ocultar variabilidad y sesgos sistemáticos.",
+        "Amplitud y latencia ERP dependen del pipeline, referencia, ventana y definición del componente.",
+        "EEG-BIDS exige metadatos que permiten reconstruir referencia, muestreo, filtros, canales y electrodos.",
+        "Estandarizar datos mejora reproducibilidad pero no demuestra calidad fisiológica o validez clínica."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "electrodos",
-      "definition": "Conductores que permiten intercambio de carga con un medio electrónico, iónico o biológico mediante una interfaz."
-    },
-    {
-      "term": "EEG y potenciales evocados",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "ruido",
-      "definition": "Variación no deseada que se superpone a una medición y limita la recuperación de la información de interés."
-    },
-    {
-      "term": "Registro neural",
-      "definition": "Dominio de estudio que integra electrodos, EEG y potenciales evocados, ruido para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de adquisición segura de actividad nerviosa usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"EEG","definition":"Registro de diferencias de potencial eléctrico sobre el cuero cabelludo que refleja actividad bioeléctrica poblacional filtrada por conducción de volumen y la cadena de adquisición."},
+    {"term":"electrodo","definition":"Elemento conductor que forma una interfaz con un medio iónico o tejido y permite medir potencial dentro de una configuración definida."},
+    {"term":"canal","definition":"Serie temporal adquirida o derivada asociada a una diferencia de potencial, sensor auxiliar u otra señal documentada."},
+    {"term":"referencia EEG","definition":"Potencial o combinación de señales respecto de la cual se expresa un canal EEG; forma parte de la definición matemática del dato."},
+    {"term":"montaje","definition":"Conjunto de derivaciones o relaciones entre electrodos/canales usadas para visualizar o analizar un registro."},
+    {"term":"rereferencia","definition":"Transformación matemática que expresa los canales respecto de una referencia diferente a partir de señales ya adquiridas."},
+    {"term":"ground/common-mode","definition":"Conexión definida por la arquitectura del equipo para controlar potencial común o interferencia; no es sinónimo automático de referencia EEG ni tierra de protección."},
+    {"term":"sistema 10-20","definition":"Convención estandarizada de colocación de electrodos de EEG basada en proporciones de distancias entre referencias anatómicas del cráneo."},
+    {"term":"sistema 10-10","definition":"Extensión de mayor densidad espacial de la nomenclatura y posiciones relativas usadas en EEG."},
+    {"term":"conducción de volumen","definition":"Propagación de campos eléctricos desde fuentes bioeléctricas a través de tejidos conductores, produciendo mezcla espacial en sensores."},
+    {"term":"potencial de campo","definition":"Señal extracelular generada por la suma espacial y temporal de corrientes de poblaciones celulares bajo una geometría determinada."},
+    {"term":"interfaz electrodo-piel","definition":"Frontera electroquímica y mecánica entre electrodo y superficie corporal que contribuye impedancia, polarización y sensibilidad a movimiento."},
+    {"term":"impedancia","definition":"Oposición compleja dependiente de frecuencia al paso de una señal eléctrica; no debe reducirse necesariamente a una resistencia fija."},
+    {"term":"impedancia de entrada","definition":"Impedancia presentada por la etapa de entrada del amplificador a la fuente medida."},
+    {"term":"modo común","definition":"Componente de señal presente de forma similar en dos entradas diferenciales."},
+    {"term":"CMRR","definition":"Razón de rechazo de modo común que cuantifica bajo condiciones especificadas cuánto atenúa un amplificador una señal común respecto de la diferencial."},
+    {"term":"amplificador diferencial","definition":"Etapa que amplifica principalmente la diferencia entre dos entradas y rechaza parcialmente componentes comunes."},
+    {"term":"ganancia","definition":"Relación entre amplitud de salida y entrada de una etapa bajo una banda y condiciones definidas."},
+    {"term":"rango de entrada","definition":"Intervalo de amplitudes que una etapa puede manejar sin recorte o comportamiento no especificado."},
+    {"term":"saturación","definition":"Estado en el que la señal excede el rango útil de una etapa y la salida deja de representar proporcionalmente la entrada."},
+    {"term":"ADC","definition":"Convertidor analógico-digital que representa una señal analógica mediante muestras y niveles digitales."},
+    {"term":"frecuencia de muestreo","definition":"Número de muestras digitales por segundo, expresado en Hz."},
+    {"term":"frecuencia de Nyquist","definition":"Mitad de la frecuencia de muestreo; límite crítico para representar una señal previamente limitada en banda."},
+    {"term":"aliasing","definition":"Plegamiento de contenido por encima de Nyquist hacia frecuencias aparentes inferiores durante el muestreo."},
+    {"term":"filtro anti-aliasing","definition":"Filtro analógico previo al ADC diseñado para atenuar contenido que produciría aliasing."},
+    {"term":"high-pass","definition":"Filtro que atenúa frecuencias por debajo de una banda de transición definida."},
+    {"term":"low-pass","definition":"Filtro que atenúa frecuencias por encima de una banda de transición definida."},
+    {"term":"notch","definition":"Filtro de rechazo estrecho centrado en una frecuencia o rango específico."},
+    {"term":"respuesta de fase","definition":"Cambio de fase introducido por un sistema o filtro en función de la frecuencia, capaz de afectar forma y latencia."},
+    {"term":"cuantización","definition":"Asignación de amplitudes continuas a un conjunto discreto de niveles digitales."},
+    {"term":"resolución en bits","definition":"Número de bits usado por el convertidor para representar niveles; no equivale por sí solo a resolución fisiológica útil."},
+    {"term":"interferencia de red","definition":"Componente electromagnético relacionado con la frecuencia de la red eléctrica local y sus armónicos."},
+    {"term":"artefacto ocular","definition":"Contribución a EEG asociada a potencial corneorretiniano, parpadeos o movimientos oculares."},
+    {"term":"artefacto muscular","definition":"Actividad electromiográfica que puede contaminar registros EEG, frecuentemente con contenido espectral amplio."},
+    {"term":"artefacto de movimiento","definition":"Cambio no neural producido por desplazamiento de electrodos, cables, piel o interfaces durante el registro."},
+    {"term":"canal malo","definition":"Canal marcado mediante criterios explícitos por comportamiento incompatible con una medición fiable dentro del análisis previsto."},
+    {"term":"ICA","definition":"Análisis de componentes independientes; descomposición estadística que puede ayudar a separar mezclas, pero no asigna fisiología automáticamente."},
+    {"term":"EOG","definition":"Electrooculografía o canal auxiliar sensible a actividad ocular usado para caracterizar artefactos relacionados con ojos."},
+    {"term":"ERP","definition":"Potencial relacionado con eventos obtenido al analizar EEG temporalmente alineado a eventos y condiciones definidos."},
+    {"term":"evento","definition":"Marca temporal que identifica un estímulo, respuesta o condición respecto de un reloj de adquisición."},
+    {"term":"trigger","definition":"Señal o marca usada para sincronizar un evento experimental con el registro fisiológico."},
+    {"term":"época","definition":"Segmento temporal extraído alrededor de un evento para análisis de ensayos o condiciones."},
+    {"term":"baseline","definition":"Intervalo de referencia temporal usado en determinadas transformaciones o comparaciones de una época; no es ausencia garantizada de actividad."},
+    {"term":"promediado","definition":"Operación que combina múltiples épocas alineadas para estimar actividad consistente bajo supuestos de repetibilidad y sincronía temporal."},
+    {"term":"latencia","definition":"Tiempo de una característica respecto de un evento de referencia, dependiente de definición, sincronización y pipeline."},
+    {"term":"amplitud ERP","definition":"Magnitud de un ERP cuantificada mediante un criterio explícito, electrodo/ROI y ventana temporal."},
+    {"term":"jitter temporal","definition":"Variabilidad o error en el tiempo real o registrado de eventos que puede dispersar una respuesta promediada."},
+    {"term":"señal cruda","definition":"Representación original preservada de la adquisición antes de transformaciones analíticas posteriores."},
+    {"term":"EEG-BIDS","definition":"Extensión de Brain Imaging Data Structure para organizar EEG y sus metadatos de forma estandarizada."},
+    {"term":"PowerLineFrequency","definition":"Metadato BIDS que documenta la frecuencia de red eléctrica relevante al entorno del registro."},
+    {"term":"procedencia","definition":"Registro de origen, parámetros, versiones y transformaciones que permite reconstruir cómo se obtuvo un resultado."},
+    {"term":"potencial evocado","definition":"Respuesta electrofisiológica asociada temporalmente a un estímulo o evento, estimada bajo un paradigma y pipeline definidos."},
+    {"term":"ERP CORE","definition":"Recurso abierto con paradigmas, datos y pipelines estandarizados para practicar análisis reproducible de componentes ERP."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Registro neural",
-      "scenario": "Un equipo propone estudiar adquisición segura de actividad nerviosa, pero su pregunta mezcla electrodos, EEG y potenciales evocados y ruido sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de electrodos, EEG y potenciales evocados y ruido.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-      ]
+      "title":"La referencia cambia la topografía sin cambiar el registro original",
+      "scenario":"Tres canales sintéticos A, B y C se adquirieron respecto de Ref. Se construye después una referencia promedio de A, B y C.",
+      "reasoning_steps":["Escribir cada canal como diferencia respecto de Ref.","Calcular la media instantánea de A, B y C.","Restar esa media a cada canal para obtener la rereferencia.","Comparar amplitudes y signos antes/después sin afirmar que una versión es universalmente 'verdadera'."],
+      "result":"La topografía y amplitudes cambian porque la referencia forma parte de la definición matemática del canal.",
+      "limits":"La rereferencia no recupera un potencial absoluto y puede verse afectada por canales contaminados."
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre electrodos y EEG y potenciales evocados en el caso de adquisición segura de actividad nerviosa; una condición vinculada con ruido podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar ruido como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title":"Nyquist no sustituye al anti-aliasing",
+      "scenario":"Una señal analógica sintética contiene 10 Hz y una interferencia de 180 Hz. Se muestrea a 250 Hz sin filtro analógico previo.",
+      "reasoning_steps":["Identificar Nyquist en 125 Hz.","Reconocer que 180 Hz excede Nyquist.","Predecir que aparecerá un componente aliasado dentro de la banda digital.","Comparar con una simulación que atenúa 180 Hz antes del ADC."],
+      "result":"La condición f_s>2·f_max solo funciona cuando la entrada ha sido limitada en banda; el filtro anti-aliasing debe actuar antes de digitalizar.",
+      "limits":"El ejemplo no prescribe un filtro de un equipo real."
+    },
+    {
+      "title":"Un pico de red no se corrige solo con notch",
+      "scenario":"Un dataset abierto muestra un pico estrecho alrededor de la frecuencia de red local y amplitud mayor en algunos canales.",
+      "reasoning_steps":["Confirmar PowerLineFrequency y espectro.","Comparar canales y referencia para buscar asimetrías.","Aplicar un notch solo en una copia derivada y documentar parámetros.","Comparar métricas y forma de onda antes/después y registrar que la causa física no fue demostrada."],
+      "result":"El filtro reduce la componente espectral, pero el diagnóstico del mecanismo requiere contexto de adquisición.",
+      "limits":"Eliminar el pico no demuestra que el resto del registro sea neural ni clínicamente interpretable."
+    },
+    {
+      "title":"ICA como hipótesis de artefacto ocular, no oráculo",
+      "scenario":"Una componente sintética tiene topografía frontal, gran respuesta durante parpadeos y alta correlación con EOG.",
+      "reasoning_steps":["Inspeccionar topografía, curso temporal y relación con EOG.","Formular hipótesis ocular y una alternativa neural/frontal.","Reconstruir datos con y sin la componente en copias separadas.","Comprobar si una medida de interés cambia de forma material."],
+      "result":"La evidencia apoya clasificar la componente como artefacto ocular, pero la decisión queda documentada y reversible.",
+      "limits":"La independencia estadística no identifica automáticamente una fuente fisiológica."
+    },
+    {
+      "title":"Promediado ERP con trigger sesgado",
+      "scenario":"Cien épocas sintéticas contienen una respuesta idéntica, pero el trigger se registra 20 ms tarde en todos los ensayos.",
+      "reasoning_steps":["Promediar las épocas y medir latencia aparente.","Aumentar el número de ensayos y comprobar que el sesgo persiste.","Corregir el offset de trigger en una copia y repetir.","Separar error sistemático de variabilidad aleatoria."],
+      "result":"Más ensayos reducen parte del ruido aleatorio pero no eliminan un error temporal sistemático.",
+      "limits":"La corrección requiere evidencia independiente del offset; no debe ajustarse solo para obtener una latencia esperada."
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
-      "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+      "title":"Auditoría reproducible de un registro EEG/ERP sintético",
+      "estimated_time_minutes":420,
+      "instructions":[
+        "Usar exclusivamente EEG abierto no identificable o el dataset sintético proporcionado; no conectar electrodos a personas.",
+        "Preservar el archivo crudo como entrada inmutable y trabajar en derivados versionados.",
+        "Definir pregunta, banda y escala temporal antes de seleccionar filtros o rereferencia.",
+        "Documentar referencia, frecuencia de muestreo, frecuencia de red, unidades, canales, filtros de adquisición y posiciones/coordenadas disponibles.",
+        "Comparar al menos dos referencias sobre copias derivadas y explicar el cambio matemático.",
+        "Auditar saturación, deriva, red, ojos, músculo, movimiento y canales anómalos antes de corregir.",
+        "Aplicar cada transformación con parámetros explícitos y conservar una comparación antes/después.",
+        "Construir ERP solo después de verificar triggers, épocas y condiciones.",
+        "Realizar al menos un análisis de sensibilidad del resultado a una decisión de preprocessing.",
+        "Exportar un inventario de metadatos inspirado en EEG-BIDS y una conclusión que se limite al dataset."
       ],
-      "problems": [
-        "Define electrodos mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo EEG y potenciales evocados modifica o complementa a electrodos.",
-        "Propón una prueba que distinga el papel de ruido de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+      "problems":[
+        "Explicar por qué el EEG de cuero cabelludo no es un registro directo de spikes individuales.",
+        "Distinguir electrodos físicos, canales almacenados, referencia y ground/common-mode en el esquema proporcionado.",
+        "Calcular conceptualmente una rereferencia promedio y predecir qué canales pueden propagar contaminación.",
+        "Comparar montaje referencial y bipolar indicando qué cambia y qué información no aparece mágicamente.",
+        "Relacionar etiquetas 10-20/10-10 con posiciones y explicar cuándo hacen falta coordenadas explícitas.",
+        "Identificar un segmento saturado y justificar por qué un filtro posterior no reconstruye la amplitud perdida.",
+        "Evaluar una frecuencia de muestreo frente a una banda analógica y detectar riesgo de aliasing.",
+        "Explicar por qué aumentar posteriormente la frecuencia de muestreo no repara aliasing.",
+        "Comparar filtros high-pass con dos cortes distintos y cuantificar el cambio en una onda lenta sintética.",
+        "Comparar procesamiento con y sin notch y documentar qué inferencia sobre la causa de red sigue pendiente.",
+        "Detectar canales con deriva o comportamiento anómalo usando criterios previamente definidos.",
+        "Usar un canal EOG sintético para evaluar una hipótesis de artefacto ocular.",
+        "Comparar rechazo de ensayos e ICA como decisiones diferentes y listar sus supuestos.",
+        "Construir un registro de canales/segmentos/componentes excluidos con justificación y posibilidad de reversión.",
+        "Verificar la alineación de triggers con una señal de prueba y estimar un offset temporal sintético.",
+        "Definir épocas y baseline sin afirmar que el intervalo preevento está fisiológicamente 'vacío'.",
+        "Promediar un conjunto de ensayos y comparar promedio con distribución de ensayos individuales.",
+        "Mostrar un caso en que duplicar el número de ensayos no corrige un sesgo sistemático.",
+        "Medir una amplitud ERP con dos ventanas/criterios razonables y discutir sensibilidad.",
+        "Medir latencia antes/después de un filtro y decidir si el cambio es fisiológico o de procesamiento.",
+        "Construir los campos mínimos de metadatos EEGReference, SamplingFrequency, PowerLineFrequency y SoftwareFilters.",
+        "Separar posiciones de electrodos de descripción de canales según la lógica EEG-BIDS.",
+        "Redactar qué decisiones deben heredarse a U5 para decodificación y cuáles no deben pasar sin revalidación.",
+        "Explicar por qué este ejercicio no demuestra seguridad de adquisición en personas ni validez diagnóstica."
       ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+      "deliverables":[
+        "Diagrama fuente→volumen conductor→electrodo→amplificador→ADC→archivo.",
+        "Tabla de electrodos, canales, referencia, unidades y coordenadas disponibles.",
+        "Presupuesto de rango/banda/muestreo con justificación de anti-aliasing.",
+        "Comparación de al menos dos rereferencias.",
+        "Inventario de artefactos y evidencia usada para clasificarlos.",
+        "Registro reproducible de filtros y transformaciones.",
+        "Comparación antes/después para una corrección de artefacto.",
+        "Tabla de eventos con validación de timing.",
+        "ERP promedio junto con visualización de variabilidad de ensayos.",
+        "Análisis de sensibilidad a una decisión de preprocessing.",
+        "Sidecar de metadatos inspirado en EEG-BIDS.",
+        "Informe técnico de máximo 500 palabras con límites y próximo paso."
       ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: adquisición segura de actividad nerviosa",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para electrodos, EEG y potenciales evocados y ruido.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de adquisición segura de actividad nerviosa y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte electrodos, EEG y potenciales evocados y ruido.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+      "checking_criteria":[
+        "La cadena distingue fuente cerebral, conducción de volumen, interfaz y adquisición.",
+        "No se atribuye un canal de cuero cabelludo a una neurona individual.",
+        "Referencia y ground/common-mode no se tratan como sinónimos.",
+        "Toda rereferencia se describe como transformación matemática explícita.",
+        "Las posiciones de electrodos conservan nomenclatura o coordenadas trazables.",
+        "La frecuencia de muestreo se evalúa junto con el filtrado anti-aliasing previo al ADC.",
+        "No se intenta reparar aliasing mediante upsampling posterior.",
+        "Saturación y clipping se identifican como pérdida de información.",
+        "Cada filtro declara tipo, cortes y efecto esperado.",
+        "El notch no se presenta como prueba de eliminación de la causa física.",
+        "Artefactos oculares y musculares se apoyan en más de una señal de evidencia cuando es posible.",
+        "ICA no se usa como clasificador fisiológico automático.",
+        "Se conserva la señal cruda y todos los derivados son reproducibles.",
+        "Los criterios de canal/segmento malo están definidos antes de comparar el resultado final.",
+        "Los triggers tienen referencia temporal y se evalúa jitter u offset.",
+        "Epoching y baseline están documentados como transformaciones.",
+        "El promedio ERP se acompaña de información sobre variabilidad o calidad de ensayos.",
+        "Se distingue ruido aleatorio de error sistemático.",
+        "La medida de amplitud y latencia declara electrodo/ROI, ventana y algoritmo.",
+        "El análisis de sensibilidad demuestra qué decisiones cambian materialmente el resultado.",
+        "Los metadatos incluyen EEGReference, SamplingFrequency, PowerLineFrequency y filtros.",
+        "Canales y electrodos se documentan como entidades distintas.",
+        "U3 queda reservada a estimulación y seguridad de intervención.",
+        "No se interpreta el dataset como diagnóstico ni se afirma seguridad de un dispositivo.",
+        "La conclusión diferencia desempeño técnico, plausibilidad fisiológica y validez clínica."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar electrodos como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar electrodos en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre electrodos y EEG y potenciales evocados demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir ruido después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Registro neural al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    {"error":"Afirmar que EEG de superficie registra directamente potenciales de acción individuales.","why":"La señal macroscópica refleja principalmente campos poblacionales mezclados por conducción de volumen.","correction":"Describir nivel de fuente y volumen conductor antes de interpretar un canal."},
+    {"error":"Buscar un electrodo de referencia universalmente neutro.","why":"Los voltajes EEG son diferenciales y toda referencia puede contener actividad.","correction":"Documentar referencia y evaluar sensibilidad a rereferenciación."},
+    {"error":"Confundir referencia con ground/common-mode.","why":"Cumplen funciones diferentes dentro de la arquitectura de adquisición.","correction":"Representarlos como nodos separados en el esquema del sistema."},
+    {"error":"Inferir buena señal solo porque la impedancia es baja.","why":"Pueden persistir artefactos, interferencia, saturación o referencia deficiente.","correction":"Evaluar múltiples métricas y la forma de onda cruda."},
+    {"error":"Suponer que un CMRR alto elimina toda interferencia común.","why":"El desempeño real depende de frecuencia, desequilibrios e instalación.","correction":"Tratar CMRR como especificación bajo condiciones, no garantía del registro."},
+    {"error":"Aplicar Nyquist sin filtro anti-aliasing analógico.","why":"El ADC puede recibir componentes superiores que se pliegan a la banda digital.","correction":"Especificar conjuntamente banda analógica, anti-aliasing y frecuencia de muestreo."},
+    {"error":"Reparar aliasing con upsampling.","why":"La identidad de la frecuencia original se pierde durante el muestreo aliasado.","correction":"Prevenir aliasing antes de digitalizar."},
+    {"error":"Filtrar hasta que la señal se vea limpia.","why":"Los filtros alteran forma, amplitud y fase y pueden crear interpretaciones dependientes del pipeline.","correction":"Elegir filtros por pregunta y documentar sensibilidad."},
+    {"error":"Usar notch como evidencia de que la interferencia estaba resuelta físicamente.","why":"El filtro atenúa una frecuencia pero no identifica ni corrige necesariamente el mecanismo de acoplamiento.","correction":"Separar corrección digital de investigación causal."},
+    {"error":"Eliminar componentes ICA solo por su índice o apariencia aislada.","why":"ICA es una descomposición estadística, no una etiqueta fisiológica.","correction":"Combinar topografía, temporalidad, canales auxiliares y sensibilidad del resultado."},
+    {"error":"Interpolar un canal malo y luego tratarlo como medición independiente.","why":"La señal interpolada se deriva de vecinos.","correction":"Conservar el estado de canal y procedencia de interpolación."},
+    {"error":"Llamar baseline a un intervalo sin actividad cerebral.","why":"La actividad neural continúa durante el intervalo preevento.","correction":"Describir baseline como referencia operacional del análisis."},
+    {"error":"Suponer que promediar elimina todo ruido.","why":"Artefactos o errores sincronizados con el evento permanecen y pueden reforzarse.","correction":"Separar ruido no correlacionado de sesgos sistemáticos."},
+    {"error":"Aumentar ensayos para corregir un trigger desplazado.","why":"El error temporal sistemático no se cancela con más repeticiones.","correction":"Validar timing con una referencia independiente."},
+    {"error":"Comparar amplitud ERP sin documentar referencia y filtros.","why":"Ambas decisiones modifican la amplitud observada.","correction":"Reportar pipeline completo junto con la métrica."},
+    {"error":"Interpretar una latencia filtrada como cambio neural automático.","why":"Filtros y detección de pico pueden desplazar características temporales.","correction":"Evaluar respuesta del filtro y sensibilidad del algoritmo."},
+    {"error":"Confundir un archivo EEG-BIDS válido con EEG de alta calidad.","why":"BIDS mejora estructura y metadatos, no valida la fisiología ni el experimento.","correction":"Auditar calidad y validez por separado."},
+    {"error":"Convertir U2 en una guía práctica de adquisición humana.","why":"La unidad no valida seguridad eléctrica, ética ni competencia clínica.","correction":"Usar únicamente señales sintéticas/abiertas y reservar intervención para marcos adecuados."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar adquisición segura de actividad nerviosa?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan electrodos y EEG y potenciales evocados?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; ruido puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre ruido?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre adquisición segura de actividad nerviosa?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Registro neural?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question":"¿Por qué un canal EEG depende de la referencia?","answer":"Porque registra una diferencia de potencial. Cambiar el término de referencia cambia matemáticamente la serie y puede modificar amplitud y topografía."},
+    {"question":"¿Qué diferencia hay entre electrodo y canal?","answer":"El electrodo es la interfaz física; el canal es la señal adquirida o derivada, que puede representar diferencias entre uno o más electrodos."},
+    {"question":"¿Por qué EEG de superficie no localiza una fuente única por inspección?","answer":"La conducción de volumen mezcla contribuciones de múltiples fuentes y una fuente puede proyectarse a varios electrodos; el problema inverso no tiene solución única sin restricciones adicionales."},
+    {"question":"¿Por qué la impedancia baja no basta para garantizar calidad?","answer":"Porque calidad también depende de contacto estable, referencia, interferencia, saturación, movimiento, amplificador, artefactos fisiológicos y pregunta analítica."},
+    {"question":"¿Qué error conceptual hay en usar f_s>2f_max sin anti-aliasing?","answer":"Ese criterio presupone una entrada limitada en banda. Componentes analógicos por encima de Nyquist pueden aliasarse si no se atenúan antes del ADC."},
+    {"question":"¿Por qué un notch puede ser insuficiente como estrategia de calidad?","answer":"Reduce una banda frecuencial pero no identifica la causa física de la interferencia ni demuestra que la señal restante sea neural."},
+    {"question":"¿Qué evidencia apoyaría clasificar una componente ICA como ocular?","answer":"Topografía frontal, curso temporal compatible con parpadeos/movimientos, relación con EOG y efectos coherentes al reconstruir datos; ninguna señal aislada es infalible."},
+    {"question":"¿Qué diferencia existe entre rechazo e interpolación?","answer":"El rechazo elimina un canal/segmento/ensayo de un análisis; la interpolación estima una señal a partir de otras y debe conservarse como derivación, no como medición original."},
+    {"question":"¿Por qué más ensayos no corrigen un offset constante del trigger?","answer":"Porque el offset es sistemático y permanece alineado en todos los ensayos; el promediado reduce principalmente contribuciones no sincronizadas."},
+    {"question":"¿De qué depende una amplitud ERP reportada?","answer":"De la definición del componente, referencia, electrodos/ROI, ventana, filtros, baseline, criterio de medida y conjunto de ensayos incluidos."},
+    {"question":"¿Qué metadatos básicos exige documentar EEG-BIDS en el sidecar EEG?","answer":"Entre otros, referencia EEG, frecuencia de muestreo, frecuencia de red y filtros de software; canales y electrodos tienen tablas/metadatos específicos."},
+    {"question":"¿Qué puede demostrar el proyecto de U2?","answer":"Que un pipeline sobre datos sintéticos/abiertos es trazable, reproducible y técnicamente coherente bajo criterios definidos. No demuestra seguridad de adquisición en personas, diagnóstico ni eficacia clínica."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Adquisición segura de actividad nerviosa."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+    {"domain":"Interfaces cerebro-computadora","connection":"Referencia, muestreo y artefactos condicionan las características que después alimentan un decodificador.","boundary":"Clasificación y adaptación se desarrollan en U5; U2 no demuestra control funcional."},
+    {"domain":"Potenciales evocados","connection":"Timing de eventos, filtros, promediado y definición de amplitud/latencia determinan la reproducibilidad de respuestas relacionadas con eventos.","boundary":"No se interpreta un ERP individual como diagnóstico."},
+    {"domain":"Neuromonitorización","connection":"Montaje, referencia, canales y artefactos son esenciales para comprender la procedencia de una señal electrofisiológica.","boundary":"La unidad no realiza ni interpreta monitorización clínica."},
+    {"domain":"Neuroprótesis","connection":"Una prótesis o interfaz que use actividad neural depende de una especificación reproducible de la señal y su cadena de adquisición.","boundary":"Prótesis sensoriales pertenecen a U4 y validación a U6."},
+    {"domain":"Investigación reproducible","connection":"EEG-BIDS y recursos abiertos permiten documentar metadatos, eventos y derivados de manera auditable.","boundary":"Formato correcto no equivale a validez científica o clínica."},
+    {"domain":"Ingeniería de instrumentación biomédica","connection":"Amplificación diferencial, rango, ADC, anti-aliasing y CMRR conectan conceptos de instrumentación con señales neurales.","boundary":"No se diseña ni certifica hardware para conexión a personas."
     }
   ],
   "sources": [
-    {
-      "title": "Lessons in Electric Circuits",
-      "organization": "All About Circuits",
-      "url": "https://www.allaboutcircuits.com/textbook/",
-      "type": "libro abierto",
-      "description": "Circuitos, dispositivos y análisis con ejercicios.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "NIST Measurement Services",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/calibrations",
-      "type": "metrología",
-      "description": "Trazabilidad, calibración y servicios de medición.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Señales fisiológicas y anotaciones para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "SciPy Signal",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
-      "type": "documentación",
-      "description": "Procesamiento digital, filtrado y análisis espectral.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"The standardized EEG electrode array of the IFCN","organization":"International Federation of Clinical Neurophysiology / Clinical Neurophysiology","url":"https://pubmed.ncbi.nlm.nih.gov/28778476/","verification_status":"verified_directly","used_for":"Posiciones estandarizadas, nomenclatura y densidad de electrodos EEG."},
+    {"title":"Routine and sleep EEG: Minimum recording standards of the IFCN and ILAE","organization":"IFCN / ILAE","url":"https://pubmed.ncbi.nlm.nih.gov/36775678/","verification_status":"verified_directly","used_for":"Contexto contemporáneo de estándares mínimos y metodología de registro EEG."},
+    {"title":"IFCN standards for digital recording of clinical EEG","organization":"International Federation of Clinical Neurophysiology","url":"https://pubmed.ncbi.nlm.nih.gov/9743285/","verification_status":"verified_directly","used_for":"Principios de registro digital, electrodos y procesamiento."},
+    {"title":"EEG-BIDS, an extension to the Brain Imaging Data Structure for electroencephalography","organization":"Scientific Data","url":"https://pubmed.ncbi.nlm.nih.gov/31239435/","verification_status":"verified_directly","used_for":"Estructura y metadatos reproducibles de EEG."},
+    {"title":"Brain Imaging Data Structure — Electroencephalography specification","organization":"BIDS","url":"https://bids-specification.readthedocs.io/en/stable/modality-specific-files/electroencephalography.html","verification_status":"verified_directly","used_for":"EEGReference, SamplingFrequency, PowerLineFrequency, filtros, canales y electrodos."},
+    {"title":"MNE-BIDS: Organizing electrophysiological data into the BIDS format","organization":"Journal of Open Source Software","url":"https://pubmed.ncbi.nlm.nih.gov/35990374/","verification_status":"verified_directly","used_for":"Flujos reproducibles de organización de datos electrofisiológicos."},
+    {"title":"Guidelines for using human event-related potentials to study cognition","organization":"Psychophysiology","url":"https://pubmed.ncbi.nlm.nih.gov/10731765/","verification_status":"verified_directly","used_for":"Principios de registro, análisis y reporte reproducible de ERP."},
+    {"title":"ERP CORE: An open resource for human event-related potential research","organization":"NeuroImage","url":"https://pubmed.ncbi.nlm.nih.gov/33099010/","verification_status":"verified_directly","used_for":"Datos y paradigmas abiertos para práctica de ERP reproducible."},
+    {"title":"Variations in ERP data quality across paradigms, participants, and scoring procedures","organization":"Psychophysiology","url":"https://pubmed.ncbi.nlm.nih.gov/36748399/","verification_status":"verified_directly","used_for":"Dependencia de calidad ERP respecto de paradigma y algoritmo de medida."},
+    {"title":"The data-processing multiverse of event-related potentials","organization":"NeuroImage","url":"https://pubmed.ncbi.nlm.nih.gov/34800661/","verification_status":"verified_directly","used_for":"Sensibilidad de resultados ERP a decisiones de procesamiento."},
+    {"title":"EEGLAB: an open source toolbox for analysis of single-trial EEG dynamics","organization":"Journal of Neuroscience Methods","url":"https://pubmed.ncbi.nlm.nih.gov/15102499/","verification_status":"verified_directly","used_for":"ICA, visualización y análisis reproducible como herramientas, no como verdad fisiológica."},
+    {"title":"The PREP pipeline: standardized preprocessing for large-scale EEG analysis","organization":"Frontiers in Neuroinformatics","url":"https://pubmed.ncbi.nlm.nih.gov/26712346/","verification_status":"verified_directly","used_for":"Referencia, detección de canales y reproducibilidad de preprocessing."},
+    {"title":"Digital filter design for electrophysiological data — a practical approach","organization":"Journal of Neuroscience Methods","url":"https://pubmed.ncbi.nlm.nih.gov/25128257/","verification_status":"verified_directly","used_for":"Efectos de filtros sobre señales electrofisiológicas, fase y transitorios."},
+    {"title":"FieldTrip: Open Source Software for Advanced Analysis of MEG, EEG, and Invasive Electrophysiological Data","organization":"Computational Intelligence and Neuroscience","url":"https://pubmed.ncbi.nlm.nih.gov/21253357/","verification_status":"verified_directly","used_for":"Análisis electrofisiológico reproducible y separación entre datos, preprocessing y análisis."},
+    {"title":"EEG Motor Movement/Imagery Dataset","organization":"PhysioNet","url":"https://physionet.org/content/eegmmidb/1.0.0/","verification_status":"verified_directly","used_for":"Ejemplo de EEG abierto no identificable para ejercicios reproducibles."},
+    {"title":"Electroencephalography","organization":"StatPearls / NCBI Bookshelf","url":"https://www.ncbi.nlm.nih.gov/books/NBK390347/","verification_status":"verified_directly","used_for":"Origen fisiológico, principios generales y terminología EEG."},
+    {"title":"Electroencephalography Signal Processing","organization":"NCBI Bookshelf","url":"https://www.ncbi.nlm.nih.gov/books/NBK390354/","verification_status":"verified_directly","used_for":"Cadena de procesamiento, frecuencia, artefactos y análisis EEG."}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "professional_scope": {
+    "allowed":"Auditoría educativa de EEG/ERP sintético u abierto no identificable, simulación de adquisición, documentación de metadatos y comparación reproducible de preprocessing.",
+    "excluded":"Conectar electrodos o hardware a personas, configurar equipos para uso clínico, interpretar EEG diagnóstico, tomar decisiones asistenciales, estimular tejido o afirmar conformidad regulatoria/seguridad eléctrica."
+  },
+  "editorial_notice":"Unidad educativa de Ingeniería Neurosensorial. Usa exclusivamente registros abiertos no identificables, señales sintéticas y modelos de adquisición. No instruye adquisición en personas, no interpreta EEG o potenciales evocados con fines diagnósticos, no prescribe montajes clínicos y no demuestra seguridad eléctrica, EMC ni eficacia de dispositivos. U1 aporta fisiología sensorial; U2 se limita a registro y procesamiento; U3 aborda estimulación y seguridad de intervención; U4 prótesis sensoriales; U5 interfaces/decodificación; U6 validación y neuroética."
 }
