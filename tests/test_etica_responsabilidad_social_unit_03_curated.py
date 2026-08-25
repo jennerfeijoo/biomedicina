@@ -1,3 +1,4 @@
+# Final user-authored trigger after U3 source, mirror, public pages and catalog synchronization.
 from __future__ import annotations
 
 import json
