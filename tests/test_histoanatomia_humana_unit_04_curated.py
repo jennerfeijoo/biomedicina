@@ -177,11 +177,9 @@ class HistoanatomiaHumanaUnit04CuratedTests(unittest.TestCase):
         self.assertIn("razonamiento multiescala de u3", purpose)
         self.assertIn("u5 pasará a sistemas digestivo, renal y endocrino", self.text)
 
-    def test_published_descriptor_matches_canonical_purpose_when_promoted(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[4]["description"] != self.unit["purpose"]:
-            self.skipTest("El descriptor se sincroniza en el workflow de publicación.")
         self.assertEqual(detailed[4]["description"], self.unit["purpose"])
 
 
