@@ -43,7 +43,7 @@ class LaboratorioBioinstrumentacionUnit03CuratedTests(unittest.TestCase):
         self.assertTrue(all(len(section["key_points"]) >= 4 for section in sections))
         theory = " ".join(p for section in sections for p in section["paragraphs"]).casefold()
         self.assertIn("no es automáticamente el cmrr de un sistema", theory)
-        self.assertIn("dependencia de frecuencia", theory)
+        self.assertIn("cmrr también depende de frecuencia", theory)
         self.assertIn("diamond plot", theory)
         self.assertIn("interferencia determinista", theory)
         self.assertIn("la cadena completa", theory)
