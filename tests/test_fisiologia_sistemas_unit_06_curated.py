@@ -47,6 +47,28 @@ class FisiologiaSistemasUnit06CuratedTests(unittest.TestCase):
         for phrase in ("modelo de estados", "series temporales", "identificabilidad", "validación", "multiescala"):
             self.assertIn(phrase, headings)
 
+    def test_key_points_are_explanatory_not_labels(self) -> None:
+        for section in self.unit["theory_sections"]:
+            for point in section["key_points"]:
+                self.assertGreaterEqual(
+                    len(point.split()),
+                    4,
+                    msg=f"Punto clave demasiado breve: {point}",
+                )
+        joined = " ".join(
+            point.casefold()
+            for section in self.unit["theory_sections"]
+            for point in section["key_points"]
+        )
+        for phrase in (
+            "frecuencia, regularidad y ventana de muestreo",
+            "perturbaciones informativas revelan ganancias y constantes de tiempo",
+            "sensibilidad local alta no garantiza identificabilidad",
+            "calibración, verificación y validación responden a preguntas distintas",
+            "estándares de intercambio facilitan reproducción y reutilización",
+        ):
+            self.assertIn(phrase, joined)
+
     def test_identifiability_is_not_fit_or_sensitivity(self) -> None:
         text = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
         for phrase in (
