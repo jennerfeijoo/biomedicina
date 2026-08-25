@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unidad 3. Ultrasonido avanzado | Imágenes Biomédicas Avanzadas I | CitoNauta</title>
-  <meta name="description" content="Integrar beamforming, Doppler, elastografía para resolver un caso de evaluación de flujo y rigidez tisular con evidencia, controles, incertidumbre y comunicación proporcional." />
+  <meta name="description" content="Reconstruir y auditar un pipeline avanzado de ultrasonido con datos exclusivamente sintéticos, conectando señales de elementos de un array con beamforming, imagen B-mode y adquisiciones ultrarrápidas; estimar flujo mediante Doppler con geometría, PRF y aliasing explícitos; diferenciar elastografía por deformación y por onda de corte; y conservar calibración, metadatos, incertidumbre y límites antes de interpretar velocidad, flujo o propiedades mecánicas como biomarcadores o afirmaciones clínicas." />
   <link rel="stylesheet" href="../../../assets/css/style.css" />
   <link rel="stylesheet" href="../../../assets/css/editorial.css" />
   <script>
@@ -52,7 +52,7 @@
       </div>
       <p class="eyebrow">Unidad 3 de 6</p>
       <h1>Ultrasonido avanzado</h1>
-      <p>Integrar beamforming, Doppler, elastografía para resolver un caso de evaluación de flujo y rigidez tisular con evidencia, controles, incertidumbre y comunicación proporcional.</p>
+      <p>Reconstruir y auditar un pipeline avanzado de ultrasonido con datos exclusivamente sintéticos, conectando señales de elementos de un array con beamforming, imagen B-mode y adquisiciones ultrarrápidas; estimar flujo mediante Doppler con geometría, PRF y aliasing explícitos; diferenciar elastografía por deformación y por onda de corte; y conservar calibración, metadatos, incertidumbre y límites antes de interpretar velocidad, flujo o propiedades mecánicas como biomarcadores o afirmaciones clínicas.</p>
       <dl class="course-meta">
         <div><dt>Asignatura</dt><dd>Imágenes Biomédicas Avanzadas I</dd></div>
         <div><dt>Estado</dt><dd data-status="generated">Lección desarrollada · revisión experta pendiente</dd></div>
@@ -80,19 +80,20 @@
     <section id="resultados" class="section">
       <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
             <ul>
-        <li>Definir beamforming, Doppler y elastografía mediante entidades, relaciones y condiciones.</li>
-        <li>Construir un modelo que conecte beamforming con Doppler y delimite el papel de elastografía.</li>
-        <li>Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.</li>
-        <li>Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.</li>
-        <li>Resolver y comunicar un caso sobre evaluación de flujo y rigidez tisular con incertidumbre y límites.</li>
-        <li>Transferir el método de Ultrasonido avanzado a un escenario nuevo y justificar qué debe revalidarse.</li>
+        <li>Explicar cómo los retardos geométricos de transmisión y recepción permiten enfocar y dirigir un array, implementar conceptualmente delay-and-sum y relacionar apertura, apodización, f-number, velocidad del sonido y muestreo con resolución y lóbulos laterales.</li>
+        <li>Comparar líneas focalizadas, plane-wave imaging y coherent compounding, justificando el intercambio entre frame rate, número de ángulos, coherencia, contraste, resolución y sensibilidad a movimiento sin confundir una imagen visualmente limpia con mayor fidelidad.</li>
+        <li>Derivar y aplicar la ecuación Doppler pulsada, distinguir frecuencia Doppler de velocidad, analizar dependencia angular, PRF, límite de Nyquist, aliasing, wall filter y diferencias entre Doppler espectral, color y power Doppler.</li>
+        <li>Distinguir strain elastography de shear-wave elastography, calcular strain y shear-wave speed en escenarios sintéticos y convertir velocidad a módulo solo cuando se declaren los supuestos de medio lineal, elástico, homogéneo, isotrópico y casi incompresible.</li>
+        <li>Auditar cuantificación de ultrasonido mediante regiones DICOM calibradas, unidades físicas, fantomas, perturbaciones conocidas, métricas task-specific y análisis de sensibilidad frente a velocidad del sonido, ángulo, SNR, profundidad, preload y selección de ROI.</li>
+        <li>Diseñar un paquete reproducible que separe señal adquirida, reconstrucción, estimador, parámetro derivado y posible interpretación fisiológica, dejando explícito que rendimiento sintético no demuestra exactitud clínica, diagnóstico, seguridad de un protocolo ni equivalencia entre plataformas.</li>
       </ul>
       <h3>Mapa de contenidos</h3>
             <ul>
-        <li>Modelo conceptual de Ultrasonido avanzado</li>
-        <li>Método, evidencia y controles</li>
-        <li>Aplicación razonada: evaluación de flujo y rigidez tisular</li>
-        <li>Calidad, transferencia y comunicación</li>
+        <li>De ecos multicanal a beamforming: retardos, apertura y foco</li>
+        <li>Ultrasonido ultrarrápido: plane waves, compounding y evaluación task-based</li>
+        <li>Doppler cuantitativo: proyección angular, PRF, espectro y aliasing</li>
+        <li>Elastografía: deformación, ondas de corte y límites del modelo mecánico</li>
+        <li>Metrología, DICOM, seguridad y transferencia de un pipeline cuantitativo</li>
       </ul>
     </section>
 
@@ -104,72 +105,170 @@
             <!-- advanced-unit-renderer:v1 -->
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 1</p>
-        <h3>Modelo conceptual de Ultrasonido avanzado</h3>
-        <p>La unidad «Ultrasonido avanzado» sitúa beamforming, Doppler y elastografía dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Imágenes Biomédicas Avanzadas I, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.</p>
-        <p>El primer núcleo de «Ultrasonido avanzado» en Imágenes Biomédicas Avanzadas I, «beamforming», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.</p>
-        <p>El segundo núcleo de «Ultrasonido avanzado», «Doppler», aporta otra dimensión al problema de Imágenes Biomédicas Avanzadas I: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con beamforming debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.</p>
-        <p>El tercer núcleo de «Ultrasonido avanzado» en Imágenes Biomédicas Avanzadas I, «elastografía», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada.</p>
-        <h4>Puntos de integración</h4>
-      <ul>
-        <li>Distinguir observación, cálculo e inferencia en Ultrasonido avanzado.</li>
-        <li>Relacionar beamforming, Doppler y elastografía mediante condiciones explícitas.</li>
-        <li>Declarar escala, unidad de observación y uso previsto antes del método.</li>
-        <li>Tratar supuestos y límites como parte del resultado, no como una nota final.</li>
-      </ul>
-      </article>
-      <article class="lesson-topic advanced-theory-section">
-        <p class="eyebrow">Desarrollo 2</p>
-        <h3>Método, evidencia y controles</h3>
-        <p>Para «Ultrasonido avanzado» dentro de Imágenes Biomédicas Avanzadas I, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.</p>
-        <p>En esta unidad de Imágenes Biomédicas Avanzadas I, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre beamforming o Doppler debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.</p>
-        <p>Para evaluar «Ultrasonido avanzado», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.</p>
-        <p>En Imágenes Biomédicas Avanzadas I, la incertidumbre de «Ultrasonido avanzado» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece.</p>
-        <h4>Puntos de integración</h4>
-      <ul>
-        <li>Elegir evidencia de acuerdo con el tipo de afirmación.</li>
-        <li>Predefinir controles y resultados esperados antes de inspeccionar la salida.</li>
-        <li>Conservar procedencia, parámetros y decisiones intermedias.</li>
-        <li>Propagar incertidumbre hasta la conclusión y la recomendación.</li>
-      </ul>
-      </article>
-      <article class="lesson-topic advanced-theory-section">
-        <p class="eyebrow">Desarrollo 3</p>
-        <h3>Aplicación razonada: evaluación de flujo y rigidez tisular</h3>
-        <p>En la unidad «Ultrasonido avanzado» de Imágenes Biomédicas Avanzadas I, el caso conductor es evaluación de flujo y rigidez tisular. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.</p>
-        <p>La resolución específica de «Ultrasonido avanzado» conecta beamforming con Doppler y utiliza elastografía como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.</p>
-        <p>Para el caso «evaluación de flujo y rigidez tisular» en Imágenes Biomédicas Avanzadas I, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.</p>
-        <p>El cierre de «Ultrasonido avanzado» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de evaluación de flujo y rigidez tisular y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados.</p>
+        <h3>De ecos multicanal a beamforming: retardos, apertura y foco</h3>
+        <p>Un array de ultrasonido no recibe una imagen terminada: cada elemento registra una señal temporal cuya llegada depende de la posición del dispersor, la geometría del array y la velocidad de propagación asumida. En pulse-echo, el tiempo de vuelo incluye el trayecto de ida y vuelta. Para reconstruir un punto se calculan retardos que alinean contribuciones coherentes de distintos elementos antes de combinarlas. La imagen B-mode aparece después de beamforming, detección de envolvente, compresión y representación; no debe confundirse el dato de canal con el píxel final.</p>
+        <p>Delay-and-sum (DAS) es el beamformer de referencia conceptual: para una posición candidata se retrasan o interpolan las señales de cada canal según el tiempo esperado y se suman con pesos. Si el modelo de propagación y la geometría son adecuados, ecos de esa posición se alinean en fase y refuerzan; contribuciones no coherentes se cancelan parcialmente. DAS es reproducible y transparente, pero su desempeño depende de supuestos y no constituye una reconstrucción exacta del campo acústico.</p>
+        <p>La apertura efectiva controla qué elementos participan en cada profundidad. Mantener un f-number aproximadamente constante suele implicar una apertura de recepción que crece con la profundidad. Aperturas mayores pueden estrechar el haz principal, pero directividad de los elementos, pitch, apodización y grating lobes limitan la mejora. La resolución lateral no es una constante del equipo: varía con profundidad, apertura, frecuencia y estrategia de formación del haz.</p>
+        <p>Apodización pondera elementos para modificar el compromiso entre ancho del lóbulo principal y lóbulos laterales. Una ventana más suave puede reducir sidelobes a costa de ensanchar el haz principal. Por ello no existe una opción que maximice simultáneamente resolución lateral y supresión de lóbulos para toda tarea. La comparación debe fijar una referencia, una inclusión pequeña o dos reflectores y una métrica task-specific antes de ajustar la ventana.</p>
+        <p>El beamformer necesita una velocidad del sonido asumida. Usar un valor incorrecto altera los retardos y produce defocus, pérdida de coherencia y desplazamientos o distorsiones. En un fantoma sintético puede variarse c deliberadamente y medir ancho a media altura, error de posición y contraste. Ese experimento enseña que un artefacto de modelo de propagación puede parecer pérdida anatómica sin que el objeto haya cambiado.</p>
+        <p>La trazabilidad de U3 comienza con geometría del array, pitch, frecuencia de muestreo, posiciones de elementos, velocidad del sonido asumida, ley de retardos, apertura, apodización e interpolador. Ninguna imagen debe denominarse raw si ya pasó por beamforming o compresión logarítmica. U2 aplicó esta disciplina a k-space; U3 la traslada a RF/IQ multicanal y a una cadena de reconstrucción distinta.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[CNR=\frac{|\mu_1-\mu_2|}{\sigma_n}\]</div>
-            <figcaption>Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.</figcaption>
+            <div class="math-display">\[y(\mathbf{r})=\sum_{m=1}^{M} w_m(\mathbf{r})\,x_m\!\left(\tau_m(\mathbf{r})\right)\]</div>
+            <figcaption>Forma educativa de delay-and-sum: las señales de M elementos se evalúan en los retardos esperados para una posición y se combinan con pesos.</figcaption>
             <ul class="equation-variables">
-              <li><code>\mu</code>: media regional</li>
-              <li><code>\sigma_n</code>: desviación del ruido</li>
+              <li><code>y</code>: salida beamformed</li>
+              <li><code>\mathbf{r}</code>: posición reconstruida</li>
+              <li><code>x_m</code>: señal del canal m</li>
+              <li><code>\tau_m</code>: retardo geométrico total</li>
+              <li><code>w_m</code>: peso o apodización</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[z\approx \frac{ct}{2}\]</div>
+            <figcaption>Relación pulse-echo simplificada entre tiempo de ida y vuelta y profundidad cuando se asume una velocidad uniforme c.</figcaption>
+            <ul class="equation-variables">
+              <li><code>z</code>: profundidad</li>
+              <li><code>c</code>: velocidad del sonido asumida</li>
+              <li><code>t</code>: tiempo de vuelo ida-vuelta</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Delimitar el caso de evaluación de flujo y rigidez tisular antes de calcular o clasificar.</li>
-        <li>Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.</li>
-        <li>Comprobar unidades, rango, supuestos y casos límite de cada ecuación.</li>
-        <li>Comparar al menos una explicación alternativa y una prueba discriminante.</li>
+        <li>Los datos multicanal preceden al beamforming y no son equivalentes a la imagen B-mode.</li>
+        <li>Delay-and-sum alinea retardos esperados y suma canales bajo un modelo de propagación declarado.</li>
+        <li>Apertura y f-number modifican resolución lateral, coherencia y comportamiento de lóbulos con la profundidad.</li>
+        <li>Apodización reduce sidelobes mediante un intercambio con anchura del haz principal y sensibilidad efectiva.</li>
+        <li>Una velocidad del sonido incorrecta puede degradar enfoque y geometría aunque el objeto permanezca idéntico.</li>
+        <li>Geometría, retardos, pesos, interpolación y velocidad asumida forman parte de la procedencia de la reconstrucción.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 2</p>
+        <h3>Ultrasonido ultrarrápido: plane waves, compounding y evaluación task-based</h3>
+        <p>La formación convencional de una línea focalizada transmite un haz dirigido y reconstruye una región limitada antes de avanzar a la siguiente línea. Esto concentra energía acústica y puede ofrecer buen enfoque, pero el número de transmisiones restringe el frame rate. Plane-wave imaging transmite un frente amplio sin foco transmitido convencional y reconstruye muchos puntos a partir de una sola emisión, habilitando tasas de cuadro muy altas cuando el hardware y el procesamiento lo permiten.</p>
+        <p>Una sola plane wave sacrifica parte del contraste y resolución frente a una adquisición focalizada porque la transmisión aporta menos focalización espacial. Coherent plane-wave compounding repite transmisiones con varios ángulos y combina señales o imágenes preservando fase/coherencia. Aumentar el número de ángulos puede mejorar calidad, pero reduce la tasa temporal efectiva y aumenta vulnerabilidad a movimiento entre emisiones. Frame rate y image quality no pueden optimizarse de forma independiente.</p>
+        <p>El compounding coherente requiere que las adquisiciones correspondan suficientemente al mismo estado del objeto. Si un objetivo se desplaza entre ángulos, la suma puede desenfocar o introducir artefactos. Un laboratorio sintético puede simular un scatterer estático y otro móvil y comparar una, tres y siete direcciones. La diferencia separa una limitación geométrica del beamformer de una inconsistencia temporal del conjunto adquirido.</p>
+        <p>Adaptive beamforming, coherence weighting y métodos aprendidos pueden modificar contraste o resolución respecto de DAS. U3 los presenta como extensiones y no como mejoras automáticas. Un método que reduce speckle o sidelobes puede borrar una inclusión pequeña o cambiar la estadística de textura. La evaluación necesita datos con ground truth sintético y tareas definidas, no solo preferencia visual por una imagen más suave.</p>
+        <p>Las métricas deben corresponder a la tarea. Full width at half maximum puede caracterizar la respuesta de un point target; contraste o CNR describen separación entre regiones bajo una definición de ruido; localization error mide geometría; detectabilidad puede requerir un observador o tarea explícita. Ninguna métrica global prueba por sí sola que todos los detalles relevantes se conservaron.</p>
+        <p>El producto de este bloque guarda channel data sintético, ángulos de transmisión, leyes de retardo, aperturas, imágenes por ángulo, combinación coherente y mapas de diferencia contra una referencia conocida. Así el estudiante puede responder qué información cambió por adquisición, qué cambió por beamforming y qué cambió únicamente por display. Esta separación prepara el análisis Doppler y elastográfico, que reutilizan adquisiciones rápidas para estimar dinámica.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Plane-wave imaging intercambia focalización transmitida por cobertura amplia y alta resolución temporal.</li>
+        <li>Coherent compounding combina varios ángulos y reduce frame rate efectivo al aumentar transmisiones.</li>
+        <li>El movimiento entre ángulos puede romper coherencia y degradar una suma que sería correcta en objeto estático.</li>
+        <li>Un beamformer adaptativo o aprendido debe evaluarse contra tarea y referencia, no por apariencia estética.</li>
+        <li>FWHM, contraste, CNR y error de localización responden preguntas diferentes sobre calidad de imagen.</li>
+        <li>Adquisición, beamforming y display se versionan por separado para localizar el origen de cada cambio.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>Doppler cuantitativo: proyección angular, PRF, espectro y aliasing</h3>
+        <p>El efecto Doppler relaciona movimiento de dispersores con un cambio de frecuencia o fase observado respecto de la señal transmitida. En el modelo pulse-echo de un flujo con velocidad v, el desplazamiento depende de la frecuencia transmitida f0, de la velocidad del sonido c y del coseno del ángulo θ entre el haz y el vector de velocidad. El sistema monohaz estima la componente proyectada sobre el haz, no el vector tridimensional completo.</p>
+        <p>La dependencia angular es estructural. Cerca de 0° el coseno cambia lentamente y la componente axial domina; al aproximarse a 90° el Doppler shift tiende a cero y pequeños errores angulares producen grandes errores relativos al convertir frecuencia en velocidad. Angle correction no recupera información que no se midió: incorpora una estimación geométrica del eje de flujo y su incertidumbre debe acompañar al resultado.</p>
+        <p>Pulsed-wave Doppler localiza un sample volume mediante tiempos de emisión y recepción, pero el muestreo repetido impone un límite de Nyquist: frecuencias Doppler mayores que PRF/2 no pueden representarse sin ambigüedad en ese esquema. El aliasing espectral o color es un fenómeno de muestreo, no evidencia de que la sangre haya cambiado realmente de dirección. Cambiar PRF, escala, baseline o frecuencia altera representación y sensibilidad bajo restricciones de profundidad y adquisición.</p>
+        <p>Spectral Doppler representa la distribución de Doppler shifts dentro del sample volume a lo largo del tiempo. Color Doppler resume estimadores como velocidad media y dirección en muchas posiciones para producir un mapa, mientras power Doppler utiliza energía/potencia de la señal Doppler y es más sensible a presencia de movimiento de baja velocidad pero no codifica dirección del mismo modo. Los tres productos no son intercambiables ni deben reducirse a un color sobre B-mode.</p>
+        <p>Wall filters atenúan señales de muy baja frecuencia asociadas a movimiento de pared o clutter, pero también pueden suprimir flujo lento. Ensemble length, PRF, packet size, clutter filtering y estimator influyen en bias, variance y temporal resolution. Una velocidad sintética exactamente recuperada en un caso ideal valida la implementación del estimador bajo esas condiciones, no la exactitud de una medición vascular clínica.</p>
+        <p>El volumen de flujo añade otro nivel de modelo. Una aproximación Q=\bar{v}A requiere velocidad media representativa y un área transversal coherente, además de asumir cómo se distribuye el perfil y cómo se sincronizan geometría y velocidad. QIBA ha resaltado la variabilidad y los supuestos de métodos tradicionales. U3 practica Q solo con vasos sintéticos de diámetro y perfil conocidos y nunca convierte una medición simulada en referencia de normalidad clínica.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[f_D=\frac{2f_0 v\cos\theta}{c}\]</div>
+            <figcaption>Ecuación Doppler pulse-echo simplificada que relaciona frecuencia Doppler con la componente de velocidad proyectada sobre el haz.</figcaption>
+            <ul class="equation-variables">
+              <li><code>f_D</code>: frecuencia Doppler</li>
+              <li><code>f_0</code>: frecuencia transmitida</li>
+              <li><code>v</code>: magnitud de velocidad bajo geometría asumida</li>
+              <li><code>\theta</code>: ángulo entre haz y movimiento</li>
+              <li><code>c</code>: velocidad del sonido</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[|f_D|&lt;\frac{PRF}{2}\]</div>
+            <figcaption>Condición de representación sin aliasing para una frecuencia Doppler muestreada uniformemente en el modelo ideal.</figcaption>
+            <ul class="equation-variables">
+              <li><code>f_D</code>: frecuencia Doppler</li>
+              <li><code>PRF</code>: pulse repetition frequency</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[Q\approx \bar{v}A\]</div>
+            <figcaption>Aproximación educativa de flujo volumétrico; exige velocidad media y área transversal compatibles y no sustituye un método validado de volume-flow measurement.</figcaption>
+            <ul class="equation-variables">
+              <li><code>Q</code>: flujo volumétrico</li>
+              <li><code>\bar{v}</code>: velocidad media espacial/temporal definida</li>
+              <li><code>A</code>: área transversal</li>
+            </ul>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Doppler monohaz mide una componente proyectada y no el vector tridimensional completo de velocidad.</li>
+        <li>La conversión de frecuencia a velocidad es fuertemente sensible al error angular cerca de noventa grados.</li>
+        <li>PRF fija un límite de Nyquist y el aliasing es una ambigüedad de muestreo, no flujo invertido real.</li>
+        <li>Spectral, color y power Doppler producen representaciones diferentes y responden preguntas distintas.</li>
+        <li>Wall filter puede retirar clutter pero también eliminar información de flujo lento relevante para la tarea.</li>
+        <li>El flujo volumétrico requiere geometría y velocidad compatibles y añade supuestos más allá del Doppler shift.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 4</p>
-        <h3>Calidad, transferencia y comunicación</h3>
-        <p>La reproducibilidad de «Ultrasonido avanzado» en Imágenes Biomédicas Avanzadas I requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.</p>
-        <p>La principal cautela disciplinar al transferir «Ultrasonido avanzado» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Imágenes Biomédicas Avanzadas I separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.</p>
-        <p>La comunicación divulgativa de «Ultrasonido avanzado» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de beamforming, Doppler y elastografía debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Imágenes Biomédicas Avanzadas I.</p>
-        <p>El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre evaluación de flujo y rigidez tisular. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Imágenes Biomédicas Avanzadas I como un componente que deberá reutilizarse y revisarse en el proyecto final del curso.</p>
+        <h3>Elastografía: deformación, ondas de corte y límites del modelo mecánico</h3>
+        <p>Elastografía no es una única técnica. Strain elastography estima deformación relativa producida por compresión externa o interna y suele mostrar mapas cualitativos o semicuantitativos. Si el esfuerzo aplicado no se conoce, observar strain no permite calcular directamente un Young&#x27;s modulus absoluto. Una región que se deforma menos bajo una excitación comparable puede parecer más rígida, pero preload, contacto, orientación y heterogeneidad condicionan esa inferencia.</p>
+        <p>Shear-wave elastography genera o aprovecha una perturbación mecánica y sigue la propagación lateral de ondas de corte con adquisiciones rápidas. La magnitud primaria más próxima a la observación es shear-wave speed, en m/s. El tracking necesita suficiente frame rate, SNR y cobertura espacial; errores de time-of-flight, reverberación o movimiento pueden producir mapas numéricos plausibles que no representan una onda de corte bien medida.</p>
+        <p>En un medio ideal lineal, elástico, homogéneo e isotrópico, el shear modulus puede aproximarse como μ=ρc_s². Si además se asume casi incomprensibilidad, Young&#x27;s modulus se aproxima como E≈3μ. Estas relaciones son útiles para un fantoma sintético, pero los tejidos reales pueden ser viscoelásticos, anisotrópicos, dispersivos y heterogéneos. Por eso m/s y kPa no son unidades intercambiables sin declarar el modelo usado para convertirlas.</p>
+        <p>La dispersión significa que shear-wave speed puede depender de frecuencia; la anisotropía hace que dependa de dirección; la geometría y límites alteran propagación; y la viscosidad introduce componentes dependientes del tiempo o frecuencia. En músculo, tendón u órganos con capas finas, aplicar E=3ρc_s² como identidad universal puede ser especialmente engañoso. U3 exige informar primero c_s y después, si se convierte, enumerar los supuestos mecánicos.</p>
+        <p>La cuantificación depende también de acquisition depth, ROI, preload, transducer, platform, reconstruction y quality map. El perfil QIBA de shear-wave speed ejemplifica por qué una biomarker claim necesita procedimientos y controles de variabilidad, no solo una cifra. El laboratorio simula profundidad y ruido como perturbaciones y analiza bias y repeatability, pero no aplica cut-offs de fibrosis ni otros umbrales clínicos.</p>
+        <p>Strain y shear-wave outputs deben mantenerse separados en el informe final. Un strain ratio semicuantitativo no es Young&#x27;s modulus; una shear-wave speed no es stiffness geométrica del órgano; y un kPa derivado no demuestra una enfermedad. La unidad enseña la cadena estímulo → movimiento → estimator → mechanical model → reported parameter y obliga a señalar en qué eslabón aparece cada supuesto.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[\varepsilon=\frac{\Delta L}{L_0}\]</div>
+            <figcaption>Strain longitudinal simple utilizado para razonar deformación relativa bajo una referencia L0.</figcaption>
+            <ul class="equation-variables">
+              <li><code>\varepsilon</code>: deformación adimensional</li>
+              <li><code>\Delta L</code>: cambio de longitud</li>
+              <li><code>L_0</code>: longitud de referencia</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[\mu=\rho c_s^2,\qquad E\approx3\rho c_s^2\]</div>
+            <figcaption>Relaciones educativas para un medio ideal; la segunda requiere además casi incomprensibilidad y no debe aplicarse como conversión universal en tejido real.</figcaption>
+            <ul class="equation-variables">
+              <li><code>\mu</code>: módulo de corte</li>
+              <li><code>E</code>: módulo de Young aproximado</li>
+              <li><code>\rho</code>: densidad</li>
+              <li><code>c_s</code>: shear-wave speed</li>
+            </ul>
+          </figure>
+        </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Diferenciar repetibilidad, reproducibilidad, validez y utilidad.</li>
-        <li>Separar desempeño técnico de afirmaciones clínicas o regulatorias.</li>
-        <li>Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.</li>
-        <li>Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido.</li>
+        <li>Strain elastography estima deformación y no entrega un módulo absoluto si el esfuerzo aplicado es desconocido.</li>
+        <li>Shear-wave elastography observa propagación y reporta primariamente velocidad de onda de corte en m/s.</li>
+        <li>Convertir shear-wave speed a módulo exige supuestos de densidad, elasticidad, homogeneidad, isotropía e incomprensibilidad.</li>
+        <li>Viscoelasticidad, anisotropía, dispersión y geometría pueden romper la equivalencia simple entre velocidad y módulo.</li>
+        <li>Profundidad, preload, ROI, plataforma y calidad de tracking forman parte de la incertidumbre cuantitativa.</li>
+        <li>Una cifra de elastografía no constituye por sí sola un diagnóstico ni un umbral transferible entre sistemas.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 5</p>
+        <h3>Metrología, DICOM, seguridad y transferencia de un pipeline cuantitativo</h3>
+        <p>Una imagen de ultrasonido puede contener regiones con significados físicos diferentes: B-mode, color flow, spectral Doppler, trazados o mediciones. El US Region Calibration Module de DICOM existe precisamente para describir regiones, formatos espaciales, tipos de datos y unidades físicas. U3 exige leer o simular esa calibración antes de convertir píxeles en distancia, tiempo o velocidad; pixel spacing genérico no debe inventarse cuando una región calibrada proporciona otra relación.</p>
+        <p>La procedencia mínima del pipeline sintético incluye identificador de fantoma, geometría del array, sampling frequency, transmit mode, steering angles, assumed sound speed, beamformer, apodization, PRF, Doppler angle, wall filter, elastography method, ROI, unidades y software/versiones. Si un dato DICOM no existe en un archivo derivado, se marca como desconocido. La trazabilidad no autoriza reconstruir retrospectivamente parámetros propietarios que nunca fueron almacenados.</p>
+        <p>Fantomas y perturbaciones conocidas permiten separar precisión del algoritmo de validez externa. Un point-target fantoma evalúa localización y point-spread function; un flow phantom sintético permite verificar Doppler shift y aliasing; un medio mecánico simulado permite recuperar c_s y estudiar noise/depth. Repetibilidad bajo la misma semilla no es reproducibilidad entre plataformas ni exactitud in vivo.</p>
+        <p>El ultrasonido diagnóstico no usa radiación ionizante, pero sí deposita energía acústica y puede producir efectos térmicos o mecánicos bajo ciertas condiciones. AIUM y FDA utilizan conceptos como Thermal Index, Mechanical Index y ALARA en educación y regulación de equipos. U3 los introduce únicamente para alfabetización de metadatos y límites: el estudiante no elige output levels ni realiza exposiciones en personas como parte de esta actividad.</p>
+        <p>La comunicación final debe distinguir seis capas: channel data o señales simuladas; reconstrucción; medición; parámetro derivado; interpretación fisiológica potencial; y evidencia clínica. Recuperar correctamente una velocidad conocida demuestra que el código funciona bajo el modelo sintético. No demuestra que el mismo estimator tenga sesgo aceptable in vivo, que un biomarcador esté validado o que una decisión clínica sea segura.</p>
+        <p>U3 termina con un paquete auditable que integra beamforming, Doppler y elastografía sin mezclarlos. La siguiente U4 cambia de modalidad hacia imagen nuclear cuantitativa, por lo que no se introducen aquí SUV, correcciones PET/SPECT ni cinética de trazadores. Esta frontera mantiene una progresión clara: CT en U1, MRI en U2, ultrasonido en U3 y nuclear en U4.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>DICOM puede calibrar regiones de ultrasonido con unidades físicas y tipos de datos específicos.</li>
+        <li>Metadatos ausentes se declaran desconocidos y no se reconstruyen por intuición o apariencia de pantalla.</li>
+        <li>Fantomas sintéticos permiten medir bias contra ground truth sin confundirlo con validación clínica externa.</li>
+        <li>MI, TI y ALARA se estudian como conceptos de seguridad y no como instrucciones para exponer personas.</li>
+        <li>Rendimiento técnico, parámetro cuantitativo, interpretación fisiológica y utilidad clínica son capas distintas.</li>
+        <li>U3 cierra ultrasonido avanzado y reserva la cuantificación nuclear PET/SPECT para la unidad siguiente.</li>
       </ul>
       </article>
     </section>
@@ -177,137 +276,142 @@
     <section id="caso" class="section">
       <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
             <article class="worked-example advanced-worked-example">
-        <h3>Del problema amplio a una evidencia verificable en Ultrasonido avanzado</h3>
-        <p><strong>Situación.</strong> Un equipo propone estudiar evaluación de flujo y rigidez tisular, pero su pregunta mezcla beamforming, Doppler y elastografía sin definir unidades, referencias ni resultado admisible.</p>
+        <h3>Error de velocidad del sonido en un fantoma puntual</h3>
+        <p><strong>Situación.</strong> Un reflector sintético está a 40 mm de profundidad y los canales fueron generados con c=1480 m/s, pero el beamformer usa 1540 m/s.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Separar necesidad, pregunta científica, decisión y producto esperado.</li>
-        <li>Definir la unidad de observación y el papel específico de beamforming, Doppler y elastografía.</li>
-        <li>Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.</li>
-        <li>Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.</li>
-        <li>Redactar una conclusión limitada y el dato que permitiría revisarla.</li>
+        <li>Reconstruir con ambas velocidades manteniendo iguales apertura y apodización.</li>
+        <li>Medir error axial, FWHM lateral y peak amplitude respecto del ground truth.</li>
+        <li>Mostrar que el cambio procede del modelo de tiempo de vuelo y no del objeto.</li>
+        <li>Repetir en dos profundidades para comprobar que el efecto no es necesariamente uniforme.</li>
       </ol>
-        <p><strong>Interpretación.</strong> El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.</p>
-        <h4>Limitaciones</h4>
-      <ul>
-        <li>El caso simulado no demuestra desempeño en un entorno real.</li>
-        <li>La conclusión depende de las definiciones y controles declarados.</li>
-        <li>Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.</li>
-      </ul>
       </article>
       <article class="worked-example advanced-worked-example">
-        <h3>Análisis de sensibilidad y explicación alternativa</h3>
-        <p><strong>Situación.</strong> El análisis inicial parece apoyar una relación entre beamforming y Doppler en el caso de evaluación de flujo y rigidez tisular; una condición vinculada con elastografía podría producir el mismo patrón.</p>
+        <h3>Compounding frente a movimiento entre emisiones</h3>
+        <p><strong>Situación.</strong> Siete plane waves observan dos point targets; uno permanece estático y otro se desplaza lateralmente entre ángulos.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Escribir por separado el resultado observado y la explicación propuesta.</li>
-        <li>Representar elastografía como condición, covariable, perturbación o fuente de sesgo según el diseño.</li>
-        <li>Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.</li>
-        <li>Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.</li>
-        <li>Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión.</li>
+        <li>Reconstruir cada ángulo por DAS.</li>
+        <li>Comparar una sola emisión con compounding de 3 y 7 ángulos.</li>
+        <li>Medir FWHM y error de localización por target.</li>
+        <li>Separar mejora estática de pérdida de coherencia por movimiento.</li>
       </ol>
-        <p><strong>Interpretación.</strong> Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.</p>
-        <h4>Limitaciones</h4>
-      <ul>
-        <li>El análisis de sensibilidad solo cubre las perturbaciones evaluadas.</li>
-        <li>Una alternativa no descartada reduce la fuerza de la inferencia.</li>
-        <li>La transferibilidad necesita evaluación independiente.</li>
-      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Aliasing Doppler con velocidad conocida</h3>
+        <p><strong>Situación.</strong> Una señal Doppler sintética corresponde a flujo axial constante y se muestrea con varias PRF.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Calcular fD verdadero con la ecuación Doppler.</li>
+        <li>Comparar fD con PRF/2 en cada condición.</li>
+        <li>Generar la frecuencia envuelta cuando se excede Nyquist.</li>
+        <li>Demostrar que la dirección física no cambió aunque el display aliasado aparente inversión.</li>
+      </ol>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Sensibilidad al error angular</h3>
+        <p><strong>Situación.</strong> La misma velocidad verdadera se observa con ángulos nominales de 30°, 60° y 80° y un error de estimación de +5°.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Generar fD a partir del ángulo verdadero.</li>
+        <li>Reconstruir v usando el ángulo nominal errado.</li>
+        <li>Calcular error relativo por condición.</li>
+        <li>Explicar por qué el error crece cuando cosθ se aproxima a cero.</li>
+      </ol>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>m/s no equivale automáticamente a kPa</h3>
+        <p><strong>Situación.</strong> Un fantoma ideal produce c_s=2.0 m/s con densidad conocida; un segundo medio simulado introduce anisotropía y dispersión.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Calcular μ y E aproximado solo para el medio ideal.</li>
+        <li>Cambiar frecuencia/dirección en el segundo medio y observar c_s variable.</li>
+        <li>Marcar como inválida una conversión única a E cuando no se cumplen los supuestos.</li>
+        <li>Comparar qué debe reportarse como observación y qué como modelo derivado.</li>
+      </ol>
       </article>
     </section>
 
     <section id="practica" class="section">
       <div class="section-header"><h2>Actividad aplicada</h2></div>
             <article class="guided-activity advanced-guided-activity">
-        <h3>Pausa de recuperación y explicación</h3>
+        <h3>Pipeline reproducible de ultrasonido avanzado: foco, flujo y onda de corte</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Responde sin consultar el texto y después corrige con un color distinto.</li>
-        <li>Dibuja las relaciones antes de escribir una definición extensa.</li>
-        <li>Marca cada elemento como observado, calculado, inferido o pendiente.</li>
-        <li>Explica la unidad a una audiencia no especialista en menos de 150 palabras.</li>
+        <li>Trabajar exclusivamente con datos sintéticos generados por código; no adquirir señales de personas, animales ni dispositivos clínicos.</li>
+        <li>Versionar semilla, geometría del array, frecuencia de muestreo, velocidad del sonido, reflectores, flujo y propiedades mecánicas verdaderas antes de reconstruir.</li>
+        <li>Mantener separados channel data, RF/IQ derivado, beamformed image, Doppler estimator, elastography estimator y display.</li>
+        <li>Predefinir métricas y criterios antes de inspeccionar las imágenes resultantes.</li>
+        <li>Guardar cada perturbación como una configuración nueva y nunca sobrescribir el ground truth.</li>
+        <li>Usar unidades explícitas para tiempo, distancia, frecuencia, velocidad, densidad y módulos.</li>
+        <li>Incluir un registro DICOM-like de región, data type y physical units sin inventar atributos que el dataset no contiene.</li>
+        <li>Separar verificación numérica de la implementación, interpretación física y cualquier afirmación clínica.</li>
+        <li>No proponer acoustic output, MI/TI targets, Doppler settings ni protocolos para examinar personas.</li>
+        <li>Cerrar con una tabla de supuestos que indique qué resultados dejan de ser válidos si cambia adquisición, plataforma o modelo mecánico.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
-        <li>Define beamforming mediante entidad, relación, condición y ejemplo.</li>
-        <li>Explica cómo Doppler modifica o complementa a beamforming.</li>
-        <li>Propón una prueba que distinga el papel de elastografía de una explicación alternativa.</li>
-        <li>Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible.</li>
+        <li>Generar un array lineal sintético con al menos 32 elementos y registrar posiciones, pitch y sampling frequency.</li>
+        <li>Generar channel data de tres point targets a profundidades y posiciones laterales conocidas mediante tiempos de vuelo ideales.</li>
+        <li>Implementar delay-and-sum con una velocidad del sonido conocida y verificar errores de localización.</li>
+        <li>Repetir DAS con dos velocidades del sonido deliberadamente incorrectas y cuantificar error geométrico y FWHM.</li>
+        <li>Comparar apertura fija y apertura dinámica con f-number declarado en al menos dos profundidades.</li>
+        <li>Comparar apodización rectangular y una ventana suave, midiendo lóbulo principal y sidelobe relativo en el fantoma sintético.</li>
+        <li>Simular plane waves a -10°, 0° y +10° y realizar coherent compounding preservando la procedencia de cada ángulo.</li>
+        <li>Añadir movimiento conocido a un target entre ángulos y medir el coste del compounding sobre su localización o FWHM.</li>
+        <li>Generar una señal Doppler de velocidad verdadera conocida para tres ángulos y recuperar fD y v con unidades explícitas.</li>
+        <li>Introducir un error angular controlado de 5° y representar el error relativo de velocidad frente al ángulo verdadero.</li>
+        <li>Reducir PRF hasta producir aliasing, calcular el límite de Nyquist y demostrar que la velocidad física no cambió.</li>
+        <li>Comparar spectral Doppler sintético con un resumen color-like y power-like, declarando qué información se conserva o se pierde.</li>
+        <li>Aplicar un wall filter sintético a una mezcla de clutter de baja frecuencia y flujo lento y cuantificar señal útil eliminada.</li>
+        <li>Simular un vaso circular con perfil de velocidad conocido y evaluar Q≈v̄A frente al flujo verdadero, incluyendo un error de diámetro.</li>
+        <li>Crear dos regiones con longitudes iniciales conocidas y deformaciones distintas; calcular strain sin convertirlo a módulo cuando el stress es desconocido.</li>
+        <li>Simular propagación de una onda de corte con c_s conocido y estimarla por pendiente tiempo-distancia bajo tres niveles de ruido.</li>
+        <li>Convertir c_s a μ y E solo para un fantoma ideal con densidad conocida y enumerar las hipótesis necesarias.</li>
+        <li>Introducir dispersión sintética haciendo c_s dependiente de frecuencia y demostrar que un único E deja de representar el modelo simulado.</li>
+        <li>Construir una estructura DICOM-like con una región B-mode, una región spectral Doppler y unidades físicas distintas; verificar que la conversión se aplica por región.</li>
+        <li>Construir una tabla final beamforming/Doppler/elastografía con input observado, estimator, output, unidades, ground truth disponible, perturbaciones y límite de transferencia.</li>
       </ul>
         <h4>Entregables</h4>
       <ul>
-        <li>Mapa conceptual corregido.</li>
-        <li>Explicación breve con una limitación explícita.</li>
+        <li>Generador versionado de array, reflectores, flujo y medio mecánico sintéticos.</li>
+        <li>Channel data y configuración original conservados como referencia inmutable.</li>
+        <li>Notebook o script de delay-and-sum con pruebas de velocidad del sonido, apertura y apodización.</li>
+        <li>Panel de point-spread functions, FWHM, sidelobes y errores de localización.</li>
+        <li>Conjunto plane-wave con ángulos, imágenes individuales, compounding y escenario de movimiento.</li>
+        <li>Dataset Doppler sintético con fD, PRF, ángulo, velocidad verdadera, velocidad estimada y condición de aliasing.</li>
+        <li>Análisis de sensibilidad angular y de error de diámetro sobre la estimación de flujo volumétrico.</li>
+        <li>Dataset de strain y shear-wave speed con ground truth, ruido y resultados de estimator.</li>
+        <li>Tabla de conversión m/s→kPa limitada explícitamente al fantoma ideal y análisis de dispersión que invalida la conversión simple.</li>
+        <li>Ficha DICOM-like y reporte final de máximo cuatro páginas que conecte adquisición, reconstrucción, cuantificación, incertidumbre y límites.</li>
       </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>Las relaciones tienen dirección.</li>
-        <li>No se confunde evidencia con interpretación.</li>
-        <li>La explicación conserva el mecanismo central.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Taller de evidencia: evaluación de flujo y rigidez tisular</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.</li>
-        <li>Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.</li>
-        <li>Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.</li>
-        <li>Conserva cálculos, decisiones, resultados negativos y cambios de versión.</li>
-        <li>Compara el resultado con un baseline o una explicación alternativa.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Construye una tabla de trazabilidad para beamforming, Doppler y elastografía.</li>
-        <li>Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.</li>
-        <li>Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.</li>
-        <li>Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.</li>
-        <li>Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.</li>
-        <li>Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Pipeline de imagen reproducible con informe cuantitativo.</li>
-        <li>Datos o premisas y procedimiento reproducible.</li>
-        <li>Registro de controles y discrepancias.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>Trazabilidad completa.</li>
-        <li>Controles discriminantes.</li>
-        <li>Procedimiento reproducible.</li>
-        <li>Conclusión proporcional a la evidencia.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Reto de transferencia y revisión por pares</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.</li>
-        <li>Intercambia el producto con otra persona o utiliza una lista de revisión independiente.</li>
-        <li>Registra hallazgos por severidad: crítico, importante o editorial.</li>
-        <li>Corrige el producto y conserva una tabla antes-después con justificación.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Transfiere el método a un caso distinto de evaluación de flujo y rigidez tisular y enumera supuestos que deben revalidarse.</li>
-        <li>Construye una explicación alternativa que también conecte beamforming, Doppler y elastografía.</li>
-        <li>Identifica una afirmación que exceda la evidencia y reescríbela.</li>
-        <li>Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.</li>
-        <li>Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Producto revisado.</li>
-        <li>Registro antes-después.</li>
-        <li>Rúbrica de transferencia.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>La revisión produce cambios verificables.</li>
-        <li>Las limitaciones son específicas.</li>
-        <li>La figura conserva unidades y procedencia.</li>
-        <li>La nueva pregunta no se responde por memorización.</li>
+        <li>El ground truth sintético queda separado de toda señal o imagen derivada.</li>
+        <li>Los channel data se distinguen de RF/IQ procesado y de B-mode renderizado.</li>
+        <li>DAS usa retardos coherentes con geometría y velocidad declaradas.</li>
+        <li>El error de velocidad del sonido produce un efecto medido y no una explicación únicamente verbal.</li>
+        <li>Apertura y f-number se registran por profundidad o configuración.</li>
+        <li>La comparación de apodización incluye lóbulo principal y al menos una medida de sidelobe.</li>
+        <li>Cada plane wave conserva su steering angle y no se mezcla antes del control individual.</li>
+        <li>El compounding móvil se compara contra un caso estático con el resto de variables constantes.</li>
+        <li>La ecuación Doppler conserva f0, c, θ y unidades antes de convertir fD en velocidad.</li>
+        <li>El informe declara que Doppler monohaz mide una componente proyectada del vector velocidad.</li>
+        <li>La sensibilidad a error angular se evalúa cuantitativamente y muestra su crecimiento cerca de 90°.</li>
+        <li>El límite de Nyquist se calcula a partir de PRF y el aliasing no se interpreta como inversión física de flujo.</li>
+        <li>Spectral, color-like y power-like outputs se mantienen conceptualmente separados.</li>
+        <li>El wall filter muestra explícitamente cualquier pérdida de señal de flujo lento.</li>
+        <li>Q≈v̄A se usa solo con área y definición de velocidad compatibles y se compara contra ground truth.</li>
+        <li>Strain se reporta como deformación y no se convierte a Young&#x27;s modulus sin stress conocido/modelo adecuado.</li>
+        <li>Shear-wave speed se estima en m/s antes de cualquier conversión mecánica.</li>
+        <li>La conversión E≈3ρc_s² enumera linealidad, elasticidad, homogeneidad, isotropía y casi incomprensibilidad.</li>
+        <li>La dispersión sintética se reconoce como violación del modelo elástico de módulo único.</li>
+        <li>Profundidad/ruido o ROI se perturban de manera controlada en la estimación de shear-wave speed.</li>
+        <li>La calibración DICOM-like aplica unidades por región y no usa una escala global inventada.</li>
+        <li>Atributos o parámetros ausentes se etiquetan como desconocidos en vez de inferirse desde apariencia.</li>
+        <li>MI, TI y ALARA se describen como conceptos de seguridad y no se convierten en instrucciones de exposición.</li>
+        <li>Cada conclusión separa verificación sintética, interpretación física, biomarcador potencial y validez clínica.</li>
+        <li>El paquete completo puede reejecutarse con la misma semilla y produce resultados compatibles.</li>
       </ul>
       </article>
     </section>
@@ -317,61 +421,74 @@
             <section class="common-errors">
         <h3>Errores frecuentes y corrección</h3>
         <ul class="rich-list">
-        <li><strong>Tratar beamforming como una etiqueta autosuficiente.</strong><p>Definir entidades, escala, relaciones, observables y condiciones antes de usar beamforming en una explicación.</p></li>
-        <li><strong>Afirmar que una relación entre beamforming y Doppler demuestra mecanismo o causalidad.</strong><p>Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones.</p></li>
-        <li><strong>Añadir elastografía después de ver el resultado.</strong><p>Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio.</p></li>
-        <li><strong>Presentar solo el resultado favorable y omitir controles o discrepancias.</strong><p>Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento.</p></li>
-        <li><strong>Generalizar la conclusión de Ultrasonido avanzado al uso clínico o real.</strong><p>Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.</p></li>
+        <li><strong>Llamar imagen raw al B-mode exportado.</strong><p>B-mode ya pasó por beamforming, detección y display; los datos de canal deben identificarse por separado.</p></li>
+        <li><strong>Creer que DAS siempre enfoca correctamente porque suma todos los elementos.</strong><p>Retardos, geometría, velocidad del sonido, apertura e interpolación condicionan la coherencia de la suma.</p></li>
+        <li><strong>Afirmar que una apertura mayor siempre mejora toda la imagen.</strong><p>El compromiso incluye directividad, sidelobes, grating lobes, profundidad y tarea.</p></li>
+        <li><strong>Interpretar apodización como reducción gratuita de ruido.</strong><p>Cambiar pesos modifica lóbulo principal y sidelobes; la respuesta espacial debe medirse.</p></li>
+        <li><strong>Suponer que más ángulos de plane-wave compounding siempre son mejores.</strong><p>Más transmisiones reducen resolución temporal efectiva y el movimiento puede romper coherencia.</p></li>
+        <li><strong>Elegir un beamformer porque produce una imagen más suave.</strong><p>La evaluación necesita ground truth sintético, métricas task-specific y mapas de diferencia.</p></li>
+        <li><strong>Tratar Doppler shift como velocidad directamente.</strong><p>La conversión depende de f0, c y cosθ y solo representa una componente proyectada en el modelo monohaz.</p></li>
+        <li><strong>Usar angle correction como si midiera el vector velocidad completo.</strong><p>Introduce una geometría estimada y su error se propaga a la velocidad calculada.</p></li>
+        <li><strong>Interpretar aliasing como cambio real de dirección del flujo.</strong><p>Aliasing es una ambigüedad de muestreo cuando el Doppler shift excede el rango representable.</p></li>
+        <li><strong>Confundir color Doppler con una fotografía directa del flujo.</strong><p>Es un mapa de estimadores procesados condicionado por PRF, ensemble, filtros y reglas de display.</p></li>
+        <li><strong>Asumir que power Doppler informa dirección igual que color Doppler.</strong><p>Power Doppler enfatiza energía de señal y no codifica dirección/velocidad de la misma forma.</p></li>
+        <li><strong>Subir el wall filter conceptualmente sin coste.</strong><p>Puede retirar clutter y también flujo lento, por lo que su efecto debe medirse.</p></li>
+        <li><strong>Calcular volume flow con peak velocity por Q=vA sin definir perfil.</strong><p>La aproximación necesita velocidad media representativa, área y sincronización compatibles.</p></li>
+        <li><strong>Llamar stiffness a cualquier mapa de strain.</strong><p>Strain mide deformación; sin stress o modelo adicional no entrega un módulo absoluto.</p></li>
+        <li><strong>Convertir automáticamente shear-wave speed en kPa.</strong><p>E≈3ρc_s² requiere supuestos mecánicos que pueden fallar en tejidos heterogéneos, anisotrópicos o viscoelásticos.</p></li>
+        <li><strong>Comparar m/s de un sistema con kPa de otro como escalas equivalentes.</strong><p>Primero debe conocerse el modelo de conversión, frecuencia, plataforma, ROI y condiciones de adquisición.</p></li>
+        <li><strong>Tratar un quality map de elastografía como ground truth.</strong><p>Es un indicador derivado del sistema y necesita validación independiente.</p></li>
+        <li><strong>Inventar unidades físicas de una imagen porque la escala visual parece conocida.</strong><p>Se usa calibración DICOM o procedencia explícita; si falta, la magnitud física se declara no recuperable.</p></li>
         </ul>
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Cuál es la unidad de observación adecuada para estudiar evaluación de flujo y rigidez tisular?</summary>
-        <p><strong>Respuesta:</strong> Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes.</p>
+        <summary>1. ¿Qué hace conceptualmente delay-and-sum?</summary>
+        <p><strong>Respuesta:</strong> Evalúa cada canal en el retardo esperado para una posición y suma las contribuciones, normalmente con pesos de apertura.</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿Cómo se relacionan beamforming y Doppler?</summary>
-        <p><strong>Respuesta:</strong> Mediante una relación con dirección, condición y evidencia verificable; elastografía puede modificar o contextualizar esa relación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Responder con una lista de definiciones sin explicar la relación.</p>
+        <summary>2. ¿Por qué una velocidad del sonido errónea afecta el foco?</summary>
+        <p><strong>Respuesta:</strong> Porque cambia los tiempos de vuelo usados para alinear canales y reduce coherencia o altera geometría.</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Qué dato apoya una afirmación sobre elastografía?</summary>
-        <p><strong>Respuesta:</strong> Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente.</p>
+        <summary>3. ¿Qué intercambio introduce coherent plane-wave compounding?</summary>
+        <p><strong>Respuesta:</strong> Más ángulos pueden mejorar calidad espacial, pero requieren más transmisiones, reducen resolución temporal efectiva y aumentan sensibilidad al movimiento.</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Qué hace que un control sea discriminante?</summary>
-        <p><strong>Respuesta:</strong> Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Añadir un control que no puede cambiar la interpretación.</p>
+        <summary>4. ¿Qué componente de velocidad estima un Doppler monohaz?</summary>
+        <p><strong>Respuesta:</strong> La proyección del vector velocidad sobre el eje del haz, relacionada con cosθ.</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Qué debe contener un resultado reproducible?</summary>
-        <p><strong>Respuesta:</strong> Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Entregar únicamente una figura final o un archivo ejecutado.</p>
+        <summary>5. ¿Por qué el error angular es crítico cerca de 90°?</summary>
+        <p><strong>Respuesta:</strong> Porque cosθ se acerca a cero y pequeños errores de θ producen grandes cambios relativos en la velocidad invertida.</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Cómo se informa una conclusión sensible a un supuesto?</summary>
-        <p><strong>Respuesta:</strong> Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Elegir el escenario que confirma la conclusión y ocultar los demás.</p>
+        <summary>6. ¿Qué causa aliasing en pulsed Doppler?</summary>
+        <p><strong>Respuesta:</strong> Que la frecuencia Doppler exceda el rango representable para la PRF, cuyo límite ideal de Nyquist es PRF/2.</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Qué afirmación no puede sostener esta unidad sobre evaluación de flujo y rigidez tisular?</summary>
-        <p><strong>Respuesta:</strong> Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir una actividad educativa o un caso simulado con validación real.</p>
+        <summary>7. ¿Qué diferencia power Doppler de spectral Doppler?</summary>
+        <p><strong>Respuesta:</strong> Power resume energía de señal espacialmente, mientras spectral Doppler muestra distribución de frecuencias/velocidades a lo largo del tiempo en un sample volume.</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿Qué demuestra dominio de Ultrasonido avanzado?</summary>
-        <p><strong>Respuesta:</strong> Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Equiparar dominio con reconocer términos o repetir una solución.</p>
+        <summary>8. ¿Qué representa strain?</summary>
+        <p><strong>Respuesta:</strong> Una deformación relativa adimensional respecto de una longitud de referencia.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>9. ¿Cuál es el output primario de shear-wave elastography más cercano a la observación?</summary>
+        <p><strong>Respuesta:</strong> La velocidad de propagación de la onda de corte, normalmente en m/s.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>10. ¿Cuándo puede usarse E≈3ρc_s²?</summary>
+        <p><strong>Respuesta:</strong> Como aproximación bajo supuestos de medio lineal, elástico, homogéneo, isotrópico y casi incompresible con densidad definida.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>11. ¿Qué aporta US Region Calibration en DICOM?</summary>
+        <p><strong>Respuesta:</strong> Describe regiones ultrasónicas y su relación con tipos de datos, coordenadas y unidades físicas específicas.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>12. ¿Qué demuestra recuperar exactamente una velocidad o c_s sintética?</summary>
+        <p><strong>Respuesta:</strong> Verifica la implementación bajo ese modelo y configuración; no demuestra exactitud clínica, biomarker validity ni seguridad de un examen real.</p>
       </details>
       </div>
     </section>
@@ -379,18 +496,59 @@
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
-        <li><strong>beamforming</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>Doppler</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>elastografía</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>Ultrasonido avanzado</strong><p>Dominio de estudio que integra beamforming, Doppler, elastografía para resolver un problema delimitado y verificable.</p></li>
-        <li><strong>Caso de aplicación</strong><p>Escenario de evaluación de flujo y rigidez tisular usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas.</p></li>
-        <li><strong>Unidad de observación</strong><p>Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse.</p></li>
-        <li><strong>Evidencia</strong><p>Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, seleccionada de acuerdo con la afirmación que se pretende sostener.</p></li>
-        <li><strong>Control</strong><p>Fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, utilizado para distinguir explicaciones o detectar fallos del procedimiento.</p></li>
-        <li><strong>Incertidumbre</strong><p>Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse.</p></li>
-        <li><strong>Validez</strong><p>Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas.</p></li>
-        <li><strong>Reproducibilidad</strong><p>Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes.</p></li>
-        <li><strong>Transferencia</strong><p>Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian.</p></li>
+        <li><strong>array transducer</strong><p>Transductor formado por múltiples elementos cuya excitación y recepción pueden controlarse para dirigir o enfocar acústicamente.</p></li>
+        <li><strong>channel data</strong><p>Señales temporales separadas por elemento antes del beamforming final.</p></li>
+        <li><strong>RF data</strong><p>Señal de radiofrecuencia ultrasónica que conserva oscilaciones rápidas antes de detección de envolvente.</p></li>
+        <li><strong>IQ data</strong><p>Representación compleja demodulada en componentes in-phase y quadrature.</p></li>
+        <li><strong>beamforming</strong><p>Proceso de combinar señales de múltiples elementos con retardos y pesos para estimar señal procedente de posiciones o direcciones.</p></li>
+        <li><strong>delay-and-sum</strong><p>Beamformer que alinea canales según retardos esperados y los suma, normalmente con pesos de apertura.</p></li>
+        <li><strong>transmit delay</strong><p>Retardo aplicado a elementos durante emisión para controlar frente de onda, foco o steering.</p></li>
+        <li><strong>receive delay</strong><p>Retardo usado al combinar ecos recibidos para enfocar dinámicamente una posición reconstruida.</p></li>
+        <li><strong>dynamic receive focusing</strong><p>Actualización de retardos y/o apertura de recepción conforme aumenta la profundidad del eco.</p></li>
+        <li><strong>aperture</strong><p>Conjunto y extensión efectiva de elementos activos en transmisión o recepción.</p></li>
+        <li><strong>f-number</strong><p>Relación entre profundidad focal y tamaño de apertura, usada para describir geometría de enfoque.</p></li>
+        <li><strong>apodization</strong><p>Ponderación espacial de elementos para modificar lóbulo principal y sidelobes.</p></li>
+        <li><strong>sidelobe</strong><p>Respuesta fuera del lóbulo principal que puede introducir señales de regiones no deseadas.</p></li>
+        <li><strong>grating lobe</strong><p>Lóbulo espacial asociado al muestreo periódico del array y a pitch/dirección, capaz de crear artefactos intensos.</p></li>
+        <li><strong>point-spread function</strong><p>Respuesta espacial del sistema a un reflector puntual ideal, dependiente de profundidad y configuración.</p></li>
+        <li><strong>FWHM</strong><p>Anchura a mitad de máximo usada como descriptor de la respuesta principal bajo una definición concreta.</p></li>
+        <li><strong>speed-of-sound error</strong><p>Desajuste entre velocidad real y asumida que altera tiempos, enfoque y geometría reconstruida.</p></li>
+        <li><strong>plane-wave imaging</strong><p>Adquisición con frente amplio no focalizado convencionalmente que permite reconstruir una región por transmisión.</p></li>
+        <li><strong>coherent compounding</strong><p>Combinación preservando fase de adquisiciones desde varios ángulos o emisiones.</p></li>
+        <li><strong>ultrafast ultrasound</strong><p>Estrategias de adquisición con alta tasa temporal, frecuentemente basadas en plane waves u otras transmisiones amplias.</p></li>
+        <li><strong>speckle</strong><p>Patrón granular de interferencia coherente de múltiples dispersores subresolución; no equivale simplemente a ruido electrónico.</p></li>
+        <li><strong>Doppler shift</strong><p>Cambio de frecuencia o fase asociado al movimiento relativo de dispersores respecto del haz.</p></li>
+        <li><strong>Doppler angle</strong><p>Ángulo entre la dirección del haz y el vector de movimiento usado en el modelo de conversión a velocidad.</p></li>
+        <li><strong>angle correction</strong><p>Uso de una estimación geométrica del ángulo para convertir Doppler shift en una velocidad bajo supuestos explícitos.</p></li>
+        <li><strong>PRF</strong><p>Pulse repetition frequency; tasa a la que se repiten pulsos o ensembles y que condiciona muestreo Doppler.</p></li>
+        <li><strong>Nyquist limit</strong><p>Mitad de la frecuencia de muestreo en el modelo uniforme, límite para representar una frecuencia sin aliasing.</p></li>
+        <li><strong>aliasing</strong><p>Ambigüedad de muestreo en la que una frecuencia fuera del rango representable aparece envuelta dentro de él.</p></li>
+        <li><strong>spectral Doppler</strong><p>Representación temporal de la distribución de frecuencias Doppler de un sample volume.</p></li>
+        <li><strong>color Doppler</strong><p>Mapa espacial de estimadores Doppler, típicamente relacionados con velocidad media y dirección, superpuesto a imagen anatómica.</p></li>
+        <li><strong>power Doppler</strong><p>Mapa relacionado con potencia/energía de señal Doppler, sensible a presencia de movimiento sin la misma codificación direccional que color Doppler.</p></li>
+        <li><strong>sample volume</strong><p>Región seleccionada de la que se estima una señal Doppler pulsada.</p></li>
+        <li><strong>wall filter</strong><p>Filtro destinado a reducir clutter de baja frecuencia que también puede atenuar flujo lento.</p></li>
+        <li><strong>ensemble length</strong><p>Número de observaciones Doppler utilizadas para estimar una magnitud, con compromiso entre precisión y resolución temporal.</p></li>
+        <li><strong>vector Doppler</strong><p>Familia de métodos multihaz que intenta estimar más de una componente del vector velocidad.</p></li>
+        <li><strong>volume flow</strong><p>Volumen de fluido que atraviesa una sección por unidad de tiempo; exige información compatible de velocidad y área.</p></li>
+        <li><strong>strain</strong><p>Deformación relativa, por ejemplo cambio de longitud dividido por longitud inicial.</p></li>
+        <li><strong>strain elastography</strong><p>Elastografía basada en estimar deformación ante una compresión o excitación mecánica.</p></li>
+        <li><strong>shear wave</strong><p>Onda mecánica transversal cuyo movimiento de partículas es principalmente perpendicular a la propagación.</p></li>
+        <li><strong>shear-wave elastography</strong><p>Elastografía que genera o sigue ondas de corte y estima su velocidad para inferir propiedades mecánicas bajo un modelo.</p></li>
+        <li><strong>shear-wave speed</strong><p>Velocidad de propagación de una onda de corte, normalmente reportada en m/s.</p></li>
+        <li><strong>shear modulus</strong><p>Módulo que relaciona esfuerzo cortante con deformación cortante en un modelo material.</p></li>
+        <li><strong>Young&#x27;s modulus</strong><p>Módulo que relaciona esfuerzo normal y strain en el régimen lineal de un modelo elástico.</p></li>
+        <li><strong>incompressibility assumption</strong><p>Aproximación de Poisson cercano a 0.5 usada para relacionar módulos en determinados tejidos/modelos.</p></li>
+        <li><strong>viscoelasticity</strong><p>Comportamiento con componentes elásticas y viscosas dependientes del tiempo o frecuencia.</p></li>
+        <li><strong>dispersion</strong><p>Dependencia de velocidad o propiedades de onda con la frecuencia.</p></li>
+        <li><strong>anisotropy</strong><p>Dependencia de una propiedad medida con la dirección de propagación u orientación del material.</p></li>
+        <li><strong>preload</strong><p>Carga mecánica presente antes o durante la medición y capaz de modificar strain o shear-wave estimates.</p></li>
+        <li><strong>quality map</strong><p>Mapa o índice auxiliar generado por un sistema para señalar confianza o calidad del tracking/estimación; no es ground truth.</p></li>
+        <li><strong>US Region Calibration</strong><p>Módulo DICOM que describe regiones ultrasónicas y su correspondencia con unidades o valores físicos.</p></li>
+        <li><strong>Mechanical Index</strong><p>Índice de salida asociado al potencial relativo de efectos mecánicos no térmicos bajo convenciones de seguridad de ultrasonido.</p></li>
+        <li><strong>Thermal Index</strong><p>Índice de salida relacionado con potencial de calentamiento bajo modelos definidos; no es una medición directa de temperatura tisular.</p></li>
+        <li><strong>ALARA</strong><p>Principio de mantener exposición acústica tan baja como razonablemente alcanzable mientras se obtiene la información necesaria.</p></li>
+        <li><strong>task-based evaluation</strong><p>Evaluación de un método respecto de una tarea definida en vez de depender solo de apariencia o una métrica global.</p></li>
       </ul>
     </section>
 
@@ -400,17 +558,31 @@
         <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
       </div>
       <ol class="rich-list advanced-sources">
-        <li><strong><a class="resource-link" href="https://docs.itk.org/" rel="noopener noreferrer">ITK documentation</a></strong><span class="course-tag">Insight Toolkit community · documentación</span></li>
-        <li><strong><a class="resource-link" href="https://www.nibib.nih.gov/science-education/science-topics" rel="noopener noreferrer">NIBIB Science Topics</a></strong><span class="course-tag">NIBIB · recurso oficial</span></li>
-        <li><strong><a class="resource-link" href="https://www.cancerimagingarchive.net/" rel="noopener noreferrer">The Cancer Imaging Archive</a></strong><span class="course-tag">National Cancer Institute · datos abiertos</span></li>
-        <li><strong><a class="resource-link" href="https://docs.monai.io/" rel="noopener noreferrer">MONAI documentation</a></strong><span class="course-tag">MONAI Consortium · documentación</span></li>
-        <li><strong><a class="resource-link" href="https://www.rsna.org/research/quantitative-imaging-biomarkers-alliance" rel="noopener noreferrer">QIBA</a></strong><span class="course-tag">Radiological Society of North America · iniciativa de calidad</span></li>
+        <li><strong><a class="resource-link" href="https://www.nibib.nih.gov/science-education/science-topics/ultrasound" rel="noopener noreferrer">Ultrasound</a></strong><span class="course-tag">National Institute of Biomedical Imaging and Bioengineering · official_overview</span></li>
+        <li><strong><a class="resource-link" href="https://www.nibib.nih.gov/taxonomy/term/25" rel="noopener noreferrer">Ultrasound: Diagnostic and Interventional</a></strong><span class="course-tag">National Institute of Biomedical Imaging and Bioengineering · official_program</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/34669073/" rel="noopener noreferrer">Advances in ultrasonography: image formation and quality assessment</a></strong><span class="course-tag">Journal of Medical Ultrasonics / PubMed · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/33360053/" rel="noopener noreferrer">So you think you can DAS? A viewpoint on delay-and-sum beamforming</a></strong><span class="course-tag">Ultrasonics / PubMed · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/38134514/" rel="noopener noreferrer">Comment on So you think you can DAS?</a></strong><span class="course-tag">Ultrasonics / PubMed · peer_reviewed_comment</span></li>
+        <li><strong><a class="resource-link" href="https://pubmed.ncbi.nlm.nih.gov/35839193/" rel="noopener noreferrer">Anatomic and Functional Imaging Using Row-Column Arrays</a></strong><span class="course-tag">IEEE TUFFC / PubMed · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7807840/" rel="noopener noreferrer">Essential notes on the physics of Doppler ultrasound</a></strong><span class="course-tag">Ultrasound / PMC · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6029191/" rel="noopener noreferrer">A Review of Medical Doppler Ultrasonography of Blood Flow</a></strong><span class="course-tag">Echocardiography / PMC · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4760583/" rel="noopener noreferrer">Recent developments in vascular ultrasound technology</a></strong><span class="course-tag">Ultrasound / PMC · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://qibawiki.rsna.org/index.php/Ultrasound_Measurement_of_Shear_Wave_Speed_for_Estimation_Liver_Fibrosis%2C_Clinically_Feasible_Profile" rel="noopener noreferrer">Ultrasound Measurement of Shear Wave Speed for Estimation Liver Fibrosis, Clinically Feasible Profile</a></strong><span class="course-tag">RSNA Quantitative Imaging Biomarkers Alliance · quantitative_imaging_profile</span></li>
+        <li><strong><a class="resource-link" href="https://qibawiki.rsna.org/images/1/18/QIBA_Summary_Abridged_Version_21Dec2023-B.pdf" rel="noopener noreferrer">QIBA Ultrasound Volume Blood Flow Profile summary</a></strong><span class="course-tag">RSNA Quantitative Imaging Biomarkers Alliance · quantitative_imaging_profile</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5973820/" rel="noopener noreferrer">Principles of Ultrasound Elastography</a></strong><span class="course-tag">Abdominal Radiology / PMC · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12266967/" rel="noopener noreferrer">Shear Wave Elastography Primer for the Abdominal Radiologist</a></strong><span class="course-tag">Radiographics / PMC · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8042759/" rel="noopener noreferrer">Towards a consensus on rheological models for elastography in soft tissues</a></strong><span class="course-tag">Physics in Medicine and Biology / PMC · peer_reviewed_consensus_review</span></li>
+        <li><strong><a class="resource-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5494870/" rel="noopener noreferrer">Current status of musculoskeletal application of shear wave elastography</a></strong><span class="course-tag">Ultrasonography / PMC · peer_reviewed_review</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_c.8.5.5.html" rel="noopener noreferrer">DICOM PS3.3 2026a — US Region Calibration Module</a></strong><span class="course-tag">DICOM Standards Committee · standard</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_a.6.4.html" rel="noopener noreferrer">DICOM PS3.3 — Ultrasound Image IOD Module Table</a></strong><span class="course-tag">DICOM Standards Committee · standard</span></li>
+        <li><strong><a class="resource-link" href="https://www.aium.org/resources/mus" rel="noopener noreferrer">Medical Ultrasound Safety</a></strong><span class="course-tag">American Institute of Ultrasound in Medicine · professional_safety_guidance</span></li>
+        <li><strong><a class="resource-link" href="https://www.fda.gov/media/71100/download" rel="noopener noreferrer">Marketing Clearance of Diagnostic Ultrasound Systems and Transducers</a></strong><span class="course-tag">U.S. Food and Drug Administration · regulatory_guidance</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Integrar beamforming, Doppler, elastografía para resolver un caso de evaluación de flujo y rigidez tisular con evidencia, controles, incertidumbre y comunicación proporcional. Conecta especialmente con Aplicación principal: Evaluación de flujo y rigidez tisular, Evidencia: Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, Calidad: Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias, Límite: Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria.</p>
+      <p>Reconstruir y auditar un pipeline avanzado de ultrasonido con datos exclusivamente sintéticos, conectando señales de elementos de un array con beamforming, imagen B-mode y adquisiciones ultrarrápidas; estimar flujo mediante Doppler con geometría, PRF y aliasing explícitos; diferenciar elastografía por deformación y por onda de corte; y conservar calibración, metadatos, incertidumbre y límites antes de interpretar velocidad, flujo o propiedades mecánicas como biomarcadores o afirmaciones clínicas. Conecta especialmente con Beamforming conecta física de arrays y procesamiento de señal con resolución espacial; un cambio de apertura o velocidad asumida puede propagarse a segmentación, radiomics y modelos de IA, Ultrafast plane-wave imaging muestra cómo aumentar resolución temporal habilita estimación de movimiento y ondas de corte, pero introduce nuevos compromisos de coherencia y reconstrucción, Doppler vincula frecuencia, geometría y hemodinámica; la dependencia angular y el aliasing ilustran por qué una variable fisiológica derivada necesita trazabilidad metrológica, Elastografía conecta adquisición ultrarrápida con mecánica de medios; shear-wave speed es un ejemplo de biomarcador cuantitativo cuyo significado depende del modelo constitutivo. Unidad educativa de ingeniería de imagen basada exclusivamente en datos, señales y fantomas sintéticos. No opera escáneres ni transductores clínicos, no expone personas o animales a ultrasonido, no selecciona potencia acústica, MI, TI, PRF, presets o protocolos para pacientes, no interpreta estudios clínicos, no diagnostica alteraciones vasculares o tisulares, no aplica cut-offs de elastografía y no recomienda tratamiento. Las ecuaciones Doppler y mecánicas son modelos con supuestos explícitos. U4 continúa con imagen nuclear cuantitativa y queda fuera del alcance de esta unidad.</p>
       <div class="page-actions"><a class="btn-link secondary" href="unidad-02.html">← Unidad 2: MRI avanzada</a><a class="btn-link" href="unidad-04.html">Unidad 4: Imagen nuclear cuantitativa →</a></div>
     </section>
     </article>
