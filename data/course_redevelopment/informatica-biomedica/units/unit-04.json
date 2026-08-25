@@ -6,387 +6,280 @@
   "slug": "analitica-y-apoyo-a-decisiones",
   "title": "Analítica y apoyo a decisiones",
   "status": "review",
-  "purpose": "Integrar cohortes, modelos, alertas y evaluación para resolver un caso de uso prudente de datos para mejorar atención con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Construir y evaluar de forma reproducible una cadena de analítica clínica y apoyo a decisiones con datos exclusivamente sintéticos: definir cohortes y tiempo cero sin fuga, estimar y validar probabilidades con discriminación y calibración, traducir predicciones a acciones mediante umbrales y utilidad explícita, integrar CDS en puntos concretos del workflow y medir su desempeño técnico y operativo sin confundir exactitud predictiva con beneficio clínico, adopción, seguridad o conformidad regulatoria.",
   "learning_objectives": [
-    "Definir cohortes, modelos y alertas y evaluación mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte cohortes con modelos y delimite el papel de alertas y evaluación.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre uso prudente de datos para mejorar atención con incertidumbre y límites.",
-    "Transferir el método de Analítica y apoyo a decisiones a un escenario nuevo y justificar qué debe revalidarse."
+    "Definir población objetivo, criterios de inclusión y exclusión, unidad de observación, tiempo cero, ventana de predicción y desenlace evitando fuga temporal, sesgo de selección y mezcla entre desarrollo y evaluación.",
+    "Distinguir descripción, inferencia causal y predicción, y construir un pipeline predictivo reproducible que preserve separación entre entrenamiento, validación interna y evaluación temporal o externa.",
+    "Evaluar modelos probabilísticos mediante discriminación, calibración, Brier score y métricas dependientes de umbral, explicando por qué AUROC, sensibilidad o precisión aisladas no determinan utilidad.",
+    "Traducir predicciones a una política de apoyo a decisiones mediante umbrales predefinidos, matriz de confusión, PPV/NPV, carga de alertas y análisis de beneficio neto con supuestos explícitos.",
+    "Diseñar un CDS sintético que entregue la información correcta a la persona, formato, canal y momento adecuados, y modelar su integración mediante artefactos como FHIR, CQL o CDS Hooks sin confundir interoperabilidad técnica con efectividad clínica.",
+    "Comparar evaluación offline, simulación, silent mode y evaluación prospectiva, definiendo métricas de proceso, seguridad y uso, límites del estudio y criterios de revalidación ante cambios de población, datos, modelo o workflow."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Analítica y apoyo a decisiones",
+      "heading": "Cohortes y tiempo: una predicción empieza antes del algoritmo",
       "paragraphs": [
-        "La unidad «Analítica y apoyo a decisiones» sitúa cohortes, modelos y alertas y evaluación dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Informática Biomédica, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Analítica y apoyo a decisiones» en Informática Biomédica, «cohortes», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Analítica y apoyo a decisiones», «modelos», aporta otra dimensión al problema de Informática Biomédica: Representaciones simplificadas de un sistema que conectan variables o mecanismos y permiten explicar, predecir o explorar escenarios. Su relación con cohortes debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Analítica y apoyo a decisiones» en Informática Biomédica, «alertas y evaluación», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Una cohorte para analítica clínica no es simplemente un conjunto de filas. Debe representar una población objetivo, una unidad de observación y un proceso de entrada al estudio. Antes de entrenar cualquier modelo se fijan criterios de elegibilidad, fuente de datos, ámbito asistencial y periodo temporal. Si la población de desarrollo no representa el uso previsto, la métrica final puede ser matemáticamente correcta y clínicamente irrelevante.",
+        "El tiempo cero define el instante desde el que una predicción sería emitida. A partir de él se separan una ventana de observación, que contiene únicamente información disponible antes de la decisión, y una ventana de predicción, donde se observa el desenlace. Una variable registrada después del tiempo cero, o calculada usando información posterior, produce fuga temporal aunque esté almacenada en la misma tabla.",
+        "La unidad de observación puede ser paciente, episodio, ingreso, visita, orden o medición. Múltiples observaciones de una misma persona no son independientes por defecto; dividirlas aleatoriamente entre entrenamiento y prueba puede hacer que el modelo reconozca patrones del mismo individuo. El esquema de partición debe respetar la estructura jerárquica y temporal del problema.",
+        "Los criterios de inclusión y exclusión determinan quién puede aparecer en los datos. Excluir casos por disponibilidad de una prueba, supervivencia suficiente o seguimiento completo puede crear selección condicionada por procesos posteriores al tiempo cero. El diagrama de cohorte debe conservar conteos, razones de exclusión y pérdidas para permitir auditar qué población terminó evaluándose.",
+        "Descripción, causalidad y predicción son preguntas distintas. Un predictor útil no tiene que ser una causa del desenlace y una asociación causal no garantiza poder predictivo individual. U4 se concentra en estimar riesgo o activar reglas de apoyo a decisiones; no convierte coeficientes del modelo en mecanismos fisiológicos ni efectos de tratamiento.",
+        "La evaluación temporal separa datos por fecha y pregunta si una estrategia desarrollada en un periodo conserva desempeño en otro. La evaluación externa cambia población, institución o sistema. Ambas aportan información de transferibilidad que una partición aleatoria interna no puede ofrecer por sí sola, pero ninguna demuestra automáticamente beneficio cuando el sistema se integra en atención real."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Analítica y apoyo a decisiones.",
-        "Relacionar cohortes, modelos y alertas y evaluación mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Definir tiempo cero antes de construir predictores evita fuga temporal.",
+        "La unidad de observación determina independencia, partición y nivel de inferencia.",
+        "Criterios de cohorte cambian población objetivo y validez de la evaluación.",
+        "Predicción, descripción e inferencia causal responden preguntas diferentes.",
+        "Separar personas y periodos evita contaminación entre desarrollo y evaluación.",
+        "Validación temporal o externa prueba transferencia bajo condiciones explícitas."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "Del riesgo estimado al modelo evaluable: discriminación, calibración y validación",
       "paragraphs": [
-        "Para «Analítica y apoyo a decisiones» dentro de Informática Biomédica, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Informática Biomédica, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre cohortes o modelos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Analítica y apoyo a decisiones», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Informática Biomédica, la incertidumbre de «Analítica y apoyo a decisiones» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Un modelo probabilístico produce una estimación de riesgo, no una decisión. Para un desenlace binario, discriminación describe cuánto ordena correctamente a individuos con y sin evento, mientras calibración compara probabilidades predichas con frecuencias observadas. Un AUROC alto puede coexistir con probabilidades sistemáticamente demasiado altas o bajas.",
+        "La calibración debe estudiarse a lo largo del rango de riesgo, no solo con un promedio. Calibration-in-the-large detecta desplazamiento global y la pendiente de calibración informa si las predicciones son demasiado extremas o demasiado comprimidas. Una curva suavizada permite localizar rangos donde el modelo sobreestima o subestima el riesgo.",
+        "El Brier score resume el error cuadrático medio de probabilidades para un desenlace binario y combina aspectos de calibración y resolución. Su valor depende de la prevalencia y no sustituye la inspección de calibración. Comparar Brier scores sin conservar población, horizonte y definición del desenlace puede ser engañoso.",
+        "Las métricas de clasificación aparecen solo después de elegir un umbral. Sensibilidad, especificidad, PPV y NPV describen consecuencias distintas. PPV y NPV dependen de la prevalencia o riesgo basal de la población; por ello, trasladar un umbral entre servicios o periodos puede cambiar la carga de falsos positivos aunque sensibilidad y especificidad permanezcan similares.",
+        "La validación interna estima optimismo y estabilidad dentro del conjunto de desarrollo mediante técnicas como bootstrap o validación cruzada correctamente anidada. La evaluación temporal o externa debe mantenerse separada del ajuste de hiperparámetros, selección de variables, recalibración y elección de umbral. Usar la prueba repetidamente para decidir el modelo convierte esa prueba en parte del desarrollo.",
+        "TRIPOD+AI enfatiza reporte transparente de modelos de predicción y su evaluación. En U4 se documentan población, predictores, manejo de datos faltantes, procedimiento de modelado, particiones, métricas e incertidumbre. El objetivo pedagógico no es imponer un algoritmo, sino hacer auditable qué se estimó y qué evidencia sostiene su desempeño."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "AUROC evalúa ordenamiento y no sustituye calibración de probabilidades.",
+        "La calibración se inspecciona en todo el rango de predicciones relevante.",
+        "Brier score complementa pero no reemplaza discriminación y calibración.",
+        "PPV y NPV cambian con el riesgo basal de la población.",
+        "La evaluación final debe permanecer fuera de selección y ajuste del modelo.",
+        "Reporte transparente permite auditar población, procedimiento y límites."
       ]
     },
     {
-      "heading": "Aplicación razonada: uso prudente de datos para mejorar atención",
+      "heading": "Umbrales y utilidad: convertir probabilidades en acciones sin esconder los costes",
       "paragraphs": [
-        "En la unidad «Analítica y apoyo a decisiones» de Informática Biomédica, el caso conductor es uso prudente de datos para mejorar atención. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Analítica y apoyo a decisiones» conecta cohortes con modelos y utiliza alertas y evaluación como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «uso prudente de datos para mejorar atención» en Informática Biomédica, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Analítica y apoyo a decisiones» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de uso prudente de datos para mejorar atención y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Un CDS necesita una política de acción: qué ocurre cuando el riesgo supera o no supera un umbral. El umbral no debe elegirse solo para maximizar accuracy, F1 o Youden. Representa un compromiso entre consecuencias de falsos negativos y falsos positivos, capacidad del sistema y preferencias relevantes para la decisión.",
+        "El valor predictivo positivo puede escribirse mediante sensibilidad, especificidad y prevalencia. La ecuación muestra por qué un mismo test o modelo puede generar una proporción muy distinta de alertas verdaderas al cambiar el contexto. Antes de desplegar una alerta se simula su carga esperada sobre la población objetivo y se reportan TP, FP, FN y TN.",
+        "El análisis de curvas de decisión expresa utilidad mediante beneficio neto para un rango de probabilidades umbral y compara el modelo con estrategias de referencia, como actuar sobre todos o sobre ninguno. El beneficio neto no descubre cuál debe ser el umbral clínico; evalúa consecuencias bajo umbrales cuyo significado debe justificarse externamente.",
+        "Una alerta puede ser técnicamente correcta y aun así ser inútil si llega demasiado tarde, a la persona equivocada o con una acción imposible. El modelo Five Rights de AHRQ obliga a especificar información, receptor, formato de intervención, canal y momento del workflow. Es una guía de diseño del CDS, no una garantía de efectividad.",
+        "La carga de alertas incluye cuántas se disparan, qué proporción son accionables, cuánto interrumpen y cómo se responden. Override rate o acceptance rate son métricas de comportamiento y no equivalen por sí solas a alert fatigue. La revisión sistemática de 2026 encontró gran inconsistencia en cómo se operacionaliza la fatiga de alertas, por lo que U4 evita diagnosticarla a partir de una tasa aislada.",
+        "Los criterios de aceptación se predefinen: rango de calibración admisible, sensibilidad mínima para un escenario sintético, límite de alertas por 100 episodios y condiciones de seguridad de la simulación. Si una política falla un criterio, se registra y se revisa el claim; no se mueve el umbral retrospectivamente hasta que el dashboard quede verde."
       ],
       "equations": [
         {
           "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
-          "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
-          }
+          "meaning": "Valor predictivo positivo en función de sensibilidad, especificidad y prevalencia para ilustrar dependencia del contexto.",
+          "variables": {"Se": "sensibilidad", "Sp": "especificidad", "\\pi": "prevalencia"}
+        },
+        {
+          "latex": "NB=\\frac{TP}{N}-\\frac{FP}{N}\\frac{p_t}{1-p_t}",
+          "meaning": "Beneficio neto de una política binaria a un umbral p_t; requiere que el umbral represente el intercambio entre consecuencias.",
+          "variables": {"TP": "verdaderos positivos", "FP": "falsos positivos", "N": "número de observaciones", "p_t": "probabilidad umbral"}
         }
       ],
       "key_points": [
-        "Delimitar el caso de uso prudente de datos para mejorar atención antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "El umbral representa consecuencias y capacidad, no una propiedad intrínseca del modelo.",
+        "PPV y carga de alertas dependen de prevalencia y política de acción.",
+        "Decision curve analysis evalúa utilidad para umbrales previamente interpretables.",
+        "Five Rights conecta contenido del CDS con persona, formato, canal y momento.",
+        "Override rate aislado no demuestra ni cuantifica automáticamente alert fatigue.",
+        "Los criterios de aceptación se fijan antes de observar el resultado final."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Arquitectura de CDS: del conocimiento computable al punto de workflow",
       "paragraphs": [
-        "La reproducibilidad de «Analítica y apoyo a decisiones» en Informática Biomédica requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Analítica y apoyo a decisiones» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Informática Biomédica separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Analítica y apoyo a decisiones» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de cohortes, modelos y alertas y evaluación debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Informática Biomédica.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre uso prudente de datos para mejorar atención. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Informática Biomédica como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Clinical decision support abarca recordatorios, order sets, recomendaciones, dashboards y alertas, no solo modelos de machine learning. AHRQ lo describe como información o conocimiento presentado de forma oportuna para informar decisiones. U4 separa el motor de lógica, los datos clínicos necesarios, el punto de activación y la presentación al usuario.",
+        "FHIR puede aportar representaciones estructuradas de datos clínicos y CDS Hooks define un patrón para invocar servicios de apoyo a decisiones desde eventos del workflow. La versión oficial publicada de CDS Hooks es 2.0.1; las versiones ballot posteriores se tratan como pre-release. Un hook indica contexto de workflow, no demuestra que el contenido clínico de una recomendación sea correcto.",
+        "Clinical Quality Language, CQL, proporciona una representación computable para lógica de calidad y CDS. Un artefacto computable requiere dependencias, versiones, value sets y modelo de datos explícitos. Que una expresión compile o ejecute contra FHIR no valida la evidencia clínica que codifica.",
+        "El servicio de CDS debe manejar datos ausentes, códigos inesperados, tiempos incompatibles y fallos de dependencia. En los ejercicios, una alerta no se dispara silenciosamente cuando falta un predictor crítico: el sistema produce un estado verificable como insufficient-data y registra qué dato faltó. Fallar de forma observable es parte de la seguridad técnica.",
+        "FDA publicó en enero de 2026 una guía final sobre Clinical Decision Support Software para aclarar su interpretación de funciones CDS en el marco regulatorio estadounidense. U4 usa esa fuente únicamente para mostrar que intended use, usuario y capacidad de revisar la base de la recomendación importan; no clasifica ejercicios, prototipos ni productos reales.",
+        "La arquitectura se prueba con casos sintéticos: paciente elegible, no elegible, predictor ausente, código no reconocido, timestamp futuro, riesgo justo por debajo y por encima del umbral. Estas pruebas verifican lógica y contratos de datos. La evaluación de interfaz, carga cognitiva y comportamiento humano se desarrolla específicamente en U5."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "CDS incluye reglas, recordatorios, order sets y modelos predictivos.",
+        "FHIR y CDS Hooks integran datos y eventos pero no validan contenido clínico.",
+        "CQL hace lógica computable y exige dependencias y versiones explícitas.",
+        "Datos ausentes deben producir estados observables y verificables del servicio.",
+        "Guías regulatorias se interpretan por jurisdicción y no clasifican prototipos educativos.",
+        "Casos sintéticos prueban contratos y lógica antes de cualquier evaluación humana."
+      ]
+    },
+    {
+      "heading": "Evaluar un CDS: de desempeño offline a efecto prospectivo",
+      "paragraphs": [
+        "La evaluación offline pregunta si una regla o modelo funciona sobre datos retrospectivos o sintéticos. Puede medir discriminación, calibración y rendimiento técnico, pero no observa cómo usuarios y entorno modifican el resultado. La simulación introduce escenarios y workflows controlados; silent mode ejecuta el CDS con datos reales sin mostrar recomendaciones al usuario, cuando un protocolo real y sus aprobaciones lo permiten.",
+        "Una evaluación prospectiva con CDS visible estudia el sistema como intervención sociotécnica. Debe medir no solo predicción, sino entrega correcta, acciones posteriores, tiempos, omisiones, overrides, eventos adversos y posibles efectos no previstos. DECIDE-AI enfatiza esta transición para sistemas de IA: desempeño in silico no equivale a beneficio durante uso clínico.",
+        "Las métricas se organizan por capa: integridad de datos y latencia; desempeño del modelo; firing rate y elegibilidad; presentación y respuesta; proceso asistencial; resultados y seguridad. Cambiar una capa puede mejorar una métrica y empeorar otra. Por ejemplo, subir el umbral reduce alertas pero también puede disminuir sensibilidad.",
+        "Las evaluaciones antes-después son vulnerables a cambios temporales, cointervenciones y aprendizaje institucional. Cuando el objetivo es estimar efecto, el diseño debe considerar comparadores apropiados, periodos, clusters o aleatorización cuando resulte ética y factible. U4 enseña a reconocer estos problemas, no a diseñar una investigación clínica real con pacientes.",
+        "El monitoreo posterior a una implementación real necesitaría vigilar deriva de población, prevalencia, datos, calibración, carga de alertas y cambios de workflow. Un cambio de versión de EHR, terminología, modelo o protocolo puede romper un supuesto aunque el código del modelo permanezca idéntico. La revalidación se vincula a la parte del claim afectada.",
+        "El dossier final de U4 termina con una tabla claim → evidencia → métrica → criterio → resultado → límite. Una persona externa debe poder reconstruir cohorte, tiempo cero, pipeline, umbral, eventos de CDS y métricas. Ninguna conclusión del ejercicio se extiende a atención real sin evaluación clínica, factores humanos, gobernanza y autorizaciones correspondientes."
+      ],
+      "key_points": [
+        "Offline, simulación, silent mode y uso visible responden preguntas diferentes.",
+        "Desempeño predictivo no equivale a efecto de una intervención CDS.",
+        "Las métricas se organizan por datos, modelo, entrega, uso y resultado.",
+        "Antes-después puede confundir intervención con tendencias y cointervenciones.",
+        "Cambios de población, software o workflow pueden exigir revalidación.",
+        "Cada claim final debe enlazar evidencia, criterio, resultado y límite."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "cohortes",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "modelos",
-      "definition": "Representaciones simplificadas de un sistema que conectan variables o mecanismos y permiten explicar, predecir o explorar escenarios."
-    },
-    {
-      "term": "alertas y evaluación",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Analítica y apoyo a decisiones",
-      "definition": "Dominio de estudio que integra cohortes, modelos, alertas y evaluación para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de uso prudente de datos para mejorar atención usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"Cohorte","definition":"Conjunto de unidades que satisfacen criterios de elegibilidad y seguimiento definidos para una pregunta."},
+    {"term":"Población objetivo","definition":"Población a la que se pretende aplicar la inferencia o predicción."},
+    {"term":"Unidad de observación","definition":"Entidad estadística sobre la que se registra un desenlace, como paciente, episodio o visita."},
+    {"term":"Tiempo cero","definition":"Instante en que se emitiría la predicción y a partir del cual empieza el horizonte; solo admite datos ya disponibles."},
+    {"term":"Ventana de observación","definition":"Periodo previo al tiempo cero del que pueden extraerse predictores."},
+    {"term":"Ventana de predicción","definition":"Periodo posterior al tiempo cero dentro del cual se define el desenlace."},
+    {"term":"Fuga temporal","definition":"Uso directo o indirecto de información que no estaría disponible en el momento real de predicción."},
+    {"term":"Sesgo de selección","definition":"Distorsión introducida cuando la inclusión o disponibilidad de datos depende de factores relacionados con predictores o desenlace."},
+    {"term":"Predicción","definition":"Estimación de un resultado futuro o no observado para una unidad individual."},
+    {"term":"Inferencia causal","definition":"Estimación del efecto de una intervención o exposición bajo supuestos causales; distinta de predicción."},
+    {"term":"Modelo probabilístico","definition":"Modelo cuya salida representa una probabilidad o riesgo estimado para un desenlace definido."},
+    {"term":"Discriminación","definition":"Capacidad de ordenar o separar unidades con diferentes desenlaces."},
+    {"term":"AUROC","definition":"Área bajo la curva ROC; medida de discriminación que no evalúa calibración ni utilidad por sí sola."},
+    {"term":"Calibración","definition":"Correspondencia entre probabilidades predichas y frecuencias observadas."},
+    {"term":"Calibration-in-the-large","definition":"Comparación de riesgo medio predicho y observado que detecta sesgo global de calibración."},
+    {"term":"Pendiente de calibración","definition":"Medida de dispersión de las predicciones respecto de los desenlaces; idealmente cercana a uno."},
+    {"term":"Curva de calibración","definition":"Representación de riesgo observado frente a predicho a lo largo del rango."},
+    {"term":"Brier score","definition":"Media del error cuadrático entre probabilidad predicha y desenlace binario observado."},
+    {"term":"Validación interna","definition":"Evaluación del optimismo y estabilidad dentro de los datos de desarrollo sin reutilizar la prueba final."},
+    {"term":"Validación temporal","definition":"Evaluación en un periodo posterior al utilizado para desarrollo."},
+    {"term":"Validación externa","definition":"Evaluación en una población, institución o entorno diferente al desarrollo."},
+    {"term":"Umbral de decisión","definition":"Probabilidad o puntuación a partir de la cual una política cambia de acción."},
+    {"term":"Sensibilidad","definition":"Proporción de eventos correctamente identificados entre quienes presentan el desenlace."},
+    {"term":"Especificidad","definition":"Proporción de no eventos correctamente identificados entre quienes no presentan el desenlace."},
+    {"term":"PPV","definition":"Proporción de clasificaciones positivas que corresponden a eventos; depende del contexto y prevalencia."},
+    {"term":"NPV","definition":"Proporción de clasificaciones negativas que corresponden a no eventos."},
+    {"term":"Matriz de confusión","definition":"Conteo de verdaderos positivos, falsos positivos, falsos negativos y verdaderos negativos para un umbral."},
+    {"term":"Beneficio neto","definition":"Métrica de análisis de decisiones que pondera verdaderos y falsos positivos según un umbral explícito."},
+    {"term":"Decision curve analysis","definition":"Evaluación del beneficio neto de una política basada en modelo frente a alternativas a lo largo de umbrales."},
+    {"term":"Clinical Decision Support","definition":"Función o sistema que presenta información o recomendaciones contextualizadas para apoyar una decisión de salud."},
+    {"term":"Five Rights","definition":"Modelo de AHRQ que considera información, persona, formato, canal y momento adecuados para CDS."},
+    {"term":"Alerta interruptiva","definition":"Intervención CDS que interrumpe el workflow y requiere atención o acción del usuario."},
+    {"term":"Alerta pasiva","definition":"Intervención CDS disponible en el workflow sin bloquear la tarea principal."},
+    {"term":"Firing rate","definition":"Frecuencia con la que una regla o servicio CDS se activa sobre oportunidades elegibles o unidades definidas."},
+    {"term":"Acceptance rate","definition":"Proporción de alertas o recomendaciones que reciben la acción definida como aceptación."},
+    {"term":"Override rate","definition":"Proporción de alertas descartadas, anuladas o no seguidas según una definición operacional."},
+    {"term":"Alert fatigue","definition":"Fenómeno relacionado con disminución de respuesta adecuada ante exceso o irrelevancia de alertas; no se infiere de una sola tasa."},
+    {"term":"CDS Hooks","definition":"Especificación HL7 para integrar servicios remotos de CDS con eventos definidos del workflow."},
+    {"term":"CQL","definition":"Clinical Quality Language, lenguaje HL7 para expresar lógica clínica y de calidad de forma computable."},
+    {"term":"Silent mode","definition":"Ejecución de un CDS sin mostrar su recomendación al usuario, usada en ciertos protocolos de evaluación."},
+    {"term":"Evaluación prospectiva","definition":"Evaluación planificada en datos o uso futuro respecto del momento en que se define el protocolo."},
+    {"term":"Drift","definition":"Cambio de población, prevalencia, entradas o relación predictor-desenlace que puede alterar desempeño."},
+    {"term":"Recalibración","definition":"Actualización de la relación entre predicciones y riesgo observado."},
+    {"term":"Contexto de uso","definition":"Descripción del usuario, decisión, población y condiciones para las que se pretende emplear una herramienta."},
+    {"term":"Claim técnico","definition":"Afirmación delimitada que puede vincularse a datos, métricas, criterios y evidencia."},
+    {"term":"Trazabilidad","definition":"Capacidad de reconstruir cohortes, datos, versiones, lógica, parámetros y decisiones que produjeron una salida."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Analítica y apoyo a decisiones",
-      "scenario": "Un equipo propone estudiar uso prudente de datos para mejorar atención, pero su pregunta mezcla cohortes, modelos y alertas y evaluación sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de cohortes, modelos y alertas y evaluación.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-      ]
+      "title":"Cohorte de deterioro sintético sin fuga temporal",
+      "scenario":"Se simulan 8.000 episodios con signos vitales horarios y un desenlace de deterioro dentro de las 12 horas posteriores a un tiempo cero definido.",
+      "reasoning_steps":["Fijar tiempo cero en una hora elegible y prohibir variables registradas después.","Agrupar todas las observaciones del mismo paciente en una sola partición.","Comparar split aleatorio por fila con split temporal por periodo.","Identificar variables que codifican implícitamente acciones posteriores al deterioro.","Reportar AUROC y calibración únicamente sobre la evaluación que preserva cronología."],
+      "interpretation":"Una caída de desempeño tras eliminar fuga es evidencia de que la evaluación anterior era optimista, no de que el modelo corregido sea peor científicamente.",
+      "limitations":["Datos completamente sintéticos.","No representa un servicio clínico real.","No autoriza triage ni monitorización de pacientes."]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre cohortes y modelos en el caso de uso prudente de datos para mejorar atención; una condición vinculada con alertas y evaluación podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar alertas y evaluación como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title":"Modelo bien discriminativo pero mal calibrado",
+      "scenario":"Un modelo sintético obtiene AUROC 0,84 pero sobreestima riesgo en casi todo el rango alto.",
+      "reasoning_steps":["Graficar curva de calibración y comparar con la diagonal.","Estimar calibration-in-the-large y pendiente.","Comparar Brier score antes y después de una recalibración hecha solo con datos permitidos.","Mantener intacto el conjunto externo final.","Mostrar cómo un umbral fijo produce distinta carga de alertas antes y después de recalibrar."],
+      "interpretation":"Buena discriminación no vuelve correctas las probabilidades; una política dependiente de riesgo necesita calibración relevante para su contexto.",
+      "limitations":["Ejemplo binario simplificado.","Recalibración no corrige variables omitidas ni drift estructural.","No demuestra utilidad clínica."]
+    },
+    {
+      "title":"Umbral y carga de alertas",
+      "scenario":"Una cohorte sintética tiene prevalencia del 6 %. Dos umbrales producen sensibilidades similares pero cantidades de falsos positivos muy diferentes.",
+      "reasoning_steps":["Construir matrices de confusión para ambos umbrales.","Calcular PPV y alertas por 100 episodios.","Comparar el impacto operativo de los falsos positivos.","Calcular beneficio neto en un rango de umbrales hipotéticos.","Elegir una política solo para el escenario sintético y declarar los costes asumidos."],
+      "interpretation":"El umbral óptimo no sale de AUROC: depende de consecuencias, capacidad y contexto.",
+      "limitations":["Los costes son hipotéticos.","No contiene preferencias reales de pacientes o clínicos.","No recomienda un umbral asistencial."]
+    },
+    {
+      "title":"CDS Hooks sintético con datos faltantes",
+      "scenario":"Un servicio de CDS simulado se invoca en patient-view y calcula una recomendación solo si existen edad, timestamp y dos variables sintéticas requeridas.",
+      "reasoning_steps":["Definir el hook y el contexto esperado.","Validar presencia, tipo y tiempo de cada predictor.","Probar paciente elegible y no elegible.","Probar predictor ausente y timestamp futuro.","Registrar una respuesta explícita de datos insuficientes en lugar de producir una recomendación silenciosa."],
+      "interpretation":"Interoperabilidad y ejecución correcta del hook son prerrequisitos técnicos, no evidencia de que la recomendación sea clínicamente correcta.",
+      "limitations":["No conecta con EHR real.","No usa datos de pacientes.","No evalúa interfaz ni conducta de usuarios."]
+    },
+    {
+      "title":"Offline frente a evaluación prospectiva",
+      "scenario":"Un CDS sintético muestra buen desempeño offline; se diseña una simulación de workflow que introduce latencia y una tasa de entrega incompleta.",
+      "reasoning_steps":["Separar métricas de modelo, entrega y respuesta.","Calcular cuántas oportunidades elegibles reciben realmente el CDS.","Introducir un fallo de dependencia y medir degradación.","Comparar estrategia visible con una fase simulada tipo silent mode.","Redactar qué preguntas seguirían requiriendo evaluación clínica real."],
+      "interpretation":"La efectividad potencial de un CDS depende de una cadena sociotécnica; la métrica offline es necesaria pero insuficiente.",
+      "limitations":["Simulación sin usuarios reales.","No estima resultados de salud.","No sustituye estudio prospectivo aprobado."]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
-      "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
-      ],
-      "problems": [
-        "Define cohortes mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo modelos modifica o complementa a cohortes.",
-        "Propón una prueba que distinga el papel de alertas y evaluación de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
-      ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
-      ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: uso prudente de datos para mejorar atención",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para cohortes, modelos y alertas y evaluación.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de uso prudente de datos para mejorar atención y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte cohortes, modelos y alertas y evaluación.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
-      ]
+      "title":"Pipeline reproducible de cohorte, modelo probabilístico y CDS sintético",
+      "estimated_time_minutes":420,
+      "instructions":["Define una pregunta predictiva educativa, población objetivo, unidad de observación, tiempo cero, ventana de observación, horizonte y desenlace.","Genera o usa únicamente datos sintéticos con timestamps suficientes para auditar temporalidad.","Construye un diagrama de cohorte con inclusión, exclusión y conteos.","Separa desarrollo, validación interna y evaluación temporal o externa antes de ajustar el modelo.","Implementa un baseline interpretable y un modelo candidato sin fuga de preprocesamiento.","Evalúa discriminación, calibración y Brier score con incertidumbre básica.","Predefine al menos dos umbrales sintéticos y calcula matriz de confusión, PPV, NPV y carga de alertas.","Calcula una curva de beneficio neto para un rango de umbrales hipotéticos y declara sus supuestos.","Diseña el CDS con Five Rights e identifica un hook o punto de workflow simulado.","Implementa casos de prueba para elegibilidad, datos ausentes, código inválido, tiempo futuro y riesgo en ambos lados del umbral.","Define una evaluación offline y una simulación o silent-mode conceptual con métricas por capa.","Versiona datos, diccionario, código, configuración, modelo, umbral y reglas de CDS y redacta límites."],
+      "problems":["Define por escrito tiempo cero y detecta tres ejemplos de fuga temporal.","Explica por qué dividir filas del mismo paciente entre train y test puede inflar desempeño.","Construye un diagrama de inclusión/exclusión y calcula la fracción final de la cohorte.","Compara prevalencia entre desarrollo y evaluación temporal.","Entrena un baseline y conserva el conjunto final sin usarlo para tuning.","Calcula AUROC y explica qué no informa.","Construye una curva de calibración y localiza un rango de sobreestimación.","Calcula Brier score y compáralo con un predictor de riesgo basal.","Construye dos matrices de confusión a umbrales distintos.","Calcula PPV y NPV y explica su dependencia con prevalencia.","Expresa carga de alertas por 100 episodios y número de falsos positivos.","Calcula beneficio neto para al menos cinco umbrales hipotéticos.","Compara modelo, actuar sobre todos y actuar sobre ninguno en la curva de decisión.","Mapea el CDS a los Five Rights de AHRQ.","Define un request/response sintético de CDS Hooks o contrato equivalente.","Prueba datos ausentes y verifica que no se produzca una recomendación inventada.","Define firing, acceptance y override con denominadores explícitos.","Explica por qué override rate aislado no operacionaliza alert fatigue.","Construye un escenario de drift de prevalencia y evalúa calibración y PPV.","Diseña un plan de revalidación tras cambio de modelo, terminología o workflow.","Separa métricas offline, de entrega, comportamiento y resultados.","Redacta un claim proporcional y una lista de preguntas no respondidas."],
+      "deliverables":["Protocolo de cohorte y diagrama temporal.","Diccionario de datos sintéticos y reglas de procedencia.","Pipeline reproducible de baseline y modelo candidato.","Informe de discriminación, calibración y Brier score.","Tabla de umbrales, matrices de confusión y carga de alertas.","Curva de decisión con supuestos de beneficio neto.","Especificación de CDS con Five Rights y punto de workflow.","Suite de casos sintéticos y manejo de errores.","Plan de evaluación offline, simulada y prospectiva por capas.","Informe final versionado con claims, límites y plan de revalidación."],
+      "checking_criteria":["Tiempo cero y ventanas están definidos antes de extraer predictores.","No existe información posterior al tiempo cero entre predictores.","Las unidades relacionadas no contaminan particiones incompatibles.","El conjunto final no se utiliza para selección ni tuning.","Baseline y candidato usan el mismo desenlace y evaluación.","AUROC no se presenta como evidencia de calibración.","La calibración se inspecciona a lo largo del rango.","Brier score se interpreta en contexto y no como única métrica.","Los umbrales se definen antes de la evaluación final.","PPV y NPV conservan denominadores y prevalencia.","La carga de alertas se expresa con unidad operacional.","Decision curve se compara con estrategias de referencia.","Five Rights identifica información, persona, formato, canal y momento.","El contrato del CDS declara datos requeridos y estados de error.","Datos ausentes no generan recomendaciones silenciosamente.","Firing, acceptance y override tienen denominadores explícitos.","Alert fatigue no se infiere de una sola métrica.","El escenario de drift obliga a reevaluar calibración o política.","El plan distingue offline, simulación, silent mode y evaluación visible.","Los claims técnicos no se convierten en beneficio clínico demostrado.","Versiones de datos, lógica, modelo y umbral son recuperables.","El informe no contiene datos identificables ni recomendaciones para pacientes."]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar cohortes como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar cohortes en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre cohortes y modelos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir alertas y evaluación después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Analítica y apoyo a decisiones al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"error":"Elegir la cohorte después de mirar el desenlace.","correction":"Predefinir elegibilidad y conservar un diagrama auditable."},
+    {"error":"Usar resultados posteriores al tiempo cero como predictores.","correction":"Construir una línea temporal y bloquear toda información futura."},
+    {"error":"Dividir por filas cuando existen múltiples episodios del mismo paciente.","correction":"Agrupar por identidad o jerarquía según la pregunta."},
+    {"error":"Interpretar un predictor como causa.","correction":"Separar explícitamente objetivo predictivo de inferencia causal."},
+    {"error":"Usar AUROC como sinónimo de buen modelo clínico.","correction":"Añadir calibración, umbrales, utilidad y contexto."},
+    {"error":"Comprobar calibración solo con deciles.","correction":"Incluir una curva suavizada a lo largo del rango."},
+    {"error":"Elegir el umbral sobre el conjunto de prueba final.","correction":"Predefinirlo o seleccionarlo dentro del desarrollo."},
+    {"error":"Tratar PPV como propiedad fija del modelo.","correction":"Reportarlo con prevalencia y población objetivo."},
+    {"error":"Maximizar accuracy sin modelar consecuencias.","correction":"Vincular umbral a falsos positivos, falsos negativos y capacidad."},
+    {"error":"Usar decision curve para descubrir el umbral correcto.","correction":"Evaluar beneficio neto sobre umbrales cuyo significado ya está justificado."},
+    {"error":"Asumir que una alerta interruptiva siempre es mejor.","correction":"Elegir formato y momento según Five Rights y pregunta de workflow."},
+    {"error":"Inferir alert fatigue solo por override rate alto.","correction":"Definir el fenómeno operacionalmente y usar métricas longitudinales apropiadas."},
+    {"error":"Hacer que datos ausentes equivalgan a riesgo cero.","correction":"Emitir un estado de datos insuficientes y registrarlo."},
+    {"error":"Confundir ejecución de CDS Hooks con validación clínica.","correction":"Separar interoperabilidad técnica de evidencia de contenido y efecto."},
+    {"error":"Considerar que CQL compilado es conocimiento validado.","correction":"Versionar la evidencia y validar la lógica por separado."},
+    {"error":"Confundir validación externa con evaluación prospectiva de impacto.","correction":"Distinguir precisión predictiva en nuevos datos de efecto del CDS visible."},
+    {"error":"Atribuir un cambio antes-después al CDS sin considerar tendencias.","correction":"Analizar cointervenciones, periodo y comparador."},
+    {"error":"Mantener el mismo claim tras cambiar EHR, modelo o terminología.","correction":"Revisar qué supuesto cambió y revalidar la parte afectada."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar uso prudente de datos para mejorar atención?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan cohortes y modelos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; alertas y evaluación puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre alertas y evaluación?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre uso prudente de datos para mejorar atención?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Analítica y apoyo a decisiones?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question":"¿Qué es tiempo cero?","answer":"El instante en que se emitiría la predicción y a partir del cual empieza el horizonte.","reasoning":"Permite decidir qué datos estaban realmente disponibles.","common_error":"Definirlo después de construir features."},
+    {"question":"¿Por qué AUROC no basta?","answer":"Porque evalúa discriminación, no calibración, umbral, utilidad ni workflow.","reasoning":"Un modelo puede ordenar bien y asignar probabilidades incorrectas.","common_error":"Llamar clínicamente útil a un AUROC alto."},
+    {"question":"¿Qué es calibración?","answer":"Correspondencia entre riesgo predicho y frecuencia observada a lo largo del rango.","reasoning":"Las probabilidades se usan para decisiones solo si su significado se conserva.","common_error":"Confundirla con sensibilidad."},
+    {"question":"¿De qué depende PPV?","answer":"De sensibilidad, especificidad y prevalencia o riesgo basal.","reasoning":"El contexto cambia cuántos positivos son verdaderos.","common_error":"Tratar PPV como constante del algoritmo."},
+    {"question":"¿Qué representa un umbral?","answer":"Una política de acción que implica un intercambio entre consecuencias.","reasoning":"No es una propiedad natural de la puntuación.","common_error":"Elegirlo solo por accuracy."},
+    {"question":"¿Qué aporta decision curve analysis?","answer":"Compara beneficio neto de políticas a lo largo de umbrales interpretables.","reasoning":"Integra consecuencias mediante el umbral.","common_error":"Usarla para inventar el umbral clínico."},
+    {"question":"¿Qué son los Five Rights?","answer":"Información, persona, formato, canal y momento adecuados para CDS.","reasoning":"Conectan contenido con workflow.","common_error":"Reducirlos a precisión del modelo."},
+    {"question":"¿Qué diferencia firing rate y acceptance rate?","answer":"Firing describe activaciones; acceptance describe una respuesta definida entre alertas aplicables.","reasoning":"Necesitan denominadores diferentes.","common_error":"Reportar porcentajes sin denominador."},
+    {"question":"¿Por qué override rate no demuestra alert fatigue?","answer":"Porque un override puede ser apropiado y la fatiga requiere una definición operacional temporal y contextual.","reasoning":"La evidencia muestra heterogeneidad de medición.","common_error":"Etiquetar cualquier override como fatiga."},
+    {"question":"¿Qué prueba CDS Hooks?","answer":"Un patrón técnico de integración de servicios CDS con eventos de workflow.","reasoning":"No valida el contenido clínico de la recomendación.","common_error":"Confundir interoperabilidad con efectividad."},
+    {"question":"¿Qué distingue validación externa de impacto prospectivo?","answer":"La primera evalúa predicción en nuevos datos; la segunda estudia efectos del sistema usado en un entorno real.","reasoning":"Son niveles de evidencia distintos.","common_error":"Llamar prospectivo a cualquier test futuro."},
+    {"question":"¿Qué obliga a revalidar?","answer":"Un cambio que pueda afectar población, datos, calibración, lógica, umbral o workflow del claim.","reasoning":"La revalidación debe dirigirse al supuesto modificado.","common_error":"No revalidar porque el código del modelo no cambió."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Uso prudente de datos para mejorar atención."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"topic":"Deterioro clínico temprano","connection":"Permite practicar cohortes temporales, calibración y carga de alertas sin convertir un score sintético en sistema de triage."},
+    {"topic":"Seguridad de medicación","connection":"Las alertas de interacción ilustran precisión, relevancia, override y carga; su evaluación requiere algo más que contar alertas."},
+    {"topic":"Laboratorio clínico","connection":"Resultados y tendencias pueden activar CDS, pero timestamps, unidades y disponibilidad real condicionan cohortes y reglas."},
+    {"topic":"Predicción de readmisión","connection":"Ilustra separación por episodio o persona, calibración temporal y diferencia entre riesgo estimado y decisión de intervención."},
+    {"topic":"Oncología y modelos pronósticos","connection":"Permite comparar discriminación, calibración y decision curves sin inferir efecto de un tratamiento a partir de predicción."},
+    {"topic":"IA clínica integrada al EHR","connection":"DECIDE-AI y CDS Hooks ayudan a separar evaluación del algoritmo, integración técnica, interacción humana y efecto prospectivo."}
   ],
   "sources": [
-    {
-      "title": "WHO Digital Health",
-      "organization": "World Health Organization",
-      "url": "https://www.who.int/health-topics/digital-health",
-      "type": "recurso institucional",
-      "description": "Estrategia, gobernanza y equidad en salud digital.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos clínicos y fisiológicos para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "UMLS",
-      "organization": "National Library of Medicine",
-      "url": "https://www.nlm.nih.gov/research/umls/",
-      "type": "sistema terminológico",
-      "description": "Integración y correspondencia entre vocabularios biomédicos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Privacy Framework",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/privacy-framework",
-      "type": "marco oficial",
-      "description": "Gestión de riesgos de privacidad en sistemas de información.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"Clinical Decision Support Five Rights Model","organization":"Agency for Healthcare Research and Quality","url":"https://www.ahrq.gov/ncepcr/reports/primary-care-research/results.html","type":"guía institucional","description":"Define el modelo Five Rights para diseño contextual de CDS.","verification_status":"verified_directly"},
+    {"title":"Clinical Decision Support","organization":"Agency for Healthcare Research and Quality","url":"https://www.ahrq.gov/cpi/about/otherwebsites/clinical-decision-support/index.html","type":"recurso institucional","description":"Describe formas y propósito del clinical decision support.","verification_status":"verified_directly"},
+    {"title":"CDS Hooks Specification v2.0.1","organization":"HL7 International","url":"https://cds-hooks.hl7.org/STU2/","type":"estándar trial-use","description":"Versión oficial publicada para integración de servicios CDS con workflow.","verification_status":"verified_directly"},
+    {"title":"Clinical Quality Language Specification v2.0.0","organization":"HL7 International","url":"https://cql.hl7.org/","type":"estándar","description":"Lenguaje computable para lógica de calidad y CDS.","verification_status":"verified_directly"},
+    {"title":"Clinical Reasoning — CDS on FHIR","organization":"HL7 International","url":"https://www.hl7.org/fhir/clinicalreasoning-cds-on-fhir.html","type":"documentación FHIR","description":"Describe integración de artefactos de razonamiento clínico y CDS.","verification_status":"verified_directly"},
+    {"title":"Clinical Decision Support Software Guidance","organization":"US Food and Drug Administration","url":"https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software","type":"guía regulatoria","description":"Guía final de enero de 2026 sobre funciones CDS en el marco estadounidense.","verification_status":"verified_directly"},
+    {"title":"TRIPOD+AI statement","organization":"TRIPOD+AI Group","url":"https://www.bmj.com/content/385/bmj-2023-078378","type":"guía de reporte","description":"Recomendaciones actualizadas de reporte para modelos de predicción con regresión o machine learning.","verification_status":"verified_directly"},
+    {"title":"Developing clinical prediction models: a step-by-step guide","organization":"BMJ","url":"https://www.bmj.com/content/386/bmj-2023-078276","type":"tutorial metodológico","description":"Desarrollo, calibración, validación y decision curve analysis de modelos clínicos.","verification_status":"verified_directly"},
+    {"title":"Evaluation of clinical prediction models (part 1)","organization":"BMJ","url":"https://www.bmj.com/content/384/bmj-2023-074819","type":"tutorial metodológico","description":"Define calibración y transición del desarrollo a validación externa.","verification_status":"verified_directly"},
+    {"title":"Evaluation of clinical prediction models (part 2)","organization":"BMJ","url":"https://www.bmj.com/content/384/bmj-2023-074820","type":"tutorial metodológico","description":"Evaluación externa, calibración a lo largo del rango y decision curves.","verification_status":"verified_directly"},
+    {"title":"Net benefit approaches to the evaluation of prediction models","organization":"BMJ","url":"https://www.bmj.com/content/352/bmj.i6","type":"tutorial metodológico","description":"Fundamentos de beneficio neto y curvas de decisión.","verification_status":"verified_directly"},
+    {"title":"DECIDE-AI","organization":"DECIDE-AI expert group","url":"https://www.nature.com/articles/s41591-022-01772-9","type":"guía de reporte","description":"Guía para evaluación clínica temprana de sistemas de apoyo a decisiones impulsados por IA.","verification_status":"verified_directly"},
+    {"title":"Alert fatigue measurement in clinical decision support: a systematic review","organization":"Journal of the American Medical Informatics Association","url":"https://pubmed.ncbi.nlm.nih.gov/42148822/","type":"revisión sistemática 2026","description":"Muestra heterogeneidad de definiciones y métricas de alert fatigue.","verification_status":"verified_directly"},
+    {"title":"Override rate of drug-drug interaction alerts in clinical decision support systems","organization":"Health Informatics Journal","url":"https://pubmed.ncbi.nlm.nih.gov/38899788/","type":"revisión sistemática y metaanálisis","description":"Resume altas tasas de override y heterogeneidad en alertas de interacción.","verification_status":"verified_directly"},
+    {"title":"Appropriateness of Overridden Alerts in Computerized Physician Order Entry","organization":"PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/32706721/","type":"revisión sistemática","description":"Analiza tasas, razones y adecuación de overrides.","verification_status":"verified_directly"},
+    {"title":"Addressing Alert Fatigue by Replacing a Burdensome Interruptive Alert with Passive CDS","organization":"Applied Clinical Informatics","url":"https://pubmed.ncbi.nlm.nih.gov/38086417/","type":"estudio aplicado","description":"Ejemplo de cambio de diseño interruptivo a CDS pasivo y evaluación de carga.","verification_status":"verified_directly"},
+    {"title":"BEST Biomarkers, EndpointS, and other Tools Resource","organization":"FDA-NIH Biomarker Working Group","url":"https://www.ncbi.nlm.nih.gov/books/NBK338448/","type":"recurso terminológico","description":"Útil para distinguir biomarcadores y contexto de uso en ejemplos predictivos.","verification_status":"verified_directly"},
+    {"title":"Reports on Non-Device Software Functions","organization":"US Food and Drug Administration","url":"https://www.fda.gov/about-fda/cdrh-reports/reports-non-device-software-functions","type":"recurso regulatorio","description":"Contextualiza riesgos y beneficios de ciertas funciones de software sanitario no dispositivo.","verification_status":"verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo de informática biomédica con cohortes, predicciones y alertas construidas exclusivamente a partir de datos sintéticos o ejemplos públicos no identificables. No interpreta historias clínicas reales, no diagnostica, prescribe, prioriza pacientes ni recomienda tratamientos; no sustituye validación clínica, evaluación prospectiva, análisis de factores humanos, revisión ética, gestión de riesgos ni requisitos regulatorios. Las referencias FDA se usan para delimitar conceptos y jurisdicciones, no para clasificar un producto concreto."
 }
