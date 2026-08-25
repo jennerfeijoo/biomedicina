@@ -1,4 +1,4 @@
-# User-authored CI trigger after public synchronization; U6 academic content unchanged.
+# Final user-authored trigger after publication metadata synchronization; U6 content unchanged.
 from __future__ import annotations
 
 import json
