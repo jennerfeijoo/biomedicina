@@ -21,11 +21,16 @@ class EconomiaGestionEmpresasUnit04CuratedTests(unittest.TestCase):
         self.assertEqual(self.unit["unit"], 4)
         self.assertEqual(self.unit["status"], "review")
 
-    def test_cross_domain_contamination_and_generic_template_are_removed(self):
+    def test_cross_domain_definition_and_generic_template_are_removed(self):
         text = SOURCE.read_text(encoding="utf-8").casefold()
         self.assertNotIn(GENERIC, text)
-        self.assertNotIn("píxeles", text)
-        self.assertNotIn("vóxeles", text)
+        glossary = {entry["term"].casefold(): entry["definition"].casefold() for entry in self.unit["glossary"]}
+        market_definition = glossary["segmentación de mercado"]
+        self.assertNotIn("píxeles", market_definition)
+        self.assertNotIn("vóxeles", market_definition)
+        self.assertIn("grupos", market_definition)
+        theory = " ".join(p for section in self.unit["theory_sections"] for p in section["paragraphs"]).casefold()
+        self.assertIn("no significa etiquetar píxeles ni vóxeles", theory)
         for concept in (
             "segmentación de mercado",
             "segmento objetivo",
@@ -110,7 +115,7 @@ class EconomiaGestionEmpresasUnit04CuratedTests(unittest.TestCase):
     def test_real_world_boundary_is_explicit(self):
         notice = self.unit["editorial_notice"].casefold()
         purpose = self.unit["purpose"].casefold()
-        self.assertIn("no constituyen revisión disciplinar externa".replace("constituyen", "constituye"), notice)
+        self.assertIn("no constituye revisión disciplinar externa", notice)
         self.assertIn("asesoría comercial", notice)
         self.assertIn("aprobación regulatoria", notice)
         self.assertIn("hta", notice)
