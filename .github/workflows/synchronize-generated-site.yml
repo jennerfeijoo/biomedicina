@@ -44,14 +44,36 @@ jobs:
           test = Path('tests/test_economia_gestion_empresas_unit_04_curated.py')
 
           text = source.read_text(encoding='utf-8')
-          broken = '''    {"error": "Introducir ICER, QALY o coste-efectividad formal en U4.", "correction": "Reservar evaluación económica sanitaria para U5 y limitar U4 a mercado, posicionamiento, adopción y proceso de compra."
-            ],'''
-          fixed = '''    {"error": "Introducir ICER, QALY o coste-efectividad formal en U4.", "correction": "Reservar evaluación económica sanitaria para U5 y limitar U4 a mercado, posicionamiento, adopción y proceso de compra."}
-            ],'''
-          if broken not in text:
-              raise SystemExit('No se encontró el cierre JSON roto esperado en U4')
-          text = text.replace(broken, fixed, 1)
-          json.loads(text)
+          repairs = [
+              (
+                  '''    {"error": "Introducir ICER, QALY o coste-efectividad formal en U4.", "correction": "Reservar evaluación económica sanitaria para U5 y limitar U4 a mercado, posicionamiento, adopción y proceso de compra."
+            ],''',
+                  '''    {"error": "Introducir ICER, QALY o coste-efectividad formal en U4.", "correction": "Reservar evaluación económica sanitaria para U5 y limitar U4 a mercado, posicionamiento, adopción y proceso de compra."}
+            ],''',
+              ),
+              (
+                  '''    {"question": "¿Qué conclusión pertenece a U5 y no a U4?", "answer": "Una conclusión formal de coste-efectividad o valor sanitario basada en resultados y costes comparativos.", "reasoning": "U4 estudia mercado, posicionamiento, adopción y compra; U5 aborda evaluación económica.", "common_error": "Usar ingresos potenciales como si fueran coste-efectividad."
+            ],''',
+                  '''    {"question": "¿Qué conclusión pertenece a U5 y no a U4?", "answer": "Una conclusión formal de coste-efectividad o valor sanitario basada en resultados y costes comparativos.", "reasoning": "U4 estudia mercado, posicionamiento, adopción y compra; U5 aborda evaluación económica.", "common_error": "Usar ingresos potenciales como si fueran coste-efectividad."}
+            ],''',
+              ),
+              (
+                  '''    {"topic": "Límite", "connection": "Mercado grande, interés, ingresos de escenario o acceso regulatorio no demuestran beneficio clínico, coste-efectividad, adopción sostenida ni recomendación de compra."
+            ],''',
+                  '''    {"topic": "Límite", "connection": "Mercado grande, interés, ingresos de escenario o acceso regulatorio no demuestran beneficio clínico, coste-efectividad, adopción sostenida ni recomendación de compra."}
+            ],''',
+              ),
+          ]
+          for broken, fixed in repairs:
+              if broken not in text:
+                  raise SystemExit(f'No se encontró un cierre JSON roto esperado: {broken[:100]!r}')
+              text = text.replace(broken, fixed, 1)
+
+          data = json.loads(text)
+          assert data['unit'] == 4
+          assert len(data['common_errors']) >= 12
+          assert len(data['self_assessment']) >= 12
+          assert len(data['biomedical_connections']) >= 5
           source.write_text(text, encoding='utf-8')
           mirror.write_bytes(source.read_bytes())
 
