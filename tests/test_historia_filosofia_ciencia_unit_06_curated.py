@@ -110,7 +110,7 @@ class HistoriaFilosofiaCienciaUnit06CuratedTests(unittest.TestCase):
         self.assertTrue(all(s.get("verification_status") == "verified_directly" for s in self.unit["sources"]))
         organizations = " ".join(s["organization"] for s in self.unit["sources"]).casefold()
         urls = " ".join(s["url"] for s in self.unit["sources"]).casefold()
-        for org in ("national academies", "unesco", "center for open science", "national institutes of health", "icmje", "committee on publication ethics", "world health organization", "elife"):
+        for org in ("national academies", "unesco", "center for open science", "national institutes of health", "international committee of medical journal editors", "committee on publication ethics", "world health organization", "elife"):
             self.assertIn(org, organizations)
         for token in ("25303", "top-guidelines", "registered-reports", "sdata201618", "retraction-guidelines", "71601", "infodemic"):
             self.assertIn(token, urls)
@@ -137,8 +137,9 @@ class HistoriaFilosofiaCienciaUnit06CuratedTests(unittest.TestCase):
         if not CATALOG.exists():
             self.skipTest("Catalog not generated yet")
         catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
-        detected = catalog.get("dimensions", {}).get("template", {}).get("template_detected", [])
-        screened = catalog.get("dimensions", {}).get("template", {}).get("screened_no_known_template_marker", [])
+        specificity = catalog.get("dimensions", {}).get("specificity", {})
+        detected = specificity.get("template_detected", [])
+        screened = specificity.get("screened_no_known_template_marker", [])
         if "historia-filosofia-ciencia" in detected:
             self.skipTest("Catalog has not been synchronized after U6 yet")
         self.assertIn("historia-filosofia-ciencia", screened)
