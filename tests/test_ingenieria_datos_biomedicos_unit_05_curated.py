@@ -7,6 +7,7 @@ SOURCE = ROOT / 'data/course_redevelopment/ingenieria-datos-biomedicos/units/uni
 MIRROR = ROOT / 'data/generated_units/ingenieria-datos-biomedicos/unit-05.json'
 DESCRIPTOR = ROOT / 'data/subjects/ingenieria-biomedica/ingenieria-datos-biomedicos.json'
 PUBLIC = ROOT / 'ingenieria-biomedica/ingenieria-datos-biomedicos/unidades/unidad-05.html'
+TEMP_REPAIR_WORKFLOW = ROOT / '.github/workflows/patch-idb-u5-final-boundary.yml'
 
 
 class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
@@ -21,6 +22,7 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertEqual(self.data['slug'], 'orquestacion-y-observabilidad')
         self.assertEqual(self.data['title'], 'Orquestación y observabilidad')
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
+        self.assertFalse(TEMP_REPAIR_WORKFLOW.exists())
 
     def test_generic_template_and_irrelevant_classifier_equation_are_removed(self):
         self.assertNotIn('concepto de la unidad que debe definirse mediante entidades observables', self.text)
