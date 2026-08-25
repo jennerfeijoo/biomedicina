@@ -95,7 +95,7 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertGreaterEqual(len(activity['deliverables']), 10)
         self.assertGreaterEqual(len(activity['checking_criteria']), 24)
         joined = ' '.join(activity['problems'] + activity['deliverables'] + activity['checking_criteria']).lower()
-        for concept in ['data interval', 'retry budget', 'idempot', 'backfill', 'structured', 'trace_id', 'sli', 'slo', 'error budget', 'runevent', 'runbook', 'postmortem']:
+        for concept in ['data interval', 'retry budget', 'idempot', 'backfill', 'logs estructurad', 'trace_id', 'sli', 'slo', 'error budget', 'runevent', 'runbook', 'postmortem']:
             self.assertIn(concept, joined)
 
     def test_glossary_and_sources_cover_core_families(self):
