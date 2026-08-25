@@ -65,10 +65,12 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertIn('u4', purpose)
         self.assertIn('u6', purpose)
         self.assertIn('quality gates', purpose)
-        self.assertIn('interoperabilidad', purpose)
+        for concept in ['seudonimización', 'minimización', 'autorización', 'productos de datos']:
+            self.assertIn(concept, purpose)
+        self.assertNotIn('interoperabilidad', purpose)
         self.assertIn('no se conectan ehr', notice)
         self.assertIn('no declara que un run exitoso pruebe calidad', notice)
-        self.assertIn('se reserva para u6', notice)
+        self.assertIn('se reservan para u6', notice)
         self.assertIn('no constituyen garantías de producción', notice)
 
     def test_academic_depth(self):
