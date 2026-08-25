@@ -146,11 +146,9 @@ class HistoanatomiaHumanaUnit02CuratedTests(unittest.TestCase):
         self.assertIn("u3 desarrollará con más detalle hueso, cartílago, tendón", self.text)
         self.assertIn("u6 desarrollará organización neuroanatómica", self.text)
 
-    def test_published_descriptor_matches_canonical_purpose_when_promoted(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[2]["description"] != self.unit["purpose"]:
-            self.skipTest("El descriptor se sincroniza en el workflow de publicación.")
         self.assertEqual(detailed[2]["description"], self.unit["purpose"])
 
 
