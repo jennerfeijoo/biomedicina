@@ -97,12 +97,13 @@ def test_unit_04_uses_verified_sources_for_all_three_modalities():
     assert "somatos" in text or "sensory feedback" in text
 
 
-def test_unit_04_publication_matches_after_promotion():
+def test_unit_04_publication_matches_canonical_source():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 4)
-    if detail["description"] == source["purpose"] and PUBLIC.exists():
-        public_text = PUBLIC.read_text(encoding="utf-8").lower()
-        for marker in ["implante coclear", "fosfeno", "lazo cerrado", "matriz de confusión"]:
-            assert marker in public_text
-        assert "concepto de la unidad que debe definirse mediante entidades observables" not in public_text
+    assert detail["description"] == source["purpose"]
+    assert PUBLIC.exists()
+    public_text = PUBLIC.read_text(encoding="utf-8").lower()
+    for marker in ["implante coclear", "fosfeno", "lazo cerrado", "matriz de confusión"]:
+        assert marker in public_text
+    assert "concepto de la unidad que debe definirse mediante entidades observables" not in public_text
