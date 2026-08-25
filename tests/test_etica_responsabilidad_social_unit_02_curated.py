@@ -77,7 +77,7 @@ class EticaResponsabilidadSocialUnit02CuratedTests(unittest.TestCase):
         activity_text = json.dumps(activity, ensure_ascii=False).casefold()
         self.assertIn("sintéticos", activity_text)
         self.assertIn("no reclutes personas", activity_text)
-        self.assertIn("no uses datos personales reales", activity_text)
+        self.assertIn("ni uses datos personales reales", activity_text)
         self.assertIn("valor y validez", activity_text)
         self.assertIn("teach-back", activity_text)
 
