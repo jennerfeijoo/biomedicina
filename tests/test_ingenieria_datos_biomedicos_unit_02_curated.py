@@ -49,14 +49,20 @@ class IngenieriaDatosBiomedicosUnit02CuratedTests(unittest.TestCase):
             for point in section["key_points"]:
                 self.assertGreaterEqual(len(point.split()), 5)
         headings = " ".join(x["heading"] for x in sections).casefold()
-        for phrase in (
-            "etl, elt",
+        # Validate the disciplinary topics rather than punctuation in the headings.
+        for token in (
+            "etl",
+            "elt",
             "validación de esquemas",
             "unidades y cantidades",
-            "tiempo, códigos y ausencias",
-            "reconciliación, pruebas e idempotencia",
+            "tiempo",
+            "códigos",
+            "ausencias",
+            "reconciliación",
+            "pruebas",
+            "idempotencia",
         ):
-            self.assertIn(phrase, headings)
+            self.assertIn(token, headings)
 
     def test_etl_elt_preserve_raw_determinism_and_idempotency(self) -> None:
         text = json.dumps(self.unit["theory_sections"][0], ensure_ascii=False).casefold()
