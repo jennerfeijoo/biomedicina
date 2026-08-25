@@ -168,13 +168,9 @@ class IngenieriaNeurosensorialUnit02CuratedTests(unittest.TestCase):
         self.assertIn("u4 prótesis sensoriales", self.text)
         self.assertIn("clasificación y adaptación se desarrollan en u5", self.text)
 
-    def test_published_descriptor_matches_canonical_purpose_when_promoted(self) -> None:
-        if not SUBJECT.exists():
-            self.skipTest("descriptor no publicado todavía")
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[2]["description"] != self.unit["purpose"]:
-            self.skipTest("descriptor pendiente de promoción por workflow")
         self.assertEqual(detailed[2]["description"], self.unit["purpose"])
 
 
