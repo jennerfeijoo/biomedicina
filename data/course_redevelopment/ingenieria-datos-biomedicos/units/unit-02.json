@@ -6,387 +6,385 @@
   "slug": "ingesta-y-transformacion",
   "title": "Ingesta y transformación",
   "status": "review",
-  "purpose": "Integrar ETL y ELT, validación de esquemas, unidades para resolver un caso de integración reproducible sin perder significado con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar, implementar y auditar transformaciones ETL/ELT reproducibles desde una landing biomédica hacia representaciones normalizadas sin destruir identidad, temporalidad, unidades, códigos ni evidencia de origen. La unidad distingue validación estructural de validación semántica, enseña conversión de unidades con UCUM y contexto explícito, trata cambios de esquema, ausencias, correcciones y rechazos como estados trazables, y exige reconciliación e idempotencia. Reutiliza el inventario source-to-landing de U1; reserva almacenamiento/modelado para U3, calidad/linaje/versionado profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6.",
   "learning_objectives": [
-    "Definir ETL y ELT, validación de esquemas y unidades mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte ETL y ELT con validación de esquemas y delimite el papel de unidades.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre integración reproducible sin perder significado con incertidumbre y límites.",
-    "Transferir el método de Ingesta y transformación a un escenario nuevo y justificar qué debe revalidarse."
+    "Comparar ETL y ELT como decisiones arquitectónicas y diseñar una secuencia extract–stage–validate–transform–load que preserve una copia raw inmutable y produzca salidas deterministas sobre datos biomédicos sintéticos.",
+    "Definir contratos de transformación con esquema, tipos, cardinalidad, campos requeridos, invariantes y política de evolución, distinguiendo errores estructurales de reglas terminológicas o de negocio.",
+    "Normalizar cantidades físicas conservando valor y unidad originales, código UCUM y regla de conversión, y rechazar conversiones dimensional o semánticamente incompatibles aunque sus columnas sean numéricas.",
+    "Transformar temporalidad y códigos sin colapsar effective/event time, issued time e ingest time ni convertir un mapeo terminológico ambiguo en equivalencia automática.",
+    "Implementar accepted/quarantine con motivos computables, reconciliar entradas, salidas y rechazos, y demostrar idempotencia mediante reejecuciones sobre un lote sintético versionado.",
+    "Entregar un pipeline reproducible de U2 con pruebas positivas, negativas y de frontera, documentando explícitamente qué decisiones se aplazan a U3–U6 y qué afirmaciones no pueden inferirse de una validación técnica."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Ingesta y transformación",
+      "heading": "1. ETL, ELT y contratos de transformación: mover datos no es transformar significado",
       "paragraphs": [
-        "La unidad «Ingesta y transformación» sitúa ETL y ELT, validación de esquemas y unidades dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Ingeniería de Datos Biomédicos, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Ingesta y transformación» en Ingeniería de Datos Biomédicos, «ETL y ELT», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Ingesta y transformación», «validación de esquemas», aporta otra dimensión al problema de Ingeniería de Datos Biomédicos: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con ETL y ELT debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Ingesta y transformación» en Ingeniería de Datos Biomédicos, «unidades», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "ETL y ELT describen dónde ocurre una transformación respecto de la carga, pero no sustituyen el diseño semántico. En ETL, los datos se extraen, transforman y después se cargan en el destino; en ELT, se preservan primero en una plataforma de destino y la transformación ocurre allí. En ambos casos, U2 parte de la landing raw de U1 y exige que el dato de origen siga reconstruible. La elección depende de restricciones de volumen, latencia, herramientas, gobernanza y capacidad de reprocesar, no de una superioridad universal de una sigla.",
+        "Una transformación se define como una función versionada entre una entrada explícita y una salida explícita. Debe declarar campos consumidos, tipos esperados, reglas de renombrado, parsing, conversión, filtrado y derivación, además de condiciones de rechazo. Si el pipeline produce el mismo nombre de columna con semántica distinta, la transformación es incorrecta aunque ejecute sin excepciones. El contrato debe permitir saber qué significado conserva, cuál deriva y cuál pierde deliberadamente.",
+        "El área staging separa recepción de transformación. Raw conserva el payload recibido y su manifiesto; staging expone una representación preparada para validar y transformar sin modificar el original. Esta separación permite reejecutar una nueva versión de código contra la misma evidencia de entrada. U2 usa staging como concepto lógico y no prescribe un motor de almacenamiento concreto, porque tablas relacionales, objetos columnares y otros modelos se comparan en U3.",
+        "Determinismo significa que la misma versión de código, configuración y entrada produzca la misma salida observable. Fechas implícitas, consultas a servicios cambiantes, orden aleatorio, zona horaria local o tablas de mapeo no versionadas rompen esa propiedad. Cuando una dependencia externa es necesaria, su versión o snapshot debe formar parte del artefacto de transformación. La reproducibilidad no implica que la regla sea clínicamente válida; solo hace posible examinarla y corregirla.",
+        "Idempotencia significa que repetir una operación con la misma identidad de entrega no genera efectos lógicos duplicados. No equivale a borrar duplicados por coincidencia de valores. Una reentrega de transporte puede contener el mismo evento; dos eventos distintos pueden compartir valor, hora aproximada y código. La clave idempotente se construye desde identidad, versión y contrato de la fuente, preservando la distinción introducida en U1.",
+        "La salida mínima de una transformación incluye dataset aceptado, dataset o registro de cuarentena, versión de esquema, versión de transformación, conteos de entrada/salida y motivos de rechazo. Esos artefactos permiten demostrar qué ocurrió en una ejecución. U4 profundizará en calidad, linaje y versionado; U5 añadirá orquestación, scheduling, retries y observabilidad operacional. U2 se concentra en que una transformación individual sea definida, verificable y reejecutable."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Ingesta y transformación.",
-        "Relacionar ETL y ELT, validación de esquemas y unidades mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "ETL y ELT cambian el lugar de transformación, no la obligación de preservar significado.",
+        "Raw permanece inmutable y staging recibe reglas explícitas antes de producir salidas normalizadas.",
+        "Cada transformación necesita entrada, salida, versión, configuración y condiciones de rechazo declaradas.",
+        "Determinismo facilita reproducibilidad, pero no demuestra validez clínica ni corrección semántica.",
+        "Idempotencia se basa en identidad de entrega, no en eliminar filas con valores parecidos.",
+        "U2 termina en una transformación auditable; almacenamiento, calidad profunda y orquestación pertenecen a U3–U5."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Validación de esquemas: estructura, cardinalidad e invariantes no son reglas clínicas completas",
       "paragraphs": [
-        "Para «Ingesta y transformación» dentro de Ingeniería de Datos Biomédicos, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Ingeniería de Datos Biomédicos, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre ETL y ELT o validación de esquemas debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Ingesta y transformación», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Ingeniería de Datos Biomédicos, la incertidumbre de «Ingesta y transformación» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Un esquema computable describe qué forma puede tener un documento o registro: tipos, propiedades, campos requeridos, cardinalidades, patrones y restricciones. JSON Schema Draft 2020-12 ofrece un vocabulario general para expresar muchas de estas condiciones. Una instancia que satisface un esquema es estructuralmente compatible con ese contrato; esto no demuestra que el valor represente al paciente correcto, que un código sea clínicamente apropiado o que la medición sea plausible.",
+        "FHIR ilustra la estratificación de la validación. Su documentación distingue estructura, cardinalidad, dominios de valor, bindings terminológicos, invariantes y perfiles, y señala que existen reglas de negocio fuera de la especificación. Por tanto, U2 no usa la frase «FHIR válido» como sinónimo de «dato correcto». El pipeline registra qué capa se comprobó, con qué perfil o esquema y qué versión se utilizó.",
+        "La validación debe devolver resultados computables y localizables. En FHIR, OperationOutcome modela issues con severidad, código, detalles y expresión asociada; en un pipeline sintético podemos adoptar una estructura equivalente: record_id, rule_id, severity, field_path, observed_value y message. Un booleano pass/fail pierde información necesaria para corregir datos, medir cambios y decidir si un registro debe aceptarse, cuarentenarse o detener un lote.",
+        "Los esquemas evolucionan. Añadir un campo opcional, hacer obligatorio un campo previo, cambiar tipo o reinterpretar un código tienen impactos distintos. Apache Avro formaliza la idea de writer schema y reader schema y reglas de resolución entre versiones; U2 usa esa distinción para enseñar compatibilidad sin imponer Avro como formato. Toda evolución debe probarse contra ejemplos históricos y nuevos antes de declarar que el lector puede procesarlos de forma segura.",
+        "Una política de evolución diferencia cambios compatibles de cambios que exigen migración o rechazo. El criterio no puede depender solo de que el parser acepte el dato. Por ejemplo, cambiar `heart_rate` de integer a string puede ser técnicamente representable pero romper comparaciones; cambiar la unidad implícita de bpm a Hz sin cambiar el nombre sería mucho más grave porque altera semántica silenciosamente. El contrato debe versionar forma y significado.",
+        "La cuarentena no es un basurero. Un registro se envía a quarantine con motivo estable, payload o referencia preservada, versión de regla y posibilidad de reproceso. Un campo opcional ausente no es equivalente a JSON inválido; una terminología desconocida no es equivalente a un tipo incorrecto. Separar clases de fallo permite que una corrección de esquema, mapeo o fuente recupere datos sin inventar valores."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "Validación estructural comprueba forma computable y no sustituye reglas clínicas ni de negocio.",
+        "FHIR separa estructura, cardinalidad, valores, bindings, invariantes, perfiles y reglas externas.",
+        "Los errores deben conservar regla, severidad, localización y valor observado para ser accionables.",
+        "La evolución de esquema necesita comparar writer y reader y probar compatibilidad con datos históricos.",
+        "Un cambio semántico puede ser peligroso aunque el tipo de dato siga siendo aceptado por el parser.",
+        "Quarantine conserva evidencia y motivo de rechazo para permitir reparación y reproceso trazables."
       ]
     },
     {
-      "heading": "Aplicación razonada: integración reproducible sin perder significado",
+      "heading": "3. Unidades y cantidades: normalizar sin borrar el valor original ni inventar equivalencias",
       "paragraphs": [
-        "En la unidad «Ingesta y transformación» de Ingeniería de Datos Biomédicos, el caso conductor es integración reproducible sin perder significado. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Ingesta y transformación» conecta ETL y ELT con validación de esquemas y utiliza unidades como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «integración reproducible sin perder significado» en Ingeniería de Datos Biomédicos, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Ingesta y transformación» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de integración reproducible sin perder significado y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Una cantidad biomédica combina magnitud, unidad y contexto de qué se midió. FHIR Quantity separa value, unit, system y code; cuando una unidad puede codificarse con UCUM, el código UCUM ofrece una representación formal para comparación y conversión. U2 conserva siempre el valor y la unidad fuente junto al valor normalizado, el código de unidad objetivo y la regla aplicada. Sobrescribir el original impide auditar errores de conversión.",
+        "UCUM normaliza sintaxis de unidades, no identidad clínica de la variable. `mm[Hg]` y `kPa` son unidades de presión y pueden convertirse con un factor físico; `mg/dL` y `mmol/L` no se convierten de forma genérica sin saber qué sustancia se mide, porque la conversión masa↔cantidad de sustancia depende de masa molar. El pipeline debe validar compatibilidad dimensional y contexto de analito antes de ejecutar la fórmula.",
+        "Las conversiones pueden ser multiplicativas o afines. Para escalas de razón compatibles puede usarse x_target = k·x_source. Algunas escalas requieren offset y se representan como x_target = a·x_source + b. La regla de transformación debe declarar a, b, unidades, dominio y precisión. Redondear antes de convertir o ignorar comparadores como `<` y `>` puede cambiar el significado de límites de detección.",
+        "El texto mostrado al usuario y el código computable no son intercambiables. `mg/dL`, `mg per dL` o variantes locales pueden representar la misma unidad o errores tipográficos; el pipeline no debe asumir equivalencia por parecido de cadenas. Se usa un diccionario versionado que mapea representación fuente a código formal después de revisar casos ambiguos. Los valores no reconocidos pasan a cuarentena o permanecen sin normalizar, nunca se fuerzan a la unidad más probable.",
+        "La precisión y el redondeo pertenecen a la transformación. Convertir un valor con tres cifras significativas y almacenar un entero puede introducir un error mayor que el cambio de unidad. U2 documenta tipo numérico, regla de redondeo y tolerancia usada en tests. No se inventa precisión adicional mostrando más decimales de los soportados por la entrada.",
+        "La normalización de unidades debe ser reversible en sentido auditivo: dado un valor objetivo, debe ser posible identificar valor fuente, unidad fuente, regla, versión y cualquier redondeo. Esto no significa que toda conversión matemática sea invertible sin pérdida. Significa que la decisión de transformación queda reconstruible. U4 usará esa evidencia para evaluar calidad y linaje más profundamente."
       ],
       "equations": [
         {
-          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
-          "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
-          }
+          "latex": "x_{target}=k\\,x_{source}",
+          "meaning": "Conversión multiplicativa entre unidades compatibles cuando el factor k está definido para la misma magnitud y contexto.",
+          "variables": {"x_{target}": "valor en unidad objetivo", "x_{source}": "valor original", "k": "factor de conversión documentado"}
+        },
+        {
+          "latex": "x_{target}=a\\,x_{source}+b",
+          "meaning": "Conversión afín para escalas donde además del factor se requiere un desplazamiento.",
+          "variables": {"a": "factor de escala", "b": "offset", "x_{source}": "valor fuente", "x_{target}": "valor objetivo"}
         }
       ],
       "key_points": [
-        "Delimitar el caso de integración reproducible sin perder significado antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Valor original, unidad original y representación normalizada deben coexistir para conservar auditabilidad.",
+        "UCUM codifica unidades; no prueba que dos variables biomédicas representen la misma magnitud clínica.",
+        "Compatibilidad dimensional es necesaria pero puede no ser suficiente para una conversión biomédica.",
+        "Conversiones masa–cantidad requieren contexto de sustancia y no se infieren solo desde nombres de columnas.",
+        "Redondeo, comparadores y precisión forman parte del significado transformado y deben probarse explícitamente.",
+        "Una unidad desconocida se conserva o cuarentena; nunca se corrige por similitud textual sin regla versionada."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "4. Tiempo, códigos y ausencias: normalizar representación sin colapsar semántica",
       "paragraphs": [
-        "La reproducibilidad de «Ingesta y transformación» en Ingeniería de Datos Biomédicos requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Ingesta y transformación» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Ingeniería de Datos Biomédicos separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Ingesta y transformación» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de ETL y ELT, validación de esquemas y unidades debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Ingeniería de Datos Biomédicos.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre integración reproducible sin perder significado. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Ingeniería de Datos Biomédicos como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "U1 separó effective/event time, issued time e ingest time; U2 transforma formatos manteniendo esas semánticas en columnas distintas. Convertir timestamps a una representación común puede ser útil, pero no autoriza reemplazar el tiempo del fenómeno por el de recepción. El pipeline conserva valor fuente, zona u offset cuando exista y regla de parsing. Una hora sin zona no adquiere mágicamente UTC por decisión del analista.",
+        "La normalización temporal distingue parsing de inferencia. Una cadena RFC 3339 con offset explícito puede convertirse a UTC conservando el original; una fecha local sin offset necesita contexto externo y debe marcarse como incompleta si ese contexto no existe. Horarios de verano, relojes de dispositivos y timestamps de precisión distinta se documentan en lugar de resolverse silenciosamente.",
+        "Los códigos clínicos también tienen sistema y versión. FHIR ConceptMap modela relaciones como equivalent, related-to, source-is-narrower-than-target, source-is-broader-than-target o not-related-to. Esto recuerda que mapear un código fuente a uno objetivo no es una sustitución de string. U2 conserva código/sistema fuente, destino, relación de mapeo, versión del mapa y estado de revisión.",
+        "Un mapeo uno-a-muchos o más amplio/más estrecho puede requerir contexto adicional. Si la equivalencia no está justificada, el pipeline no debe escoger arbitrariamente el primer destino. Puede conservar el código original y marcar `mapping_status=unresolved`, o enviar el caso a revisión. La reproducibilidad exige que la misma tabla de mapeo versionada produzca la misma decisión, no que todas las fuentes sean forzadas a un vocabulario objetivo.",
+        "Ausente, cero, falso, cadena vacía, null y no aplicable representan estados distintos. En FHIR, la ausencia puede expresarse mediante mecanismos específicos según el elemento y el contexto. U2 exige una taxonomía sintética de missingness: not-recorded, not-applicable, unknown, invalid o suppressed cuando corresponda al caso. La transformación nunca rellena automáticamente un resultado clínico ausente con cero para satisfacer un esquema.",
+        "Las correcciones y estados se transforman sin duplicar hechos. Si un resultado corregido llega como una nueva versión, la salida debe preservar vínculo con el evento lógico y versión de fuente; U3 decidirá el modelo de almacenamiento y U4 profundizará en versionado/linaje. U2 demuestra que la transformación puede reejecutarse y producir una representación coherente de esas versiones sin borrar la historia raw."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "Normalizar timestamp no autoriza colapsar effective, issued e ingest time en una sola columna.",
+        "Un timestamp sin zona requiere contexto; asumir UTC silenciosamente fabrica precisión temporal inexistente.",
+        "Los códigos se transforman con sistema, versión y relación de mapeo, no por sustitución textual.",
+        "ConceptMap permite distinguir equivalencia de relaciones más amplias, estrechas o no relacionadas.",
+        "Null, cero, vacío, desconocido y no aplicable deben conservar estados semánticos diferentes.",
+        "Las correcciones se transforman como versiones relacionadas y no como observaciones independientes automáticas."
+      ]
+    },
+    {
+      "heading": "5. Reconciliación, pruebas e idempotencia: demostrar qué entró, qué salió y por qué",
+      "paragraphs": [
+        "Una transformación auditable reconcilia el universo de entrada. Para un lote sin filtrados deliberadamente excluidos, N_input debe descomponerse en N_accepted + N_quarantine. Si existen descartes por diseño, deben aparecer como categoría explícita; una diferencia de conteos no puede explicarse con «el pipeline eliminó duplicados». La identidad de cada registro rechazado debe ser rastreable a su entrega raw.",
+        "La reconciliación también verifica agregados que puedan detectar errores silenciosos. Conteos por source_id, rango de tiempos, códigos principales, unidades y sums/checksums de campos no sensibles pueden compararse antes y después cuando tenga sentido. Estas comprobaciones no sustituyen la auditoría de calidad de U4; son invariantes de transformación que permiten saber si una regla cambió más registros de los esperados.",
+        "Las pruebas se diseñan antes de mirar solo el caso feliz. Un conjunto mínimo incluye registros válidos, campo requerido ausente, tipo incorrecto, unidad desconocida, unidad incompatible, timestamp sin zona, código sin mapeo, versión corregida, reentrega idéntica y evolución compatible/incompatible de esquema. Cada caso tiene salida esperada: accepted, quarantine o transformación específica con evidencia preservada.",
+        "La idempotencia se demuestra reejecutando el mismo delivery_id con la misma versión de transformación y verificando que no aparezcan entidades lógicas nuevas. Después se cambia deliberadamente la versión de transformación y se genera una nueva ejecución asociada al mismo raw, no una mutación silenciosa de la anterior. Esto separa reintento operativo de reprocesamiento analítico.",
+        "El registro de ejecución de U2 incluye run_id, delivery_id, input_manifest, schema_version, transform_version, mapping_version, started_at, completed_at, conteos y ubicación de accepted/quarantine. U5 incorporará scheduling, retries, alertas y SLOs; aquí ese registro es un artefacto reproducible del laboratorio, no un sistema de observabilidad productivo.",
+        "El criterio de cierre es una transformación defendible, no una tasa de aceptación máxima. Rechazar explícitamente una unidad ambigua puede ser mejor que aceptar silenciosamente un valor incorrecto. El estudiante debe poder explicar qué regla falló, qué evidencia hace falta para resolverla, qué puede reprocesarse y qué conclusiones no son posibles. La salida técnica no se presenta como datos listos para decisión clínica hasta que otras capas hayan sido evaluadas."
+      ],
+      "equations": [
+        {
+          "latex": "N_{input}=N_{accepted}+N_{quarantine}",
+          "meaning": "Reconciliación de un lote cuando todos los registros de entrada terminan explícitamente aceptados o en cuarentena.",
+          "variables": {"N_{input}": "registros de entrada", "N_{accepted}": "registros aceptados", "N_{quarantine}": "registros en cuarentena"}
+        }
+      ],
+      "key_points": [
+        "Los conteos de entrada deben reconciliarse con estados de salida explícitos y motivos computables.",
+        "Las pruebas negativas y de frontera son obligatorias para descubrir transformaciones silenciosamente peligrosas.",
+        "Reejecutar la misma entrega debe demostrar idempotencia sin borrar evidencia de ejecuciones anteriores.",
+        "Cambiar versión de transformación crea un reprocesamiento identificable, no una mutación invisible del resultado.",
+        "El run record documenta configuración y conteos; la observabilidad productiva se desarrolla después en U5.",
+        "Una cuarentena correctamente justificada es preferible a maximizar aceptación mediante inferencias no sustentadas."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "ETL y ELT",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "validación de esquemas",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "unidades",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Ingesta y transformación",
-      "definition": "Dominio de estudio que integra ETL y ELT, validación de esquemas, unidades para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de integración reproducible sin perder significado usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"ETL","definition":"Patrón extract–transform–load en el que la transformación precede a la carga en el destino analítico."},
+    {"term":"ELT","definition":"Patrón extract–load–transform en el que los datos se cargan antes de aplicar transformaciones posteriores."},
+    {"term":"staging","definition":"Área lógica intermedia donde datos recibidos se preparan y validan sin modificar la evidencia raw."},
+    {"term":"landing raw","definition":"Representación inmutable de una entrega tal como fue recibida junto con su manifiesto."},
+    {"term":"contrato de transformación","definition":"Especificación versionada de entradas, salidas, reglas, tipos, rechazos y supuestos de una transformación."},
+    {"term":"transform_version","definition":"Identificador de la versión exacta de código y reglas usadas para producir una salida."},
+    {"term":"determinismo","definition":"Propiedad por la que la misma entrada, versión y configuración producen la misma salida observable."},
+    {"term":"idempotencia","definition":"Propiedad por la que repetir una operación sobre la misma identidad de entrega no duplica efectos lógicos."},
+    {"term":"reprocesamiento","definition":"Nueva ejecución identificable de una transformación sobre evidencia raw previamente preservada."},
+    {"term":"schema","definition":"Contrato computable que describe estructura y restricciones de una representación de datos."},
+    {"term":"JSON Schema","definition":"Especificación para describir y validar estructura de documentos JSON mediante vocabularios declarativos."},
+    {"term":"cardinalidad","definition":"Número mínimo y máximo permitido de ocurrencias de un campo o elemento."},
+    {"term":"campo requerido","definition":"Elemento cuya ausencia viola el contrato estructural aplicado."},
+    {"term":"invariante","definition":"Condición que debe permanecer verdadera para una instancia o transformación bajo el contrato definido."},
+    {"term":"perfil FHIR","definition":"StructureDefinition que impone restricciones o extensiones contextuales sobre recursos FHIR."},
+    {"term":"$validate","definition":"Operación FHIR que puede comprobar conformidad de un recurso y devolver un OperationOutcome."},
+    {"term":"OperationOutcome","definition":"Recurso FHIR que representa issues de una operación con severidad, código y detalles."},
+    {"term":"severidad","definition":"Categoría que expresa impacto de un issue, por ejemplo error, warning o información."},
+    {"term":"quarantine","definition":"Estado donde una entrada inválida o ambigua se conserva con motivo y evidencia para revisión o reproceso."},
+    {"term":"schema evolution","definition":"Cambio versionado de un esquema y de las reglas para leer datos escritos con versiones distintas."},
+    {"term":"writer schema","definition":"Esquema asociado a la representación con la que un dato fue escrito."},
+    {"term":"reader schema","definition":"Esquema esperado por el consumidor que intenta leer una representación existente."},
+    {"term":"compatibilidad backward","definition":"Capacidad del lector nuevo de procesar datos producidos con una versión previa bajo reglas explícitas."},
+    {"term":"compatibilidad forward","definition":"Capacidad prevista de lectores previos de manejar datos escritos con cambios compatibles posteriores."},
+    {"term":"Quantity","definition":"Tipo FHIR para una cantidad medible que separa value, unit, system y code."},
+    {"term":"UCUM","definition":"Unified Code for Units of Measure, sistema formal para codificar expresiones de unidades."},
+    {"term":"unidad fuente","definition":"Unidad recibida originalmente y preservada antes de normalización."},
+    {"term":"unidad objetivo","definition":"Unidad normalizada definida explícitamente por el contrato de transformación."},
+    {"term":"compatibilidad dimensional","definition":"Condición de que unidades representen dimensiones físicas convertibles bajo una regla válida."},
+    {"term":"factor de conversión","definition":"Constante multiplicativa documentada para convertir entre unidades compatibles."},
+    {"term":"conversión afín","definition":"Transformación de escala que requiere multiplicación y offset."},
+    {"term":"masa molar","definition":"Relación entre masa y cantidad de sustancia necesaria en conversiones dependientes del analito."},
+    {"term":"comparador","definition":"Símbolo como < o > que modifica el significado de una cantidad medida o reportada."},
+    {"term":"precisión implícita","definition":"Información sobre resolución significativa asociada a la representación numérica original."},
+    {"term":"effective time","definition":"Tiempo en que una observación o hecho aplica al fenómeno representado."},
+    {"term":"issued time","definition":"Tiempo en que un resultado o representación fue emitido o hecho disponible."},
+    {"term":"ingest time","definition":"Tiempo en que el pipeline recibió una representación."},
+    {"term":"RFC 3339","definition":"Perfil de fecha y hora usado ampliamente para timestamps con representación de offset."},
+    {"term":"timezone","definition":"Contexto de zona horaria necesario para interpretar ciertos tiempos locales."},
+    {"term":"ConceptMap","definition":"Recurso FHIR para expresar relaciones de mapeo entre conceptos de sistemas terminológicos."},
+    {"term":"equivalent","definition":"Relación de ConceptMap que expresa equivalencia según el contexto definido por el mapa."},
+    {"term":"source-is-narrower-than-target","definition":"Relación donde el concepto fuente es más específico que el concepto destino."},
+    {"term":"source-is-broader-than-target","definition":"Relación donde el concepto fuente es más general que el concepto destino."},
+    {"term":"mapping_version","definition":"Versión identificable de la tabla o ConceptMap usada para transformar códigos."},
+    {"term":"unresolved mapping","definition":"Estado explícito usado cuando la evidencia no permite escoger un destino terminológico válido."},
+    {"term":"null","definition":"Ausencia de valor en una representación; no equivale automáticamente a cero, falso o no aplicable."},
+    {"term":"missingness","definition":"Semántica de por qué un valor no está presente y cómo debe tratarse sin inventarlo."},
+    {"term":"reconciliación","definition":"Comprobación de que entradas y estados de salida se explican mediante conteos e invariantes explícitos."},
+    {"term":"N_input","definition":"Conteo de registros que entran en el alcance de una ejecución."},
+    {"term":"N_accepted","definition":"Conteo de registros que satisfacen las reglas necesarias para la salida aceptada."},
+    {"term":"N_quarantine","definition":"Conteo de registros preservados en cuarentena por errores o ambigüedades."},
+    {"term":"delivery_id","definition":"Identificador estable de una entrega usado para distinguir reintentos y lotes diferentes."},
+    {"term":"run_id","definition":"Identificador único de una ejecución de transformación."},
+    {"term":"manifest","definition":"Registro de archivos u objetos, conteos, hashes y metadata que describe una entrega o ejecución."},
+    {"term":"prueba positiva","definition":"Caso diseñado para confirmar comportamiento esperado con entrada válida."},
+    {"term":"prueba negativa","definition":"Caso deliberadamente inválido que debe activar rechazo o error específico."},
+    {"term":"prueba de frontera","definition":"Caso cercano a un límite de rango, tipo, tiempo o compatibilidad que prueba comportamiento extremo."},
+    {"term":"regla de negocio","definition":"Restricción contextual que puede quedar fuera de un esquema estructural y requiere evidencia del dominio."},
+    {"term":"validación semántica","definition":"Comprobación de que códigos, unidades, relaciones y significado cumplen el uso definido, más allá de la forma."},
+    {"term":"normalización","definition":"Transformación explícita hacia una representación común conservando procedencia y significado necesarios."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Ingesta y transformación",
-      "scenario": "Un equipo propone estudiar integración reproducible sin perder significado, pero su pregunta mezcla ETL y ELT, validación de esquemas y unidades sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de ETL y ELT, validación de esquemas y unidades.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-      ]
+      "title":"ETL frente a ELT sin perder raw",
+      "scenario":"Un lote sintético de observaciones llega como JSON y el equipo discute transformar antes o después de cargar en staging.",
+      "task":"Comparar dos diseños y elegir uno sin eliminar la evidencia de entrada.",
+      "reasoning_steps":["Identificar raw, staging y salida normalizada.","Enumerar reglas que dependen de servicios o tablas versionadas.","Comparar capacidad de reproceso y superficie de fallo.","Separar decisión ETL/ELT de validez clínica."],
+      "result":"Ambos patrones son aceptables si raw permanece inmutable y la transformación es versionada y reproducible.",
+      "interpretation":"La arquitectura se justifica por restricciones concretas; ETL o ELT no es una garantía de calidad.",
+      "limitations":["No compara costes reales de plataforma.","No prescribe un motor de ejecución."]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre ETL y ELT y validación de esquemas en el caso de integración reproducible sin perder significado; una condición vinculada con unidades podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar unidades como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title":"FHIR estructuralmente válido pero semánticamente dudoso",
+      "scenario":"Una Observation sintética cumple tipos y cardinalidades, pero usa una unidad inesperada para el código de medición.",
+      "task":"Separar qué comprobaciones puede resolver el esquema y cuáles requieren semántica adicional.",
+      "reasoning_steps":["Validar estructura y perfil.","Registrar OperationOutcome o issue equivalente.","Comparar código de medición y unidad esperada.","Enviar a quarantine si la compatibilidad no está definida."],
+      "result":"La instancia puede pasar parte de la validación computable y aun requerir rechazo semántico.",
+      "interpretation":"Conformidad estructural no equivale a dato clínicamente correcto.",
+      "limitations":["No se conecta a un servidor FHIR real.","Las reglas clínicas son sintéticas."]
+    },
+    {
+      "title":"Conversión de presión con preservación de origen",
+      "scenario":"Dos dispositivos sintéticos entregan presión en mm[Hg] y kPa.",
+      "task":"Normalizar a una unidad objetivo sin borrar valor ni unidad fuente.",
+      "reasoning_steps":["Verificar que ambas unidades representan presión.","Aplicar factor documentado con precisión definida.","Guardar source_value/source_unit y normalized_value/normalized_unit.","Probar un caso límite y tolerancia."],
+      "result":"La salida conserva ambas representaciones y la versión de regla usada.",
+      "interpretation":"Una conversión correcta necesita compatibilidad, regla y auditabilidad.",
+      "limitations":["Ejemplo físico sintético; no interpreta presión de un paciente."]
+    },
+    {
+      "title":"mg/dL a mmol/L: por qué falta el analito",
+      "scenario":"Una columna genérica concentration trae mg/dL y el destino exige mmol/L, pero el nombre del analito falta.",
+      "task":"Decidir si el pipeline debe convertir automáticamente.",
+      "reasoning_steps":["Reconocer cambio masa↔cantidad de sustancia.","Identificar dependencia de masa molar.","Comprobar ausencia de identidad del analito.","Conservar original y enviar a quarantine."],
+      "result":"No se realiza conversión automática porque falta contexto semántico indispensable.",
+      "interpretation":"Compatibilidad aparente de columnas numéricas no basta para normalizar una cantidad biomédica.",
+      "limitations":["No establece factores clínicos ni rangos de referencia."]
+    },
+    {
+      "title":"Reintento idempotente y reprocesamiento versionado",
+      "scenario":"El mismo delivery_id llega dos veces; después se publica transform_version 2 con una regla corregida.",
+      "task":"Distinguir reintento de nueva ejecución analítica.",
+      "reasoning_steps":["Procesar delivery con versión 1.","Repetir mismo delivery y comprobar ausencia de duplicados lógicos.","Ejecutar versión 2 como nuevo run_id.","Reconciliar accepted/quarantine por cada ejecución."],
+      "result":"El reintento no duplica entidades; el reprocesamiento queda como ejecución distinta asociada al mismo raw.",
+      "interpretation":"Idempotencia y versionado permiten corregir pipelines sin borrar historia.",
+      "limitations":["No implementa scheduler ni sistema distribuido real."]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
-      "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+      "title":"Laboratorio reproducible: transformar un paquete biomédico multimodal sin perder semántica",
+      "estimated_time_minutes":420,
+      "instructions":[
+        "Trabaja solo con el paquete sintético derivado de U1; no introduzcas datos identificables, credenciales ni exports institucionales.",
+        "Conserva raw sin modificar y crea staging/output como artefactos separados.",
+        "Versiona schema, transformación, tabla de unidades y mapa terminológico utilizados.",
+        "Predefine accepted/quarantine y motivos de rechazo antes de ejecutar los casos negativos.",
+        "Mantén source_value/source_unit junto a cualquier valor normalizado.",
+        "Conserva effective/event time, issued time e ingest time en campos diferenciados.",
+        "No resuelvas almacenamiento físico de U3, reglas profundas de calidad/linaje de U4, scheduling de U5 ni controles de privacidad de U6.",
+        "Registra cada ejecución con run_id y delivery_id y demuestra una reejecución idempotente.",
+        "Explica cada conversión o mapeo con evidencia; los casos ambiguos deben permanecer unresolved o quarantine.",
+        "Entrega código o pseudocódigo reproducible, fixtures sintéticos, resultados y una matriz de pruebas."
       ],
-      "problems": [
-        "Define ETL y ELT mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo validación de esquemas modifica o complementa a ETL y ELT.",
-        "Propón una prueba que distinga el papel de unidades de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+      "problems":[
+        "Dibuja el flujo raw → staging → validate → transform → accepted/quarantine para un diseño ETL y otro ELT.",
+        "Justifica cuál patrón usarías para el paquete sintético y nombra dos condiciones que podrían cambiar la decisión.",
+        "Escribe un JSON Schema mínimo para una observación sintética con id, code, value, unit, effective_time e ingest_time.",
+        "Construye un fixture que falle por campo requerido ausente y predice el issue antes de validar.",
+        "Construye otro fixture con tipo incorrecto y diferencia este fallo de una unidad semánticamente inválida.",
+        "Define una estructura de error con rule_id, severity, field_path, observed_value y message.",
+        "Propón un cambio de esquema compatible y otro incompatible; explica efecto sobre writer/reader.",
+        "Normaliza tres presiones sintéticas de mm[Hg] a kPa conservando original, factor y tolerancia.",
+        "Diseña un caso donde una unidad textual parecida no pueda mapearse con seguridad a UCUM.",
+        "Explica por qué convertir mg/dL a mmol/L exige conocer el analito y masa molar.",
+        "Implementa una conversión afín sintética y verifica ida con tolerancia y registro del offset.",
+        "Conserva un comparador '<' durante una transformación de unidad y explica por qué no debe perderse.",
+        "Transforma tres timestamps con offset a UTC conservando la cadena fuente y offset.",
+        "Envía a quarantine un timestamp local sin contexto suficiente en vez de asumir UTC.",
+        "Construye un ConceptMap sintético con equivalent, broader/narrower y un caso unresolved.",
+        "Demuestra por qué escoger el primer target de un mapeo uno-a-muchos sería una regla no justificada.",
+        "Distingue null, cero, cadena vacía y not-applicable en cuatro fixtures y define salidas diferentes.",
+        "Modela una corrección de resultado como nueva versión relacionada sin contarla automáticamente como evento nuevo.",
+        "Reconciliación: demuestra N_input = N_accepted + N_quarantine para un lote de al menos 20 registros.",
+        "Reejecuta el mismo delivery_id con transform_version idéntica y demuestra idempotencia.",
+        "Reprocesa el mismo raw con transform_version nueva y conserva ambos run_id sin sobrescribir historia.",
+        "Construye una matriz U1–U6 que explique por qué esta entrega no implementa todavía base analítica, linaje profundo, scheduler ni privacidad productiva."
       ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+      "deliverables":[
+        "Diagrama comparativo ETL/ELT con raw, staging y salidas.",
+        "Contrato de transformación versionado.",
+        "JSON Schema y al menos seis fixtures positivos/negativos.",
+        "Tabla de issues estructurados y política accepted/quarantine.",
+        "Diccionario de unidades con source/UCUM/target y reglas de conversión.",
+        "Pruebas de conversión multiplicativa, afín, incompatible y dependiente de analito.",
+        "Tabla temporal con source/effective/issued/ingest y normalización documentada.",
+        "ConceptMap sintético versionado con caso unresolved.",
+        "Tabla de missingness que separe null, cero, vacío y no aplicable.",
+        "Reporte de reconciliación de conteos por estado.",
+        "Demostración de idempotencia y reprocesamiento con run_id/delivery_id.",
+        "README de límites U2 y responsabilidades reservadas a U3–U6."
       ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: integración reproducible sin perder significado",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para ETL y ELT, validación de esquemas y unidades.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de integración reproducible sin perder significado y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte ETL y ELT, validación de esquemas y unidades.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+      "checking_criteria":[
+        "Raw permanece sin modificar durante toda la actividad.",
+        "ETL/ELT se justifica por restricciones y no como preferencia universal.",
+        "El contrato identifica versión de esquema y transformación.",
+        "Los fixtures negativos producen motivos específicos y reproducibles.",
+        "La validación estructural no se presenta como validación clínica completa.",
+        "Los errores conservan rule_id y field_path.",
+        "El cambio de esquema compatible se distingue del incompatible.",
+        "Source value y source unit nunca son sobrescritos por la normalización.",
+        "Las unidades objetivo usan códigos formales cuando corresponde.",
+        "Las conversiones verifican compatibilidad dimensional antes de calcular.",
+        "La conversión mg/dL↔mmol/L no se ejecuta sin identidad de analito.",
+        "Las conversiones afines documentan factor y offset.",
+        "Comparadores como < o > se conservan.",
+        "Effective, issued e ingest time permanecen separados.",
+        "Un timestamp sin zona no se convierte a UTC sin contexto.",
+        "Los mapeos terminológicos guardan sistema, versión y relación.",
+        "Un mapeo ambiguo queda unresolved en vez de forzarse.",
+        "Null, cero, vacío y no aplicable no se colapsan.",
+        "Las correcciones conservan vínculo con la identidad del hecho.",
+        "N_input se reconcilia con accepted y quarantine.",
+        "Cada quarantine conserva motivo y referencia a la entrada.",
+        "La reejecución idéntica no crea duplicados lógicos.",
+        "El reprocesamiento con nueva versión genera run_id distinto.",
+        "El registro de ejecución contiene delivery_id y versiones relevantes.",
+        "La actividad usa solo datos sintéticos o abiertos no identificables.",
+        "La entrega declara explícitamente fronteras con U3, U4, U5 y U6."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar ETL y ELT como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar ETL y ELT en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre ETL y ELT y validación de esquemas demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir unidades después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Ingesta y transformación al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"error":"Elegir ETL porque siempre es más seguro que ELT.","correction":"ETL/ELT se decide por restricciones y controles; ninguno garantiza seguridad o semántica por sí solo."},
+    {"error":"Modificar raw para ahorrar espacio.","correction":"Preservar raw y aplicar transformaciones versionadas en staging/salidas."},
+    {"error":"Considerar que JSON válido significa dato clínicamente correcto.","correction":"Separar sintaxis/esquema de terminología, unidades, negocio y plausibilidad contextual."},
+    {"error":"Usar un booleano de validación sin motivo.","correction":"Registrar rule_id, severidad, campo, valor observado y mensaje accionable."},
+    {"error":"Cambiar un tipo de campo sin probar datos históricos.","correction":"Evaluar writer/reader schema y fixtures de versiones antes de aceptar evolución."},
+    {"error":"Sobrescribir unidad y valor originales tras convertir.","correction":"Conservar source_value/source_unit y añadir representación normalizada separada."},
+    {"error":"Mapear unidades por semejanza textual.","correction":"Usar códigos formales y tabla versionada; ambiguos quedan unresolved/quarantine."},
+    {"error":"Convertir cualquier mg/dL a mmol/L con el mismo factor.","correction":"La conversión depende del analito y de su masa molar; sin identidad suficiente no se convierte."},
+    {"error":"Perder el comparador de un resultado por debajo de detección.","correction":"Preservar <, > u otros comparadores durante normalización y almacenamiento posterior."},
+    {"error":"Convertir todos los tiempos a UTC y borrar el original.","correction":"Conservar timestamp fuente/offset y no inferir zona ausente sin evidencia."},
+    {"error":"Colapsar effective, issued e ingest time.","correction":"Mantener relojes diferenciados porque responden preguntas distintas."},
+    {"error":"Tratar ConceptMap como diccionario uno-a-uno.","correction":"Conservar relación del mapeo y permitir broader, narrower, not-related o unresolved."},
+    {"error":"Rellenar null con cero para pasar el esquema.","correction":"Modelar motivo de ausencia; cero es un valor observado y no un marcador universal de missingness."},
+    {"error":"Eliminar filas repetidas para lograr idempotencia.","correction":"Usar identidad de entrega/evento; duplicación física y eventos iguales no son conceptos equivalentes."},
+    {"error":"Descartar quarantine después de arreglar el pipeline.","correction":"Preservar evidencia y reprocesar con una nueva ejecución identificable."},
+    {"error":"Aceptar pérdida de filas porque el conteo final parece razonable.","correction":"Reconciliar explícitamente entrada, accepted, quarantine y cualquier exclusión documentada."},
+    {"error":"Usar un checksum para afirmar calidad clínica.","correction":"Checksum detecta integridad de bytes bajo ciertas condiciones; la calidad semántica pertenece a otras pruebas."},
+    {"error":"Presentar el output de U2 como dataset listo para decisiones clínicas.","correction":"U2 demuestra transformación técnica; almacenamiento, calidad, privacidad, validación y uso requieren capas adicionales."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar integración reproducible sin perder significado?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan ETL y ELT y validación de esquemas?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; unidades puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre unidades?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre integración reproducible sin perder significado?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Ingesta y transformación?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question":"¿Qué diferencia esencial hay entre ETL y ELT en esta unidad?","answer":"El orden relativo entre transformación y carga; ambos deben preservar raw y reglas versionadas.","reasoning":"La sigla no elimina obligaciones semánticas ni de reproducibilidad.","common_error":"Asumir que uno es universalmente superior."},
+    {"question":"¿Por qué un recurso que pasa JSON Schema puede seguir siendo incorrecto?","answer":"Porque estructura válida no garantiza terminología, unidades, identidad, reglas de negocio o plausibilidad contextual.","reasoning":"Las capas de validación responden preguntas diferentes.","common_error":"Equiparar parser válido con dato válido."},
+    {"question":"¿Para qué sirve OperationOutcome como referencia pedagógica?","answer":"Para representar issues con severidad, código y localización en vez de un pass/fail opaco.","reasoning":"Los errores estructurados permiten corregir y reprocesar.","common_error":"Guardar solo un mensaje de texto global."},
+    {"question":"¿Por qué debe conservarse el writer schema?","answer":"Porque permite interpretar cómo fue escrito el dato y evaluar compatibilidad con lectores posteriores.","reasoning":"La evolución no puede evaluarse sin conocer ambas versiones.","common_error":"Validar solo contra el esquema actual."},
+    {"question":"¿UCUM basta para decidir que dos valores son comparables?","answer":"No; codifica unidades, pero también se necesita saber qué magnitud/analito y contexto representan.","reasoning":"Compatibilidad dimensional puede ser necesaria sin ser suficiente.","common_error":"Comparar solo el texto de la unidad."},
+    {"question":"¿Por qué mg/dL→mmol/L no tiene un factor universal?","answer":"Porque requiere masa molar del analito y, por tanto, identidad de la sustancia.","reasoning":"Masa y cantidad de sustancia se relacionan mediante propiedades específicas.","common_error":"Aplicar factor de glucosa a cualquier analito."},
+    {"question":"¿Qué se pierde al colapsar effective e ingest time?","answer":"La distinción entre cuándo ocurrió/aplica el hecho y cuándo el pipeline lo recibió.","reasoning":"Esa pérdida puede producir orden temporal y disponibilidad falsos.","common_error":"Usar el timestamp más fácil de consultar."},
+    {"question":"¿Qué indica source-is-broader-than-target en un ConceptMap?","answer":"Que el concepto fuente es más general que el destino y no debe tratarse como equivalencia exacta.","reasoning":"La relación forma parte del significado del mapeo.","common_error":"Sustituir todos los targets como equivalentes."},
+    {"question":"¿Por qué null no debe convertirse automáticamente a cero?","answer":"Porque null indica ausencia de valor, mientras cero es un valor observado con significado propio.","reasoning":"Colapsarlos fabrica información.","common_error":"Rellenar para satisfacer un tipo numérico."},
+    {"question":"¿Cómo se demuestra idempotencia?","answer":"Reprocesando la misma identidad de entrega con misma versión y verificando que no aparecen efectos lógicos duplicados.","reasoning":"La propiedad se prueba sobre identidad y efectos, no sobre parecido de filas.","common_error":"Aplicar drop_duplicates sin contrato."},
+    {"question":"¿Qué significa reconciliar un lote?","answer":"Explicar todos los registros de entrada mediante estados de salida y exclusiones explícitas con conteos consistentes.","reasoning":"Evita pérdidas silenciosas durante transformaciones.","common_error":"Comparar solo tamaños aproximados."},
+    {"question":"¿Qué no demuestra un pipeline U2 reproducible?","answer":"No demuestra calidad clínica global, privacidad, escalabilidad, utilidad clínica ni seguridad productiva.","reasoning":"Esas afirmaciones requieren controles y unidades posteriores específicas.","common_error":"Confundir reproducibilidad técnica con readiness clínica."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Integración reproducible sin perder significado."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"connection":"Laboratorio clínico","explanation":"Resultados con valor, unidad, comparador y tiempos muestran por qué una transformación debe conservar semántica antes de normalizar."},
+    {"connection":"Monitorización fisiológica","explanation":"Metadatos de señal de U1 pueden normalizarse sin convertir gaps o relojes inciertos en datos artificiales."},
+    {"connection":"Interoperabilidad FHIR","explanation":"Perfiles, Quantity, ConceptMap y OperationOutcome ilustran capas distintas de estructura, cantidades, mapeo y errores."},
+    {"connection":"Investigación multicéntrica","explanation":"Unidades y códigos heterogéneos requieren reglas versionadas para evitar diferencias de sitio fabricadas por ETL."},
+    {"connection":"Ómicas y metadata de muestra","explanation":"Transformaciones deben preservar identidad de muestra/ensayo y no usar normalización tabular para borrar jerarquías de U1."},
+    {"connection":"IA clínica y análisis retrospectivo","explanation":"Tiempos, correcciones y unidades transformadas incorrectamente pueden inducir leakage o features semánticamente falsas antes de cualquier modelado."}
   ],
   "sources": [
-    {
-      "title": "SNOMED CT",
-      "organization": "SNOMED International",
-      "url": "https://www.snomed.org/",
-      "type": "terminología clínica",
-      "description": "Conceptos y relaciones clínicas computables.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "LOINC",
-      "organization": "Regenstrief Institute",
-      "url": "https://loinc.org/",
-      "type": "terminología clínica",
-      "description": "Identificadores de observaciones, mediciones y documentos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "WHO Digital Health",
-      "organization": "World Health Organization",
-      "url": "https://www.who.int/health-topics/digital-health",
-      "type": "recurso institucional",
-      "description": "Estrategia, gobernanza y equidad en salud digital.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos clínicos y fisiológicos para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"FHIR R5 – Welcome / current published R5","organization":"HL7 International","url":"https://hl7.org/fhir/R5/","type":"estándar sanitario","description":"Versión publicada R5 5.0.0 y estructura general del estándar.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Validation","organization":"HL7 International","url":"https://www.hl7.org/fhir/validation.html","type":"estándar sanitario","description":"Distingue estructura, cardinalidad, valores, bindings, invariantes, perfiles y reglas de negocio en validación.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Resource $validate","organization":"HL7 International","url":"https://hl7.org/fhir/R5/resource-operation-validate.html","type":"estándar sanitario","description":"Operación de validación idempotente y retorno mediante OperationOutcome.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 OperationOutcome","organization":"HL7 International","url":"https://hl7.org/fhir/R5/operationoutcome.html","type":"estándar sanitario","description":"Modelo computable de issues con severidad, código, detalles y expresión.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Datatypes – Quantity","organization":"HL7 International","url":"https://hl7.org/fhir/R5/datatypes.html#Quantity","type":"estándar sanitario","description":"Quantity separa value, unit, system y code y recomienda UCUM cuando es aplicable.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Observation definitions","organization":"HL7 International","url":"https://hl7.org/fhir/R5/observation-definitions.html","type":"estándar sanitario","description":"Definiciones de Observation, value[x] y contexto de resultados.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 ConceptMap definitions","organization":"HL7 International","url":"https://www.hl7.org/fhir/R5/conceptmap-definitions.html","type":"estándar sanitario","description":"Relaciones de mapeo source-target y semántica de equivalencia, broader/narrower y no relación.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 StructureDefinition","organization":"HL7 International","url":"https://hl7.org/fhir/R5/structuredefinition.html","type":"estándar sanitario","description":"Marco de perfiles, restricciones e invariantes para recursos y tipos FHIR.","verification_status":"verified_directly"},
+    {"title":"Unified Code for Units of Measure Specification 2.2","organization":"UCUM Organization / Regenstrief Institute","url":"https://unitsofmeasure.org/ucum","type":"estándar de unidades","description":"Especificación UCUM 2.2, fechada 2024-06-17, para sintaxis y semántica de unidades.","verification_status":"verified_directly"},
+    {"title":"JSON Schema Draft 2020-12","organization":"JSON Schema","url":"https://json-schema.org/draft/2020-12","type":"especificación técnica","description":"Página oficial del Draft 2020-12 y sus vocabularios.","verification_status":"verified_directly"},
+    {"title":"JSON Schema Core 2020-12","organization":"JSON Schema","url":"https://json-schema.org/draft/2020-12/json-schema-core","type":"especificación técnica","description":"Terminología y mecanismos centrales para describir estructura JSON.","verification_status":"verified_directly"},
+    {"title":"JSON Schema Validation 2020-12","organization":"JSON Schema","url":"https://json-schema.org/draft/2020-12/json-schema-validation","type":"especificación técnica","description":"Vocabulario de restricciones estructurales y validación de instancias JSON.","verification_status":"verified_directly"},
+    {"title":"JSON Schema 2020-12 Release Notes","organization":"JSON Schema","url":"https://json-schema.org/draft/2020-12/release-notes","type":"documentación técnica","description":"Cambios de arrays, referencias dinámicas y otros elementos relevantes para evolución de esquemas.","verification_status":"verified_directly"},
+    {"title":"Apache Avro current documentation","organization":"Apache Software Foundation","url":"https://avro.apache.org/docs/","type":"documentación técnica","description":"Documentación oficial de Avro y papel del esquema junto a los datos.","verification_status":"verified_directly"},
+    {"title":"Apache Avro Specification – Schema Resolution","organization":"Apache Software Foundation","url":"https://avro.apache.org/docs/++version++/specification/","type":"especificación técnica","description":"Define writer schema, reader schema y reglas de resolución entre versiones.","verification_status":"verified_directly"},
+    {"title":"RFC 3339 – Date and Time on the Internet: Timestamps","organization":"IETF / RFC Editor","url":"https://www.rfc-editor.org/rfc/rfc3339","type":"estándar de internet","description":"Referencia para representación interoperable de timestamps y offsets.","verification_status":"verified_directly"},
+    {"title":"PROV-O: The PROV Ontology","organization":"W3C","url":"https://www.w3.org/TR/prov-o/","type":"recomendación web","description":"Referencia de procedencia Entity–Activity–Agent; U2 solo conserva metadata necesaria y U4 profundiza linaje.","verification_status":"verified_directly"},
+    {"title":"The FAIR Guiding Principles for scientific data management and stewardship","organization":"Wilkinson et al., Scientific Data","url":"https://www.nature.com/articles/sdata201618","type":"artículo científico","description":"Principios de reutilización e interoperabilidad que motivan preservar metadata y transformación explícita.","verification_status":"verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo de ingeniería de datos con datos exclusivamente sintéticos o recursos abiertos no identificables. U2 no ingiere sistemas institucionales, no modifica EHR/DICOM/waveforms/ómicas reales, no interpreta resultados clínicos y no autoriza conversiones o mapeos para uso asistencial. Las referencias FHIR R5 5.0.0, UCUM 2.2, JSON Schema Draft 2020-12 y documentación Apache Avro se consultaron el 25 de agosto de 2026 y deben revalidarse si cambian versiones o implementaciones. U1 cubre fuentes/source-to-landing; U3 almacenamiento/modelado; U4 calidad/linaje/versionado; U5 orquestación/observabilidad; U6 privacidad, acceso, documentación y contratos/productos de datos."
 }
