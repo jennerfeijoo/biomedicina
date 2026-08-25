@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "electrofisica-electromecanica" / "units" / "unit-06.json"
 MIRROR = ROOT / "data" / "generated_units" / "electrofisica-electromecanica" / "unit-06.json"
+CATALOG = ROOT / "data" / "catalog_statuses.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -27,6 +28,13 @@ class ElectrofisicaElectromecanicaUnit06CuratedTests(unittest.TestCase):
         self.assertNotIn(GENERIC, self.text)
         self.assertNotIn("\\mathrm{snr}", self.text)
         self.assertNotIn("cadena física de transducción, acondicionamiento, adquisición", self.text)
+
+    def test_course_stays_out_of_template_detected_catalog_status(self) -> None:
+        catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+        specificity = catalog["dimensions"]["specificity"]
+        subject = "electrofisica-electromecanica"
+        self.assertIn(subject, specificity["screened_no_known_template_marker"])
+        self.assertNotIn(subject, specificity["template_detected"])
 
     def test_theory_is_safety_emc_and_verification_specific(self) -> None:
         sections = self.unit["theory_sections"]
