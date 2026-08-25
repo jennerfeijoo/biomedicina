@@ -170,11 +170,9 @@ class HistoanatomiaHumanaUnit03CuratedTests(unittest.TestCase):
         self.assertIn("u4 pasará a corazón, vasos y aparato respiratorio", self.text)
         self.assertIn("modelado biomecánico cuantitativo pertenece a asignaturas específicas", self.text)
 
-    def test_published_descriptor_matches_canonical_purpose_when_promoted(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[3]["description"] != self.unit["purpose"]:
-            self.skipTest("El descriptor se sincroniza en el workflow de publicación.")
         self.assertEqual(detailed[3]["description"], self.unit["purpose"])
 
 
