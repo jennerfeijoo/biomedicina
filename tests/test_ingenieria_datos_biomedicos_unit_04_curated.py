@@ -111,13 +111,10 @@ class IngenieriaDatosBiomedicosUnit04Curated(unittest.TestCase):
             self.assertIn(family, source_text)
         self.assertTrue(all(s.get("verification_status", "").startswith("verified_directly_2026-08-25") for s in self.data["sources"]))
 
-    def test_published_descriptor_matches_when_promoted(self):
-        if not DESCRIPTOR.exists():
-            self.skipTest("Descriptor todavía no promovido por publicación.")
+    def test_published_descriptor_matches_canonical_purpose(self):
+        self.assertTrue(DESCRIPTOR.exists(), "El descriptor curricular publicado debe existir.")
         descriptor = json.loads(DESCRIPTOR.read_text(encoding="utf-8"))
         unit = next(item for item in descriptor["detailed_units"] if item["unit"] == 4)
-        if unit["description"] != self.data["purpose"]:
-            self.skipTest("El descriptor de U4 será promovido por el workflow de publicación.")
         self.assertEqual(unit["description"], self.data["purpose"])
 
 
