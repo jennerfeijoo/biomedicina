@@ -113,16 +113,20 @@ def test_unit_03_uses_verified_stimulation_sources():
     assert required.issubset(urls)
 
 
-def test_publication_is_checked_after_promotion():
+def test_unit_03_publication_matches_canonical_source():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 3)
-    # Before publication promotes U3 this is intentionally non-blocking.
-    # The final regression will make descriptor equality strict after promotion.
-    if detail["description"] == source["purpose"] and PUBLIC.exists():
-        public_text = PUBLIC.read_text(encoding="utf-8").lower()
-        for marker in ["ley de faraday", "duty cycle", "riesgo residual", "hotspot", "sham"]:
-            assert marker in public_text
+    assert detail["description"] == source["purpose"]
+    assert PUBLIC.exists()
+    public_text = PUBLIC.read_text(encoding="utf-8").lower()
+    for marker in ["ley de faraday", "duty cycle", "riesgo residual", "hotspot", "sham"]:
+        assert marker in public_text
+    for forbidden in [
+        "concepto de la unidad que debe definirse mediante entidades observables",
+        "modelo conceptual de estimulación",
+    ]:
+        assert forbidden not in public_text
 
 
 if __name__ == "__main__":
