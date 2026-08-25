@@ -65,6 +65,14 @@ class ElectrofisicaElectromecanicaUnit06CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, self.text)
 
+    def test_component_evidence_is_not_promoted_to_system_conformity(self) -> None:
+        errors = " ".join(item["error"].casefold() for item in self.unit["common_errors"])
+        corrections = " ".join(item["correction"].casefold() for item in self.unit["common_errors"])
+        self.assertIn("componente 2mopp", errors)
+        self.assertIn("rutas e interfaces del sistema final", corrections)
+        self.assertIn("la conformidad del componente no se hereda automáticamente al sistema", self.text)
+        self.assertIn("no constituyen ensayo de conformidad", self.unit["purpose"].casefold())
+
     def test_applied_parts_and_mop_are_present_without_auto_certification(self) -> None:
         for phrase in (
             "tipo b", "tipo bf", "tipo cf", "mopp", "moop", "parte aplicada",
