@@ -46,10 +46,11 @@ class EconomiaGestionEmpresasUnit05CuratedTests(unittest.TestCase):
             "impacto presupuestario",
             "asequibilidad",
             "análisis probabilístico",
-            "incertidumbre estructural",
+            "estructura del modelo",
             "cheers 2022",
         ):
             self.assertIn(concept, theory)
+        self.assertIn("la incertidumbre no es solo paramétrica", theory)
         self.assertIn("no demuestra que exista presupuesto disponible", theory)
         self.assertIn("no un sello que garantice", theory)
 
