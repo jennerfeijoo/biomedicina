@@ -6,387 +6,861 @@
   "slug": "almacenamiento-y-modelado",
   "title": "Almacenamiento y modelado",
   "status": "review",
-  "purpose": "Integrar relacional, lago de datos, series temporales para resolver un caso de selección de arquitectura según uso y escala con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Seleccionar y justificar modelos de almacenamiento para datos biomédicos ya normalizados, conectando esquema relacional, modelado analítico, archivos columnares/lago de datos y series temporales con los patrones de consulta, cardinalidad, mutabilidad, tamaño y temporalidad del uso previsto. La unidad enseña claves e integridad referencial, normalización y desnormalización deliberada, particionado e indexación, Parquet e Iceberg, y diseños de series temporales sin presentar ninguna tecnología como solución universal. Reutiliza la landing de U1 y las transformaciones de U2; reserva calidad, linaje y versionado profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6.",
   "learning_objectives": [
-    "Definir relacional, lago de datos y series temporales mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte relacional con lago de datos y delimite el papel de series temporales.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre selección de arquitectura según uso y escala con incertidumbre y límites.",
-    "Transferir el método de Almacenamiento y modelado a un escenario nuevo y justificar qué debe revalidarse."
+    "Traducir un patrón de acceso biomédico a un modelo lógico con entidades, granularidad, claves primarias/foráneas y restricciones, distinguiendo identidad estable de atributos mutables.",
+    "Comparar normalización relacional, modelo dimensional y desnormalización controlada según workload transaccional o analítico, sin confundir duplicación física con duplicación semántica.",
+    "Seleccionar almacenamiento por filas, archivos columnares Parquet y tablas de lago/lakehouse con criterios explícitos de consulta, volumen, mutabilidad, esquema y coste de reescritura.",
+    "Diseñar una representación de series temporales que preserve entity/channel, event_time, ingest_time, unidad y calidad de muestra, justificando partición temporal e índices desde consultas concretas.",
+    "Separar metadatos consultables de objetos biomédicos grandes —por ejemplo DICOM, waveforms o arrays— mediante identificadores y referencias verificables en vez de almacenar binarios arbitrariamente en tablas.",
+    "Entregar y defender una arquitectura híbrida reproducible sobre datos sintéticos, con DDL/pseudocódigo, consultas de prueba, estimaciones de volumen y límites explícitos frente a U4–U6."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Almacenamiento y modelado",
+      "heading": "1. Modelo relacional: identidad, granularidad e integridad antes de optimizar",
       "paragraphs": [
-        "La unidad «Almacenamiento y modelado» sitúa relacional, lago de datos y series temporales dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Ingeniería de Datos Biomédicos, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Almacenamiento y modelado» en Ingeniería de Datos Biomédicos, «relacional», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Almacenamiento y modelado», «lago de datos», aporta otra dimensión al problema de Ingeniería de Datos Biomédicos: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con relacional debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Almacenamiento y modelado» en Ingeniería de Datos Biomédicos, «series temporales», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "U3 empieza después de U2: los registros ya tienen estructura, unidades y temporalidad explícitas, pero aún falta decidir cómo representarlos para consulta y análisis. El primer paso no es elegir PostgreSQL, un data lake o una base de series temporales, sino declarar la unidad de observación y las relaciones que deben mantenerse. Una persona, un encuentro, una muestra, un estudio de imagen y una medición no tienen la misma granularidad; colocarlos en una única tabla ancha puede borrar cardinalidades y producir duplicaciones aparentes.",
+        "El modelo relacional representa entidades en relaciones con atributos y restricciones. Una primary key identifica de forma única una fila dentro del modelo; una foreign key expresa que una referencia debe corresponder a una clave válida en otra relación. PostgreSQL documenta que una primary key implica unicidad y no-null, mientras que una foreign key mantiene integridad referencial. Estas restricciones son propiedades del modelo de datos, no evidencia de que la identidad clínica o el enlace entre personas haya sido resuelto correctamente en la fuente.",
+        "Normalizar significa separar hechos que dependen de claves distintas para reducir anomalías de inserción, actualización y borrado. En un ejemplo sintético, PERSON, ENCOUNTER y MEASUREMENT pueden almacenarse por separado porque una persona tiene múltiples encuentros y cada encuentro múltiples mediciones. Repetir fecha de nacimiento o sexo en cada medición facilita algunas lecturas, pero también multiplica puntos donde un atributo puede quedar inconsistente. U3 enseña a reconocer ese coste antes de desnormalizar.",
+        "La desnormalización puede ser deliberada en una capa analítica cuando un patrón de lectura repetitivo justifica materializar atributos o agregados. No significa abandonar el modelo semántico. Debe documentarse qué dato es fuente de verdad, qué copia es derivada, con qué granularidad y bajo qué regla se reconstruye. Una tabla ancha de features para análisis puede ser apropiada como producto derivado, pero no debe convertirse silenciosamente en reemplazo de entidades clínicas normalizadas.",
+        "Los modelos comunes de investigación sanitaria muestran que la estructura relacional puede estandarizar dominios sin eliminar la semántica del evento. OMOP CDM v5.4, por ejemplo, separa PERSON, VISIT_OCCURRENCE, MEASUREMENT, CONDITION_OCCURRENCE y otras tablas con claves y convenciones. U3 usa OMOP solo como ejemplo de diseño analítico biomédico; no exige convertir el paquete sintético al CDM ni afirma que un esquema estándar resuelva la calidad o la idoneidad de un estudio.",
+        "Antes de optimizar se escriben consultas objetivo. Si el caso requiere recuperar todas las mediciones de una persona en una ventana, enlazar muestras con ensayos o contar eventos por cohorte, el modelo debe permitir esas operaciones sin joins ambiguos. La prueba de diseño no es que el diagrama entidad-relación se vea limpio: es que identidades, cardinalidades y consultas esperadas puedan expresarse y que las restricciones detecten estados imposibles definidos por el contrato."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Almacenamiento y modelado.",
-        "Relacionar relacional, lago de datos y series temporales mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "La granularidad de cada tabla se declara antes de elegir claves o índices.",
+        "Primary key identifica filas; no demuestra que la identidad clínica fuente sea correcta.",
+        "Foreign key preserva integridad referencial entre relaciones bajo el modelo definido.",
+        "Normalización reduce anomalías; desnormalización debe ser una decisión derivada y auditable.",
+        "Un esquema estándar como OMOP organiza datos, pero no garantiza calidad ni validez del análisis.",
+        "Las consultas objetivo son parte del diseño lógico y deben probar cardinalidades reales."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Workload y diseño físico: filas, columnas, índices y particiones responden a consultas distintas",
       "paragraphs": [
-        "Para «Almacenamiento y modelado» dentro de Ingeniería de Datos Biomédicos, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Ingeniería de Datos Biomédicos, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre relacional o lago de datos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Almacenamiento y modelado», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Ingeniería de Datos Biomédicos, la incertidumbre de «Almacenamiento y modelado» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: selección de arquitectura según uso y escala",
-      "paragraphs": [
-        "En la unidad «Almacenamiento y modelado» de Ingeniería de Datos Biomédicos, el caso conductor es selección de arquitectura según uso y escala. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Almacenamiento y modelado» conecta relacional con lago de datos y utiliza series temporales como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «selección de arquitectura según uso y escala» en Ingeniería de Datos Biomédicos, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Almacenamiento y modelado» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de selección de arquitectura según uso y escala y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "El modelo lógico dice qué significa cada entidad; el diseño físico decide cómo se almacena y accede. Un workload transaccional suele leer o modificar pocas filas por operación y beneficia formatos orientados a filas, restricciones e índices selectivos. Un workload analítico recorre muchas filas y pocas columnas, agrega por cohortes o tiempo y puede beneficiarse de formatos columnares. U3 evita la regla simplista «SQL para pequeño, data lake para grande»: la forma de acceso importa tanto como el volumen.",
+        "Los índices aceleran ciertos patrones de búsqueda a cambio de espacio, mantenimiento y coste de escritura. PostgreSQL advierte que los índices permiten recuperar filas con mayor rapidez, pero añaden overhead. Por eso el estudiante no crea un índice para cada columna. Parte de consultas concretas —por person_id, device_id, code y rango temporal— y evalúa cuáles columnas filtran, ordenan o unen de manera repetida.",
+        "El particionado divide una tabla lógica grande en piezas físicas según una clave. PostgreSQL 18 soporta particionado declarativo y partition pruning, de modo que consultas compatibles con la clave pueden evitar leer particiones irrelevantes. Particionar por fecha puede ser útil para eventos masivos, pero perjudicial si la mayoría de consultas buscan una persona a través de toda la historia y el diseño obliga a tocar muchas particiones. La clave de partición se justifica con workload y distribución, no por moda.",
+        "La estimación de volumen conecta el modelo con recursos. Si N entidades generan r observaciones por segundo durante T segundos y cada registro ocupa aproximadamente b bytes antes de índices/compresión, el volumen bruto aproximado es V=N·r·T·b. Es una estimación de orden de magnitud, no una predicción exacta de almacenamiento: formatos, compresión, metadatos, índices, nulls y replicación cambian el tamaño real.",
+        "Las decisiones físicas deben distinguir latencia de consulta, throughput de escritura y coste de escaneo. Optimizar una consulta individual con muchos índices puede degradar ingestión; maximizar compresión puede aumentar CPU o latencia de escritura. U3 documenta el compromiso con una matriz workload→diseño→métrica esperada y usa mediciones sintéticas simples, no benchmarks universales.",
+        "El resultado del diseño físico es revisable. Se conserva DDL o pseudocódigo, consultas representativas, EXPLAIN o mediciones cuando el motor esté disponible, y supuestos de tamaño. U5 cubrirá observabilidad de pipelines en operación; U3 solo demuestra que la estructura propuesta responde de forma reproducible a un conjunto de consultas y escalas definidas."
       ],
       "equations": [
         {
-          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
+          "latex": "V\\approx N\\,r\\,T\\,b",
+          "meaning": "Estimación de orden de magnitud del volumen bruto generado por una colección de entidades o canales antes de compresión, índices y replicación.",
           "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
+            "V": "volumen bruto aproximado",
+            "N": "número de entidades o canales",
+            "r": "registros por unidad de tiempo y entidad",
+            "T": "duración observada",
+            "b": "bytes aproximados por registro"
           }
         }
       ],
       "key_points": [
-        "Delimitar el caso de selección de arquitectura según uso y escala antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Workload transaccional y analítico imponen patrones de acceso diferentes.",
+        "Los índices aceleran lecturas seleccionadas pero añaden coste de escritura y almacenamiento.",
+        "El particionado solo ayuda cuando la clave y las consultas permiten podar datos irrelevantes.",
+        "Una estimación de volumen debe declarar frecuencia, duración y tamaño aproximado por registro.",
+        "Latencia, throughput, compresión y coste de escaneo pueden entrar en conflicto.",
+        "DDL, consultas y supuestos deben quedar versionados para poder reproducir la decisión."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "3. Lago de datos, Parquet e Iceberg: separar objeto, archivo y tabla analítica",
       "paragraphs": [
-        "La reproducibilidad de «Almacenamiento y modelado» en Ingeniería de Datos Biomédicos requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Almacenamiento y modelado» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Ingeniería de Datos Biomédicos separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Almacenamiento y modelado» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de relacional, lago de datos y series temporales debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Ingeniería de Datos Biomédicos.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre selección de arquitectura según uso y escala. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Ingeniería de Datos Biomédicos como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un lago de datos es una arquitectura de almacenamiento de objetos o archivos heterogéneos, no una excusa para abandonar esquemas. La landing raw de U1 puede vivir en objetos inmutables, mientras U3 crea datasets analíticos con esquemas explícitos. Guardar miles de CSV con nombres libres no constituye por sí mismo una arquitectura: deben existir convenciones de ruta o catálogo, formato, esquema, partición, identificadores y relación con el origen.",
+        "Apache Parquet es un formato de archivo columnar orientado a almacenamiento y recuperación eficientes. Organiza los datos en row groups, column chunks y pages con metadatos que permiten a lectores seleccionar columnas y, según implementación y estadísticas, evitar trabajo innecesario. Parquet es un formato de archivos; no proporciona por sí solo transacciones multiarchivo, catálogo, control de concurrencia ni una semántica completa de tabla.",
+        "Los archivos pequeños ilustran por qué formato y tabla no son lo mismo. Miles de objetos diminutos pueden aumentar coste de listado, planificación y apertura aun cuando cada uno sea Parquet. En el laboratorio se compara un diseño con muchos archivos pequeños frente a otro con row groups/archivos de tamaño razonable, sin fijar un tamaño universal. El criterio depende del motor, almacenamiento, paralelismo y patrón de consulta.",
+        "Un table format como Apache Iceberg añade una capa de metadatos que representa un conjunto de archivos como tabla. Su especificación mantiene estado en metadata files y permite evolución de schema y partition spec; la documentación actual distingue versiones de formato adoptadas y características en evolución. Esto habilita snapshots y cambios atómicos de metadatos sin convertir el lakehouse en fuente clínica autoritativa.",
+        "Schema evolution no significa cambio semántico libre. Renombrar o añadir columnas con mecanismos del table format puede mantener identidad estructural, pero reinterpretar `heart_rate` como otra magnitud seguiría siendo un cambio semántico que U2/U4 deben controlar. Del mismo modo, partition evolution puede cambiar cómo se organizan archivos sin cambiar necesariamente la unidad lógica de observación.",
+        "U3 separa raw, curated table y producto derivado. Raw conserva evidencia recibida; una tabla curada aplica el contrato de U2 y un esquema analítico; una feature table o agregado responde a un uso posterior. U4 profundizará en linaje/versionado y U6 en contratos de producto. Aquí el objetivo es que cada capa tenga una razón física y lógica identificable, no multiplicar zonas con nombres decorativos."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "Un data lake necesita convenciones, esquemas y catálogo; no es una carpeta arbitraria de archivos.",
+        "Parquet es formato columnar de archivos y no constituye por sí solo una tabla transaccional.",
+        "Row groups y column chunks permiten lecturas selectivas, pero el rendimiento depende del motor y layout.",
+        "Muchos archivos pequeños pueden degradar planificación y acceso aunque usen un formato columnar.",
+        "Iceberg agrega metadatos de tabla, snapshots y evolución sobre archivos analíticos.",
+        "Evolución estructural de esquema no autoriza reinterpretar silenciosamente el significado biomédico."
+      ]
+    },
+    {
+      "heading": "4. Series temporales biomédicas: tiempo, entidad, canal y orden deben modelarse explícitamente",
+      "paragraphs": [
+        "Una serie temporal biomédica no es solo una columna `timestamp` y otra `value`. El modelo necesita identificar entidad o dispositivo, canal o variable, event_time, ingest_time, valor, unidad y, cuando exista, indicadores de calidad o secuencia. Una señal de ECG de alta frecuencia, signos vitales cada minuto y resultados de laboratorio irregulares tienen densidades y semánticas temporales distintas; no deben forzarse al mismo patrón físico sin justificarlo.",
+        "Para observaciones discretas puede usarse una tabla larga con `(entity_id, channel_code, event_time, value, unit_code, ingest_time)`. Una clave lógica puede requerir sequence_number u otra identidad cuando dos muestras válidas comparten el mismo timestamp. Declarar `UNIQUE(device_id,event_time)` sin comprobar frecuencia y resolución del reloj puede borrar observaciones reales. La restricción se deriva de la semántica fuente, no de conveniencia.",
+        "El particionado por tiempo es común porque muchas consultas piden ventanas recientes o intervalos. PostgreSQL y extensiones como Timescale muestran estrategias para dividir datos por rangos temporales. Sin embargo, la partición no sustituye un índice o una dimensión de entidad cuando las consultas se filtran por paciente o dispositivo. Un diseño time-series se evalúa con consultas representativas de ventana temporal, entidad+tiempo y agregación.",
+        "Datos fuera de orden y tardíos son normales en sistemas distribuidos. Event_time indica cuándo ocurrió la observación; ingest_time cuándo llegó. Un registro con event_time antiguo pero ingest_time reciente no debe insertarse como si hubiera ocurrido ahora. U3 modela ambos relojes; U5 estudiará retries, late arrivals y operación del pipeline, y U4 estudiará calidad y procedencia con más profundidad.",
+        "Los resúmenes temporales cambian la información. Un promedio por minuto, máximo por hora o downsample reduce volumen pero no puede reemplazar automáticamente las muestras de alta resolución si otros análisis las necesitan. Los agregados deben ser productos derivados con ventana, función y versión explícitas. Una media de frecuencia cardiaca no preserva ectopias, gaps ni morfología de waveform.",
+        "El almacenamiento de series temporales se selecciona por frecuencia, retención, consultas y necesidad de actualización. Una tabla relacional particionada puede ser suficiente para muchos casos; un motor especializado puede automatizar chunks, compresión o agregados. U3 no convierte una característica de producto en requisito científico: compara el mismo dataset sintético bajo dos layouts y documenta qué workload favorece cada uno."
+      ],
+      "key_points": [
+        "Una serie temporal necesita identidad de entidad y canal además del timestamp y valor.",
+        "Event time e ingest time permanecen separados para representar retrasos y datos fuera de orden.",
+        "Una restricción de unicidad temporal solo es válida si la resolución del reloj la sustenta.",
+        "Particionar por tiempo no resuelve por sí solo consultas frecuentes por entidad.",
+        "Downsampling crea un producto derivado y puede eliminar morfología, gaps o eventos breves.",
+        "El motor temporal se justifica por frecuencia, retención y consultas, no por una etiqueta especializada."
+      ]
+    },
+    {
+      "heading": "5. Arquitectura híbrida biomédica: metadatos consultables y objetos grandes con referencias verificables",
+      "paragraphs": [
+        "Los datos biomédicos mezclan relaciones pequeñas con objetos muy grandes. Guardar una imagen DICOM, un archivo de waveform o un array multidimensional completo dentro de una fila puede ser técnicamente posible y aun ser un mal diseño para el workload. U3 separa el objeto pesado de sus metadatos consultables cuando conviene: la tabla mantiene identidad, tipo, URI o key de objeto, tamaño, hash y relaciones; el objeto conserva su formato especializado.",
+        "DICOM PS3.10 define un formato de archivo para encapsular una SOP Instance y metainformación asociada. Esto permite tratar el archivo como objeto identificable sin descomponer necesariamente todos sus bytes en columnas relacionales. La base analítica puede almacenar Study/Series/Instance UIDs y una referencia al objeto, pero una URI válida no demuestra que el objeto corresponda al paciente correcto ni que el archivo sea clínicamente interpretable.",
+        "Arrays científicos grandes pueden requerir chunking multidimensional distinto del row grouping tabular. Zarr v3 define un formato para arrays N-dimensionales y almacenamiento compatible con computación paralela/distribuida. U3 lo presenta como contraste arquitectónico: una matriz de imagen o volumen puede necesitar chunking espacial, mientras una tabla de measurements puede beneficiarse de partición temporal o Parquet columnar.",
+        "El patrón híbrido evita duplicar payloads sin necesidad. Un mismo objeto raw puede ser referenciado por manifest y tablas derivadas; una versión transformada debe tener identidad distinta si sus bytes o semántica cambian. El hash ayuda a verificar integridad de bytes o detectar igualdad bajo un algoritmo, pero no sustituye identidad clínica, calidad, autorización ni linaje completo.",
+        "La arquitectura de laboratorio combina cuatro componentes lógicos: relational core para entidades/relaciones, time-series table para mediciones densas, object store simulado para DICOM/waveforms/arrays y analytical table Parquet/Iceberg para cohortes. No se exige desplegar servicios reales: carpetas locales y SQLite/PostgreSQL opcional pueden simular los roles si el diseño y las consultas son reproducibles.",
+        "El cierre exige una matriz de decisión. Para cada dataset se declara granularidad, tamaño aproximado, frecuencia de escritura, mutabilidad, consultas, necesidad de joins, acceso por rango temporal y forma del payload. La selección final puede ser híbrida y debe explicar qué se pierde si todo se fuerza a una sola tecnología. U4 evaluará calidad/linaje, U5 operación y U6 privacidad/productización; U3 entrega únicamente el modelo de almacenamiento."
+      ],
+      "key_points": [
+        "Objetos grandes y metadatos consultables pueden requerir capas de almacenamiento distintas.",
+        "DICOM puede conservarse como objeto identificado mientras tablas mantienen UIDs y relaciones consultables.",
+        "Zarr ilustra chunking para arrays multidimensionales distinto del layout de una tabla relacional.",
+        "URI y hash verifican propiedades técnicas limitadas; no prueban identidad clínica ni calidad.",
+        "Una arquitectura biomédica realista puede combinar relacional, temporal, objetos y tablas analíticas.",
+        "La selección se defiende con granularidad, tamaño, mutabilidad y workload, no con una tecnología universal."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "relacional",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "modelo lógico",
+      "definition": "Representación de entidades, atributos, relaciones, granularidad y restricciones independiente del layout físico."
     },
     {
-      "term": "lago de datos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "modelo físico",
+      "definition": "Decisiones concretas de tablas, archivos, particiones, índices y almacenamiento usadas para implementar un modelo."
     },
     {
-      "term": "series temporales",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "granularidad",
+      "definition": "Nivel representado por una fila, evento, objeto o registro; determina cardinalidades y significado."
     },
     {
-      "term": "Almacenamiento y modelado",
-      "definition": "Dominio de estudio que integra relacional, lago de datos, series temporales para resolver un problema delimitado y verificable."
+      "term": "entidad",
+      "definition": "Objeto conceptual con identidad propia dentro del modelo, como persona, encuentro, muestra o dispositivo."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de selección de arquitectura según uso y escala usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "primary key",
+      "definition": "Restricción que identifica de forma única y no nula una fila dentro de una relación."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "foreign key",
+      "definition": "Restricción que exige que una referencia corresponda a una clave válida de otra relación."
     },
     {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "integridad referencial",
+      "definition": "Propiedad por la que referencias entre relaciones cumplen las restricciones declaradas."
     },
     {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "cardinalidad",
+      "definition": "Número permitido de relaciones entre instancias, por ejemplo uno-a-muchos."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "normalización relacional",
+      "definition": "Separación de hechos dependientes de claves distintas para reducir anomalías y redundancia no controlada."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "desnormalización",
+      "definition": "Materialización deliberada de datos derivados o repetidos para un patrón de lectura, manteniendo fuente y regla."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "OLTP",
+      "definition": "Workload orientado a transacciones pequeñas, lecturas/escrituras puntuales y consistencia de operaciones."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "OLAP",
+      "definition": "Workload orientado a escaneo, agregación y análisis de grandes conjuntos de datos."
+    },
+    {
+      "term": "modelo dimensional",
+      "definition": "Modelo analítico que organiza hechos y dimensiones según una granularidad declarada."
+    },
+    {
+      "term": "tabla de hechos",
+      "definition": "Relación analítica donde cada fila representa un evento o medición a una granularidad definida."
+    },
+    {
+      "term": "dimensión",
+      "definition": "Entidad descriptiva usada para contextualizar y agrupar hechos analíticos."
+    },
+    {
+      "term": "índice",
+      "definition": "Estructura auxiliar para acelerar ciertos accesos a cambio de almacenamiento y coste de mantenimiento."
+    },
+    {
+      "term": "B-tree",
+      "definition": "Tipo de índice ordenado común para igualdad, rangos y ordenamiento en sistemas relacionales."
+    },
+    {
+      "term": "índice compuesto",
+      "definition": "Índice que incluye múltiples columnas y cuyo valor depende del patrón de consulta."
+    },
+    {
+      "term": "particionado",
+      "definition": "División física de una tabla lógica en subconjuntos según una clave y límites definidos."
+    },
+    {
+      "term": "partition pruning",
+      "definition": "Eliminación de particiones irrelevantes durante planificación/ejecución de una consulta."
+    },
+    {
+      "term": "workload",
+      "definition": "Conjunto representativo de lecturas, escrituras, filtros, joins y agregaciones que guían el diseño."
+    },
+    {
+      "term": "latencia",
+      "definition": "Tiempo entre iniciar una operación y obtener su resultado bajo condiciones definidas."
+    },
+    {
+      "term": "throughput",
+      "definition": "Cantidad de operaciones o datos procesados por unidad de tiempo."
+    },
+    {
+      "term": "selectividad",
+      "definition": "Fracción de filas que satisface un predicado de consulta."
+    },
+    {
+      "term": "volumen bruto",
+      "definition": "Estimación de bytes antes de compresión, índices, replicación y metadatos adicionales."
+    },
+    {
+      "term": "almacenamiento orientado a filas",
+      "definition": "Layout que mantiene valores de una fila próximos y favorece ciertos accesos transaccionales."
+    },
+    {
+      "term": "almacenamiento columnar",
+      "definition": "Layout que agrupa valores por columna y favorece escaneos analíticos de columnas seleccionadas."
+    },
+    {
+      "term": "Parquet",
+      "definition": "Formato columnar de archivos con row groups, column chunks, pages y metadatos."
+    },
+    {
+      "term": "row group",
+      "definition": "Conjunto horizontal de filas dentro de un archivo Parquet organizado en chunks por columna."
+    },
+    {
+      "term": "column chunk",
+      "definition": "Porción de una columna correspondiente a un row group de Parquet."
+    },
+    {
+      "term": "page",
+      "definition": "Unidad interna de codificación/compresión dentro de un column chunk de Parquet."
+    },
+    {
+      "term": "predicate pushdown",
+      "definition": "Optimización en la que filtros pueden evitar procesamiento de datos irrelevantes según capacidades del lector/formato."
+    },
+    {
+      "term": "data lake",
+      "definition": "Arquitectura de almacenamiento de objetos/archivos heterogéneos con convenciones, esquema y catálogo explícitos."
+    },
+    {
+      "term": "lakehouse",
+      "definition": "Arquitectura que añade semántica de tablas y gestión de metadatos sobre almacenamiento de tipo data lake."
+    },
+    {
+      "term": "Apache Iceberg",
+      "definition": "Table format abierto para administrar colecciones de archivos como tablas analíticas versionadas."
+    },
+    {
+      "term": "snapshot",
+      "definition": "Estado identificable de una tabla Iceberg compuesto por metadatos y archivos referenciados."
+    },
+    {
+      "term": "schema evolution",
+      "definition": "Cambio controlado de la estructura de una tabla manteniendo reglas de compatibilidad e identidad de campos."
+    },
+    {
+      "term": "partition evolution",
+      "definition": "Cambio de la especificación de partición de una tabla sin asumir que cambia su semántica lógica."
+    },
+    {
+      "term": "small-files problem",
+      "definition": "Sobrecoste de planificación y acceso causado por grandes cantidades de archivos diminutos."
+    },
+    {
+      "term": "object store",
+      "definition": "Almacenamiento direccionado por claves/objetos adecuado para payloads y archivos de gran tamaño."
+    },
+    {
+      "term": "URI de objeto",
+      "definition": "Referencia a la ubicación lógica de un objeto; no demuestra por sí sola identidad ni integridad."
+    },
+    {
+      "term": "hash",
+      "definition": "Resumen calculado sobre bytes que puede apoyar verificación de integridad o igualdad bajo un algoritmo."
+    },
+    {
+      "term": "serie temporal",
+      "definition": "Secuencia de observaciones indexadas por tiempo y asociadas a entidad/canal y contexto."
+    },
+    {
+      "term": "event time",
+      "definition": "Tiempo en que ocurrió o aplica la observación representada."
+    },
+    {
+      "term": "ingest time",
+      "definition": "Tiempo en que el sistema de datos recibió o registró la observación."
+    },
+    {
+      "term": "late arrival",
+      "definition": "Dato cuyo tiempo de llegada ocurre significativamente después de su event time."
+    },
+    {
+      "term": "out-of-order data",
+      "definition": "Observaciones recibidas en un orden distinto del orden de event_time."
+    },
+    {
+      "term": "time partitioning",
+      "definition": "Particionado cuyo rango se define a partir de una dimensión temporal."
+    },
+    {
+      "term": "time bucket",
+      "definition": "Intervalo temporal usado para agrupar observaciones en resúmenes."
+    },
+    {
+      "term": "downsampling",
+      "definition": "Reducción de resolución temporal mediante selección o agregación explícita."
+    },
+    {
+      "term": "retención",
+      "definition": "Política sobre cuánto tiempo se conserva una representación y en qué nivel de detalle."
+    },
+    {
+      "term": "DICOM SOP Instance",
+      "definition": "Objeto de información DICOM identificable que puede encapsularse en un archivo PS3.10."
+    },
+    {
+      "term": "Study Instance UID",
+      "definition": "UID DICOM que identifica un Study dentro de la jerarquía de imagen."
+    },
+    {
+      "term": "Series Instance UID",
+      "definition": "UID DICOM que identifica una Series dentro de un Study."
+    },
+    {
+      "term": "SOP Instance UID",
+      "definition": "UID DICOM que identifica una instancia concreta."
+    },
+    {
+      "term": "Zarr",
+      "definition": "Formato para arrays N-dimensionales chunked orientado a datos científicos."
+    },
+    {
+      "term": "chunking multidimensional",
+      "definition": "División de un array en bloques según dimensiones para acceso y procesamiento."
+    },
+    {
+      "term": "OMOP CDM",
+      "definition": "Modelo común de datos observacionales de OHDSI con tablas y convenciones analíticas."
+    },
+    {
+      "term": "DDL",
+      "definition": "Data Definition Language usada para declarar tablas, columnas, claves, constraints e índices."
+    },
+    {
+      "term": "consulta objetivo",
+      "definition": "Consulta representativa definida antes del diseño y usada para evaluar si el almacenamiento satisface el workload."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Almacenamiento y modelado",
-      "scenario": "Un equipo propone estudiar selección de arquitectura según uso y escala, pero su pregunta mezcla relacional, lago de datos y series temporales sin definir unidades, referencias ni resultado admisible.",
+      "title": "PERSON–ENCOUNTER–MEASUREMENT sin tabla ancha",
+      "scenario": "Un dataset sintético contiene 100 personas, múltiples encuentros y miles de mediciones.",
+      "task": "Diseñar claves y relaciones evitando repetir atributos personales en cada medición.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de relacional, lago de datos y series temporales.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Definir granularidad de cada tabla.",
+        "Asignar primary keys estables.",
+        "Modelar foreign keys persona→encuentro→medición.",
+        "Probar cardinalidades con consultas de conteo."
       ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "result": "Tres relaciones separan identidad, encuentro y medición; una vista derivada puede aplanarlas para análisis.",
+      "interpretation": "Normalización protege dependencias y una vista analítica puede desnormalizar sin cambiar la fuente.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
+        "No resuelve record linkage real ni identidad institucional."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre relacional y lago de datos en el caso de selección de arquitectura según uso y escala; una condición vinculada con series temporales podría producir el mismo patrón.",
+      "title": "Índice y partición para mediciones por persona y tiempo",
+      "scenario": "Diez millones de observaciones sintéticas se consultan por person_id y ventanas mensuales.",
+      "task": "Comparar índice compuesto, partición temporal y combinación de ambos.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar series temporales como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Escribir consultas objetivo.",
+        "Estimar selectividad por persona y mes.",
+        "Diseñar partición por rango temporal.",
+        "Evaluar si el índice person_id,event_time sigue siendo necesario."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "result": "El diseño combina partición temporal con acceso por entidad cuando ambas dimensiones aparecen en el workload.",
+      "interpretation": "Particionar no reemplaza automáticamente índices ni garantiza mejora en todas las consultas.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "No fija umbrales universales de tamaño ni benchmark de hardware."
+      ]
+    },
+    {
+      "title": "Parquet frente a miles de CSV pequeños",
+      "scenario": "Un lote analítico sintético de 50 GB puede escribirse como 200 000 CSV o como archivos Parquet agrupados.",
+      "task": "Justificar un layout columnar y evitar small-files problem.",
+      "reasoning_steps": [
+        "Identificar columnas leídas por consultas.",
+        "Comparar metadatos y apertura de archivos.",
+        "Definir partición por fecha/cohorte solo si aparece en filtros.",
+        "Mantener raw separado del dataset curado."
+      ],
+      "result": "Se elige Parquet para la tabla curada con un número razonable de archivos y esquema explícito.",
+      "interpretation": "El formato columnar ayuda al workload analítico, pero no sustituye catálogo ni semántica de tabla.",
+      "limitations": [
+        "El tamaño óptimo de archivo depende de motor y almacenamiento."
+      ]
+    },
+    {
+      "title": "Serie temporal de monitor con dos relojes",
+      "scenario": "Un dispositivo sintético produce frecuencia cardiaca cada segundo y entrega lotes con retraso.",
+      "task": "Modelar event_time, ingest_time, device_id y secuencia sin perder eventos tardíos.",
+      "reasoning_steps": [
+        "Separar ambos timestamps.",
+        "Comprobar resolución del reloj.",
+        "Definir clave lógica con device/channel/time/sequence si hace falta.",
+        "Probar consulta por dispositivo y ventana."
+      ],
+      "result": "Los datos tardíos conservan su event_time original y pueden consultarse por tiempo de fenómeno o llegada.",
+      "interpretation": "Orden de llegada no debe redefinir cronología fisiológica.",
+      "limitations": [
+        "No modela sincronización de reloj clínico real ni calidad de señal."
+      ]
+    },
+    {
+      "title": "DICOM como objeto y metadatos como tabla",
+      "scenario": "Un estudio sintético contiene cientos de archivos DICOM grandes y consultas frecuentes por Study/Series/Instance UID.",
+      "task": "Evitar guardar todos los bytes en una tabla relacional sin perder buscabilidad.",
+      "reasoning_steps": [
+        "Mantener objetos DICOM en object store simulado.",
+        "Extraer UIDs y metadatos mínimos consultables.",
+        "Guardar URI/hash como propiedades técnicas.",
+        "Probar join entre study, series e instance."
+      ],
+      "result": "El payload permanece como objeto y la base relacional mantiene identificadores y relaciones.",
+      "interpretation": "Separar objeto de metadatos reduce acoplamiento físico sin afirmar validez clínica del estudio.",
+      "limitations": [
+        "No implementa PACS, DICOMweb ni desidentificación productiva."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Laboratorio reproducible: diseñar almacenamiento híbrido para un paquete biomédico multimodal",
+      "estimated_time_minutes": 420,
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja exclusivamente con datos sintéticos o abiertos no identificables; no uses exports institucionales, credenciales ni buckets reales.",
+        "Reutiliza las identidades, tiempos y unidades preservados en U1–U2; no los redefinas para simplificar el modelo.",
+        "Define primero cinco consultas objetivo y la granularidad de cada dataset antes de elegir motor o formato.",
+        "Modela relational core, tabla temporal, object store simulado y tabla analítica como roles lógicos que pueden implementarse localmente.",
+        "Versiona DDL, esquema Parquet/Iceberg o pseudocódigo equivalente y parámetros de partición usados en cada experimento.",
+        "Conserva raw de U1 sin modificar; U3 crea representaciones almacenadas derivadas y referencias.",
+        "Evita benchmarks universales: registra tamaño, número de filas/archivos y latencia solo dentro del entorno sintético usado.",
+        "No implementes reglas profundas de calidad/linaje de U4, scheduling/alertas de U5 ni controles de privacidad/producto de U6.",
+        "Documenta cada desnormalización, agregado o downsampling como derivación y declara qué información deja de preservar.",
+        "Entrega artefactos reproducibles: diagrama, DDL/pseudocódigo, consultas, estimaciones de volumen, layout de archivos y matriz de decisión."
       ],
       "problems": [
-        "Define relacional mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo lago de datos modifica o complementa a relacional.",
-        "Propón una prueba que distinga el papel de series temporales de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Define granularidad y clave para PERSON, ENCOUNTER, MEASUREMENT, DEVICE y OBJECT_REF en un dataset sintético.",
+        "Dibuja un ERD con al menos cuatro relaciones y cardinalidades explícitas.",
+        "Escribe DDL o pseudocódigo con primary keys, foreign keys, NOT NULL y una restricción CHECK razonable.",
+        "Construye un ejemplo donde una tabla ancha duplique un atributo mutable y demuestra la anomalía de actualización.",
+        "Propón una vista o tabla derivada desnormalizada para análisis y documenta su fuente de verdad.",
+        "Escribe cinco consultas objetivo: lookup puntual, join, rango temporal, agregación por cohorte y consulta de objeto.",
+        "Selecciona índices para esas consultas y justifica por qué no indexas todas las columnas.",
+        "Compara sin partición, partición temporal y partición por otra dimensión; explica qué consultas se benefician o perjudican.",
+        "Estima V≈N·r·T·b para un monitor sintético y realiza sensibilidad duplicando r y T.",
+        "Modela una tabla de hechos y dos dimensiones para un análisis de mediciones sin cambiar la granularidad declarada.",
+        "Convierte un dataset tabular sintético a Parquet o describe el layout exacto si no hay librería disponible.",
+        "Compara un layout con muchos archivos pequeños frente a otro agrupado y registra número de objetos y bytes.",
+        "Explica qué aporta Iceberg sobre Parquet y qué no demuestra un snapshot respecto de calidad clínica.",
+        "Propón una evolución de esquema segura y un cambio semántico que no debe aprobarse solo porque el table format lo soporte.",
+        "Diseña una tabla time-series con entity_id, channel_code, event_time, ingest_time, value y unit_code.",
+        "Crea dos observaciones con mismo timestamp pero distinta secuencia y decide si UNIQUE(entity_id,event_time) sería válido.",
+        "Insertar conceptualmente un late arrival y demuestra consultas distintas por event_time e ingest_time.",
+        "Construye un downsample por minuto y enumera qué información puede perder frente a las muestras originales.",
+        "Representa Study/Series/SOP Instance UID y object_uri para un conjunto DICOM sintético.",
+        "Compara almacenar un array 3D como filas, archivo monolítico y chunks Zarr; justifica acceso por subvolumen.",
+        "Construye una matriz de decisión relacional vs Parquet/lakehouse vs temporal vs object store para cinco datasets biomédicos.",
+        "Explica por qué una arquitectura híbrida no autoriza afirmar calidad, privacidad, disponibilidad o utilidad clínica."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Diagrama ERD con granularidad, claves y cardinalidades.",
+        "DDL o pseudocódigo reproducible del relational core.",
+        "Lista de consultas objetivo y matriz consulta→índice/partición.",
+        "Estimación de volumen con análisis de sensibilidad.",
+        "Modelo dimensional derivado con granularidad explícita.",
+        "Dataset o especificación Parquet con partición/layout documentados.",
+        "Comparación de small-files y layout agrupado.",
+        "Esquema de tabla Iceberg/lakehouse o metadatos equivalentes.",
+        "Tabla temporal con event_time/ingest_time y casos tardíos.",
+        "Ejemplo de downsampling con pérdida documentada.",
+        "Catálogo de object_ref para DICOM/waveform/array sintéticos.",
+        "Matriz final de selección de arquitectura y límites U4–U6."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: selección de arquitectura según uso y escala",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para relacional, lago de datos y series temporales.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de selección de arquitectura según uso y escala y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte relacional, lago de datos y series temporales.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "La granularidad de cada relación está escrita en una frase verificable.",
+        "Cada primary key identifica filas sin usar un atributo evidentemente mutable como única identidad.",
+        "Las foreign keys representan relaciones previstas y no joins por texto libre.",
+        "La normalización evita una anomalía demostrada y la desnormalización derivada declara fuente.",
+        "Las cinco consultas objetivo existen antes de seleccionar índices o particiones.",
+        "Cada índice se asocia a al menos una consulta y reconoce coste de mantenimiento.",
+        "La clave de partición se justifica por filtros reales del workload.",
+        "La estimación de volumen declara N, r, T y b con unidades consistentes.",
+        "El modelo dimensional conserva una granularidad de hecho explícita.",
+        "Parquet se describe como formato de archivo columnar, no como base de datos completa.",
+        "El layout evita asumir un tamaño universal de archivo óptimo.",
+        "Iceberg se describe como table format sobre archivos y no como garantía de calidad.",
+        "Schema evolution no se usa para justificar cambios de significado biomédico.",
+        "La tabla temporal conserva entity/channel además del timestamp.",
+        "Event time e ingest time permanecen en columnas distintas.",
+        "La unicidad temporal se justifica desde resolución/sequence y no por conveniencia.",
+        "Los late arrivals conservan el tiempo original del fenómeno.",
+        "El downsampling se etiqueta como producto derivado y no reemplaza automáticamente raw.",
+        "Los UIDs DICOM permanecen distintos de URI y hash.",
+        "El object store simulado no se presenta como PACS clínico.",
+        "Zarr se usa solo como ejemplo de chunking de arrays multidimensionales.",
+        "Cada tecnología se selecciona desde workload, volumen, mutabilidad y forma del payload.",
+        "Raw U1 permanece sin modificación.",
+        "La actividad usa exclusivamente datos sintéticos o abiertos no identificables.",
+        "La entrega reserva calidad/linaje a U4, operación a U5 y privacidad/productos a U6.",
+        "No se afirma que rendimiento técnico implique validez científica o utilidad clínica."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar relacional como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar relacional en una explicación."
+      "error": "Usar una tabla por cada archivo de origen.",
+      "correction": "Modelar entidades y granularidad del dominio, no la estructura accidental de una entrega."
     },
     {
-      "error": "Afirmar que una relación entre relacional y lago de datos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Elegir UUID, nombre o timestamp como clave sin contrato.",
+      "correction": "Definir identidad estable y distinguir clave técnica de identidad clínica fuente."
     },
     {
-      "error": "Añadir series temporales después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Creer que una foreign key valida record linkage.",
+      "correction": "La constraint solo valida referencias dentro del modelo; linkage requiere evidencia previa."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Desnormalizar porque reduce joins.",
+      "correction": "Documentar workload, fuente de verdad y regla de reconstrucción antes de duplicar atributos."
     },
     {
-      "error": "Generalizar la conclusión de Almacenamiento y modelado al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
+      "error": "Normalizar hasta impedir consultas razonables.",
+      "correction": "El modelo lógico protege dependencias; vistas/materializaciones pueden servir análisis sin alterar la fuente."
+    },
+    {
+      "error": "Crear índices para todas las columnas.",
+      "correction": "Seleccionar índices por consultas y medir el coste de escritura/almacenamiento."
+    },
+    {
+      "error": "Particionar porque la tabla es grande.",
+      "correction": "Elegir partición por workload y distribución; una mala clave puede aumentar trabajo."
+    },
+    {
+      "error": "Usar PPV para elegir arquitectura de almacenamiento.",
+      "correction": "PPV es una métrica diagnóstica/predictiva y no pertenece a la decisión de U3."
+    },
+    {
+      "error": "Llamar data lake a una carpeta de CSV sin contrato.",
+      "correction": "Definir formato, esquema, catálogo, identidad, partición y relación con raw."
+    },
+    {
+      "error": "Decir que Parquet ofrece transacciones de tabla.",
+      "correction": "Parquet es un formato de archivo; la semántica de tabla requiere otra capa."
+    },
+    {
+      "error": "Crear miles de Parquet diminutos.",
+      "correction": "Evaluar small-files overhead y agrupar según motor/workload, sin fijar tamaño universal."
+    },
+    {
+      "error": "Confundir Iceberg con un motor de cómputo.",
+      "correction": "Iceberg es table format; el procesamiento lo realizan motores compatibles."
+    },
+    {
+      "error": "Usar schema evolution para cambiar significado.",
+      "correction": "Cambios estructurales no autorizan reinterpretar magnitud, código o unidad."
+    },
+    {
+      "error": "Definir UNIQUE(device_id,event_time) sin conocer resolución.",
+      "correction": "Comprobar si pueden existir múltiples muestras en el mismo timestamp y añadir secuencia/identidad."
+    },
+    {
+      "error": "Ordenar la serie por ingest_time como cronología fisiológica.",
+      "correction": "Mantener event_time separado y tratar llegada tardía explícitamente."
+    },
+    {
+      "error": "Downsamplear y borrar alta resolución.",
+      "correction": "Mantener raw o detalle requerido; los agregados son productos derivados."
+    },
+    {
+      "error": "Guardar todos los DICOM como BLOB por defecto.",
+      "correction": "Comparar object storage + metadatos consultables con el workload antes de decidir."
+    },
+    {
+      "error": "Usar hash como identidad clínica.",
+      "correction": "Hash verifica bytes bajo un algoritmo; no sustituye identidad, procedencia o autorización."
+    },
+    {
+      "error": "Forzar arrays N-D a filas sin comparar acceso.",
+      "correction": "Evaluar chunking multidimensional como Zarr cuando el workload accede subvolúmenes."
+    },
+    {
+      "error": "Presentar la arquitectura como lista para producción clínica.",
+      "correction": "U3 valida diseño técnico sintético; U4–U6 cubren calidad, operación, privacidad y producto."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar selección de arquitectura según uso y escala?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué debe definirse antes de una primary key?",
+      "answer": "La granularidad y la identidad lógica de la entidad o hecho.",
+      "reasoning": "Sin saber qué representa una fila, la unicidad no tiene significado estable.",
+      "common_error": "Elegir la columna más corta."
     },
     {
-      "question": "¿Cómo se relacionan relacional y lago de datos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; series temporales puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Qué garantiza una foreign key?",
+      "answer": "Integridad referencial dentro del esquema declarado.",
+      "reasoning": "No demuestra que el enlace entre identidades fuente sea verdadero.",
+      "common_error": "Confundir FK con record linkage."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre series temporales?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Cuándo puede ser válida la desnormalización?",
+      "answer": "Cuando un workload concreto justifica materializar datos derivados con fuente y regla conocidas.",
+      "reasoning": "Debe seguir siendo posible reconstruir de dónde procede cada copia.",
+      "common_error": "Duplicar columnas para evitar cualquier join."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Por qué no deben indexarse todas las columnas?",
+      "answer": "Porque índices consumen espacio y añaden mantenimiento a escrituras.",
+      "reasoning": "El beneficio depende de filtros, joins y ordenamientos reales.",
+      "common_error": "Asumir que más índices siempre mejora rendimiento."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Qué diferencia Parquet de Iceberg?",
+      "answer": "Parquet es formato columnar de archivo; Iceberg añade metadatos y semántica de tabla sobre archivos.",
+      "reasoning": "Responden a capas arquitectónicas distintas.",
+      "common_error": "Tratarlos como productos equivalentes."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Qué es el small-files problem?",
+      "answer": "Sobrecoste de planificar, listar y abrir grandes cantidades de archivos diminutos.",
+      "reasoning": "Formato columnar no elimina coste por objeto.",
+      "common_error": "Pensar que archivos pequeños siempre mejoran paralelismo."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre selección de arquitectura según uso y escala?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Por qué event_time e ingest_time deben separarse?",
+      "answer": "Porque describen cuándo ocurrió el fenómeno y cuándo llegó el dato.",
+      "reasoning": "Late arrivals serían ordenados incorrectamente si se colapsan.",
+      "common_error": "Usar solo la hora de la base."
     },
     {
-      "question": "¿Qué demuestra dominio de Almacenamiento y modelado?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Puede UNIQUE(device_id,event_time) ser siempre correcto?",
+      "answer": "No; depende de resolución del reloj y de si existen múltiples muestras por instante.",
+      "reasoning": "Puede requerirse channel o sequence_number.",
+      "common_error": "Suponer que timestamp identifica una muestra."
+    },
+    {
+      "question": "¿Qué pierde el downsampling?",
+      "answer": "Detalle temporal y potencialmente eventos breves, gaps o morfología.",
+      "reasoning": "El agregado responde otra pregunta y debe ser derivado.",
+      "common_error": "Borrar raw después de promediar."
+    },
+    {
+      "question": "¿Qué demuestra un hash de un DICOM?",
+      "answer": "Una propiedad de los bytes bajo un algoritmo, útil para integridad/igualdad técnica.",
+      "reasoning": "No prueba identidad clínica ni corrección de metadatos.",
+      "common_error": "Usarlo como patient_id."
+    },
+    {
+      "question": "¿Por qué separar objeto grande y metadatos?",
+      "answer": "Porque sus patrones de acceso y layout pueden ser distintos.",
+      "reasoning": "La tabla puede hacer buscables UIDs y el object store conservar payload.",
+      "common_error": "Guardar siempre BLOB o siempre archivos."
+    },
+    {
+      "question": "¿Qué no demuestra una arquitectura U3 que funciona?",
+      "answer": "No demuestra calidad, privacidad, resiliencia, utilidad clínica ni autorización productiva.",
+      "reasoning": "Esas capas se evalúan en unidades posteriores y contextos reales.",
+      "common_error": "Equiparar query rápida con readiness clínico."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Selección de arquitectura según uso y escala."
+      "connection": "Registros clínicos longitudinales",
+      "explanation": "Personas, encuentros y mediciones ilustran granularidades y relaciones que deben modelarse antes de análisis."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
+      "connection": "Monitorización fisiológica",
+      "explanation": "Datos densos por dispositivo/canal requieren event_time, ingest_time, partición e índices adecuados al workload."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "connection": "Imagen médica DICOM",
+      "explanation": "UIDs y metadatos pueden consultarse relacionalmente mientras los SOP Instances permanecen como objetos especializados."
     },
     {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
+      "connection": "Ómicas y matrices de alta dimensión",
+      "explanation": "Archivos columnares y arrays chunked muestran que forma del payload y patrón de lectura guían el almacenamiento."
+    },
+    {
+      "connection": "Investigación observacional",
+      "explanation": "OMOP CDM ejemplifica un modelo relacional analítico con dominios y claves, sin resolver automáticamente calidad o causalidad."
+    },
+    {
+      "connection": "Machine learning biomédico",
+      "explanation": "Feature tables son representaciones derivadas y desnormalizadas que deben conservar granularidad, tiempo y procedencia hacia las capas previas."
     }
   ],
   "sources": [
     {
-      "title": "LOINC",
-      "organization": "Regenstrief Institute",
-      "url": "https://loinc.org/",
-      "type": "terminología clínica",
-      "description": "Identificadores de observaciones, mediciones y documentos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "PostgreSQL 18.6 Documentation",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/18/",
+      "type": "documentación oficial",
+      "description": "Versión soportada actual consultada para fundamentos de diseño relacional y capacidades del motor.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "WHO Digital Health",
-      "organization": "World Health Organization",
-      "url": "https://www.who.int/health-topics/digital-health",
-      "type": "recurso institucional",
-      "description": "Estrategia, gobernanza y equidad en salud digital.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "PostgreSQL 18 – Constraints",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/18/ddl-constraints.html",
+      "type": "documentación oficial",
+      "description": "Primary keys, foreign keys, unique, not-null y check constraints.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos clínicos y fisiológicos para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "PostgreSQL 18 – Indexes",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/18/indexes.html",
+      "type": "documentación oficial",
+      "description": "Índices, tipos y trade-off entre recuperación rápida y overhead.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "PostgreSQL 18 – Table Partitioning",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/18/ddl-partitioning.html",
+      "type": "documentación oficial",
+      "description": "Particionado declarativo, pruning, beneficios y limitaciones.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "UMLS",
-      "organization": "National Library of Medicine",
-      "url": "https://www.nlm.nih.gov/research/umls/",
-      "type": "sistema terminológico",
-      "description": "Integración y correspondencia entre vocabularios biomédicos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Apache Parquet – Overview",
+      "organization": "Apache Software Foundation",
+      "url": "https://parquet.apache.org/docs/overview/",
+      "type": "especificación/documentación oficial",
+      "description": "Parquet como formato de archivo columnar para almacenamiento y recuperación eficientes.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Apache Parquet – File Format",
+      "organization": "Apache Software Foundation",
+      "url": "https://parquet.apache.org/docs/file-format/",
+      "type": "especificación/documentación oficial",
+      "description": "Row groups, column chunks, pages y metadatos del formato.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Apache Parquet – Column Chunks",
+      "organization": "Apache Software Foundation",
+      "url": "https://parquet.apache.org/docs/file-format/data-pages/columnchunks/",
+      "type": "documentación oficial",
+      "description": "Pages, compresión, diccionario e índices de páginas dentro de column chunks.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Apache Iceberg – Table Spec",
+      "organization": "Apache Software Foundation",
+      "url": "https://iceberg.apache.org/spec/",
+      "type": "especificación oficial",
+      "description": "Metadatos, snapshots, commits y versiones del table format.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Apache Iceberg 1.11 – Schemas",
+      "organization": "Apache Software Foundation",
+      "url": "https://iceberg.apache.org/docs/latest/schemas/",
+      "type": "documentación oficial",
+      "description": "Tipos, field IDs y evolución de esquemas en Iceberg.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Apache Iceberg 1.11.0 Release",
+      "organization": "Apache Software Foundation",
+      "url": "https://iceberg.apache.org/blog/apache-iceberg-1.11.0-release/",
+      "type": "nota oficial de versión",
+      "description": "Versión 1.11.0 publicada en mayo de 2026 y estado contemporáneo del proyecto.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "OMOP Common Data Model v5.4",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/cdm54.html",
+      "type": "modelo de datos biomédico oficial",
+      "description": "CDM analítico con tablas, claves, convenciones y dominios para datos observacionales.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "OMOP Common Data Model – Current CDM",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/",
+      "type": "documentación oficial",
+      "description": "Confirma CDM v5.4 como versión actual y soporte de herramientas.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Timescale – Hypertables",
+      "organization": "Timescale",
+      "url": "https://docs.timescale.com/use-timescale/latest/hypertables/",
+      "type": "documentación técnica oficial",
+      "description": "Ejemplo de particionado automático por tiempo y trade-offs de chunks para series temporales.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Timescale – Time buckets",
+      "organization": "Timescale",
+      "url": "https://docs.timescale.com/use-timescale/latest/time-buckets/",
+      "type": "documentación técnica oficial",
+      "description": "Agrupación temporal para resúmenes y consultas de series temporales.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "DICOM PS3.10 2026c – Media Storage and File Format",
+      "organization": "DICOM Standards Committee / NEMA",
+      "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part10/ps3.10.html",
+      "type": "estándar de imagen médica",
+      "description": "Formato DICOM de archivo y encapsulación de SOP Instances.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Zarr Core Specification v3.1",
+      "organization": "Zarr Developers",
+      "url": "https://zarr-specs.readthedocs.io/en/latest/v3/core/",
+      "type": "especificación abierta",
+      "description": "Formato para arrays N-dimensionales chunked usado como contraste con almacenamiento tabular.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "FHIR Bulk Data Access 3.0.0 – STU3",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/uv/bulkdata/",
+      "type": "guía de implementación sanitaria",
+      "description": "Versión publicada vigente de Bulk Data Access, usada solo como contexto de exportación masiva hacia capas analíticas.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "PostgreSQL 18 Release Notes",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/release-18.html",
+      "type": "nota oficial de versión",
+      "description": "Contexto de la versión 18 y capacidades contemporáneas consultadas el 25 de agosto de 2026.",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "professional_scope": "Competencia educativa en modelado y almacenamiento de datos biomédicos sintéticos o abiertos no identificables. No acredita administración de bases productivas, arquitectura hospitalaria, seguridad, privacidad, calidad clínica ni operación de infraestructura.",
+  "editorial_notice": "Material educativo de Ingeniería de Datos Biomédicos. Todas las actividades usan datos, objetos, UIDs y consultas sintéticos o abiertos no identificables; no se conectan bases clínicas, PACS, dispositivos, buckets institucionales ni credenciales reales. La unidad evalúa selección técnica de almacenamiento y modelado, no calidad/linaje profundo (U4), orquestación/observabilidad (U5), privacidad/productos (U6), conformidad regulatoria, disponibilidad clínica ni utilidad asistencial. Versiones de referencia verificadas el 25 de agosto de 2026: PostgreSQL 18.6, Apache Iceberg 1.11.0, OMOP CDM v5.4, DICOM 2026c y Zarr v3.1; FHIR Bulk Data Access 3.0.0 STU3 se usa como contexto de intercambio masivo, no como especificación de almacenamiento."
 }
