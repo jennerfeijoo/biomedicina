@@ -120,6 +120,15 @@ class ElectrofisicaElectromecanicaUnit03CuratedTests(unittest.TestCase):
         ):
             self.assertIn(url, urls)
 
+    def test_course_progression_boundaries_are_named(self) -> None:
+        for phrase in (
+            "u4 estudiará transductores y calibración",
+            "u5, actuadores y control",
+            "u6, seguridad e integración",
+        ):
+            self.assertIn(phrase, self.text)
+        self.assertIn("en u3 la resonancia se limita a redes eléctricas lumped", self.text)
+
     def test_professional_and_course_boundaries_are_explicit(self) -> None:
         notice = self.unit["editorial_notice"].casefold()
         for boundary in (
