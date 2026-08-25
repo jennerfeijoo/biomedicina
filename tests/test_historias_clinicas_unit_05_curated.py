@@ -160,11 +160,9 @@ class HistoriasClinicasUnit05CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, notice)
 
-    def test_published_descriptor_matches_when_promoted(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[5]["description"] != self.unit["purpose"]:
-            self.skipTest("El publicador aún no ha promovido U5 al descriptor curricular")
         self.assertEqual(detailed[5]["description"], self.unit["purpose"])
 
 
