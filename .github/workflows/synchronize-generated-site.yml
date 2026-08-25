@@ -32,37 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Clarify moral residue and self-clean curator
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          source = Path('data/course_redevelopment/etica-responsabilidad-social/units/unit-01.json')
-          mirror = Path('data/generated_units/etica-responsabilidad-social/unit-01.json')
-          text = source.read_text(encoding='utf-8')
-          needle = 'Es necesario especificar qué exige el principio en ese contexto, evaluar la fuerza de las razones y explicar por qué una restricción es necesaria y proporcional.'
-          addition = ' Una decisión justificable puede dejar un residuo moral: una obligación, un valor o una razón relevante puede permanecer insatisfecha aunque otra razón deba prevalecer tras comparar las alternativas. Registrar ese residuo orienta salvaguardas, mitigación, reconocimiento de la pérdida y revisión futura; no equivale por sí solo a demostrar que la decisión elegida sea incorrecta.'
-          if text.count(needle) != 1:
-              raise SystemExit(f'Expected exactly one target paragraph fragment, found {text.count(needle)}')
-          updated = text.replace(needle, needle + addition, 1)
-          source.write_text(updated, encoding='utf-8')
-          mirror.write_text(updated, encoding='utf-8')
-          if source.read_bytes() != mirror.read_bytes():
-              raise SystemExit('Source and generated mirror diverged after patch')
-          PY
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            data/course_redevelopment/etica-responsabilidad-social/units/unit-01.json \
-            data/generated_units/etica-responsabilidad-social/unit-01.json \
-            .github/workflows/synchronize-generated-site.yml
-          git commit -m "Clarify moral residue in Ética U1"
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
-
       - name: Validate structured academic sources
         shell: bash
         run: |
