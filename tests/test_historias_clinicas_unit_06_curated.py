@@ -166,6 +166,18 @@ class HistoriasClinicasUnit06CuratedTests(unittest.TestCase):
         self.assertIn("historias-clinicas-terminologias-estandares", screened)
         self.assertNotIn("historias-clinicas-terminologias-estandares", pending)
 
+    def test_structured_error_budget_equation(self) -> None:
+        section = self.unit["theory_sections"][3]
+        equations = section.get("equations", [])
+        self.assertEqual(len(equations), 1)
+        equation = equations[0]
+        self.assertEqual(equation["latex"], "T_{error}=(1-A_{SLO})T_{window}")
+        self.assertIn("indisponibilidad", equation["meaning"].casefold())
+        self.assertEqual(set(equation["variables"]), {"T_{error}", "A_{SLO}", "T_{window}"})
+        text = " ".join(section["paragraphs"]).casefold()
+        self.assertIn("43.2 minutos", text)
+        self.assertIn("no demuestra seguridad clínica", text)
+
 
 if __name__ == "__main__":
     unittest.main()
