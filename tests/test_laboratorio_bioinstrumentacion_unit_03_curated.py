@@ -46,7 +46,7 @@ class LaboratorioBioinstrumentacionUnit03CuratedTests(unittest.TestCase):
         self.assertIn("cmrr también depende de frecuencia", theory)
         self.assertIn("diamond plot", theory)
         self.assertIn("interferencia determinista", theory)
-        self.assertIn("la cadena completa", theory)
+        self.assertIn("rechazo total de la cadena", theory)
 
     def test_core_equations_are_present(self) -> None:
         equations = {
