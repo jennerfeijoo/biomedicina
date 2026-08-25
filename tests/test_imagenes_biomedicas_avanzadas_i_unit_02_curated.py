@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "imagenes-biomedicas-avanzadas-i" / "units" / "unit-02.json"
 MIRROR = ROOT / "data" / "generated_units" / "imagenes-biomedicas-avanzadas-i" / "unit-02.json"
+DESCRIPTOR = ROOT / "data" / "subjects" / "ingenieria-biomedica" / "imagenes-biomedicas-avanzadas-i.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -14,6 +15,7 @@ class ImagenesBiomedicasAvanzadasIUnit02CuratedTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.unit = json.loads(SOURCE.read_text(encoding="utf-8"))
+        cls.descriptor = json.loads(DESCRIPTOR.read_text(encoding="utf-8"))
         cls.text = SOURCE.read_text(encoding="utf-8").casefold()
 
     def test_generated_unit_is_exact_redevelopment_mirror(self) -> None:
@@ -24,6 +26,10 @@ class ImagenesBiomedicasAvanzadasIUnit02CuratedTests(unittest.TestCase):
         self.assertEqual(self.unit["slug"], "mri-avanzada")
         self.assertNotIn(GENERIC, self.text)
         self.assertNotIn(r"cnr=\frac{|\mu_1-\mu_2|}{\sigma_n}", self.text)
+
+    def test_public_descriptor_matches_canonical_purpose(self) -> None:
+        published = next(x for x in self.descriptor["detailed_units"] if x["unit"] == 2)
+        self.assertEqual(published["description"], self.unit["purpose"])
 
     def test_objectives_cover_full_mri_chain(self) -> None:
         objectives = " ".join(self.unit["learning_objectives"]).casefold()
