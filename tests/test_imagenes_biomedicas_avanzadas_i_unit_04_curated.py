@@ -105,11 +105,9 @@ class ImagenesBiomedicasAvanzadasIUnit04CuratedTests(unittest.TestCase):
         for phrase in ("no administra radiotrazadores", "no selecciona actividad para pacientes", "no opera pet/spect", "no interpreta estudios clínicos", "u5 continúa con registro y fusión", "u6 queda reservada"):
             self.assertIn(phrase, notice)
 
-    def test_descriptor_is_updated_if_publication_has_run(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         published = next(x for x in subject["detailed_units"] if x["unit"] == 4)
-        if published["description"] != self.unit["purpose"]:
-            self.skipTest("El publicador todavía no ha promovido U4 al descriptor curricular.")
         self.assertEqual(published["description"], self.unit["purpose"])
 
 
