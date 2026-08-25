@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "economia-gestion-empresas" / "units" / "unit-06.json"
 MIRROR = ROOT / "data" / "generated_units" / "economia-gestion-empresas" / "unit-06.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
-# Final human-authored validation trigger after generated-site synchronization.
+# Final user-authored validation trigger after catalog and descriptor synchronization.
 
 
 class EconomiaGestionEmpresasUnit06CuratedTests(unittest.TestCase):
