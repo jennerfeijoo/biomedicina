@@ -1,0 +1,45 @@
+name: Materialize Informatica Biomedica U4
+
+on:
+  push:
+    branches:
+      - codex/informatica-biomedica-u4-analitica-cds
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/informatica-biomedica-u4-analitica-cds
+          fetch-depth: 0
+      - name: Assemble and validate canonical unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/informatica_u4/gz00.b64 .tmp/informatica_u4/gz01.b64 .tmp/informatica_u4/gz02.b64 .tmp/informatica_u4/gz03.b64 | base64 -d | gzip -dc > /tmp/unit-04.json
+          echo '275300810d2e676f4a3f9e30938392a757bdbbe3b7c44aaad5fd44d91e8063c1  /tmp/unit-04.json' | sha256sum -c -
+          python -m json.tool /tmp/unit-04.json >/dev/null
+          cp /tmp/unit-04.json data/course_redevelopment/informatica-biomedica/units/unit-04.json
+          cp /tmp/unit-04.json data/generated_units/informatica-biomedica/unit-04.json
+          cmp data/course_redevelopment/informatica-biomedica/units/unit-04.json data/generated_units/informatica-biomedica/unit-04.json
+          rm -rf .tmp/informatica_u4
+          rm -f .github/workflows/materialize-informatica-u4.yml
+      - name: Commit materialized unit and cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git commit -m 'Materializar curación de Informática Biomédica U4'
+          git push
