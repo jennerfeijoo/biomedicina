@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final user-authored trigger after curated U2 generation.
+# Final user-authored trigger after publication metadata synchronization; U2 content unchanged.
 
 import json
 import unittest
