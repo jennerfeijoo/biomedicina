@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final user-authored trigger after publication metadata synchronization; U2 content unchanged.
+# Final human trigger after automated publication synchronization; academic U2 content is unchanged.
 
 import json
 import unittest
