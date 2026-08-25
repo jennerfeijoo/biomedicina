@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "historias-clinicas-terminologias-estandares" / "units" / "unit-05.json"
 MIRROR = ROOT / "data" / "generated_units" / "historias-clinicas-terminologias-estandares" / "unit-05.json"
 SUBJECT = ROOT / "data" / "subjects" / "ingenieria-biomedica" / "historias-clinicas-terminologias-estandares.json"
+PUBLIC_UNIT = ROOT / "ingenieria-biomedica" / "historias-clinicas-terminologias-estandares" / "unidades" / "unidad-05.html"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -149,6 +150,10 @@ class HistoriasClinicasUnit05CuratedTests(unittest.TestCase):
             "aprobación ética", "gdpr y hipaa", "u6 queda reservada",
         ):
             self.assertIn(phrase, notice)
+
+    def test_public_page_contains_canonical_purpose(self) -> None:
+        public_text = PUBLIC_UNIT.read_text(encoding="utf-8")
+        self.assertIn(self.unit["purpose"], public_text)
 
     def test_published_descriptor_matches_canonical_purpose_when_promoted(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
