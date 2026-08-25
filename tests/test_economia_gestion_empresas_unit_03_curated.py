@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Final human trigger for U3 validation; academic content is unchanged.
+
 import json
 import unittest
 from pathlib import Path
