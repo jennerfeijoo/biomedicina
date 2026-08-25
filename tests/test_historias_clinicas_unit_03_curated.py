@@ -10,6 +10,7 @@ MIRROR = ROOT / "data" / "generated_units" / "historias-clinicas-terminologias-e
 SUBJECT = ROOT / "data" / "subjects" / "ingenieria-biomedica" / "historias-clinicas-terminologias-estandares.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
+
 class HistoriasClinicasUnit03CuratedTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -138,9 +139,8 @@ class HistoriasClinicasUnit03CuratedTests(unittest.TestCase):
     def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[3]["description"] != self.unit["purpose"]:
-            self.skipTest("descriptor pendiente de promoción automática")
         self.assertEqual(detailed[3]["description"], self.unit["purpose"])
+
 
 if __name__ == "__main__":
     unittest.main()
