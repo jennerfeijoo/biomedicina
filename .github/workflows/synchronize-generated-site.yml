@@ -32,12 +32,49 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Repair strengthened Economía U4 curation
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path('data/course_redevelopment/economia-gestion-empresas/units/unit-04.json')
+          mirror = Path('data/generated_units/economia-gestion-empresas/unit-04.json')
+          test = Path('tests/test_economia_gestion_empresas_unit_04_curated.py')
+
+          text = source.read_text(encoding='utf-8')
+          broken = '''    {"error": "Introducir ICER, QALY o coste-efectividad formal en U4.", "correction": "Reservar evaluación económica sanitaria para U5 y limitar U4 a mercado, posicionamiento, adopción y proceso de compra."
+            ],'''
+          fixed = '''    {"error": "Introducir ICER, QALY o coste-efectividad formal en U4.", "correction": "Reservar evaluación económica sanitaria para U5 y limitar U4 a mercado, posicionamiento, adopción y proceso de compra."}
+            ],'''
+          if broken not in text:
+              raise SystemExit('No se encontró el cierre JSON roto esperado en U4')
+          text = text.replace(broken, fixed, 1)
+          json.loads(text)
+          source.write_text(text, encoding='utf-8')
+          mirror.write_bytes(source.read_bytes())
+
+          test_text = test.read_text(encoding='utf-8')
+          brittle = '''        self.assertNotIn("píxeles", text)
+                  self.assertNotIn("vóxeles", text)
+          '''
+          robust = '''        self.assertNotIn("asignación de píxeles o vóxeles a regiones de interés según criterios anatómicos, funcionales o algorítmicos", text)
+                  self.assertIn("no significa dividir una imagen", text)
+          '''
+          if brittle not in test_text:
+              raise SystemExit('No se encontró la aserción frágil esperada en la regresión U4')
+          test_text = test_text.replace(brittle, robust, 1)
+          test.write_text(test_text, encoding='utf-8')
+          PY
+
       - name: Validate structured academic sources
         shell: bash
         run: |
           set -euo pipefail
           python scripts/validate_curriculum.py
           python scripts/validate_generated_units.py
+          python -m unittest tests.test_economia_gestion_empresas_unit_04_curated
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
@@ -65,20 +102,19 @@ jobs:
           path: global-generation.txt
           if-no-files-found: warn
 
-      - name: Commit deterministic public site
+      - name: Commit repaired academic source and deterministic public site
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
+          rm -f global-generation.txt
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "U4 y el sitio público ya están sincronizados."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Repair and synchronize Economía y Gestión U4"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
