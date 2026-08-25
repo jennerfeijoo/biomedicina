@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unidad 1. Fuentes y arquitectura de datos | Ingeniería de Datos Biomédicos | CitoNauta</title>
-  <meta name="description" content="Integrar clínicos, sensores, imagen y ómicas para resolver un caso de diseño de flujos para datos biomédicos heterogéneos con evidencia, controles, incertidumbre y comunicación proporcional." />
+  <meta name="description" content="Diseñar y justificar una arquitectura source-to-landing para datos biomédicos heterogéneos —registros clínicos, señales fisiológicas, imagen médica y ómicas— preservando identidad, granularidad, tiempo, unidades y metadatos de adquisición antes de cualquier transformación. La unidad enseña a inventariar fuentes, reconocer su semántica temporal y sus patrones de actualización, y construir un flujo reproducible desde sistemas fuente hacia una zona de aterrizaje sintética; reserva ETL/ELT y conversiones para U2, almacenamiento/modelado para U3, calidad/linaje profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6." />
   <link rel="stylesheet" href="../../../assets/css/style.css" />
   <link rel="stylesheet" href="../../../assets/css/editorial.css" />
   <script>
@@ -52,7 +52,7 @@
       </div>
       <p class="eyebrow">Unidad 1 de 6</p>
       <h1>Fuentes y arquitectura de datos</h1>
-      <p>Integrar clínicos, sensores, imagen y ómicas para resolver un caso de diseño de flujos para datos biomédicos heterogéneos con evidencia, controles, incertidumbre y comunicación proporcional.</p>
+      <p>Diseñar y justificar una arquitectura source-to-landing para datos biomédicos heterogéneos —registros clínicos, señales fisiológicas, imagen médica y ómicas— preservando identidad, granularidad, tiempo, unidades y metadatos de adquisición antes de cualquier transformación. La unidad enseña a inventariar fuentes, reconocer su semántica temporal y sus patrones de actualización, y construir un flujo reproducible desde sistemas fuente hacia una zona de aterrizaje sintética; reserva ETL/ELT y conversiones para U2, almacenamiento/modelado para U3, calidad/linaje profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6.</p>
       <dl class="course-meta">
         <div><dt>Asignatura</dt><dd>Ingeniería de Datos Biomédicos</dd></div>
         <div><dt>Estado</dt><dd data-status="generated">Lección desarrollada · revisión experta pendiente</dd></div>
@@ -80,19 +80,20 @@
     <section id="resultados" class="section">
       <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
             <ul>
-        <li>Definir clínicos, sensores y imagen y ómicas mediante entidades, relaciones y condiciones.</li>
-        <li>Construir un modelo que conecte clínicos con sensores y delimite el papel de imagen y ómicas.</li>
-        <li>Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.</li>
-        <li>Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.</li>
-        <li>Resolver y comunicar un caso sobre diseño de flujos para datos biomédicos heterogéneos con incertidumbre y límites.</li>
-        <li>Transferir el método de Fuentes y arquitectura de datos a un escenario nuevo y justificar qué debe revalidarse.</li>
+        <li>Construir un inventario de fuentes biomédicas que declare sistema productor, entidad primaria, granularidad, identificadores, temporalidad, formato, unidades, volumen, frecuencia de llegada y reglas de actualización sin confundir el archivo recibido con el fenómeno clínico o biológico.</li>
+        <li>Distinguir en datos clínicos el sujeto, encuentro, orden, espécimen, observación y resultado, separando tiempo efectivo del hecho, tiempo de emisión o verificación y tiempo de ingesta, y manteniendo identificadores dentro de su namespace.</li>
+        <li>Caracterizar señales fisiológicas y sensores mediante canales, frecuencia de muestreo, unidades, ganancia, baseline, timestamps, reloj, segmentos, huecos y anotaciones, calculando tasas nominales de adquisición sin tratar una señal muestreada como una tabla de eventos independientes.</li>
+        <li>Reconstruir la jerarquía DICOM Patient–Study–Series–Instance y separar metadatos, píxeles, modalidad y parámetros de adquisición, explicando por qué un nombre de archivo o Patient ID no sustituye UIDs ni contexto de estudio.</li>
+        <li>Reconstruir en datos ómicos la relación Study/BioProject–Sample/BioSample–Experiment–Run y diferenciar muestra biológica, biblioteca, ensayo, instrumento, lectura y archivo, preservando metadatos que permiten distinguir réplicas biológicas de técnicas.</li>
+        <li>Diseñar un flujo source-to-landing sintético que combine batch y streaming, landing inmutable, manifiestos, checksums, cuarentena y tablas de correspondencia temporal/identidad, y justificar qué responsabilidades quedan deliberadamente para U2–U6.</li>
       </ul>
       <h3>Mapa de contenidos</h3>
             <ul>
-        <li>Modelo conceptual de Fuentes y arquitectura de datos</li>
-        <li>Método, evidencia y controles</li>
-        <li>Aplicación razonada: diseño de flujos para datos biomédicos heterogéneos</li>
-        <li>Calidad, transferencia y comunicación</li>
+        <li>1. Inventario de fuentes: granularidad, autoridad y cambio antes de mover datos</li>
+        <li>2. Datos clínicos: entidades, namespaces y tres relojes que no deben colapsarse</li>
+        <li>3. Sensores y waveforms: muestreo, reloj, unidades y huecos forman parte del dato</li>
+        <li>4. Imagen y ómicas: jerarquías de adquisición que no caben en una tabla plana</li>
+        <li>5. Arquitectura source-to-landing: preservar primero, transformar después</li>
       </ul>
     </section>
 
@@ -104,73 +105,119 @@
             <!-- advanced-unit-renderer:v1 -->
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 1</p>
-        <h3>Modelo conceptual de Fuentes y arquitectura de datos</h3>
-        <p>La unidad «Fuentes y arquitectura de datos» sitúa clínicos, sensores y imagen y ómicas dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Ingeniería de Datos Biomédicos, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.</p>
-        <p>El primer núcleo de «Fuentes y arquitectura de datos» en Ingeniería de Datos Biomédicos, «clínicos», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.</p>
-        <p>El segundo núcleo de «Fuentes y arquitectura de datos», «sensores», aporta otra dimensión al problema de Ingeniería de Datos Biomédicos: Elementos que responden a una magnitud y generan una señal utilizable para medición o control. Su relación con clínicos debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.</p>
-        <p>El tercer núcleo de «Fuentes y arquitectura de datos» en Ingeniería de Datos Biomédicos, «imagen y ómicas», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada.</p>
+        <h3>1. Inventario de fuentes: granularidad, autoridad y cambio antes de mover datos</h3>
+        <p>La ingeniería de datos biomédicos comienza antes del ETL. Una fuente es un sistema, dispositivo, repositorio o instrumento que produce registros bajo reglas concretas. El primer trabajo es describir qué entidad representa cada registro, con qué granularidad, quién o qué lo produjo, cuál es el identificador dentro de su ámbito y qué cambios posteriores pueden ocurrir. Un CSV exportado de una EHR, un archivo DICOM, un registro WFDB y un FASTQ son representaciones distintas de fenómenos y procesos distintos; tratarlos como filas equivalentes destruye contexto antes de empezar.</p>
+        <p>La unidad de observación o grain define qué significa una fila, objeto, muestra o segmento. Una tabla de laboratorio puede tener un resultado por fila; un registro de onda contiene miles de muestras temporales por canal; un estudio DICOM agrupa series e instancias; una ejecución de secuenciación agrupa lecturas derivadas de una biblioteca. Antes de unir fuentes se declara ese grain y la jerarquía superior e inferior. Contar archivos no equivale a contar pacientes, estudios, muestras biológicas ni observaciones independientes.</p>
+        <p>La autoridad de una fuente debe formularse por campo y uso, no como una etiqueta absoluta de «source of truth». El sistema de laboratorio puede ser autoritativo para el resultado verificado, la orden clínica para la intención de solicitarlo y el sistema de adquisición para parámetros de señal o imagen. Copias secundarias pueden retrasarse, truncarse o reformatearse. La arquitectura registra de dónde proviene cada atributo y evita decidir autoridad por conveniencia del analista.</p>
+        <p>La mutabilidad también pertenece al contrato de la fuente. Un resultado puede corregirse, una nota puede enmendarse, un registro puede llegar tarde y una ejecución de secuenciación puede recibir metadatos actualizados. Append-only, upsert, corrección con versión y eliminación lógica producen historias distintas. Una landing reproducible conserva la llegada original y suficiente metadata para reconstruir qué se sabía en cada momento, sin adelantar aún la política de linaje completa de U4.</p>
+        <p>Los ejes de heterogeneidad incluyen estructura, semántica, escala temporal, dimensionalidad y velocidad. Datos clínicos suelen ser episódicos y orientados a eventos; sensores pueden ser continuos; imagen combina objetos voluminosos con metadata jerárquica; ómicas combina archivos de alta dimensión con metadata de muestra y ensayo. La arquitectura no intenta convertirlos inmediatamente a un único molde: primero preserva sus rasgos necesarios para poder transformarlos de forma explícita en U2.</p>
+        <p>El producto mínimo de esta sección es un inventario de fuentes con columnas para source_id, sistema productor, entidad primaria, grain, identificador y namespace, reloj/tiempo relevante, formato, unidad, frecuencia o periodicidad, patrón de actualización y metadata imprescindible. Esa tabla no es burocracia: hace visibles supuestos que, si se pierden, vuelven imposible distinguir un error de integración de una diferencia real entre dominios.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Distinguir observación, cálculo e inferencia en Fuentes y arquitectura de datos.</li>
-        <li>Relacionar clínicos, sensores y imagen y ómicas mediante condiciones explícitas.</li>
-        <li>Declarar escala, unidad de observación y uso previsto antes del método.</li>
-        <li>Tratar supuestos y límites como parte del resultado, no como una nota final.</li>
+        <li>El archivo recibido es una representación de una fuente, no la fuente ni el fenómeno completo.</li>
+        <li>La granularidad debe declararse antes de contar, unir o comparar registros de dominios distintos.</li>
+        <li>La autoridad se asigna por atributo y uso previsto, no por comodidad del pipeline.</li>
+        <li>Las correcciones y llegadas tardías forman parte de la semántica operativa de una fuente.</li>
+        <li>Heterogeneidad incluye estructura, significado, escala temporal, dimensionalidad y velocidad de producción.</li>
+        <li>Un inventario de fuentes explícito precede a cualquier transformación implementada en unidades posteriores.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
-        <h3>Método, evidencia y controles</h3>
-        <p>Para «Fuentes y arquitectura de datos» dentro de Ingeniería de Datos Biomédicos, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.</p>
-        <p>En esta unidad de Ingeniería de Datos Biomédicos, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre clínicos o sensores debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.</p>
-        <p>Para evaluar «Fuentes y arquitectura de datos», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.</p>
-        <p>En Ingeniería de Datos Biomédicos, la incertidumbre de «Fuentes y arquitectura de datos» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece.</p>
+        <h3>2. Datos clínicos: entidades, namespaces y tres relojes que no deben colapsarse</h3>
+        <p>Un sistema clínico genera entidades relacionadas: persona o paciente, encuentro, orden, espécimen, observación, informe y administración, entre otras. La misma medición puede estar conectada a varias de ellas. En FHIR R5, Observation representa mediciones y afirmaciones simples sobre un sujeto; su contexto puede referenciar Patient, Encounter, Specimen o Device. Esta unidad usa FHIR como ejemplo de semántica estructurada, pero no supone que la EHR fuente almacene internamente sus datos como recursos FHIR.</p>
+        <p>Los identificadores existen dentro de ámbitos. Un MRN local, accession number de laboratorio, order identifier o device identifier no es universal solo porque parezca único en una tabla. El inventario registra sistema/namespace junto al valor y evita usar texto visible como clave global. La resolución entre instituciones o dominios se representa con una tabla sintética de correspondencias; la política de identidad productiva y privacidad queda fuera del alcance de U1.</p>
+        <p>El tiempo clínico tiene más de una semántica. Para una observación puede existir un tiempo efectivo o de ocurrencia —cuándo aplica el hecho—, un tiempo de emisión o disponibilidad —cuándo se hizo disponible el resultado— y un tiempo de ingesta —cuándo el pipeline recibió esa representación—. Confundirlos puede crear fugas temporales, ordenar eventos incorrectamente o hacer parecer que un dato estaba disponible antes de ser verificado.</p>
+        <p>Las correcciones clínicas requieren distinguir identidad del evento e identidad de la versión. Dos versiones del mismo resultado no son necesariamente dos mediciones independientes. La landing conserva la versión o estado de llegada y el timestamp de recepción, de forma que U4 pueda reconstruir linaje y U2 pueda definir reglas de actualización. Sobrescribir silenciosamente un valor corregido destruye evidencia temporal.</p>
+        <p>Los valores necesitan unidades, código o descripción del concepto y contexto de medición. Un número sin unidad o una observación sin tipo no es un dato clínico autosuficiente. U1 preserva esos elementos tal como llegan y registra los campos críticos; U2 se encargará de normalizar unidades y estructuras, mientras que la interoperabilidad terminológica detallada se estudia en asignaturas específicas.</p>
+        <p>Un ejemplo reproducible registra una observación de laboratorio sintética con sujeto namespaceado, encuentro, espécimen, código, valor, unidad, effective time, issued time y ingest time. El ejercicio demuestra que cambiar solo el reloj elegido puede alterar la secuencia aparente de eventos aunque el valor clínico sea idéntico. La conclusión es arquitectónica: conservar relojes y claves precede a cualquier análisis.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Elegir evidencia de acuerdo con el tipo de afirmación.</li>
-        <li>Predefinir controles y resultados esperados antes de inspeccionar la salida.</li>
-        <li>Conservar procedencia, parámetros y decisiones intermedias.</li>
-        <li>Propagar incertidumbre hasta la conclusión y la recomendación.</li>
+        <li>Patient, Encounter, Specimen y Observation representan entidades distintas y no deben colapsarse en una sola clave.</li>
+        <li>Todo identificador local necesita un namespace explícito antes de participar en un join multimodal.</li>
+        <li>Tiempo efectivo, tiempo de emisión y tiempo de ingesta responden preguntas temporales diferentes.</li>
+        <li>Una corrección del mismo hecho no debe contarse automáticamente como una nueva observación independiente.</li>
+        <li>Código, valor, unidad y contexto de medición deben preservarse como componentes separados del registro.</li>
+        <li>FHIR R5 sirve aquí como modelo de semántica, no como afirmación sobre el almacenamiento interno de cada EHR.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 3</p>
-        <h3>Aplicación razonada: diseño de flujos para datos biomédicos heterogéneos</h3>
-        <p>En la unidad «Fuentes y arquitectura de datos» de Ingeniería de Datos Biomédicos, el caso conductor es diseño de flujos para datos biomédicos heterogéneos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.</p>
-        <p>La resolución específica de «Fuentes y arquitectura de datos» conecta clínicos con sensores y utiliza imagen y ómicas como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.</p>
-        <p>Para el caso «diseño de flujos para datos biomédicos heterogéneos» en Ingeniería de Datos Biomédicos, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.</p>
-        <p>El cierre de «Fuentes y arquitectura de datos» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de diseño de flujos para datos biomédicos heterogéneos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados.</p>
+        <h3>3. Sensores y waveforms: muestreo, reloj, unidades y huecos forman parte del dato</h3>
+        <p>Una señal fisiológica digital es una secuencia ordenada de muestras asociadas a uno o más canales. ECG, presión arterial, respiración, EEG u oximetría pueden tener frecuencias, unidades y escalas distintas. La arquitectura conserva channel name, sampling frequency, unidad física, ganancia, baseline, inicio temporal y relación entre canales. Sin esa metadata, los bytes de una waveform pueden ser legibles pero fisiológicamente ininterpretables.</p>
+        <p>La frecuencia de muestreo determina cuántas muestras se esperan por unidad de tiempo. Si un canal tiene N muestras a frecuencia f_s, la duración nominal es N/f_s solo cuando el muestreo es regular y no existen huecos no representados. El cálculo no sustituye timestamps o segmentos: una interrupción de adquisición puede producir la misma longitud de archivo que otra combinación de frecuencia o segmentos.</p>
+        <p>La tasa nominal de adquisición ayuda a dimensionar la interfaz de entrada. Para C canales, frecuencia f_s y b bits por muestra, una aproximación sin headers ni compresión es R=C·f_s·b/8 bytes por segundo. Esta ecuación compara órdenes de magnitud de las fuentes; no estima por sí sola almacenamiento final, compresión, índices o coste, cuestiones que corresponden a U3.</p>
+        <p>El reloj del dispositivo puede diferir del reloj del servidor. Deriva, resincronización, cambio de zona horaria, pérdida de paquetes o timestamps redondeados pueden desplazar señales respecto de eventos clínicos. El inventario registra origen del reloj, timezone u offset cuando exista, precisión temporal y mecanismo de sincronización. Alinear por la primera fila sin documentar reloj convierte una decisión técnica en una falsa simultaneidad fisiológica.</p>
+        <p>PhysioNet WFDB ilustra por qué señal y metadata deben viajar juntas: los registros relacionan archivos de señal con headers que describen atributos como frecuencia y características de los canales, además de anotaciones cuando existen. U1 no exige WFDB como formato universal; lo usa para enseñar que una waveform es un conjunto de muestras más especificaciones necesarias para interpretarlas.</p>
+        <p>Los huecos son información. Un segmento ausente no debe rellenarse silenciosamente con ceros, repetición del último valor o interpolación antes de documentar el motivo. U1 marca intervalos faltantes y conserva el patrón de adquisición; U2 decidirá transformaciones y U4 evaluará reglas de calidad. El objetivo es impedir que una decisión de conveniencia se convierta en una señal artificial.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[PPV=\frac{Se\,\pi}{Se\,\pi+(1-Sp)(1-\pi)}\]</div>
-            <figcaption>Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.</figcaption>
+            <div class="math-display">\[T_{nom}=\frac{N}{f_s}\]</div>
+            <figcaption>Duración nominal de N muestras cuando el muestreo es regular y f_s se expresa en muestras por segundo.</figcaption>
             <ul class="equation-variables">
-              <li><code>Se</code>: sensibilidad</li>
-              <li><code>Sp</code>: especificidad</li>
-              <li><code>\pi</code>: prevalencia</li>
+              <li><code>T_{nom}</code>: duración nominal en segundos</li>
+              <li><code>N</code>: número de muestras</li>
+              <li><code>f_s</code>: frecuencia de muestreo en Hz</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[R_{raw}=\frac{C\,f_s\,b}{8}\]</div>
+            <figcaption>Tasa bruta nominal de adquisición sin headers, compresión ni overhead; útil para comparar fuentes antes del diseño de ingesta.</figcaption>
+            <ul class="equation-variables">
+              <li><code>R_{raw}</code>: bytes por segundo</li>
+              <li><code>C</code>: número de canales</li>
+              <li><code>f_s</code>: muestras por segundo por canal</li>
+              <li><code>b</code>: bits por muestra</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Delimitar el caso de diseño de flujos para datos biomédicos heterogéneos antes de calcular o clasificar.</li>
-        <li>Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.</li>
-        <li>Comprobar unidades, rango, supuestos y casos límite de cada ecuación.</li>
-        <li>Comparar al menos una explicación alternativa y una prueba discriminante.</li>
+        <li>Las muestras necesitan frecuencia, canal, unidad, escala y referencia temporal para ser interpretables.</li>
+        <li>La duración N/f_s solo es válida bajo muestreo regular y representación explícita de huecos.</li>
+        <li>La tasa bruta de adquisición dimensiona la fuente, no el almacenamiento final ni su coste.</li>
+        <li>Reloj del dispositivo y reloj de ingesta son relojes distintos que deben registrarse.</li>
+        <li>WFDB ejemplifica la separación entre muestras, headers, atributos de señal y anotaciones.</li>
+        <li>Los huecos se preservan y documentan antes de cualquier interpolación o imputación posterior.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 4</p>
-        <h3>Calidad, transferencia y comunicación</h3>
-        <p>La reproducibilidad de «Fuentes y arquitectura de datos» en Ingeniería de Datos Biomédicos requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.</p>
-        <p>La principal cautela disciplinar al transferir «Fuentes y arquitectura de datos» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Ingeniería de Datos Biomédicos separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.</p>
-        <p>La comunicación divulgativa de «Fuentes y arquitectura de datos» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de clínicos, sensores y imagen y ómicas debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Ingeniería de Datos Biomédicos.</p>
-        <p>El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre diseño de flujos para datos biomédicos heterogéneos. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Ingeniería de Datos Biomédicos como un componente que deberá reutilizarse y revisarse en el proyecto final del curso.</p>
+        <h3>4. Imagen y ómicas: jerarquías de adquisición que no caben en una tabla plana</h3>
+        <p>En imagen médica, DICOM 2026c es la edición actual consultada del estándar. La jerarquía Patient–Study–Series–Instance separa niveles con identidad y metadata propia. Study Instance UID, Series Instance UID y SOP Instance UID no son nombres de archivo. U1 conserva esos identificadores y parámetros de adquisición en la landing; la interpretación de píxeles y el procesamiento de imagen pertenecen a otras asignaturas.</p>
+        <p>La metadata DICOM describe modalidad, estudio, serie, instancia, geometría y numerosos parámetros técnicos. Píxel y metadata son componentes relacionados pero no equivalentes. Extraer solo una matriz de intensidades puede perder orientación, spacing, frame of reference o contexto de adquisición. La arquitectura registra el objeto o referencia al objeto junto con un manifiesto mínimo de metadata crítica, sin intentar normalizar todavía todos los atributos.</p>
+        <p>Los archivos de imagen son objetos grandes y jerárquicos; una exportación tabular de metadatos puede facilitar inventarios, pero no sustituye el conjunto DICOM. Un estudio con varias series y miles de instancias sigue siendo un estudio, no miles de pacientes ni miles de exploraciones independientes. El grain del análisis futuro debe construirse desde la jerarquía, no desde el número de archivos.</p>
+        <p>En ómicas, NCBI SRA organiza metadatos mediante STUDY/BioProject, SAMPLE/BioSample, EXPERIMENT y RUN. Un EXPERIMENT describe una combinación concreta de muestra, biblioteca, estrategia/layout e instrumento; un RUN manifiesta los archivos derivados de secuenciar esa biblioteca. Esta jerarquía evita confundir muestra biológica, preparación de biblioteca, ejecución técnica y archivo.</p>
+        <p>FASTQ contiene identificadores de lecturas, bases y puntuaciones de calidad por base; SRA también admite otros formatos según su guía vigente. El archivo de lecturas no sustituye metadata de muestra, biblioteca, estrategia o instrumento. Para análisis reproducible se conserva la relación entre BioSample, experimento y run; cambiar esa relación puede convertir réplicas técnicas en falsas réplicas biológicas.</p>
+        <p>Imagen y ómicas comparten una lección arquitectónica: la jerarquía y metadata de adquisición son parte del dato. Una landing que guarda únicamente archivos sin manifestar relaciones, UIDs/accesiones, versiones y parámetros necesarios crea un repositorio de bytes difícil de auditar. U1 conserva esas relaciones; U2 transformará, U3 decidirá almacenamiento y U4 formalizará controles de calidad y linaje.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Diferenciar repetibilidad, reproducibilidad, validez y utilidad.</li>
-        <li>Separar desempeño técnico de afirmaciones clínicas o regulatorias.</li>
-        <li>Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.</li>
-        <li>Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido.</li>
+        <li>DICOM Patient–Study–Series–Instance representa niveles distintos y sus UIDs no son nombres de archivo.</li>
+        <li>Píxeles y metadata DICOM deben conservar suficiente contexto de geometría y adquisición para reutilización.</li>
+        <li>El número de instancias DICOM no equivale al número de pacientes ni de estudios independientes.</li>
+        <li>SRA distingue Study, Sample, Experiment y Run para separar proyecto, muestra, ensayo y ejecución.</li>
+        <li>FASTQ conserva lecturas y calidad por base, pero no reemplaza la metadata biológica y técnica.</li>
+        <li>Jerarquías de adquisición preservadas evitan crear pseudoréplicas al integrar imagen u ómicas.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 5</p>
+        <h3>5. Arquitectura source-to-landing: preservar primero, transformar después</h3>
+        <p>La arquitectura source-to-landing de U1 conecta cada fuente con una zona de aterrizaje reproducible mediante interfaces explícitas. No es todavía un pipeline ETL completo. Para cada fuente se define si la llegada es batch, micro-batch o streaming; qué objeto o mensaje se recibe; cómo se nombra la entrega; qué timestamp marca recepción; qué checksum identifica el payload; y qué metadata mínima debe acompañarlo antes de ser aceptado.</p>
+        <p>Una landing raw o inmutable conserva la representación recibida o una copia verificable de ella. Inmutable no significa que el mundo nunca cambie: significa que una corrección llega como nueva versión o nueva entrega y no borra silenciosamente la evidencia previa. Esta propiedad permite reconstruir fallos y comparar transformaciones posteriores. U4 profundizará en linaje/versionado y U6 en retención, acceso y privacidad.</p>
+        <p>Un manifiesto de entrega desacopla archivos y contexto. Puede registrar source_id, batch/run id, received_at, event-time range, checksum, número de objetos, esquema o versión declarada, unidad/clock metadata y estado de aceptación. El manifiesto no es un sustituto de los metadatos nativos DICOM, WFDB, FHIR o SRA; es una capa operativa mínima para saber qué llegó y con qué contexto.</p>
+        <p>La cuarentena evita que un payload obviamente incompleto o ilegible se mezcle con entradas aceptadas. U1 define criterios de entrada básicos —archivo presente, checksum reproducible, metadatos críticos presentes y relación con una fuente conocida— sin realizar todavía la validación semántica y conversión profunda de U2. Cuarentena no significa borrar: conserva evidencia y motivo para revisión.</p>
+        <p>Batch y streaming requieren expectativas diferentes. Un batch puede cerrarse y reconciliarse por conteos; un stream puede incluir eventos tardíos, duplicados y reintentos. La landing registra event time e ingest time y usa claves de entrega que permitan detectar reenvíos sin asumir que dos mensajes idénticos son el mismo evento. La semántica de deduplicación se documenta como requisito para U2, no se improvisa en U1.</p>
+        <p>El caso integrador combina EHR sintética, waveform, un estudio DICOM y RNA-seq. El estudiante entrega un diagrama source-to-landing, inventario de grain/identidad/tiempo, manifiestos y tabla de correspondencia entre sujeto sintético, estudio, registro de señal y BioSample. No se transforman datos identificables ni se activa infraestructura clínica. El objetivo es demostrar que el contexto necesario para transformar y analizar sigue intacto al cruzar la frontera de adquisición.</p>
+        <p>La frontera curricular es evaluable: U2 implementa ETL/ELT, esquemas y unidades; U3 compara modelos relacionales, lagos y series temporales; U4 mide calidad, linaje y versionado; U5 orquesta y observa pipelines; U6 aplica seudonimización, controles de acceso y contratos/productos de datos. Si U1 intenta resolver esas capas, deja de enseñar con claridad la pregunta previa: qué debe preservarse antes de tocar una fuente.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Source-to-landing define interfaces y contexto de llegada antes de implementar transformaciones ETL o ELT.</li>
+        <li>Una landing inmutable preserva entregas originales y representa correcciones mediante versiones adicionales auditables.</li>
+        <li>El manifiesto complementa, pero nunca sustituye, los metadatos nativos de cada dominio biomédico.</li>
+        <li>La cuarentena separa entradas no aceptables sin borrar la evidencia necesaria para investigar el fallo.</li>
+        <li>Batch y streaming tienen semánticas distintas de cierre, retraso, reintento y duplicación.</li>
+        <li>U1 preserva contexto; U2–U6 transforman, almacenan, evalúan, operan y gobiernan ese contexto.</li>
       </ul>
       </article>
     </section>
@@ -178,41 +225,99 @@
     <section id="caso" class="section">
       <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
             <article class="worked-example advanced-worked-example">
-        <h3>Del problema amplio a una evidencia verificable en Fuentes y arquitectura de datos</h3>
-        <p><strong>Situación.</strong> Un equipo propone estudiar diseño de flujos para datos biomédicos heterogéneos, pero su pregunta mezcla clínicos, sensores y imagen y ómicas sin definir unidades, referencias ni resultado admisible.</p>
+        <h3>Tres relojes para un mismo resultado de laboratorio</h3>
+        <p><strong>Situación.</strong> Un resultado sintético de potasio tiene effectiveTime 09:02, issued 09:17 y llega al landing a las 09:23. Un pipeline alternativo conserva solo received_at.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Separar necesidad, pregunta científica, decisión y producto esperado.</li>
-        <li>Definir la unidad de observación y el papel específico de clínicos, sensores y imagen y ómicas.</li>
-        <li>Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.</li>
-        <li>Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.</li>
-        <li>Redactar una conclusión limitada y el dato que permitiría revisarla.</li>
+        <li>Identificar sujeto, encuentro, espécimen, observación, valor y unidad como campos distintos.</li>
+        <li>Registrar MRN sintético con namespace y no usarlo como identificador global.</li>
+        <li>Ordenar el caso por effective time, issued time e ingest time y comparar las tres secuencias.</li>
+        <li>Explicar qué pregunta responde cada reloj y cuál sería incorrecto para reconstruir disponibilidad clínica.</li>
+        <li>Definir qué campos deben conservarse sin normalizarlos todavía.</li>
       </ol>
-        <p><strong>Interpretación.</strong> El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.</p>
+        <p><strong>Interpretación.</strong> La arquitectura debe preservar los tres tiempos: el valor clínico no cambia, pero sí cambia lo que puede afirmarse sobre ocurrencia, disponibilidad y llegada.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>El caso simulado no demuestra desempeño en un entorno real.</li>
-        <li>La conclusión depende de las definiciones y controles declarados.</li>
-        <li>Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</li>
+        <li>El caso no modela todas las transiciones de estado de una EHR real.</li>
+        <li>FHIR se usa como semántica de referencia, no como prueba de que la fuente sea FHIR nativa.</li>
+        <li>No se evalúa uso clínico del resultado.</li>
       </ul>
       </article>
       <article class="worked-example advanced-worked-example">
-        <h3>Análisis de sensibilidad y explicación alternativa</h3>
-        <p><strong>Situación.</strong> El análisis inicial parece apoyar una relación entre clínicos y sensores en el caso de diseño de flujos para datos biomédicos heterogéneos; una condición vinculada con imagen y ómicas podría producir el mismo patrón.</p>
+        <h3>Dimensionar una waveform sin confundir bytes con fisiología</h3>
+        <p><strong>Situación.</strong> Un dispositivo sintético registra ECG de 3 canales a 250 Hz y 16 bits por muestra durante 20 minutos, con un hueco documentado de 12 s.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Escribir por separado el resultado observado y la explicación propuesta.</li>
-        <li>Representar imagen y ómicas como condición, covariable, perturbación o fuente de sesgo según el diseño.</li>
-        <li>Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.</li>
-        <li>Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.</li>
-        <li>Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión.</li>
+        <li>Calcular la tasa bruta nominal R=3·250·16/8=1500 bytes/s.</li>
+        <li>Calcular 20 minutos nominales de adquisición y separar el intervalo faltante.</li>
+        <li>Registrar canal, unidad, frecuencia, gain, baseline, reloj y hueco en el manifiesto.</li>
+        <li>No rellenar los 12 s con ceros ni interpolación durante U1.</li>
+        <li>Explicar qué parte del tamaño final no puede inferirse sin conocer headers, compresión y almacenamiento de U3.</li>
       </ol>
-        <p><strong>Interpretación.</strong> Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.</p>
+        <p><strong>Interpretación.</strong> La tasa de la fuente puede estimarse, pero el hueco y la metadata temporal deben preservarse para que el registro siga siendo interpretable.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>El análisis de sensibilidad solo cubre las perturbaciones evaluadas.</li>
-        <li>Una alternativa no descartada reduce la fuerza de la inferencia.</li>
-        <li>La transferibilidad necesita evaluación independiente.</li>
+        <li>La tasa ignora overhead y compresión.</li>
+        <li>El dispositivo y la señal son sintéticos.</li>
+        <li>No se interpreta ECG ni se evalúa calidad clínica.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Un estudio DICOM no es una carpeta de imágenes independientes</h3>
+        <p><strong>Situación.</strong> Una exportación sintética contiene un Study Instance UID con dos Series Instance UIDs y 420 SOP Instances cuyos nombres de archivo fueron renombrados.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Reconstruir Patient–Study–Series–Instance usando UIDs, no paths ni filenames.</li>
+        <li>Separar metadata de estudio/serie/instancia de pixel data.</li>
+        <li>Contar un estudio, dos series y 420 instancias sin convertirlas en 420 exploraciones.</li>
+        <li>Registrar modalidad, orientación/spacing y parámetros de adquisición definidos por el caso.</li>
+        <li>Crear un manifiesto que apunte al conjunto DICOM preservado y no a una tabla plana como sustituto.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La unidad de adquisición se reconstruye desde la jerarquía y sus UIDs; nombres de archivo son una conveniencia de almacenamiento.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No se procesan píxeles ni se interpreta imagen.</li>
+        <li>El conjunto es sintético y no constituye una Conformance Statement.</li>
+        <li>La selección de almacenamiento se reserva para U3.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Sample, Experiment y Run no son sinónimos en RNA-seq</h3>
+        <p><strong>Situación.</strong> Dos muestras biológicas sintéticas generan dos bibliotecas cada una y cada biblioteca se secuencia en dos runs. Ocho FASTQ no equivalen a ocho réplicas biológicas.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Enumerar BioSample, biblioteca/Experiment, Run y archivos FASTQ por nivel.</li>
+        <li>Distinguir réplica biológica de repetición técnica.</li>
+        <li>Registrar estrategia, layout, instrumento y relación muestra→experimento→run.</li>
+        <li>Comprobar que paired-end forward/reverse pertenecen al mismo run cuando corresponda.</li>
+        <li>Definir el grain de futuros análisis sin usar el conteo de archivos como n biológico.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La jerarquía de metadatos evita pseudorreplicación y conserva la conexión entre muestra biológica y archivos de secuenciación.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No se realizan QC, alineamiento ni expresión diferencial.</li>
+        <li>No se usan datos humanos reales.</li>
+        <li>Los criterios de calidad profunda pertenecen a unidades posteriores.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Arquitectura multimodal source-to-landing</h3>
+        <p><strong>Situación.</strong> Una cohorte totalmente sintética combina EHR batch diaria, waveform streaming, un estudio DICOM por visita y RNA-seq por subgrupo.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Construir inventario de fuentes y grain para cada dominio.</li>
+        <li>Elegir batch, micro-batch o streaming según el patrón de llegada y justificarlo.</li>
+        <li>Definir payload raw, manifest y checksum por entrega.</li>
+        <li>Crear tabla de correspondencia entre subject_id sintético, encounter, waveform record, Study UID y BioSample.</li>
+        <li>Separar accepted y quarantine sin transformar unidades ni contenidos.</li>
+        <li>Marcar explícitamente qué decisiones pasan a U2, U3, U4, U5 y U6.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Una arquitectura defendible preserva identidad, tiempo y metadata nativa suficientes para que las transformaciones posteriores sean auditables.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No se despliega infraestructura real.</li>
+        <li>No se manejan datos personales ni credenciales.</li>
+        <li>El ejercicio no demuestra escalabilidad, seguridad o utilidad clínica.</li>
       </ul>
       </article>
     </section>
@@ -220,95 +325,90 @@
     <section id="practica" class="section">
       <div class="section-header"><h2>Actividad aplicada</h2></div>
             <article class="guided-activity advanced-guided-activity">
-        <h3>Pausa de recuperación y explicación</h3>
+        <h3>Laboratorio reproducible: mapa source-to-landing de una cohorte multimodal sintética</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Responde sin consultar el texto y después corrige con un color distinto.</li>
-        <li>Dibuja las relaciones antes de escribir una definición extensa.</li>
-        <li>Marca cada elemento como observado, calculado, inferido o pendiente.</li>
-        <li>Explica la unidad a una audiencia no especialista en menos de 150 palabras.</li>
+        <li>Trabaja únicamente con datos sintéticos creados para la actividad o recursos abiertos no identificables; no introduzcas MRN, imágenes, waveforms u ómicas de pacientes reales.</li>
+        <li>Recibe cuatro paquetes sintéticos: eventos clínicos estilo FHIR, un registro waveform con header, un estudio DICOM de prueba y metadata/FASTQ mínimos de RNA-seq.</li>
+        <li>Antes de transformar nada, crea un inventario de fuentes con source_id, productor, entidad primaria, grain, identificador+namespace, tiempo relevante, formato, unidad, volumen y patrón de actualización.</li>
+        <li>Dibuja por separado la jerarquía clínica, la de waveform, Patient–Study–Series–Instance y Study/Sample–Experiment–Run.</li>
+        <li>Registra event/effective time, issued time e ingest time cuando existan y no los colapses en una sola columna.</li>
+        <li>Para la waveform, conserva channel, sampling frequency, unit, gain/baseline, clock source, segments y gaps.</li>
+        <li>Para DICOM, usa UIDs y metadata de adquisición; no uses nombres de archivo como identidad de Study, Series o Instance.</li>
+        <li>Para ómicas, conserva BioSample, biblioteca, estrategia/layout, instrumento, Experiment, Run y archivos; separa réplicas biológicas y técnicas.</li>
+        <li>Diseña interfaces de llegada batch/streaming y un manifest mínimo con checksum y received_at.</li>
+        <li>Predefine criterios mínimos de accepted/quarantine sin implementar transformaciones ETL/ELT de U2.</li>
+        <li>Construye una tabla de correspondencia multimodal usando identificadores sintéticos namespaceados y ventanas temporales justificadas.</li>
+        <li>Documenta explícitamente qué decisiones quedan reservadas para U2, U3, U4, U5 y U6.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
-        <li>Define clínicos mediante entidad, relación, condición y ejemplo.</li>
-        <li>Explica cómo sensores modifica o complementa a clínicos.</li>
-        <li>Propón una prueba que distinga el papel de imagen y ómicas de una explicación alternativa.</li>
-        <li>Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible.</li>
+        <li>Define el grain exacto de cada una de las cuatro fuentes y enumera un nivel superior y uno inferior cuando existan.</li>
+        <li>Identifica qué sistema es autoritativo para cada atributo seleccionado y justifica por qué la autoridad no es global.</li>
+        <li>Detecta tres identificadores que serían inseguros como claves globales si se elimina su namespace.</li>
+        <li>Para cinco eventos clínicos, separa effective/occurrence, issued y ingest time y explica una conclusión que cambiaría al usar el reloj equivocado.</li>
+        <li>Representa una corrección de laboratorio como nueva versión sin contarla como nueva medición independiente.</li>
+        <li>Calcula la duración nominal de una waveform a partir de N y f_s y compara con la duración cronológica cuando existe un gap.</li>
+        <li>Calcula R_raw para una señal multicanal y explica por qué no es una estimación completa de almacenamiento.</li>
+        <li>Documenta un drift sintético de reloj y explica cómo afectaría una alineación con eventos clínicos.</li>
+        <li>Marca dos huecos de waveform sin imputarlos y define la metadata mínima que permitirá tratarlos después.</li>
+        <li>Reconstruye Patient–Study–Series–Instance desde UIDs y demuestra por qué filenames no son claves válidas.</li>
+        <li>Separa cinco atributos DICOM de metadata de los pixel data y explica qué contexto perderías al conservar solo la matriz.</li>
+        <li>Cuenta estudios, series e instancias sin confundir instancias con exploraciones independientes.</li>
+        <li>Reconstruye Study/BioProject–BioSample–Experiment–Run para el paquete ómico.</li>
+        <li>Clasifica cada repetición del caso ómico como biológica o técnica y detecta una pseudorreplicación deliberada.</li>
+        <li>Inspecciona la estructura de un FASTQ sintético y explica qué metadata de muestra/ensayo no contiene el archivo por sí solo.</li>
+        <li>Clasifica cada fuente como batch, micro-batch o streaming y justifica una alternativa descartada.</li>
+        <li>Diseña el manifest de entrega para cada fuente e incluye checksum, received_at, rango temporal y conteo de objetos.</li>
+        <li>Define tres condiciones de quarantine que detecten problemas de entrada sin realizar aún la validación semántica de U2.</li>
+        <li>Simula un reintento de entrega y explica cómo distinguir duplicado de transporte de nuevo evento biomédico.</li>
+        <li>Construye la tabla de correspondencia multimodal sin usar PII y marca una relación ambigua como no resuelta en lugar de forzarla.</li>
+        <li>Propón un caso de llegada tardía y explica qué campo conserva la evidencia de que el dato no estaba disponible al tiempo esperado.</li>
+        <li>Entrega una matriz de responsabilidades U1–U6 que impida resolver en U1 transformaciones, almacenamiento, calidad profunda, orquestación o privacidad.</li>
       </ul>
         <h4>Entregables</h4>
       <ul>
-        <li>Mapa conceptual corregido.</li>
-        <li>Explicación breve con una limitación explícita.</li>
+        <li>Inventario de las cuatro fuentes con grain, identificadores, tiempos, formato y patrón de actualización.</li>
+        <li>Diagrama source-to-landing con interfaces batch/streaming y estados accepted/quarantine.</li>
+        <li>Mapa de entidades clínicas y tabla de los tres relojes.</li>
+        <li>Ficha waveform con canales, frecuencia, unidad, gain/baseline, clock y gaps.</li>
+        <li>Mapa DICOM Patient–Study–Series–Instance con UIDs y metadata mínima.</li>
+        <li>Mapa ómico BioProject/BioSample–Experiment–Run con réplicas clasificadas.</li>
+        <li>Cuatro manifiestos de entrega con checksums sintéticos.</li>
+        <li>Tabla de correspondencia multimodal namespaceada.</li>
+        <li>Cálculos documentados de T_nom y R_raw con unidades.</li>
+        <li>Registro de corrección, llegada tardía, gap y reintento.</li>
+        <li>Matriz U1–U6 de responsabilidades y decisiones diferidas.</li>
+        <li>Informe final de arquitectura con supuestos, límites y siguiente prueba.</li>
       </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>Las relaciones tienen dirección.</li>
-        <li>No se confunde evidencia con interpretación.</li>
-        <li>La explicación conserva el mecanismo central.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Taller de evidencia: diseño de flujos para datos biomédicos heterogéneos</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.</li>
-        <li>Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.</li>
-        <li>Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.</li>
-        <li>Conserva cálculos, decisiones, resultados negativos y cambios de versión.</li>
-        <li>Compara el resultado con un baseline o una explicación alternativa.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Construye una tabla de trazabilidad para clínicos, sensores y imagen y ómicas.</li>
-        <li>Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.</li>
-        <li>Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.</li>
-        <li>Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.</li>
-        <li>Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.</li>
-        <li>Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Prototipo reproducible con contrato de datos y plan de validación.</li>
-        <li>Datos o premisas y procedimiento reproducible.</li>
-        <li>Registro de controles y discrepancias.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>Trazabilidad completa.</li>
-        <li>Controles discriminantes.</li>
-        <li>Procedimiento reproducible.</li>
-        <li>Conclusión proporcional a la evidencia.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Reto de transferencia y revisión por pares</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.</li>
-        <li>Intercambia el producto con otra persona o utiliza una lista de revisión independiente.</li>
-        <li>Registra hallazgos por severidad: crítico, importante o editorial.</li>
-        <li>Corrige el producto y conserva una tabla antes-después con justificación.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Transfiere el método a un caso distinto de diseño de flujos para datos biomédicos heterogéneos y enumera supuestos que deben revalidarse.</li>
-        <li>Construye una explicación alternativa que también conecte clínicos, sensores y imagen y ómicas.</li>
-        <li>Identifica una afirmación que exceda la evidencia y reescríbela.</li>
-        <li>Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.</li>
-        <li>Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Producto revisado.</li>
-        <li>Registro antes-después.</li>
-        <li>Rúbrica de transferencia.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>La revisión produce cambios verificables.</li>
-        <li>Las limitaciones son específicas.</li>
-        <li>La figura conserva unidades y procedencia.</li>
-        <li>La nueva pregunta no se responde por memorización.</li>
+        <li>Cada fuente declara una unidad de observación inequívoca y no usa el número de archivos como tamaño de muestra biológico.</li>
+        <li>Los identificadores incluyen namespace y ninguna clave local se presenta como universal sin evidencia.</li>
+        <li>Effective/occurrence, issued y ingest time permanecen separados cuando representan hechos distintos.</li>
+        <li>Las correcciones se versionan o registran sin sobrescritura silenciosa del payload recibido.</li>
+        <li>La waveform conserva frecuencia, canal, unidad, escala y referencia temporal.</li>
+        <li>Los huecos de señal permanecen explícitos y no se rellenan durante U1.</li>
+        <li>Los cálculos de duración y tasa bruta muestran fórmula, unidades y supuestos.</li>
+        <li>El reloj del dispositivo se distingue del reloj de la plataforma de ingesta.</li>
+        <li>Study, Series e Instance se reconstruyen mediante UIDs y jerarquía DICOM.</li>
+        <li>Metadata DICOM y pixel data se distinguen explícitamente.</li>
+        <li>El conteo de instancias no se interpreta como número de estudios independientes.</li>
+        <li>BioSample, Experiment y Run se distinguen con relaciones explícitas.</li>
+        <li>Las réplicas biológicas y técnicas no se mezclan.</li>
+        <li>FASTQ no se usa como sustituto de metadata de muestra, biblioteca o instrumento.</li>
+        <li>Cada interfaz de llegada especifica batch, micro-batch o streaming con justificación.</li>
+        <li>Cada entrega tiene un manifest con source_id, received_at y checksum reproducible.</li>
+        <li>Quarantine conserva payload y motivo del rechazo en lugar de borrar evidencia.</li>
+        <li>Los reintentos pueden identificarse sin asumir que todo payload repetido es un evento duplicado.</li>
+        <li>La correspondencia multimodal usa únicamente identificadores sintéticos y no contiene PII.</li>
+        <li>Las relaciones ambiguas se marcan como no resueltas y no se fuerzan.</li>
+        <li>Las llegadas tardías conservan event time e ingest time.</li>
+        <li>El flujo preserva payload raw o copia verificable antes de transformaciones.</li>
+        <li>U2 queda reservado a ETL/ELT, validación de esquemas y normalización de unidades.</li>
+        <li>U3–U6 conservan explícitamente sus responsabilidades de almacenamiento, calidad, operación y privacidad.</li>
+        <li>La conclusión final separa diseño técnico de validez clínica, seguridad, privacidad y escalabilidad productiva.</li>
+        <li>Una persona independiente puede reconstruir qué llegó, desde dónde, cuándo y con qué contexto.</li>
       </ul>
       </article>
     </section>
@@ -318,61 +418,98 @@
             <section class="common-errors">
         <h3>Errores frecuentes y corrección</h3>
         <ul class="rich-list">
-        <li><strong>Tratar clínicos como una etiqueta autosuficiente.</strong><p>Definir entidades, escala, relaciones, observables y condiciones antes de usar clínicos en una explicación.</p></li>
-        <li><strong>Afirmar que una relación entre clínicos y sensores demuestra mecanismo o causalidad.</strong><p>Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones.</p></li>
-        <li><strong>Añadir imagen y ómicas después de ver el resultado.</strong><p>Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio.</p></li>
-        <li><strong>Presentar solo el resultado favorable y omitir controles o discrepancias.</strong><p>Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento.</p></li>
-        <li><strong>Generalizar la conclusión de Fuentes y arquitectura de datos al uso clínico o real.</strong><p>Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</p></li>
+        <li><strong>Contar archivos como observaciones independientes.</strong><p>Definir primero grain y jerarquía; archivos, instancias, runs y pacientes representan niveles distintos.</p></li>
+        <li><strong>Eliminar namespaces de identificadores.</strong><p>Conservar sistema/namespace junto al valor y no convertir claves locales en identificadores universales.</p></li>
+        <li><strong>Usar ingest time como si fuera tiempo del evento.</strong><p>Preservar effective/occurrence, issued y ingest time cuando tengan semánticas diferentes.</p></li>
+        <li><strong>Sobrescribir una corrección clínica.</strong><p>Registrar la nueva versión o entrega sin destruir la representación previamente recibida.</p></li>
+        <li><strong>Tratar una waveform como filas independientes.</strong><p>Conservar orden temporal, canales, frecuencia, unidades, escala, clock y segmentación.</p></li>
+        <li><strong>Calcular duración con N/f_s ignorando gaps.</strong><p>Usar N/f_s solo como duración nominal bajo muestreo regular y representar huecos explícitamente.</p></li>
+        <li><strong>Rellenar gaps con ceros en la landing.</strong><p>Preservar el hueco y diferir imputación/interpolación hasta una transformación justificada.</p></li>
+        <li><strong>Asumir que clocks de dispositivo y servidor están sincronizados.</strong><p>Registrar origen del reloj, offset/zone, precisión y mecanismo de sincronización.</p></li>
+        <li><strong>Usar filenames DICOM como identidad.</strong><p>Reconstruir Study, Series e Instance mediante sus UIDs y metadata de contexto.</p></li>
+        <li><strong>Guardar solo pixel data.</strong><p>Conservar metadata crítica de adquisición y geometría junto al objeto o referencia al objeto.</p></li>
+        <li><strong>Contar SOP Instances como estudios independientes.</strong><p>Usar la jerarquía Patient–Study–Series–Instance para determinar el nivel analítico.</p></li>
+        <li><strong>Equiparar FASTQ con muestra biológica.</strong><p>Vincular archivos con BioSample, Experiment y Run y preservar metadata de biblioteca/ensayo.</p></li>
+        <li><strong>Tratar runs técnicos como réplicas biológicas.</strong><p>Clasificar réplicas según independencia biológica antes de definir el n analítico.</p></li>
+        <li><strong>Transformar todo a una tabla única en U1.</strong><p>Preservar las jerarquías nativas; ETL/ELT y normalización corresponden a U2.</p></li>
+        <li><strong>Elegir base de datos definitiva en U1.</strong><p>Documentar requerimientos de la fuente y reservar la selección de almacenamiento/modelado para U3.</p></li>
+        <li><strong>Declarar que checksum demuestra calidad del dato.</strong><p>Checksum detecta cambios de payload; calidad, consistencia y linaje profundo corresponden a U4.</p></li>
+        <li><strong>Confundir logs de llegada con observabilidad completa.</strong><p>U1 registra manifiestos mínimos; orquestación, métricas y alertas corresponden a U5.</p></li>
+        <li><strong>Introducir datos identificables para hacer el caso realista.</strong><p>Usar exclusivamente datos sintéticos o abiertos no identificables; privacidad y acceso se formalizan en U6.</p></li>
         </ul>
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Cuál es la unidad de observación adecuada para estudiar diseño de flujos para datos biomédicos heterogéneos?</summary>
-        <p><strong>Respuesta:</strong> Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes.</p>
+        <summary>1. ¿Por qué cuatro archivos no implican cuatro observaciones independientes?</summary>
+        <p><strong>Respuesta:</strong> Porque cada dominio tiene un grain propio; un archivo puede contener muchas muestras, instancias o eventos y varios archivos pueden pertenecer a una sola muestra o estudio.</p>
+        <p><strong>Razonamiento:</strong> La independencia se decide desde la entidad y jerarquía, no desde el contenedor físico.</p>
+        <p><strong>Error que evita:</strong> Usar el número de archivos como n.</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿Cómo se relacionan clínicos y sensores?</summary>
-        <p><strong>Respuesta:</strong> Mediante una relación con dirección, condición y evidencia verificable; imagen y ómicas puede modificar o contextualizar esa relación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Responder con una lista de definiciones sin explicar la relación.</p>
+        <summary>2. ¿Qué problema resuelve un namespace?</summary>
+        <p><strong>Respuesta:</strong> Delimita el ámbito en que un identificador es único e interpretable.</p>
+        <p><strong>Razonamiento:</strong> La misma cadena puede identificar entidades distintas en sistemas diferentes.</p>
+        <p><strong>Error que evita:</strong> Concatenar IDs sin registrar su sistema.</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Qué dato apoya una afirmación sobre imagen y ómicas?</summary>
-        <p><strong>Respuesta:</strong> Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente.</p>
+        <summary>3. ¿Qué diferencia hay entre effective time e ingest time?</summary>
+        <p><strong>Respuesta:</strong> El primero sitúa el hecho observado; el segundo registra cuándo la plataforma recibió la representación.</p>
+        <p><strong>Razonamiento:</strong> Son relojes útiles para preguntas distintas de cronología y disponibilidad.</p>
+        <p><strong>Error que evita:</strong> Ordenar la historia clínica solo por tiempo de ingesta.</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Qué hace que un control sea discriminante?</summary>
-        <p><strong>Respuesta:</strong> Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Añadir un control que no puede cambiar la interpretación.</p>
+        <summary>4. ¿Qué significa que una corrección no sea una nueva medición?</summary>
+        <p><strong>Respuesta:</strong> Puede ser una nueva versión del mismo hecho y debe conservar identidad/versionado sin inflar el conteo de observaciones.</p>
+        <p><strong>Razonamiento:</strong> Versión del registro e identidad del evento son ejes distintos.</p>
+        <p><strong>Error que evita:</strong> Contar cada versión como evento independiente.</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Qué debe contener un resultado reproducible?</summary>
-        <p><strong>Respuesta:</strong> Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Entregar únicamente una figura final o un archivo ejecutado.</p>
+        <summary>5. ¿Cuándo es válida T=N/f_s?</summary>
+        <p><strong>Respuesta:</strong> Como duración nominal cuando el muestreo es regular y los huecos están adecuadamente representados.</p>
+        <p><strong>Razonamiento:</strong> La fórmula depende de la interpretación de N y de la continuidad temporal.</p>
+        <p><strong>Error que evita:</strong> Ignorar gaps o cambios de frecuencia.</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Cómo se informa una conclusión sensible a un supuesto?</summary>
-        <p><strong>Respuesta:</strong> Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Elegir el escenario que confirma la conclusión y ocultar los demás.</p>
+        <summary>6. ¿Por qué R_raw no es el tamaño final en disco?</summary>
+        <p><strong>Respuesta:</strong> Ignora headers, compresión, índices, replicación y decisiones de almacenamiento.</p>
+        <p><strong>Razonamiento:</strong> Es una propiedad aproximada de la fuente, no del sistema de almacenamiento.</p>
+        <p><strong>Error que evita:</strong> Usar R_raw para dimensionar toda U3.</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Qué afirmación no puede sostener esta unidad sobre diseño de flujos para datos biomédicos heterogéneos?</summary>
-        <p><strong>Respuesta:</strong> Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir una actividad educativa o un caso simulado con validación real.</p>
+        <summary>7. ¿Qué se pierde al guardar solo pixel data de DICOM?</summary>
+        <p><strong>Respuesta:</strong> Puede perderse identidad jerárquica, geometría, modalidad y parámetros necesarios para interpretar la adquisición.</p>
+        <p><strong>Razonamiento:</strong> Píxel y metadata forman un objeto contextualizado.</p>
+        <p><strong>Error que evita:</strong> Tratar DICOM como una matriz sin contexto.</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿Qué demuestra dominio de Fuentes y arquitectura de datos?</summary>
-        <p><strong>Respuesta:</strong> Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Equiparar dominio con reconocer términos o repetir una solución.</p>
+        <summary>8. ¿Qué diferencia SRA Experiment de Run?</summary>
+        <p><strong>Respuesta:</strong> Experiment describe muestra/biblioteca/estrategia/instrumento; Run manifiesta archivos derivados de la secuenciación de esa biblioteca.</p>
+        <p><strong>Razonamiento:</strong> Separar esos niveles evita confundir ensayo y ejecución técnica.</p>
+        <p><strong>Error que evita:</strong> Usar cada FASTQ como un experimento independiente.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>9. ¿Qué significa landing inmutable?</summary>
+        <p><strong>Respuesta:</strong> Que una entrega histórica no se sobrescribe silenciosamente; correcciones se registran como nuevas versiones o entregas.</p>
+        <p><strong>Razonamiento:</strong> Inmutabilidad preserva evidencia de qué se recibió y cuándo.</p>
+        <p><strong>Error que evita:</strong> Interpretar inmutabilidad como imposibilidad de corregir datos.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>10. ¿Qué función cumple un checksum?</summary>
+        <p><strong>Respuesta:</strong> Permite detectar si el contenido de un payload cambió o se corrompió accidentalmente.</p>
+        <p><strong>Razonamiento:</strong> No evalúa exactitud clínica, semántica ni calidad del dato.</p>
+        <p><strong>Error que evita:</strong> Declarar calidad porque dos checksums coinciden.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>11. ¿Por qué cuarentena no significa borrar?</summary>
+        <p><strong>Respuesta:</strong> Porque el payload y el motivo del rechazo son evidencia necesaria para depurar la interfaz y decidir una corrección.</p>
+        <p><strong>Razonamiento:</strong> Separar entradas no aceptadas protege el flujo sin destruir trazabilidad.</p>
+        <p><strong>Error que evita:</strong> Eliminar archivos inválidos sin registro.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>12. ¿Qué demuestra dominio de U1?</summary>
+        <p><strong>Respuesta:</strong> Poder diseñar un mapa source-to-landing auditable que preserve grain, identidad, tiempo, unidades y metadata y que deje explícitas las tareas de U2–U6.</p>
+        <p><strong>Razonamiento:</strong> El objetivo es conservar significado antes de transformar, no desplegar toda la plataforma.</p>
+        <p><strong>Error que evita:</strong> Presentar una arquitectura productiva o una base de datos final como requisito de U1.</p>
       </details>
       </div>
     </section>
@@ -380,18 +517,66 @@
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
-        <li><strong>clínicos</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>sensores</strong><p>Elementos que responden a una magnitud y generan una señal utilizable para medición o control.</p></li>
-        <li><strong>imagen y ómicas</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>Fuentes y arquitectura de datos</strong><p>Dominio de estudio que integra clínicos, sensores, imagen y ómicas para resolver un problema delimitado y verificable.</p></li>
-        <li><strong>Caso de aplicación</strong><p>Escenario de diseño de flujos para datos biomédicos heterogéneos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas.</p></li>
-        <li><strong>Unidad de observación</strong><p>Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse.</p></li>
-        <li><strong>Evidencia</strong><p>Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener.</p></li>
-        <li><strong>Control</strong><p>Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento.</p></li>
-        <li><strong>Incertidumbre</strong><p>Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse.</p></li>
-        <li><strong>Validez</strong><p>Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas.</p></li>
-        <li><strong>Reproducibilidad</strong><p>Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes.</p></li>
-        <li><strong>Transferencia</strong><p>Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian.</p></li>
+        <li><strong>Fuente de datos</strong><p>Sistema, dispositivo, repositorio o instrumento que produce registros bajo reglas y contexto identificables.</p></li>
+        <li><strong>Sistema productor</strong><p>Sistema que origina un dato o artefacto antes de copias, exportaciones o transformaciones secundarias.</p></li>
+        <li><strong>Granularidad</strong><p>Nivel al que una fila, objeto, muestra, segmento o evento representa una unidad de observación.</p></li>
+        <li><strong>Unidad de observación</strong><p>Entidad concreta sobre la que se registra un atributo o medición y cuya jerarquía debe declararse.</p></li>
+        <li><strong>Source of truth</strong><p>Fuente considerada autoritativa para un atributo y uso definidos; no es una etiqueta absoluta para todos los campos.</p></li>
+        <li><strong>Namespace</strong><p>Ámbito que da unicidad y significado operativo a un identificador local.</p></li>
+        <li><strong>Identificador</strong><p>Valor utilizado para distinguir una entidad dentro de un sistema o namespace específico.</p></li>
+        <li><strong>Join multimodal</strong><p>Vinculación entre fuentes distintas usando claves y condiciones explícitas de identidad, tiempo y granularidad.</p></li>
+        <li><strong>Evento clínico</strong><p>Hecho o registro clínico situado en contexto temporal y de atención.</p></li>
+        <li><strong>Encuentro</strong><p>Contexto asistencial durante el que ocurren actos, observaciones u órdenes relacionadas.</p></li>
+        <li><strong>Observation</strong><p>Recurso FHIR usado para representar mediciones y afirmaciones simples sobre un sujeto u otro objeto.</p></li>
+        <li><strong>Tiempo efectivo</strong><p>Instante o intervalo al que se refiere el hecho observado o medido.</p></li>
+        <li><strong>Tiempo de emisión</strong><p>Momento en que un resultado o versión se hace disponible o se emite tras su procesamiento.</p></li>
+        <li><strong>Tiempo de ingesta</strong><p>Momento en que la arquitectura de datos recibe una representación desde la fuente.</p></li>
+        <li><strong>Llegada tardía</strong><p>Registro cuyo tiempo de ingesta es posterior al esperado respecto de su tiempo de evento.</p></li>
+        <li><strong>Corrección</strong><p>Nueva versión o actualización que modifica la representación previa de un hecho sin implicar necesariamente un nuevo hecho.</p></li>
+        <li><strong>Señal fisiológica</strong><p>Variable fisiológica muestreada a lo largo del tiempo en uno o varios canales.</p></li>
+        <li><strong>Muestra temporal</strong><p>Valor digital de un canal adquirido en una posición temporal de una señal.</p></li>
+        <li><strong>Canal</strong><p>Secuencia de muestras asociada a una variable, derivación o sensor específico.</p></li>
+        <li><strong>Frecuencia de muestreo</strong><p>Número nominal de muestras adquiridas por segundo en un canal regular.</p></li>
+        <li><strong>Ganancia</strong><p>Factor usado para relacionar valores digitales almacenados con amplitudes físicas.</p></li>
+        <li><strong>Baseline</strong><p>Offset de referencia utilizado en la representación o calibración de una señal.</p></li>
+        <li><strong>Clock drift</strong><p>Desviación acumulada entre el reloj de un dispositivo y una referencia temporal externa.</p></li>
+        <li><strong>Hueco</strong><p>Intervalo esperado de una señal o stream para el que no existe adquisición válida disponible.</p></li>
+        <li><strong>Segmento</strong><p>Bloque temporal o lógico de un registro waveform que conserva continuidad y metadata propias.</p></li>
+        <li><strong>WFDB</strong><p>Waveform Database software/formats de PhysioNet para señales, headers y anotaciones fisiológicas.</p></li>
+        <li><strong>DICOM</strong><p>Estándar para información médica digital que define objetos, atributos, codificación y servicios.</p></li>
+        <li><strong>Study</strong><p>Nivel DICOM que agrupa una adquisición o conjunto relacionado de series bajo un Study Instance UID.</p></li>
+        <li><strong>Series</strong><p>Nivel DICOM que agrupa instancias relacionadas dentro de un estudio y posee Series Instance UID.</p></li>
+        <li><strong>Instance</strong><p>Objeto DICOM individual identificado mediante SOP Instance UID.</p></li>
+        <li><strong>UID</strong><p>Identificador único utilizado por DICOM para estudios, series, instancias y otras entidades.</p></li>
+        <li><strong>Metadata DICOM</strong><p>Atributos que describen identidad, contexto, modalidad, geometría y parámetros de adquisición de objetos DICOM.</p></li>
+        <li><strong>Pixel data</strong><p>Datos de imagen o frames contenidos en una instancia; no sustituyen los metadatos que permiten interpretarlos.</p></li>
+        <li><strong>Modalidad</strong><p>Tipo de sistema o procedimiento de adquisición de imagen declarado en el contexto DICOM.</p></li>
+        <li><strong>BioProject</strong><p>Entidad NCBI que organiza un proyecto de investigación y enlaza datos y muestras relacionadas.</p></li>
+        <li><strong>BioSample</strong><p>Registro NCBI que describe una muestra biológica y sus atributos.</p></li>
+        <li><strong>SRA Study</strong><p>Nivel de estudio/proyecto en el modelo de metadatos de Sequence Read Archive.</p></li>
+        <li><strong>SRA Experiment</strong><p>Objeto que describe una combinación concreta de muestra, biblioteca, estrategia/layout e instrumento.</p></li>
+        <li><strong>SRA Run</strong><p>Manifiesto de archivos derivados de secuenciar una biblioteca descrita por un experimento.</p></li>
+        <li><strong>FASTQ</strong><p>Formato textual que representa identificadores de lecturas, bases y puntuaciones de calidad por base.</p></li>
+        <li><strong>Biblioteca de secuenciación</strong><p>Preparación molecular derivada de una muestra que se somete a una estrategia de secuenciación.</p></li>
+        <li><strong>Réplica biológica</strong><p>Muestra biológica independiente utilizada para capturar variación biológica.</p></li>
+        <li><strong>Réplica técnica</strong><p>Medición, biblioteca o ejecución repetida destinada a caracterizar variación técnica sin crear independencia biológica.</p></li>
+        <li><strong>Batch</strong><p>Conjunto delimitado de registros u objetos entregados como una unidad de procesamiento.</p></li>
+        <li><strong>Micro-batch</strong><p>Conjunto pequeño de eventos acumulados durante una ventana breve antes de procesarse juntos.</p></li>
+        <li><strong>Streaming</strong><p>Llegada continua o casi continua de eventos que se procesan sin esperar un lote cerrado.</p></li>
+        <li><strong>Source-to-landing</strong><p>Tramo arquitectónico que transporta y registra una entrega desde la fuente hasta una zona de aterrizaje preservando contexto.</p></li>
+        <li><strong>Landing zone</strong><p>Área donde se reciben y registran payloads antes de transformaciones analíticas posteriores.</p></li>
+        <li><strong>Landing raw</strong><p>Representación preservada de la entrega original o copia verificable de ella.</p></li>
+        <li><strong>Inmutabilidad</strong><p>Propiedad de no sobrescribir silenciosamente una entrega histórica; las correcciones se representan como nuevas versiones.</p></li>
+        <li><strong>Manifiesto de entrega</strong><p>Registro operativo que describe qué payload llegó, desde qué fuente, cuándo, con qué checksum y metadata mínima.</p></li>
+        <li><strong>Checksum</strong><p>Resumen calculado del contenido utilizado para detectar cambios o corrupción accidental de un payload.</p></li>
+        <li><strong>Cuarentena</strong><p>Estado separado para entradas que no cumplen criterios mínimos de aceptación y requieren revisión.</p></li>
+        <li><strong>Reintento</strong><p>Nuevo intento de entrega o procesamiento que puede reproducir un payload previamente recibido.</p></li>
+        <li><strong>Duplicado de transporte</strong><p>Entrega repetida causada por mecanismos de transmisión y no necesariamente por un nuevo evento biomédico.</p></li>
+        <li><strong>Event time</strong><p>Tiempo asociado al evento en la fuente, distinto del tiempo en que la plataforma lo recibe.</p></li>
+        <li><strong>Ingest time</strong><p>Tiempo registrado por la plataforma al recibir una entrega o evento.</p></li>
+        <li><strong>Inventario de fuentes</strong><p>Tabla estructurada de sistemas, entidades, granularidad, identificadores, tiempos, formatos, unidades y patrones de actualización.</p></li>
+        <li><strong>Metadata de adquisición</strong><p>Información técnica y contextual producida durante la captura que es necesaria para interpretar posteriormente el dato.</p></li>
+        <li><strong>Jerarquía de adquisición</strong><p>Relaciones entre niveles como Study–Series–Instance o Sample–Experiment–Run que deben preservarse durante la ingesta.</p></li>
       </ul>
     </section>
 
@@ -401,17 +586,30 @@
         <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
       </div>
       <ol class="rich-list advanced-sources">
-        <li><strong><a class="resource-link" href="https://hl7.org/fhir/" rel="noopener noreferrer">HL7 FHIR</a></strong><span class="course-tag">HL7 International · estándar sanitario</span></li>
-        <li><strong><a class="resource-link" href="https://www.snomed.org/" rel="noopener noreferrer">SNOMED CT</a></strong><span class="course-tag">SNOMED International · terminología clínica</span></li>
-        <li><strong><a class="resource-link" href="https://loinc.org/" rel="noopener noreferrer">LOINC</a></strong><span class="course-tag">Regenstrief Institute · terminología clínica</span></li>
-        <li><strong><a class="resource-link" href="https://www.who.int/health-topics/digital-health" rel="noopener noreferrer">WHO Digital Health</a></strong><span class="course-tag">World Health Organization · recurso institucional</span></li>
-        <li><strong><a class="resource-link" href="https://physionet.org/" rel="noopener noreferrer">PhysioNet</a></strong><span class="course-tag">MIT Laboratory for Computational Physiology · datos abiertos</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/R5/observation.html" rel="noopener noreferrer">FHIR R5 Observation</a></strong><span class="course-tag">HL7 International · estándar sanitario</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/R5/datatypes.html#Identifier" rel="noopener noreferrer">FHIR R5 Identifier</a></strong><span class="course-tag">HL7 International · estándar sanitario</span></li>
+        <li><strong><a class="resource-link" href="https://hl7.org/fhir/R5/encounter.html" rel="noopener noreferrer">FHIR R5 Encounter</a></strong><span class="course-tag">HL7 International · estándar sanitario</span></li>
+        <li><strong><a class="resource-link" href="https://www.hl7.org/fhir/R5/observation.schema.json.html" rel="noopener noreferrer">FHIR v5.0.0 Observation JSON Schema</a></strong><span class="course-tag">HL7 International · estándar sanitario</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/" rel="noopener noreferrer">DICOM current standard 2026c</a></strong><span class="course-tag">DICOM Standards Committee · estándar de imagen médica</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/PS3.3.html" rel="noopener noreferrer">DICOM PS3.3 Information Object Definitions 2026c</a></strong><span class="course-tag">DICOM Standards Committee · estándar de imagen médica</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part05/PS3.5.html" rel="noopener noreferrer">DICOM PS3.5 Data Structures and Encoding 2026c</a></strong><span class="course-tag">DICOM Standards Committee · estándar de imagen médica</span></li>
+        <li><strong><a class="resource-link" href="https://www.physionet.org/physiotools/wpg/wpg.pdf" rel="noopener noreferrer">PhysioNet WFDB Programmer&#x27;s Guide</a></strong><span class="course-tag">PhysioNet / MIT Laboratory for Computational Physiology · documentación técnica abierta</span></li>
+        <li><strong><a class="resource-link" href="https://www.physionet.org/physiotools/wag/" rel="noopener noreferrer">PhysioNet WFDB Applications Guide</a></strong><span class="course-tag">PhysioNet / MIT Laboratory for Computational Physiology · documentación técnica abierta</span></li>
+        <li><strong><a class="resource-link" href="https://physionet.org/about/publish/" rel="noopener noreferrer">PhysioNet data publication guidance</a></strong><span class="course-tag">PhysioNet · guía de datos abiertos</span></li>
+        <li><strong><a class="resource-link" href="https://physionet.org/content/mimic3wdb/1.0/" rel="noopener noreferrer">MIMIC-III Waveform Database v1.0</a></strong><span class="course-tag">PhysioNet · dataset/documentación</span></li>
+        <li><strong><a class="resource-link" href="https://www.ncbi.nlm.nih.gov/sra/" rel="noopener noreferrer">NCBI Sequence Read Archive</a></strong><span class="course-tag">NCBI · repositorio de datos</span></li>
+        <li><strong><a class="resource-link" href="https://www.ncbi.nlm.nih.gov/sra/docs/submitmeta/" rel="noopener noreferrer">SRA Metadata and Submission Overview</a></strong><span class="course-tag">NCBI · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.ncbi.nlm.nih.gov/sra/docs/submitformats/" rel="noopener noreferrer">SRA File Format Guide</a></strong><span class="course-tag">NCBI · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://www.ncbi.nlm.nih.gov/biosample/" rel="noopener noreferrer">BioSample</a></strong><span class="course-tag">NCBI · repositorio de metadata</span></li>
+        <li><strong><a class="resource-link" href="https://www.ncbi.nlm.nih.gov/bioproject/" rel="noopener noreferrer">BioProject</a></strong><span class="course-tag">NCBI · repositorio de metadata</span></li>
+        <li><strong><a class="resource-link" href="https://www.nature.com/articles/sdata201618" rel="noopener noreferrer">The FAIR Guiding Principles for scientific data management and stewardship</a></strong><span class="course-tag">Wilkinson et al., Scientific Data · artículo científico</span></li>
+        <li><strong><a class="resource-link" href="https://www.w3.org/TR/prov-o/" rel="noopener noreferrer">PROV-O: The PROV Ontology</a></strong><span class="course-tag">W3C · recomendación web</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Integrar clínicos, sensores, imagen y ómicas para resolver un caso de diseño de flujos para datos biomédicos heterogéneos con evidencia, controles, incertidumbre y comunicación proporcional. Conecta especialmente con Aplicación principal: Diseño de flujos para datos biomédicos heterogéneos, Evidencia: Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, Calidad: Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias, Límite: Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria.</p>
+      <p>Diseñar y justificar una arquitectura source-to-landing para datos biomédicos heterogéneos —registros clínicos, señales fisiológicas, imagen médica y ómicas— preservando identidad, granularidad, tiempo, unidades y metadatos de adquisición antes de cualquier transformación. La unidad enseña a inventariar fuentes, reconocer su semántica temporal y sus patrones de actualización, y construir un flujo reproducible desde sistemas fuente hacia una zona de aterrizaje sintética; reserva ETL/ELT y conversiones para U2, almacenamiento/modelado para U3, calidad/linaje profundo para U4, orquestación/observabilidad para U5 y privacidad/productos de datos para U6. Conecta especialmente con Historia clínica y laboratorio: Preservar entidades, namespaces y relojes permite reconstruir eventos clínicos sin confundir ocurrencia, verificación e ingesta, Monitorización fisiológica: Canales, frecuencia, escala y clocks deben acompañar las muestras para que ECG, presión, respiración u otras waveforms sigan siendo interpretables, Imagen médica: Jerarquías y UIDs DICOM conservan identidad de estudios, series e instancias antes de cualquier procesamiento de píxeles, Ómicas: BioSample–Experiment–Run evita confundir muestra, biblioteca, ejecución técnica y archivos de secuenciación. Material educativo con datos exclusivamente sintéticos o abiertos no identificables. U1 no ingiere EHR, DICOM, waveforms u ómicas de pacientes reales, no resuelve identidad productiva, no interpreta resultados clínicos o imágenes y no demuestra seguridad, privacidad, escalabilidad ni utilidad clínica. FHIR R5 5.0.0, DICOM 2026c, WFDB y la documentación SRA se usan como referencias técnicas consultadas el 25 de agosto de 2026 y deben revalidarse si cambian sus versiones. U2 aborda ETL/ELT y unidades; U3 almacenamiento/modelado; U4 calidad/linaje/versionado; U5 orquestación/observabilidad; U6 seudonimización, acceso, documentación y contratos/productos de datos.</p>
       <div class="page-actions"><a class="btn-link" href="unidad-02.html">Unidad 2: Ingesta y transformación →</a></div>
     </section>
     </article>
