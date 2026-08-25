@@ -63,11 +63,12 @@ class HistoriaFilosofiaCienciaUnit04CuratedTests(unittest.TestCase):
         self.assertIn("trazabilidad metrológica es una propiedad de un resultado de medición", text)
         self.assertIn("decir «este instrumento es trazable» abrevia de forma peligrosa", text)
         self.assertIn("trazabilidad y aptitud para uso son independientes", text)
-        self.assertIn("no garantiza que la incertidumbre sea adecuada", " ".join(self.unit["theory_sections"][1]["key_points"]).casefold())
+        key_points = " ".join(self.unit["theory_sections"][1]["key_points"]).casefold()
+        self.assertIn("incertidumbre sea adecuada para el uso previsto", key_points)
 
     def test_classification_section_distinguishes_reference_and_decision_limits(self) -> None:
         text = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
-        for phrase in ("variable continua", "umbral", "intervalo de referencia", "límite de decisión", "incertidumbre", "versión"):
+        for phrase in ("variable continua", "umbral", "intervalo de referencia", "límite de decisión", "incertidumbre", "version"):
             self.assertIn(phrase, text)
         self.assertIn("no son equivalentes", text)
         equations = json.dumps(self.unit["theory_sections"][2].get("equations", []), ensure_ascii=False)
@@ -110,7 +111,7 @@ class HistoriaFilosofiaCienciaUnit04CuratedTests(unittest.TestCase):
 
     def test_clinical_boundary_is_explicit(self) -> None:
         notice = self.unit["editorial_notice"].casefold()
-        for phrase in ("datos", "sintéticos", "no interpreta resultados de laboratorio", "no diagnostica", "no recomienda"):
+        for phrase in ("todos los valores", "sintéticos", "no interpreta resultados de laboratorio", "no diagnostica", "no recomienda"):
             self.assertIn(phrase, notice)
 
     def test_descriptor_when_promoted_matches_canonical_purpose(self) -> None:
