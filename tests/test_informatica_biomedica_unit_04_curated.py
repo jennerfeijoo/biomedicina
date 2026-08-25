@@ -143,7 +143,7 @@ class TestInformaticaBiomedicaUnit04Curated(unittest.TestCase):
         for phrase in [
             "no interpreta historias clínicas reales",
             "no diagnostica",
-            "no recomienda tratamientos",
+            "ni recomienda tratamientos",
             "no sustituye validación clínica",
             "no clasificar un producto concreto",
         ]:
