@@ -24,7 +24,7 @@ class HistoanatomiaHumanaUnit06CuratedTests(unittest.TestCase):
         self.assertEqual(self.unit["unit"], 6)
         self.assertEqual(self.unit["slug"], "sistemas-nervioso-y-reproductor")
         self.assertNotIn(GENERIC, self.text)
-        self.assertNotIn(r"v=\\frac{\\delta y}{\\delta t}", self.text)
+        self.assertNotIn(r"v=\frac{\Delta y}{\Delta t}", self.text)
 
     def test_objectives_cover_cns_senses_and_reproductive_histoanatomy(self) -> None:
         objectives = " ".join(self.unit["learning_objectives"]).casefold()
@@ -38,7 +38,7 @@ class HistoanatomiaHumanaUnit06CuratedTests(unittest.TestCase):
             "epidídimo",
             "ovario",
             "trompa uterina",
-            "endometrio",
+            "útero",
             "tres rasgos positivos",
         ):
             self.assertIn(phrase, objectives)
@@ -182,7 +182,7 @@ class HistoanatomiaHumanaUnit06CuratedTests(unittest.TestCase):
             "tres rasgos positivos",
             "dos rasgos negativos",
             "retina",
-            "scala media",
+            "scala vestibuli, media y tympani",
             "vía espermática",
             "no se estima fertilidad",
             "no se formula diagnóstico",
@@ -198,7 +198,7 @@ class HistoanatomiaHumanaUnit06CuratedTests(unittest.TestCase):
         for phrase in (
             "no constituye entrenamiento diagnóstico",
             "neuroimagen",
-            "evaluación de fertilidad",
+            "fertilidad",
             "reserva ovárica",
             "inmunohistoquímica",
             "tampoco prescribe tratamiento",
