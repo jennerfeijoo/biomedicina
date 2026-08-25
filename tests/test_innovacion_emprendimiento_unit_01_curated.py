@@ -71,7 +71,7 @@ class InnovacionEmprendimientoUnit01CuratedTests(unittest.TestCase):
             theory,
             (
                 "muestreo cualitativo",
-                "variación deliberada",
+                "diversidad informativa",
                 "saturación cualitativa",
                 "representatividad estadística",
                 "preguntas abiertas",
@@ -137,7 +137,7 @@ class InnovacionEmprendimientoUnit01CuratedTests(unittest.TestCase):
                 "pregunta sugestiva",
                 "paciente",
                 "profesional",
-                "mantenedor",
+                "mantenimiento",
                 "solución",
                 "adopción",
             ),
