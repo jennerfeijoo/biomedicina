@@ -1,1 +1,823 @@
-{"schema_version":"2.0","subject_id":"ingenieria-datos-biomedicos","area_id":"ingenieria-biomedica","unit":4,"slug":"calidad-y-procedencia","title":"Calidad y procedencia","status":"review","purpose":"Evaluar y documentar la calidad de datos biomédicos antes de su análisis mediante criterios explícitos de conformidad, completitud y plausibilidad dependientes del uso, conservando denominadores, estados de ausencia, reglas y excepciones. La unidad construye procedencia y linaje reproducibles desde fuentes y transformaciones hasta cada liberación derivada, usando W3C PROV, FHIR Provenance y OpenLineage como referencias conceptuales o técnicas, y versiona datos, esquemas, terminologías, código y configuración sin confundir identidad de bytes con corrección semántica. Reutiliza inventario/identidad de U1, transformaciones de U2 y almacenamiento/snapshots de U3; reserva ejecución programada, observabilidad y alertas operativas para U5 y privacidad, acceso y entrega de productos de datos para U6.","learning_objectives":["Definir calidad de datos como adecuación al uso y operacionalizar conformidad, completitud, plausibilidad, consistencia, unicidad y actualidad mediante poblaciones elegibles, numeradores, denominadores, reglas y umbrales explícitos.","Distinguir verificación interna de validación contra una referencia externa y justificar cuándo una regla puede demostrar estructura válida sin demostrar verdad clínica.","Diseñar un perfil reproducible de calidad para un dataset biomédico sintético, conservando valores ausentes, Not Applicable, errores de ejecución, duplicados legítimos, correcciones y relojes effective/issued/ingest.","Representar procedencia y linaje con entidades, actividades y agentes, y comparar W3C PROV, FHIR Provenance y OpenLineage sin confundir linaje con auditoría, calidad o exactitud clínica.","Versionar conjuntamente datos, esquemas, terminologías, código y configuración; distinguir snapshot, release, checksum, corrección y reprocesamiento y demostrar por qué un hash idéntico solo prueba identidad de bytes.","Construir un quality gate previo al análisis con estados Passed/Failed/Error/Not Applicable, severidad, cuarentena, excepciones y criterios de aceptación, y comunicar sus límites sin presentar una liberación técnicamente verde como lista para clínica o producción."],"theory_sections":[{"heading":"1. Calidad de datos biomédicos: adecuación al uso, dimensiones y contexto de evaluación","paragraphs":["La calidad de datos no es una propiedad absoluta que pueda resumirse sin contexto. Un mismo campo puede ser suficientemente completo para describir volumen de actividad y claramente insuficiente para una cohorte longitudinal que exige fecha exacta de evento. Por ello U4 empieza por una pregunta de uso: qué decisión analítica o ingeniería debe soportar el dataset, qué población y periodo son elegibles y qué errores podrían invalidar ese uso. El marco de Kahn et al. agrupa evaluaciones de datos clínicos secundarios en Conformance, Completeness y Plausibility y distingue los contextos Verification y Validation.","Conformance pregunta si la representación cumple restricciones sintácticas o estructurales esperadas: tipo de dato, dominio permitido, formato, integridad referencial o cardinalidad. Completeness pregunta si los valores u observaciones esperadas están presentes respecto de una población elegible definida. Plausibility pregunta si los valores o relaciones son creíbles por conocimiento interno o comparación externa. Estas categorías no son etiquetas decorativas; cada una debe traducirse en una regla reproducible con población, numerador, denominador y criterio de resultado.","Completitud requiere un denominador explícito. Si se evalúa creatinina en pacientes con una orden de laboratorio, el denominador no tiene por qué ser todas las filas de la tabla PERSON. Una medida simple puede escribirse como $C=N_{present}/N_{eligible}$, donde $N_{eligible}$ debe definirse por contrato. Cambiar la población elegible cambia el significado de la proporción; por eso una cifra sin denominador, periodo y regla de elegibilidad no es una métrica audit-able.","Valores ausentes, cero, cadena vacía, código desconocido y Not Applicable son estados distintos. Convertirlos a un único null puede destruir información. Del mismo modo, una regla puede ser inaplicable a una subpoblación y no debe contarse como Passed. U4 exige conservar el motivo de ausencia o inaplicabilidad cuando la fuente lo permite y declarar qué estados participan en cada denominador.","Verification evalúa propiedades usando conocimiento interno del dataset o restricciones que no dependen de una referencia externa. Validation contrasta con expectativas, estándares o fuentes externas apropiadas. Una foreign key válida es evidencia de integridad técnica, no de identidad clínica correcta; una distribución similar a una publicación externa tampoco prueba que cada registro sea verdadero. La categoría de evidencia debe corresponder al tipo de afirmación.","No se construirá un único 'quality score' ponderando dimensiones heterogéneas. Un 95 % de completitud no compensa automáticamente una violación crítica de identidad o un error de unidades. El informe conserva métricas y hallazgos por regla, severidad y uso previsto. Si se necesita una decisión de gate, la lógica debe ser explícita —por ejemplo, fallar ante cualquier error crítico— en lugar de esconder juicios en una suma opaca."],"key_points":["La calidad es dependiente del uso y debe declarar población, periodo, unidad de observación y riesgo relevante.","Conformance, Completeness y Plausibility se traducen en reglas medibles; no son sinónimos ni puntuaciones intercambiables.","Toda proporción de calidad necesita denominador elegible explícito y tratamiento definido de missing y Not Applicable.","Verification usa evidencia interna; Validation necesita una referencia externa adecuada a la afirmación.","Integridad técnica puede ser necesaria sin demostrar identidad, exactitud clínica o utilidad analítica.","Un gate transparente conserva hallazgos por regla y severidad en lugar de ocultarlos en un score global."],"equations":[{"expression":"C=\\frac{N_{present}}{N_{eligible}}","meaning":"Proporción de completitud dentro de una población elegible definida por contrato; no debe calcularse sin especificar qué registros son esperables."},{"expression":"R_{viol}=\\frac{N_{viol}}{N_{eligible}}","meaning":"Tasa de violaciones de una regla respecto de su población aplicable; el denominador debe excluir explícitamente casos Not Applicable cuando corresponda."}]},{"heading":"2. Perfilado y reglas reproducibles: del hallazgo exploratorio al control versionado","paragraphs":["El perfilado describe distribuciones, cardinalidades, nulos, rangos, patrones y relaciones para descubrir candidatos a reglas. No sustituye el contrato. Observar que una variable toma valores 0–200 en una release no demuestra que ese sea su dominio clínicamente válido. El perfil sirve para formular preguntas y detectar cambios; las reglas que bloquean una liberación necesitan una justificación independiente y una versión.","Cada regla debería tener al menos rule_id, descripción, campo o relación afectada, población aplicable, numerador, denominador, severidad, umbral, versión y evidencia de respaldo. Una regla de integridad referencial puede medir $R_{ref}=N_{resolved}/N_{non-null\\ ref}$. El resultado debe separar referencias resueltas, huérfanas, nulas e inaplicables, porque colapsarlas cambia la interpretación.","Los duplicados requieren identidad de evento. Dos resultados con el mismo subject, código, valor y timestamp pueden ser una retransmisión técnica, dos mediciones realmente repetidas o una versión corregida. Aplicar `drop_duplicates` por igualdad de columnas sin contrato puede borrar evidencia legítima. U4 exige definir una clave de evento o reglas de deduplicación trazables y conservar relación con versiones anteriores cuando exista una corrección.","La plausibilidad temporal debe respetar los relojes introducidos en U1–U3. `effective` representa cuándo ocurrió o aplica el fenómeno; `issued` cuándo fue emitido un resultado; `ingest` cuándo llegó al pipeline. Una regla como start <= end evalúa consistencia interna. Comparar issued con effective puede detectar retrasos de publicación, pero no autoriza a reescribir el tiempo clínico para que la secuencia parezca ordenada.","Una nueva release se compara contra una baseline con las mismas definiciones. Para una métrica de completitud puede registrarse $\\Delta C=C_{new}-C_{reference}$, pero una diferencia requiere contexto: cambió la población, el mapeo, la fuente, el esquema o el fenómeno real. El pipeline debe distinguir cambio de datos de cambio de fórmula; si se modifica la regla, la comparación histórica debe recalcularse o etiquetarse como no comparable.","El DataQualityDashboard de OHDSI ilustra un enfoque de checks parametrizados sobre un modelo común, con tipos de verificación y umbrales. U4 lo usa como ejemplo de ingeniería reproducible, no como garantía automática de fitness-for-purpose. Que una herramienta ejecute cientos de checks no elimina la necesidad de escoger población, severidad, excepciones y uso previsto."],"key_points":["El perfilado descubre patrones y anomalías; una regla de aceptación necesita contrato, versión y justificación.","Cada check conserva rule_id, población, numerador, denominador, severidad, umbral y versión de implementación.","Referential integrity valida relaciones técnicas y debe reportar referencias huérfanas, nulas e inaplicables por separado.","Deduplicar exige identidad de evento y manejo de correcciones; igualdad de valores no demuestra duplicidad.","effective, issued e ingest describen relojes distintos y no deben colapsarse para satisfacer una regla temporal.","Comparar releases requiere mantener constante la definición de la métrica o declarar que el cambio de regla rompe comparabilidad."],"equations":[{"expression":"R_{ref}=\\frac{N_{resolved}}{N_{non-null\\ ref}}","meaning":"Proporción de referencias no nulas que resuelven contra la entidad objetivo; no demuestra que la asociación sea clínicamente correcta."},{"expression":"\\Delta C=C_{new}-C_{reference}","meaning":"Cambio de una métrica de completitud entre releases comparables; debe interpretarse solo si población y definición permanecen equivalentes."}]},{"heading":"3. Procedencia y linaje: reconstruir qué produjo cada dato y con qué contexto","paragraphs":["Procedencia describe origen, transformaciones y responsabilidad asociada a un dato o artefacto. Linaje suele enfatizar la cadena de dependencias entre datasets y procesos. Ambos responden a preguntas que una tabla final no puede contestar por sí sola: de qué fuente salió esta fila, qué transformación la generó, qué código y configuración se usaron y qué artefacto previo se modificó. U4 trata esos metadatos como parte del producto de ingeniería, no como documentación opcional posterior.","W3C PROV ofrece un modelo conceptual con tres clases de partida: Entity, Activity y Agent. Una entidad puede representar un archivo de entrada, una tabla o una release; una actividad, una importación o transformación; un agente, una persona, organización o software responsable. Relaciones como `used`, `wasGeneratedBy` y `wasDerivedFrom` permiten construir un grafo que responda de forma auditable cómo una salida depende de entradas y actividades.","FHIR R5 Provenance registra contexto de procedencia de recursos y puede representar qué entidades o agentes participaron en la creación, revisión o transformación. FHIR también tiene AuditEvent para registrar eventos relevantes de auditoría. Solapan algunos casos, pero no son equivalentes: Provenance se centra en la historia y contexto del recurso; AuditEvent en la ocurrencia de eventos observables de seguridad u operación. U4 enseña la distinción conceptual sin diseñar auditoría productiva, que se relacionará con U5/U6.","OpenLineage modela información de ejecución mediante Job, Run y Dataset y permite adjuntar facets extensibles. Un Job identifica un proceso lógico; cada Run representa una ejecución concreta; Dataset representa entradas y salidas. Facets pueden transportar esquema, versión u otros metadatos. Esta separación es útil para pipelines, pero capturar un evento OpenLineage no prueba que la transformación sea correcta ni que la fuente tenga calidad suficiente.","Un grafo de linaje útil conserva granularidad suficiente para análisis de impacto. Si `lab_clean_v2` deriva de `lab_raw_2026-08-25` mediante `normalize_units@3.2`, cambiar el mapeo UCUM debe permitir localizar outputs afectados y reproducir una nueva versión sin sobrescribir la anterior. Si todas las transformaciones se representan como un único nodo 'ETL', el linaje existe formalmente pero no responde preguntas prácticas.","Procedencia y calidad se complementan. Un hallazgo de plausibilidad puede propagarse hacia consumidores identificados por linaje; una nueva fuente puede requerir revalidar reglas. Sin embargo, lineage completeness no equivale a data quality. Un grafo perfecto puede describir cómo se generó un dato incorrecto. La evidencia de procedencia debe conservarse junto con resultados de reglas, no sustituirlos."],"key_points":["Procedencia explica origen, transformación y responsabilidad; linaje permite seguir dependencias y analizar impacto.","W3C PROV organiza el razonamiento alrededor de Entity, Activity y Agent y relaciones explícitas entre ellos.","FHIR Provenance registra historia y contexto de recursos; AuditEvent registra eventos y no debe tratarse como sinónimo.","OpenLineage diferencia Job, Run y Dataset; cada ejecución necesita identidad propia para que el linaje sea reproducible.","La granularidad del linaje debe permitir localizar qué salida depende de qué fuente, código, configuración y transformación.","Un linaje completo documenta el proceso, pero no demuestra calidad, exactitud clínica ni validez semántica." ]},{"heading":"4. Versionado, releases y reproducibilidad: conservar el estado completo que produjo un resultado","paragraphs":["Versionar únicamente el archivo final es insuficiente. Un resultado reproducible depende de data version, schema version, vocabulary or mapping version, code version y configuration version. U4 exige que una release registre ese conjunto en un manifest. Si cambia uno de esos componentes, el estudiante evalúa si el output debe regenerarse y si sigue siendo comparable con versiones previas.","Snapshot y release no son sinónimos. Un snapshot puede ser un estado técnico del almacenamiento en un instante, quizá generado automáticamente. Una release es una versión deliberadamente identificada para consumo, con manifest, reglas de calidad, changelog y criterios de aceptación. Un backup tiene otra finalidad: recuperación. Mezclar los tres conceptos lleva a reproducibilidad aparente sin saber qué artefacto fue aprobado para análisis.","Un checksum o content hash es útil para verificar identidad de bytes. Si SHA-256 coincide, puede afirmarse que dos byte streams son iguales bajo ese algoritmo y proceso. No puede afirmarse que el archivo sea semánticamente correcto, esté bien mapeado o represente al paciente correcto. Cambiar el orden no semántico de filas puede cambiar el hash; mantener los mismos bytes conserva el mismo error si la semántica era equivocada.","Las fuentes clínicas pueden emitir correcciones o actualizaciones. Un pipeline no debe sobrescribir silenciosamente el pasado. Debe conservar identidad del evento, versión de fuente o status cuando exista, fecha de recepción y relación supersedes/amends. Reprocesar con `mapping_v2` produce una nueva release derivada de los mismos inputs más una nueva versión de mapping; la release previa se mantiene para reproducir análisis históricos.","El changelog documenta qué cambió y por qué: columnas añadidas, dominio modificado, terminología actualizada, corrección de parser, nueva fuente o regla de calidad. Un cambio de esquema puede ser compatible a nivel físico y aun alterar semántica. Por eso schema evolution no elimina la revisión del contrato ni de downstream consumers.","Reproducibilidad implica reconstruir artefactos a partir de entradas y versiones registradas dentro de límites razonables. No implica que el resultado sea verdadero. U4 pide un replay sintético: ejecutar la misma versión de código/configuración sobre el mismo input y comprobar hashes de outputs esperados, y después cambiar una sola dependencia para documentar qué difiere y qué debe revalidarse."],"key_points":["Una release reproducible versiona datos, esquema, terminología o mappings, código y configuración como un conjunto.","Snapshot es estado técnico, release es artefacto deliberado para consumo y backup sirve a recuperación; no son equivalentes.","Un content hash demuestra identidad de bytes bajo un procedimiento, no corrección semántica ni exactitud clínica.","Correcciones de fuente se modelan como nuevas versiones relacionadas, no mediante sobrescritura silenciosa del pasado.","Un changelog debe registrar cambios físicos, de esquema y semánticos y su impacto esperado en consumidores.","Reproducir el mismo resultado no valida su verdad; demuestra que el proceso puede reconstruirse bajo condiciones declaradas." ]},{"heading":"5. Quality gate previo al análisis: decisiones explícitas, excepciones y evidencia auditable","paragraphs":["Un quality gate convierte reglas versionadas en una decisión operacional antes de entregar una release al análisis. Cada check produce un estado: Passed, Failed, Error o Not Applicable. Failed significa que la regla se ejecutó y no cumplió criterio; Error que no pudo evaluarse; Not Applicable que la regla no corresponde a esa población. Tratar Error o Not Applicable como Passed crea falsa confianza.","El gate necesita severidad y política. Una violación crítica puede bloquear la release aunque otras 99 reglas pasen. Un warning puede permitir entrega con caveat. La política debe versionarse y separar resultados de reglas de la decisión final. La cobertura del gate puede expresarse como $Coverage=N_{checks\\ evaluated}/N_{checks\\ applicable}$; una cobertura baja impide interpretar un gran porcentaje de Passed como evidencia suficiente.","La cuarentena preserva datos o particiones que fallan controles sin destruirlos. Una excepción permite aceptar temporalmente una desviación conocida, pero necesita owner, razón, alcance, fecha de expiración y evidencia de aprobación. Excepciones permanentes sin revisión son deuda oculta. Si una regla deja de ser pertinente, debe cambiarse su versión y quedar trazado el cambio en lugar de acumular bypasses.","El dossier de liberación integra manifest de versiones, perfil, resultados de checks, excepciones, grafo de procedencia, changelog y decisión de gate. El objetivo no es generar documentación ornamental; es permitir que otra persona reconstruya por qué la release fue aceptada, qué limitaciones conserva y qué downstream consumers podrían verse afectados por una corrección.","FAIR promueve que datos y metadatos sean Findable, Accessible, Interoperable y Reusable bajo condiciones explícitas. FAIR no significa datos abiertos sin restricción ni garantiza calidad. Un dataset puede ser bien documentado y reutilizable bajo gobernanza apropiada y aun contener sesgos o errores. U4 usa FAIR para reforzar metadata y procedencia; privacidad, autorización y productos de datos se desarrollan en U6.","El gate de U4 termina antes de operación continua y privacidad. U5 añadirá programación, retry, backfill, SLAs/SLOs, logs, métricas, alertas y observabilidad de ejecución. U6 añadirá minimización, control de acceso, privacidad y contratos/productos de datos. Pasar U4 solo significa que la release sintética cumple los checks y evidencias definidos para su uso analítico educativo; no certifica exactitud clínica, cumplimiento legal ni readiness productiva."],"key_points":["Passed, Failed, Error y Not Applicable son estados distintos y deben conservarse en los resultados del gate.","La severidad y la política de gate son explícitas; muchas reglas verdes no compensan automáticamente un fallo crítico.","Coverage mide qué fracción de checks aplicables se pudo evaluar y evita interpretar resultados incompletos como éxito total.","Cuarentena conserva datos fallidos; una excepción necesita owner, alcance, justificación y fecha de expiración.","El dossier de release reúne manifest, checks, excepciones, linaje y changelog para que la decisión sea reproducible.","FAIR y un quality gate aportan gobernanza técnica, pero no demuestran privacidad, validez clínica o preparación productiva."],"equations":[{"expression":"Coverage=\\frac{N_{checks\\ evaluated}}{N_{checks\\ applicable}}","meaning":"Fracción de controles aplicables que pudieron evaluarse; Error y Not Applicable requieren tratamiento separado en el denominador según política definida."}]}],"glossary":[{"term":"Calidad de datos","definition":"Grado en que los datos satisfacen requisitos relevantes para un uso declarado; no es una propiedad absoluta independiente del contexto."},{"term":"fitness for purpose","definition":"Adecuación de un dataset para una pregunta, decisión o proceso específico bajo criterios explícitos."},{"term":"Conformance","definition":"Categoría que evalúa cumplimiento de restricciones sintácticas, estructurales o de formato esperadas."},{"term":"Completeness","definition":"Presencia de valores u observaciones esperadas respecto de una población elegible definida."},{"term":"Plausibility","definition":"Credibilidad de valores, distribuciones o relaciones según conocimiento interno o referencia externa apropiada."},{"term":"Verification","definition":"Evaluación de calidad usando conocimiento interno, restricciones y relaciones presentes en el propio dataset."},{"term":"Validation","definition":"Evaluación contra una referencia externa, expectativa independiente o fuente considerada apropiada para la afirmación."},{"term":"población elegible","definition":"Conjunto de registros en los que una regla o expectativa es aplicable y que define su denominador."},{"term":"numerador","definition":"Conteo de casos que cumplen o violan una condición según la definición de una métrica."},{"term":"denominador","definition":"Conjunto de oportunidades elegibles contra el que se normaliza una proporción; debe declararse explícitamente."},{"term":"missingness","definition":"Patrón y mecanismo de ausencia de valores u observaciones, que no debe reducirse automáticamente a cero."},{"term":"Not Applicable","definition":"Estado de un check que no corresponde a una población o contexto determinado; no equivale a Passed."},{"term":"integridad referencial","definition":"Propiedad técnica por la que una referencia apunta a una entidad existente según restricciones del esquema."},{"term":"unicidad","definition":"Ausencia de identidades repetidas bajo una clave o regla definida; no implica ausencia de mediciones repetidas legítimas."},{"term":"duplicado técnico","definition":"Registro repetido por mecanismo de transmisión o ingesta según una regla de identidad de evento documentada."},{"term":"plausibilidad temporal","definition":"Compatibilidad de tiempos y secuencias con restricciones temporales explícitas."},{"term":"plausibilidad atemporal","definition":"Credibilidad de valores o relaciones sin usar orden temporal, por ejemplo dominios o distribuciones."},{"term":"perfilado","definition":"Descripción exploratoria de nulos, cardinalidades, distribuciones, rangos y patrones para caracterizar un dataset."},{"term":"baseline","definition":"Referencia versionada usada para comparar métricas o distribuciones entre releases equivalentes."},{"term":"regla de calidad","definition":"Condición reproducible con identificador, población, resultado, severidad, umbral y versión."},{"term":"severidad","definition":"Clasificación del impacto de un hallazgo sobre el uso previsto y la decisión de gate."},{"term":"umbral","definition":"Criterio cuantitativo o lógico predefinido para decidir el resultado de una regla."},{"term":"release","definition":"Versión deliberadamente identificada para consumo, acompañada de manifest, calidad y changelog."},{"term":"snapshot","definition":"Estado técnico de datos o tabla en un momento; puede no corresponder a una release aprobada."},{"term":"Procedencia","definition":"Información sobre origen, transformaciones, agentes y contexto que explica cómo se produjo un artefacto."},{"term":"linaje","definition":"Cadena o grafo de dependencias entre fuentes, procesos y outputs usada para trazabilidad e impacto."},{"term":"W3C PROV","definition":"Familia de especificaciones para representar procedencia mediante entidades, actividades, agentes y relaciones."},{"term":"Entity","definition":"En PROV, cosa física, digital o conceptual sobre la que se registra procedencia."},{"term":"Activity","definition":"En PROV, proceso o acción que usa o genera entidades durante un intervalo."},{"term":"Agent","definition":"En PROV, entidad con responsabilidad por una actividad o entidad, como persona, organización o software."},{"term":"wasGeneratedBy","definition":"Relación PROV entre una entidad y la actividad que la generó."},{"term":"wasDerivedFrom","definition":"Relación PROV que expresa derivación entre entidades."},{"term":"FHIR Provenance","definition":"Recurso FHIR para registrar contexto de procedencia de recursos y participantes relacionados."},{"term":"AuditEvent","definition":"Recurso FHIR orientado a registrar eventos de auditoría; no es sinónimo de Provenance."},{"term":"OpenLineage","definition":"Especificación abierta para eventos y metadatos de linaje de jobs, runs y datasets."},{"term":"Job","definition":"En OpenLineage, proceso lógico que puede tener múltiples ejecuciones."},{"term":"Run","definition":"Ejecución concreta de un Job con identidad propia y eventos asociados."},{"term":"Dataset","definition":"Entrada o salida de un proceso de datos identificada en un namespace y nombre."},{"term":"Facet","definition":"Estructura extensible de OpenLineage para adjuntar metadata a runs, jobs o datasets."},{"term":"versionado","definition":"Registro explícito de estados y cambios de datos, esquemas, terminologías, código o configuración."},{"term":"data version","definition":"Identidad de la versión concreta de los datos consumidos o producidos."},{"term":"schema version","definition":"Versión de la estructura, tipos, restricciones y significado contractual de campos."},{"term":"vocabulary version","definition":"Versión de una terminología, vocabulario o mapeo semántico usado en transformación."},{"term":"code version","definition":"Identidad reproducible del código, commit o artefacto ejecutable que produjo una salida."},{"term":"configuration version","definition":"Versión de parámetros y configuración que afectan una ejecución."},{"term":"manifest","definition":"Documento estructurado que enumera artefactos, versiones, hashes y parámetros de una release."},{"term":"checksum","definition":"Valor calculado para detectar cambios en bytes; no demuestra corrección semántica."},{"term":"content hash","definition":"Hash calculado sobre contenido para identificar igualdad o cambio de bytes bajo un procedimiento definido."},{"term":"corrección","definition":"Nueva versión que modifica o reemplaza el significado de un registro previo conservando relación con él."},{"term":"reprocesamiento","definition":"Nueva ejecución sobre datos previos con código, mapping o configuración versionados, produciendo una salida derivada."},{"term":"change log","definition":"Registro de cambios entre versiones y de su motivo e impacto esperado."},{"term":"excepción","definition":"Aceptación temporal y trazada de una desviación con owner, justificación, alcance y expiración."},{"term":"cuarentena","definition":"Separación de datos o particiones que fallan controles para impedir uso accidental sin destruir evidencia."},{"term":"quality gate","definition":"Política reproducible que combina estados y severidades de checks para decidir si una release puede avanzar."},{"term":"FAIR","definition":"Principios de Findability, Accessibility, Interoperability y Reusability; no equivalen a datos abiertos ni garantizan calidad."}],"worked_examples":[{"title":"Completitud con denominador clínicamente elegible","scenario":"Una release sintética tiene 1 000 personas, pero solo 400 presentan una orden elegible de creatinina. Existen 380 resultados no nulos.","task":"Calcular y comunicar completitud sin usar toda la tabla PERSON como denominador.","reasoning_steps":["Definir elegibilidad: registros con orden de creatinina dentro del periodo.","Contar N_eligible=400 y N_present=380.","Calcular C=380/400=0.95.","Registrar 20 ausencias y su estado si la fuente lo ofrece.","No comparar con una métrica histórica si su población elegible era distinta."],"result":"Completitud=95 % dentro de 400 oportunidades elegibles; no 38 % sobre toda la población.","interpretation":"La proporción adquiere significado solo con definición de elegibilidad y periodo.","limitations":["No establece por qué faltan 20 resultados ni si 95 % es suficiente para otro uso."]},{"title":"Foreign key válida pero identidad equivocada","scenario":"Todas las mediciones sintéticas apuntan a person_id existente, pero un lote se vinculó al sujeto equivocado durante un mapeo de identificadores.","task":"Distinguir conformance técnica de validación de identidad.","reasoning_steps":["La foreign key comprueba existencia del person_id.","El check de integridad referencial pasa.","Comparar contra source_person_id+namespace o una referencia independiente.","Detectar discrepancia de mapping.","Registrar el hallazgo como problema de identidad/procedencia, no de FK."],"result":"Conformance relacional puede ser perfecta mientras la asociación clínica es incorrecta.","interpretation":"Una restricción solo sostiene la afirmación para la que fue diseñada.","limitations":["El escenario sintético no define un proceso real de patient matching."]},{"title":"Mismo valor y tiempo no significa duplicado automático","scenario":"Dos filas tienen mismo subject, código, valor y minuto. Una es una repetición legítima y otra podría ser una retransmisión técnica.","task":"Diseñar criterio de deduplicación sin borrar observaciones legítimas.","reasoning_steps":["Buscar event/source identifier y status/version.","Comparar message id o provenance cuando exista.","Distinguir repeat measurement de retransmission.","No usar igualdad de value+timestamp como identidad universal.","Etiquetar ambigüedad si faltan claves suficientes."],"result":"Solo se elimina una fila cuando el contrato de identidad demuestra retransmisión; la repetición legítima se conserva.","interpretation":"La unicidad depende de identidad de evento, no de igualdad superficial de atributos.","limitations":["Fuentes sin identificadores suficientes pueden dejar duplicidad no resoluble automáticamente."]},{"title":"Grafo PROV de una normalización de laboratorio","scenario":"`lab_raw.csv` se transforma con `normalize_units.py@abc123` y `ucum_mapping_v1` para producir `lab_clean_v1.parquet`.","task":"Representar procedencia mínima con Entity, Activity y Agent.","reasoning_steps":["Modelar raw, mapping y output como Entities.","Modelar normalización como Activity.","Registrar que la actividad used raw y mapping.","Registrar output wasGeneratedBy actividad y wasDerivedFrom raw.","Asociar software/organización responsable como Agent."],"result":"El grafo permite reconstruir qué entrada y mapping generaron la release limpia.","interpretation":"PROV explicita dependencias y responsabilidad sin afirmar que la transformación sea clínicamente correcta.","limitations":["No cubre firma, acceso o auditoría productiva."]},{"title":"Reprocesamiento después de cambiar un mapeo terminológico","scenario":"`mapping_v1` asignó un código sintético a concepto A; revisión experta produce `mapping_v2` que lo asigna a B.","task":"Crear una nueva release sin destruir reproducibilidad histórica.","reasoning_steps":["Congelar manifest de release_v1 con mapping_v1 y code commit.","Versionar mapping_v2 con changelog y evidencia de cambio.","Reprocesar inputs originales con mismo código salvo mapping.","Crear release_v2 y registrar derivación de fuente+mapping_v2.","Comparar outputs, localizar consumidores y conservar release_v1."],"result":"v1 y v2 quedan reproducibles y el impacto del cambio semántico es auditable.","interpretation":"Cambiar un mapping puede alterar significado aunque el esquema físico permanezca igual.","limitations":["El ejercicio no decide gobernanza institucional de terminologías."]}],"guided_activities":[{"title":"Laboratorio reproducible: auditar calidad, procedencia y versionado de una release biomédica sintética","estimated_time_minutes":480,"instructions":["Trabaja exclusivamente con datasets sintéticos o recursos abiertos no identificables y parte de una release producida por U3.","Define primero un uso analítico educativo y la unidad de observación; ninguna regla de calidad se acepta sin ese contexto.","Conserva datos crudos y release de referencia; no corrijas ni borres filas antes de registrar el hallazgo.","Implementa checks como funciones o consultas versionadas que devuelvan población, numerador, denominador, estado y ejemplos de fallo.","Distingue Passed, Failed, Error y Not Applicable; nunca conviertas automáticamente los dos últimos en Passed.","Registra effective, issued e ingest time por separado donde existan y documenta timezone/precision.","Construye procedencia con una representación legible por máquina y una visualización resumida; ambas deben compartir identificadores.","Versiona fuente, esquema, mapping/vocabulary, código y configuración en un manifest de release.","Realiza al menos un reprocesamiento controlado cambiando una sola dependencia y conserva ambas salidas.","Documenta excepciones con owner, motivo, alcance y expiry; evita bypasses anónimos.","Incluye resultados reproducibles, queries/scripts, manifest, changelog y evidencia de comparación entre releases.","La conclusión se limita al escenario sintético; el gate no autoriza uso clínico, conexión productiva ni tratamiento de datos identificables."],"problems":["Redactar el fit-for-use de la release y tres riesgos de calidad que podrían invalidarlo.","Perfilar nulls, cardinalidades y distribuciones sin convertir automáticamente los rangos observados en reglas válidas.","Clasificar 12 reglas propuestas como Conformance, Completeness o Plausibility y justificar casos ambiguos.","Definir población elegible, numerador y denominador para completitud de una variable de laboratorio.","Implementar un check de datatype/dominio y separar valores inválidos de missing y Not Applicable.","Calcular integridad referencial y explicar por qué un 100 % no demuestra identidad clínica correcta.","Implementar dos reglas temporales usando effective/issued/ingest sin colapsar los relojes.","Resolver un conjunto con retransmisión, repetición legítima y corrección sin usar drop_duplicates ciego.","Medir cobertura de un mapping terminológico y conservar códigos fuente no mapeados para revisión.","Detectar outliers sintéticos, separar error imposible de valor extremo plausible y evitar borrado automático.","Comparar completitud y distribución entre release_A y release_B con la misma definición de métrica.","Introducir un cambio de fórmula de una regla y demostrar por qué rompe comparabilidad directa con la baseline.","Construir un grafo PROV con al menos cuatro Entities, dos Activities y un Agent.","Representar un pipeline como OpenLineage Job/Run/Dataset y explicar por qué dos runs del mismo job no son el mismo evento.","Modelar un FHIR Provenance educativo y contrastarlo con un AuditEvent sin tratarlos como sinónimos.","Crear un manifest con data/schema/mapping/code/config versions y hashes de inputs/outputs.","Demostrar con un ejemplo que hash idéntico prueba bytes idénticos pero no semántica correcta.","Reprocesar con mapping_v2, crear release_v2 y conservar release_v1 con changelog y relación de derivación.","Clasificar cinco cambios como físicos, de esquema, semánticos o de contenido y decidir qué consumidores revalidar.","Ejecutar el quality gate con estados Passed/Failed/Error/Not Applicable y política de severidad explícita.","Cuarentenar un subconjunto fallido y diseñar una excepción temporal con owner, motivo, alcance y expiración.","Emitir un dossier final de calidad/procedencia que declare qué demuestra el gate y qué sigue fuera de alcance."],"deliverables":["README con uso previsto, unidad de observación, fuentes sintéticas y límites.","Perfil reproducible de la release con conteos y denominadores.","Catálogo versionado de reglas con rule_id, categoría, severidad, umbral y población.","Tabla de resultados de checks con Passed/Failed/Error/Not Applicable y ejemplos de fallo.","Script o notebook reproducible para al menos diez checks.","Grafo de procedencia W3C PROV o representación equivalente documentada.","Evento o maqueta OpenLineage con Job, Run, Dataset y facets seleccionados.","Ejemplo comparado de FHIR Provenance y AuditEvent.","Manifest de release con versiones y hashes.","Changelog y comparación release_A→release_B.","Registro de cuarentena/excepción con owner y expiry.","Dossier final de quality gate con decisión y limitaciones."],"checking_criteria":["El uso previsto y la población analítica están definidos antes de evaluar calidad.","Cada proporción reporta numerador y denominador reproducibles.","Missing, cero, vacío y Not Applicable no se colapsan sin justificación.","Las reglas se clasifican y versionan con severidad y umbral explícitos.","Conformance no se presenta como verdad clínica.","Verification y Validation se distinguen por tipo de evidencia.","La integridad referencial separa nulos, referencias no resueltas e inaplicables.","La deduplicación usa identidad de evento y conserva repeticiones legítimas.","effective, issued e ingest permanecen diferenciados.","Los outliers no se eliminan solo por ser extremos.","Las releases se comparan con definiciones de métrica compatibles.","Los cambios de regla o población rompen comparabilidad hasta revalidación.","El grafo PROV contiene Entity, Activity y Agent con relaciones explícitas.","OpenLineage separa Job de Run y registra datasets de entrada/salida.","FHIR Provenance no se confunde con AuditEvent.","El manifest incluye versiones de datos, esquema, mapping, código y configuración.","Los hashes se interpretan como identidad de bytes, no corrección semántica.","El reprocesamiento conserva la release previa y registra derivación.","El changelog distingue cambios físicos, estructurales y semánticos.","El quality gate conserva Failed, Error y Not Applicable como estados distintos.","Los fallos críticos no se compensan con un promedio global.","La cuarentena conserva evidencia sin permitir consumo accidental.","Cada excepción incluye owner, razón, alcance y expiry.","El dossier permite reconstruir por qué la release fue aceptada o rechazada.","La conclusión no afirma privacidad, validez clínica, cumplimiento legal ni readiness productiva.","Se declara que observabilidad continua pertenece a U5 y privacidad/acceso/productos a U6."]}],"common_errors":[{"error":"Hablar de 'calidad alta' sin indicar el uso previsto.","correction":"Definir primero decisión, población, periodo y riesgos que la calidad debe soportar."},{"error":"Calcular completitud con todas las filas disponibles como denominador.","correction":"Definir la población elegible según dónde el valor u observación es esperable."},{"error":"Interpretar null como cero.","correction":"Separar ausencia de observación, valor cero, vacío, unknown y Not Applicable cuando la fuente lo permite."},{"error":"Concluir que un dato es verdadero porque cumple el esquema.","correction":"Conformance demuestra una restricción representacional, no exactitud clínica."},{"error":"Eliminar automáticamente valores extremos.","correction":"Investigar plausibilidad, fuente y contexto; un extremo puede ser válido y un valor central puede ser erróneo."},{"error":"Aplicar drop_duplicates por igualdad de columnas.","correction":"Definir identidad de evento y distinguir retransmisión, repetición y corrección."},{"error":"Usar una foreign key válida como prueba de identidad correcta.","correction":"La FK prueba existencia referencial; validar patient/event linkage necesita otra evidencia."},{"error":"Colapsar effective, issued e ingest en un solo timestamp.","correction":"Conservar los relojes porque responden a fenómenos distintos y afectan análisis temporal y leakage."},{"error":"Comparar releases aunque cambió el denominador o fórmula del check.","correction":"Versionar reglas y declarar no comparables las métricas hasta recalcular con una definición común."},{"error":"Crear un score único de calidad que promedia todos los checks.","correction":"Mantener hallazgos por dimensión/severidad y una política de gate explícita."},{"error":"Tratar Error o Not Applicable como Passed.","correction":"Conservar estados separados y reportar cobertura de checks aplicables evaluados."},{"error":"Asumir que tener linaje demuestra calidad.","correction":"El linaje explica cómo se produjo un dato; puede documentar perfectamente un proceso que produce datos erróneos."},{"error":"Usar Provenance y AuditEvent como sinónimos.","correction":"Provenance describe historia/contexto del recurso; AuditEvent registra eventos de auditoría."},{"error":"Confundir OpenLineage Job con Run.","correction":"Job es el proceso lógico y Run una ejecución concreta con identidad propia."},{"error":"Interpretar un hash coincidente como prueba de semántica correcta.","correction":"Un hash sirve para identidad de bytes; no valida mappings, unidades o significado."},{"error":"Sobrescribir la release histórica al corregir una fuente.","correction":"Crear nueva versión o release y conservar relación con el artefacto previo."},{"error":"Llamar release a cualquier snapshot automático.","correction":"Una release tiene intención de consumo, manifest, criterios y changelog; un snapshot es estado técnico."},{"error":"Aceptar una excepción sin owner ni expiry.","correction":"Toda excepción temporal necesita responsabilidad, razón, alcance y fecha de revisión/expiración."},{"error":"Asumir que FAIR significa abierto y de alta calidad.","correction":"FAIR trata findability/accessibility/interoperability/reusability bajo condiciones; no garantiza apertura ni calidad."},{"error":"Presentar un quality gate verde como readiness clínica o regulatoria.","correction":"El gate solo sostiene las reglas definidas para el uso sintético; privacidad, clínica, legal y producción requieren controles adicionales."}],"self_assessment":[{"question":"¿Por qué la calidad de datos depende del uso?","answer":"Porque una misma limitación puede ser tolerable para una pregunta y crítica para otra; métricas y umbrales deben vincularse al uso previsto.","reasoning":"Sin contexto no existe criterio para decidir si una desviación importa.","common_error":"Reportar una puntuación universal."},{"question":"¿Qué diferencia hay entre Conformance y Plausibility?","answer":"Conformance evalúa cumplimiento de representación o restricciones; Plausibility evalúa credibilidad de valores o relaciones.","reasoning":"Un valor puede tener tipo correcto y ser clínicamente imposible.","common_error":"Usar validación de esquema como calidad total."},{"question":"¿Por qué completitud necesita población elegible?","answer":"Porque solo deben contarse como oportunidades los registros donde el valor es esperable según el contrato.","reasoning":"Usar todas las filas puede inflar o reducir artificialmente la proporción.","common_error":"Denominador = tamaño de tabla."},{"question":"¿Verification y Validation son equivalentes?","answer":"No. Verification usa conocimiento interno o restricciones del dataset; Validation contrasta con una referencia externa apropiada.","reasoning":"Sostienen afirmaciones de naturaleza distinta.","common_error":"Llamar validación a cualquier check."},{"question":"¿Qué aporta W3C PROV?","answer":"Un modelo de Entity, Activity y Agent y relaciones para describir cómo artefactos fueron usados, generados o derivados.","reasoning":"Permite representar procedencia de forma interoperable y auditable.","common_error":"Usar una lista de filenames sin relaciones."},{"question":"¿Qué diferencia hay entre FHIR Provenance y AuditEvent?","answer":"Provenance registra historia/contexto de recursos y participantes; AuditEvent registra eventos observables de auditoría.","reasoning":"Pueden solaparse, pero responden a focos diferentes.","common_error":"Guardar el mismo evento en uno cualquiera sin modelar intención."},{"question":"¿Qué diferencia hay entre OpenLineage Job y Run?","answer":"Job identifica el proceso lógico; Run una ejecución concreta de ese proceso.","reasoning":"Sin Run no se distingue qué ejecución específica produjo un dataset.","common_error":"Usar nombre de job como execution id."},{"question":"¿Qué demuestra un SHA-256 idéntico?","answer":"Que bajo el procedimiento definido los bytes comparados producen el mismo digest, evidencia de identidad de contenido.","reasoning":"No evalúa significado, mapping ni exactitud clínica.","common_error":"Hash correcto = datos correctos."},{"question":"¿Snapshot, release y backup son iguales?","answer":"No. Snapshot captura estado técnico, release identifica una versión para consumo y backup sirve a recuperación.","reasoning":"Tienen contratos y ciclos distintos.","common_error":"Usar snapshot id como única versión de análisis."},{"question":"¿Qué hacer ante una corrección de mapping?","answer":"Versionar mapping, reprocesar de forma trazada, crear nueva release, conservar la anterior y evaluar impacto downstream.","reasoning":"Sobrescribir rompe reproducibilidad histórica.","common_error":"Editar el resultado limpio en sitio."},{"question":"¿Qué significa Error en un quality check?","answer":"Que el control no pudo evaluarse correctamente; no significa que los datos pasaron.","reasoning":"Ocultar errores de ejecución reduce cobertura real del gate.","common_error":"Error = Passed porque no hay violaciones contadas."},{"question":"¿Qué no demuestra una release que pasa U4?","answer":"No demuestra privacidad, validez clínica, cumplimiento regulatorio, operación estable ni readiness productiva.","reasoning":"U4 cubre calidad, procedencia y versionado para el uso sintético; U5/U6 y validaciones externas cubren otras capas.","common_error":"Quality gate verde = lista para clínica."}],"biomedical_connections":[{"connection":"Resultados de laboratorio longitudinales","explanation":"Denominadores elegibles, unidades, relojes y procedencia permiten detectar ausencias, mappings y correcciones sin inferir automáticamente enfermedad."},{"connection":"Observaciones FHIR","explanation":"FHIR Provenance puede vincular recursos derivados con agentes y entidades; effective/issued siguen siendo parte de la semántica temporal de la observación."},{"connection":"Cohortes OMOP multicéntricas","explanation":"Checks de CDM, vocabulario y plausibilidad pueden automatizarse, pero cada sitio y uso necesita revisar denominadores, mappings y comparabilidad."},{"connection":"Dispositivos y wearables","explanation":"Quality rules pueden evaluar gaps, frecuencia y duplicados de transmisión; U4 no configura streaming productivo ni interpreta señales clínicas."},{"connection":"IA biomédica retrospectiva","explanation":"Versionar release, mapping y feature source reduce leakage temporal y permite reproducir datasets de entrenamiento, pero no valida el modelo."},{"connection":"Imágenes y ómicas","explanation":"Manifests y hashes conectan objetos grandes con metadata y pipelines derivados; identidad de archivo no garantiza anotación o significado correctos."}],"sources":[{"title":"A Harmonized Data Quality Assessment Terminology and Framework for the Secondary Use of Electronic Health Record Data","organization":"Kahn et al. / eGEMs","url":"https://pubmed.ncbi.nlm.nih.gov/27713905/","type":"artículo científico","description":"Marco de Conformance, Completeness y Plausibility con contextos Verification y Validation.","verification_status":"verified_directly_2026-08-25"},{"title":"The Book of OHDSI — Data Quality","organization":"OHDSI","url":"https://ohdsi.github.io/TheBookOfOhdsi/DataQuality.html","type":"documentación metodológica abierta","description":"Discute calidad de datos observacionales y el marco aplicado en herramientas OHDSI.","verification_status":"verified_directly_2026-08-25"},{"title":"OHDSI DataQualityDashboard — Check Type Definitions","organization":"OHDSI","url":"https://ohdsi.github.io/DataQualityDashboard/articles/CheckTypeDefinitions.html","type":"documentación técnica oficial","description":"Define tipos de checks implementados por DataQualityDashboard.","verification_status":"verified_directly_2026-08-25"},{"title":"OHDSI DataQualityDashboard — Check Status Definitions","organization":"OHDSI","url":"https://ohdsi.github.io/DataQualityDashboard/articles/CheckStatusDefinitions.html","type":"documentación técnica oficial","description":"Documenta estados y tratamiento de checks dentro de la herramienta.","verification_status":"verified_directly_2026-08-25"},{"title":"standardConceptRecordCompleteness","organization":"OHDSI DataQualityDashboard","url":"https://ohdsi.github.io/DataQualityDashboard/reference/standardConceptRecordCompleteness.html","type":"documentación de check","description":"Ejemplo de check de completitud/conformidad sobre conceptos estándar con parámetros explícitos.","verification_status":"verified_directly_2026-08-25"},{"title":"plausibleStartBeforeEnd","organization":"OHDSI DataQualityDashboard","url":"https://ohdsi.github.io/DataQualityDashboard/reference/plausibleStartBeforeEnd.html","type":"documentación de check","description":"Ejemplo de plausibilidad temporal que evalúa relación start/end.","verification_status":"verified_directly_2026-08-25"},{"title":"cdmDatatype","organization":"OHDSI DataQualityDashboard","url":"https://ohdsi.github.io/DataQualityDashboard/reference/cdmDatatype.html","type":"documentación de check","description":"Ejemplo de conformance de datatype respecto del Common Data Model.","verification_status":"verified_directly_2026-08-25"},{"title":"PROV-DM: The PROV Data Model","organization":"W3C","url":"https://www.w3.org/TR/prov-dm/","type":"recomendación W3C","description":"Modelo conceptual de procedencia con Entity, Activity, Agent y relaciones.","verification_status":"verified_directly_2026-08-25"},{"title":"PROV-O: The PROV Ontology","organization":"W3C","url":"https://www.w3.org/TR/prov-o/","type":"recomendación W3C","description":"Ontología OWL2 de PROV y relaciones como wasGeneratedBy y wasDerivedFrom.","verification_status":"verified_directly_2026-08-25"},{"title":"FHIR R5 Provenance","organization":"HL7 International","url":"https://hl7.org/fhir/R5/provenance.html","type":"especificación técnica","description":"Recurso Provenance para contexto, entidades y agentes relacionados con recursos FHIR.","verification_status":"verified_directly_2026-08-25"},{"title":"OpenLineage — Run Facets","organization":"OpenLineage","url":"https://openlineage.io/docs/spec/facets/run-facets/","type":"documentación técnica oficial","description":"Facets y metadatos asociados a ejecuciones OpenLineage.","verification_status":"verified_directly_2026-08-25"},{"title":"OpenLineage — Dataset Facets","organization":"OpenLineage","url":"https://openlineage.io/docs/spec/facets/dataset-facets/","type":"documentación técnica oficial","description":"Facets aplicables a datasets de entrada y salida.","verification_status":"verified_directly_2026-08-25"},{"title":"OpenLineage specification repository","organization":"OpenLineage","url":"https://github.com/OpenLineage/OpenLineage","type":"repositorio de especificación","description":"Especificación y evolución versionada del estándar OpenLineage.","verification_status":"verified_directly_2026-08-25"},{"title":"ISO/IEC 25012:2008 — Data quality model","organization":"ISO/IEC","url":"https://www.iso.org/standard/35736.html","type":"estándar internacional","description":"Modelo general de características de calidad de datos estructurados; se usa a nivel conceptual.","verification_status":"verified_directly_2026-08-25"},{"title":"The FAIR Guiding Principles for scientific data management and stewardship","organization":"Wilkinson et al. / Scientific Data","url":"https://www.nature.com/articles/sdata201618","type":"artículo científico","description":"Principios Findable, Accessible, Interoperable y Reusable y énfasis en metadata y stewardship.","verification_status":"verified_directly_2026-08-25"},{"title":"FAIR Principles","organization":"GO FAIR","url":"https://www.go-fair.org/fair-principles/","type":"recurso educativo institucional","description":"Explicación operativa de FAIR y de que Accessible no equivale necesariamente a acceso abierto irrestricto.","verification_status":"verified_directly_2026-08-25"}],"editorial_notice":"Material educativo de ingeniería de datos con datos exclusivamente sintéticos o recursos abiertos no identificables. U4 no conecta EHR, PACS, dispositivos o repositorios institucionales, no configura credenciales ni procesa información identificable y no interpreta resultados de pacientes. El marco de Kahn, OHDSI DataQualityDashboard, W3C PROV, FHIR R5 Provenance, OpenLineage, ISO/IEC 25012 y FAIR se usan como referencias consultadas o verificadas el 25 de agosto de 2026 y no constituyen certificación de cumplimiento. Pasar el quality gate definido aquí demuestra únicamente que una release sintética satisface las reglas, poblaciones, umbrales y evidencias versionadas para su uso educativo. U1 cubre fuentes e identidad; U2 ingesta y transformación; U3 almacenamiento y snapshots; U5 programación, retry, backfill, SLAs/SLOs, logs, métricas, alertas y observabilidad; U6 privacidad, autorización, contratos y productos de datos. Una implementación real debe revalidar arquitectura, seguridad, privacidad, gobernanza, semántica, clínica y regulación."}
+{
+  "schema_version": "2.0",
+  "subject_id": "ingenieria-datos-biomedicos",
+  "area_id": "ingenieria-biomedica",
+  "unit": 4,
+  "slug": "calidad-y-procedencia",
+  "title": "Calidad y procedencia",
+  "status": "review",
+  "purpose": "Evaluar y documentar la calidad de datos biomédicos antes de su reutilización, convirtiendo conceptos como completitud, conformidad, consistencia, plausibilidad, unicidad y actualidad en comprobaciones reproducibles con denominadores, reglas, umbrales y evidencia. La unidad conecta los contratos y transformaciones de U2 con los modelos, snapshots y semántica temporal de U3; desarrolla procedencia, linaje, versionado y análisis de impacto con W3C PROV, FHIR Provenance y OpenLineage como marcos de referencia. Reserva la ejecución operacional, scheduling, reintentos y observabilidad profunda para U5, y privacidad, autorización y productos de datos para U6. El objetivo no es producir un score universal de calidad, sino un dossier auditable que permita decidir qué usos están respaldados, qué defectos requieren cuarentena o corrección y qué incertidumbres permanecen.",
+  "learning_objectives": [
+    "Definir calidad de datos como adecuación al uso previsto y operacionalizar completitud, conformidad, consistencia, plausibilidad, unicidad y actualidad mediante reglas con población, denominador y umbral explícitos.",
+    "Distinguir verificación interna de estructura y reglas frente a validación contra una referencia externa, evitando interpretar un check técnico aprobado como prueba automática de corrección clínica.",
+    "Construir un perfil reproducible de un dataset biomédico sintético, incluyendo missingness, dominios, duplicados, relaciones, unidades, tiempos y cambios entre releases.",
+    "Representar procedencia y linaje mediante entidades, actividades/agentes, datasets, jobs/runs y recursos FHIR Provenance, distinguiendo lineage de logs y de causalidad clínica.",
+    "Versionar datos, esquema, vocabularios, código y reglas por separado, usando snapshots, manifiestos, hashes y changelog para reproducir una release y analizar correcciones o supersesiones.",
+    "Diseñar quality gates y un dossier de calidad/procedencia que conecte hallazgo, severidad, causa upstream, impacto downstream, acción y límites de uso sin invadir la orquestación de U5 ni la gobernanza de acceso de U6."
+  ],
+  "theory_sections": [
+    {
+      "heading": "1. Calidad para un uso previsto: dimensiones, población evaluada y denominadores",
+      "paragraphs": [
+        "La calidad de datos no es una propiedad absoluta de una tabla. Un dataset puede ser suficiente para calcular ocupación diaria y, a la vez, insuficiente para reconstruir una trayectoria longitudinal. Por ello U4 empieza por declarar el uso previsto, la población evaluada y las variables críticas antes de calcular métricas. El marco armonizado de Kahn y colaboradores organiza la evaluación de datos clínicos secundarios en categorías como conformance, completeness y plausibility; U4 lo usa como vocabulario de trabajo, no como lista cerrada ni certificación.",
+        "La completitud debe declarar qué se esperaba observar. El cociente entre valores presentes y valores esperados cambia si el denominador es número de filas, número de encuentros, ventana temporal o subconjunto elegible. Informar 98 % de completitud sin describir el denominador oculta la pregunta real. La ausencia puede ser válida por diseño, estructural, no aplicable o un defecto de captura; missing no equivale automáticamente a error.",
+        "La conformidad pregunta si los datos respetan una representación declarada: tipo, formato, dominio, unidad, cardinalidad o vocabulario permitido. La consistencia examina si varias piezas compatibles entre sí mantienen invariantes, por ejemplo que una fecha de alta no preceda al ingreso o que una foreign key apunte a una entidad existente. Un registro puede ser conforme al esquema y, sin embargo, ser semánticamente incorrecto.",
+        "La plausibilidad evalúa si un valor o una relación resulta creíble respecto de conocimiento, distribuciones o restricciones temporales explícitas. Los límites fisiológicos son dependientes de población, contexto, método y unidad; por eso U4 no presenta rangos universales como verdad clínica. Una regla de plausibilidad es una señal para revisión y debe documentar fuente, versión, contexto y excepciones.",
+        "Unicidad y actualidad responden preguntas diferentes. Un duplicado técnico puede identificarse por la misma clave de evento, mientras dos mediciones legítimas pueden compartir valor y timestamp aproximado. La actualidad o currency depende del desfase entre el momento relevante y la disponibilidad para el uso previsto; no significa que los datos recientes sean automáticamente mejores.",
+        "Un dashboard verde no convierte una release en apta para todos los usos. Cada check necesita identificador estable, definición, severidad, población, denominador, versión de regla, resultado y evidencia. Los controles críticos se mantienen visibles en vez de promediarse dentro de una puntuación opaca. La salida de la sección es una especificación de calidad verificable, no una etiqueta genérica de 'datos limpios'."
+      ],
+      "key_points": [
+        "La calidad se evalúa contra un uso previsto y una población explícita.",
+        "Cada porcentaje necesita numerador y denominador definidos antes de interpretarse.",
+        "Conformidad estructural no demuestra corrección semántica ni clínica.",
+        "Plausibilidad depende de contexto, método, unidad, población y referencia documentada.",
+        "Duplicado técnico y repetición biomédica legítima son fenómenos distintos.",
+        "Un dashboard verde no certifica una release para usos no evaluados."
+      ],
+      "equations": [
+        {
+          "latex": "C=\\frac{N_{present}}{N_{expected}}",
+          "meaning": "Completitud respecto de una expectativa declarada; el denominador debe describirse explícitamente.",
+          "variables": {
+            "C": "completitud",
+            "N_{present}": "elementos presentes",
+            "N_{expected}": "elementos esperados para la población definida"
+          }
+        },
+        {
+          "latex": "R_{invalid}=\\frac{N_{invalid}}{N_{assessed}}",
+          "meaning": "Fracción de elementos que incumplen una regla dentro de la población realmente evaluada.",
+          "variables": {
+            "R_{invalid}": "tasa de incumplimiento",
+            "N_{invalid}": "elementos que fallan",
+            "N_{assessed}": "elementos evaluados"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "2. Profiling, checks negativos y cambio entre releases",
+      "paragraphs": [
+        "El profiling describe forma y distribución antes de decidir qué regla aplicar. Para columnas numéricas puede incluir conteo, missingness, cuantiles, valores extremos y unidades; para códigos, cardinalidad, frecuencia y pertenencia a dominios; para relaciones, claves huérfanas; para tiempos, orden, cobertura y desfases. Perfilar no sustituye validar: sirve para descubrir preguntas y establecer baselines reproducibles.",
+        "Los checks estructurales verifican invariantes que el sistema puede comprobar directamente: esquema esperado, tipo, nulabilidad, claves, foreign keys, dominios de código y formato de unidades. Los checks semánticos requieren una referencia o definición del dominio y deben declarar su procedencia. Una foreign key correcta verifica integridad referencial, pero no prueba que un encuentro haya sido asignado a la persona correcta.",
+        "La verificación interna pregunta si una implementación cumple sus reglas declaradas. La validación externa compara contra una fuente independiente apropiada para una pregunta concreta. Una transformación puede pasar unit tests y constraints y aún reproducir con precisión una lógica equivocada. Por ello el dossier separa siempre 'la regla se ejecutó correctamente' de 'la regla representa correctamente el fenómeno que pretende comprobar'.",
+        "Los negative fixtures son registros sintéticos diseñados para fallar una regla específica: unidad incompatible, clave huérfana, fecha imposible, duplicado técnico o código fuera de dominio. Permiten comprobar que un test realmente detecta el defecto esperado y no solo produce verde con datos fáciles. Cada fixture debe tener defecto conocido y resultado esperado.",
+        "Comparar releases exige mantener estable la definición de la métrica. Si cambia el denominador o la regla, una diferencia de porcentaje puede ser un artefacto metodológico. U4 versiona las reglas y calcula cambios de missingness, cardinalidad o violaciones solo después de confirmar que las poblaciones comparadas son equivalentes o de documentar la diferencia.",
+        "El drift de calidad puede aparecer sin drift de la variable clínica: un nuevo sitio puede aumentar missingness, una actualización de interfaz puede alterar unidades o una migración de vocabulario puede introducir códigos desconocidos. U4 documenta estos cambios como señales de ingeniería de datos; inferir efectos clínicos requiere otros diseños y queda fuera del alcance."
+      ],
+      "key_points": [
+        "Profiling caracteriza los datos y no reemplaza una regla de validación.",
+        "Constraints aprobadas no demuestran que los registros correspondan al mundo real.",
+        "Verificación interna y validación externa responden preguntas diferentes.",
+        "Negative fixtures demuestran que un check detecta defectos conocidos.",
+        "Comparar releases exige controlar versión de regla y población evaluada.",
+        "Drift de calidad puede originarse en procesos técnicos sin implicar cambio clínico."
+      ],
+      "equations": [
+        {
+          "latex": "R_{orphan}=\\frac{N_{orphan}}{N_{child}}",
+          "meaning": "Tasa de registros hijos cuya referencia no encuentra padre dentro del conjunto evaluado.",
+          "variables": {
+            "R_{orphan}": "tasa de huérfanos",
+            "N_{orphan}": "referencias sin padre",
+            "N_{child}": "registros hijos evaluados"
+          }
+        },
+        {
+          "latex": "\\Delta p_{miss}=p_{miss,t_2}-p_{miss,t_1}",
+          "meaning": "Cambio de missingness entre dos releases comparables; requiere la misma definición de métrica o una nota explícita de cambio.",
+          "variables": {
+            "p_{miss,t_1}": "proporción ausente en baseline",
+            "p_{miss,t_2}": "proporción ausente en nueva release"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "3. Procedencia y linaje: qué dato, qué actividad, quién o qué agente y qué ejecución",
+      "paragraphs": [
+        "La procedencia registra de dónde provino una entidad de datos, qué actividades participaron en su generación y qué agentes o sistemas estuvieron asociados. W3C PROV ofrece las clases Entity, Activity y Agent y relaciones para expresar derivación y generación. U4 usa este modelo conceptual para construir grafos auditables sin asumir que todo pipeline deba almacenar PROV-O literalmente.",
+        "El linaje responde cómo una salida depende de entradas y transformaciones. Puede representarse a nivel de dataset, tabla, columna o campo. El nivel elegido debe corresponder al riesgo y a la pregunta: saber que una tabla deriva de otra puede bastar para un catálogo, mientras rastrear una variable calculada puede exigir column lineage y versión exacta del código.",
+        "OpenLineage modela eventos alrededor de Job, Run y Dataset, lo que permite asociar una ejecución concreta con inputs, outputs y facetas. El run_id es crucial: dos ejecuciones del mismo job pueden producir resultados diferentes por datos, parámetros o versión. Registrar nombre de job sin ejecución no basta para reconstruir qué ocurrió en una release.",
+        "FHIR Provenance representa contexto de generación, revisión, firma o transformación de recursos FHIR mediante target, recorded, activity, agent y entity, entre otros elementos. U4 lo usa como ejemplo biomédico de procedencia de recursos. Un recurso Provenance no certifica la verdad clínica de su target; documenta relaciones y responsabilidades según lo que se registre.",
+        "Lineage y logs son complementarios pero no equivalentes. Un log puede decir que una tarea terminó o falló; un grafo de linaje describe dependencias de datos. Ninguno demuestra por sí solo causalidad biomédica. La procedencia ayuda a investigar el origen de un valor y el impacto de una corrección, no a inferir que una transformación causó un desenlace clínico.",
+        "El dossier de U4 exige cobertura de linaje para outputs críticos, identificadores estables de dataset y run, referencias a versiones de código/reglas y una forma de recorrer upstream y downstream. Cuando no existe linaje de columna, la limitación se declara. Inventar precisión de procedencia es peor que registrar explícitamente una zona no cubierta."
+      ],
+      "key_points": [
+        "W3C PROV separa Entity, Activity y Agent para describir procedencia.",
+        "OpenLineage distingue Dataset, Job y Run para anclar ejecuciones concretas.",
+        "FHIR Provenance documenta procedencia de recursos sin certificar su verdad clínica.",
+        "Lineage describe dependencias de datos; logs describen eventos de ejecución.",
+        "Column lineage se justifica cuando una salida crítica necesita trazabilidad fina.",
+        "Procedencia documentada permite análisis de impacto, pero no demuestra causalidad clínica."
+      ],
+      "equations": [
+        {
+          "latex": "L=\\frac{N_{outputs\\ with\\ lineage}}{N_{outputs\\ in\\ scope}}",
+          "meaning": "Cobertura de linaje para outputs declarados críticos; debe indicar alcance y nivel de granularidad.",
+          "variables": {
+            "L": "cobertura de linaje",
+            "N_{outputs with lineage}": "outputs con dependencia registrada",
+            "N_{outputs in scope}": "outputs críticos dentro del alcance"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "4. Versionado y reproducibilidad: data, schema, vocabulary, code y rules no son una sola versión",
+      "paragraphs": [
+        "Una release reproducible necesita más que un nombre de carpeta. U4 versiona por separado datos, esquema, vocabularios o mapeos, código de transformación y reglas de calidad. La combinación puede registrarse en un manifest. Dos releases con los mismos datos pero distinto vocabulario no son equivalentes para análisis semántico.",
+        "Los snapshots de U3 proporcionan una identidad del estado de una tabla, pero no sustituyen el release manifest. Un snapshot puede referir archivos concretos mientras el dossier añade código, reglas, referencias externas y parámetros. U4 conserva esa separación para que 'snapshot' no se convierta en sinónimo ambiguo de versión total.",
+        "Un hash criptográfico ayuda a verificar identidad de bytes o detectar cambios. No mide calidad, completitud, corrección clínica ni ausencia de sesgo. El mismo archivo defectuoso producirá un hash estable; y una serialización diferente de los mismos registros puede producir otro hash. U4 usa hashes como evidencia de integridad/reproducibilidad, no como score de calidad.",
+        "Las correcciones necesitan historia. Sobrescribir silenciosamente una release impide reproducir análisis anteriores y oculta qué cambió. Un patrón auditable crea una nueva versión, registra changelog, fecha, motivo, datos afectados y relación supersedes/corrects. Las políticas reales de retención y borrado dependen de gobernanza y se reservan para U6.",
+        "Usar la etiqueta latest como única identidad rompe reproducibilidad porque su contenido cambia con el tiempo. Un consumidor puede consultar 'latest' para descubrimiento, pero un análisis reproducible fija release_id o snapshot_id y las versiones auxiliares necesarias. El manifiesto debe permitir recuperar o al menos identificar exactamente la entrada utilizada.",
+        "Los principios FAIR incluyen procedencia detallada como parte de la reutilización. U4 traduce ese principio a una práctica verificable: metadata de origen, versión, transformación y licencia/condiciones cuando correspondan. FAIR no significa abierto a todo el mundo ni libre de controles de acceso; esa distinción se retoma en U6."
+      ],
+      "key_points": [
+        "Datos, esquema, vocabulario, código y reglas necesitan identidades de versión separadas.",
+        "Snapshot de tabla y release manifest representan capas diferentes de reproducibilidad.",
+        "Un hash demuestra identidad de bytes y no demuestra calidad de datos.",
+        "Corregir una release requiere nueva versión y relación explícita con la anterior.",
+        "Latest sirve para descubrimiento, pero no como identidad reproducible de un análisis.",
+        "Procedencia FAIR favorece reutilización sin eliminar requisitos de acceso o gobernanza."
+      ]
+    },
+    {
+      "heading": "5. De hallazgos a decisiones: quality gates, cuarentena, root cause e impacto downstream",
+      "paragraphs": [
+        "Una regla de calidad solo es útil si su resultado conduce a una acción definida. U4 distingue pass, warning, quarantine y block como estados educativos configurables. Los umbrales son sintéticos y deben justificarse por el uso previsto; no se presentan como estándares clínicos universales. Un fallo crítico puede bloquear una release aunque el promedio de otras métricas sea alto.",
+        "La cuarentena conserva registros separados de la salida aprobada y registra reason_code, rule_version, run_id y evidencia suficiente para reproducir la decisión. Cuarentena no significa borrar. Permite investigar, corregir upstream y reejecutar. Las reglas de retención, acceso y tratamiento de identificadores reales quedan fuera del laboratorio y pertenecen a U6.",
+        "El análisis de root cause recorre upstream desde un hallazgo: fuente, mapping, transformación, vocabulario, unidad, join o lógica temporal. El análisis de impacto recorre downstream para localizar tablas, features, dashboards o cohortes derivadas. El linaje reduce el espacio de búsqueda, pero la causa debe confirmarse con evidencia y no inferirse por proximidad en el grafo.",
+        "Una única puntuación compuesta puede ocultar un fallo crítico. Promediar 99 % de completitud con una violación grave de identidad o unidad no vuelve seguro el dataset. U4 prefiere un perfil multidimensional con gates explícitos, severidad y excepciones documentadas. Si se usa un score para priorizar, nunca sustituye el detalle de checks subyacentes.",
+        "El dossier final reúne release manifest, perfil, resultados de checks, negative fixtures, desviaciones contra baseline, grafo de procedencia/linaje, hallazgos abiertos, decisiones de gate y análisis de impacto. Debe permitir que otra persona reproduzca por qué una release fue aceptada para un uso sintético concreto o por qué quedó en cuarentena.",
+        "U4 termina donde empieza la operación continua. Ejecutar estos checks de forma programada, gestionar retries, SLAs, alertas, logs y métricas operativas pertenece a U5. Autorización, minimización, controles de acceso, privacidad y publicación de productos de datos pertenecen a U6. Un dossier aprobado en U4 no declara un sistema listo para producción ni clínicamente válido."
+      ],
+      "key_points": [
+        "Quality gates convierten hallazgos en acciones explícitas y auditables.",
+        "Un fallo crítico no debe desaparecer dentro de un promedio compuesto.",
+        "Cuarentena conserva evidencia y facilita corrección upstream y reejecución.",
+        "Root cause recorre upstream e impacto analiza consumidores downstream.",
+        "El dossier integra calidad, procedencia, versiones, decisiones y límites pendientes.",
+        "Aprobar checks de U4 no certifica readiness productiva, regulatoria ni clínica."
+      ]
+    }
+  ],
+  "glossary": [
+    {
+      "term": "calidad de datos",
+      "definition": "Adecuación de datos a requisitos explícitos de un uso previsto, evaluada con evidencia y límites."
+    },
+    {
+      "term": "fitness for purpose",
+      "definition": "Principio según el cual la suficiencia de un dataset depende de la tarea y contexto de uso."
+    },
+    {
+      "term": "completitud",
+      "definition": "Grado en que los elementos esperados están presentes para una población y denominador declarados."
+    },
+    {
+      "term": "conformidad",
+      "definition": "Cumplimiento de formatos, tipos, dominios, unidades, cardinalidades o vocabularios especificados."
+    },
+    {
+      "term": "consistencia",
+      "definition": "Compatibilidad entre valores, relaciones e invariantes que deberían mantenerse conjuntamente."
+    },
+    {
+      "term": "plausibilidad",
+      "definition": "Credibilidad de valores o relaciones respecto de reglas o referencias documentadas."
+    },
+    {
+      "term": "unicidad",
+      "definition": "Propiedad usada para detectar duplicados técnicos bajo una definición de identidad explícita."
+    },
+    {
+      "term": "actualidad",
+      "definition": "Adecuación temporal entre disponibilidad del dato y el uso previsto."
+    },
+    {
+      "term": "denominador",
+      "definition": "Población respecto de la cual se calcula una proporción de calidad."
+    },
+    {
+      "term": "población evaluada",
+      "definition": "Conjunto exacto de registros o campos al que se aplica una regla."
+    },
+    {
+      "term": "data profiling",
+      "definition": "Caracterización reproducible de estructura, distribución, missingness y cardinalidad antes o junto a reglas."
+    },
+    {
+      "term": "missingness",
+      "definition": "Patrón y proporción de valores ausentes, interpretados según aplicabilidad y mecanismo de captura."
+    },
+    {
+      "term": "constraint",
+      "definition": "Restricción verificable sobre estructura o relaciones de los datos."
+    },
+    {
+      "term": "dominio de valores",
+      "definition": "Conjunto permitido o esperado para una variable según contrato o vocabulario."
+    },
+    {
+      "term": "integridad referencial",
+      "definition": "Propiedad por la que referencias entre entidades apuntan a identificadores existentes."
+    },
+    {
+      "term": "registro huérfano",
+      "definition": "Registro cuya referencia esperada no encuentra la entidad padre correspondiente."
+    },
+    {
+      "term": "verificación",
+      "definition": "Comprobación de que una implementación satisface reglas o especificaciones declaradas."
+    },
+    {
+      "term": "validación externa",
+      "definition": "Comparación con una referencia independiente apropiada para la pregunta evaluada."
+    },
+    {
+      "term": "negative fixture",
+      "definition": "Ejemplo sintético construido deliberadamente para activar un fallo conocido."
+    },
+    {
+      "term": "baseline",
+      "definition": "Release o perfil de referencia usado para detectar cambios posteriores."
+    },
+    {
+      "term": "data drift",
+      "definition": "Cambio en distribuciones o composición de datos a lo largo del tiempo."
+    },
+    {
+      "term": "drift de calidad",
+      "definition": "Cambio en métricas o patrones de defectos entre releases comparables."
+    },
+    {
+      "term": "procedencia",
+      "definition": "Información sobre origen, generación, transformación y agentes relacionados con un dato."
+    },
+    {
+      "term": "linaje",
+      "definition": "Representación de dependencias upstream y downstream entre datasets y transformaciones."
+    },
+    {
+      "term": "W3C PROV",
+      "definition": "Modelo estándar de procedencia basado en Entity, Activity, Agent y relaciones."
+    },
+    {
+      "term": "Entity",
+      "definition": "Objeto o dato cuya procedencia puede describirse en PROV."
+    },
+    {
+      "term": "Activity",
+      "definition": "Proceso o transformación que usa o genera entidades en PROV."
+    },
+    {
+      "term": "Agent",
+      "definition": "Persona, organización o software asociado con responsabilidad o acción en PROV."
+    },
+    {
+      "term": "OpenLineage",
+      "definition": "Especificación abierta para registrar metadata de linaje alrededor de jobs, runs y datasets."
+    },
+    {
+      "term": "Dataset",
+      "definition": "Conjunto de datos identificado como entrada o salida en un evento de linaje."
+    },
+    {
+      "term": "Job",
+      "definition": "Definición lógica de un proceso que puede tener múltiples ejecuciones."
+    },
+    {
+      "term": "Run",
+      "definition": "Ejecución concreta de un job, idealmente identificada por run_id."
+    },
+    {
+      "term": "run_id",
+      "definition": "Identificador de una ejecución concreta usado para enlazar evidencia y outputs."
+    },
+    {
+      "term": "FHIR Provenance",
+      "definition": "Recurso HL7 FHIR para representar procedencia y agentes asociados a recursos objetivo."
+    },
+    {
+      "term": "column lineage",
+      "definition": "Linaje a nivel de columnas o campos que relaciona outputs con inputs específicos."
+    },
+    {
+      "term": "upstream",
+      "definition": "Fuentes y procesos de los que depende un dato o producto."
+    },
+    {
+      "term": "downstream",
+      "definition": "Consumidores, derivados o productos que dependen de una salida."
+    },
+    {
+      "term": "log",
+      "definition": "Registro temporal de eventos de ejecución; no equivale por sí mismo a linaje."
+    },
+    {
+      "term": "versión de datos",
+      "definition": "Identidad estable de una release o estado de datos."
+    },
+    {
+      "term": "versión de esquema",
+      "definition": "Identidad de la estructura y contratos de campos de una release."
+    },
+    {
+      "term": "versión de vocabulario",
+      "definition": "Identidad de terminologías, mappings o conceptos empleados."
+    },
+    {
+      "term": "versión de código",
+      "definition": "Referencia reproducible al código que generó o transformó datos."
+    },
+    {
+      "term": "versión de regla",
+      "definition": "Identidad de la lógica de un check de calidad."
+    },
+    {
+      "term": "snapshot",
+      "definition": "Estado coherente de una tabla o dataset referenciado en un punto concreto."
+    },
+    {
+      "term": "release",
+      "definition": "Publicación identificable de datos y artefactos relacionados."
+    },
+    {
+      "term": "release manifest",
+      "definition": "Documento que fija versiones de datos, esquema, vocabulario, código, reglas y parámetros."
+    },
+    {
+      "term": "hash",
+      "definition": "Resumen criptográfico usado para verificar identidad/integridad de bytes; no mide calidad."
+    },
+    {
+      "term": "changelog",
+      "definition": "Registro estructurado de cambios entre versiones."
+    },
+    {
+      "term": "supersesión",
+      "definition": "Relación en la que una release reemplaza formalmente a otra sin borrar su historia."
+    },
+    {
+      "term": "reproducibilidad",
+      "definition": "Capacidad de reconstruir una salida a partir de inputs, versiones, código y parámetros identificados."
+    },
+    {
+      "term": "quality gate",
+      "definition": "Regla de decisión que transforma resultados de checks en pass, warning, quarantine o block."
+    },
+    {
+      "term": "quarantine",
+      "definition": "Separación controlada de registros o releases que requieren investigación o corrección."
+    },
+    {
+      "term": "reason_code",
+      "definition": "Código estable que explica por qué una regla produjo un hallazgo o acción."
+    },
+    {
+      "term": "severidad",
+      "definition": "Prioridad o criticidad asignada a un hallazgo bajo criterios explícitos."
+    },
+    {
+      "term": "root cause",
+      "definition": "Causa upstream confirmada mediante evidencia, no solo sospechada por asociación."
+    },
+    {
+      "term": "impact analysis",
+      "definition": "Evaluación de outputs o consumidores downstream afectados por un cambio o defecto."
+    },
+    {
+      "term": "coverage de linaje",
+      "definition": "Proporción de outputs dentro de alcance con dependencias de linaje registradas."
+    },
+    {
+      "term": "data quality dashboard",
+      "definition": "Conjunto de checks y reportes parametrizados para evaluar dimensiones de calidad."
+    },
+    {
+      "term": "OHDSI DataQualityDashboard",
+      "definition": "Implementación abierta de checks de calidad sobre OMOP CDM usada como referencia práctica."
+    },
+    {
+      "term": "FAIR",
+      "definition": "Principios para que datos sean localizables, accesibles bajo condiciones, interoperables y reutilizables."
+    },
+    {
+      "term": "UCUM",
+      "definition": "Sistema de códigos de unidades útil para expresar unidades computables de manera consistente."
+    },
+    {
+      "term": "OMOP CDM",
+      "definition": "Modelo común de datos de OHDSI utilizado aquí como contexto para checks de calidad secundarios."
+    }
+  ],
+  "worked_examples": [
+    {
+      "title": "Dos denominadores de completitud",
+      "scenario": "Una tabla sintética contiene 100 encuentros; la variable presión arterial aplica a 80 y está presente en 72.",
+      "steps": [
+        "Definir denominador A como todos los encuentros: 72/100.",
+        "Definir denominador B como encuentros elegibles: 72/80.",
+        "Registrar por qué 20 encuentros son no aplicables y conservar ambas cifras."
+      ],
+      "result": "La completitud es 72 % sobre todos los encuentros y 90 % sobre los elegibles.",
+      "interpretation": "La cifra cambia por la pregunta, no porque los datos hayan cambiado. Un porcentaje sin denominador es insuficiente."
+    },
+    {
+      "title": "Foreign key verde, identidad equivocada",
+      "scenario": "Una transformación sintética intercambia person_id entre dos filas, pero ambos identificadores existen.",
+      "steps": [
+        "Ejecutar integridad referencial y observar que pasa.",
+        "Comparar contra una referencia sintética independiente que conserva el vínculo correcto.",
+        "Clasificar el primer resultado como verificación interna y el segundo como validación de identidad."
+      ],
+      "result": "La constraint no detecta el intercambio; la comparación externa sí.",
+      "interpretation": "Integridad referencial protege estructura, no pertenencia real del evento."
+    },
+    {
+      "title": "Drift de missingness entre releases",
+      "scenario": "B0 tiene 4 % de ausencia en device_id y B1 tiene 19 % usando la misma población y regla.",
+      "steps": [
+        "Fijar versiones de regla y denominador.",
+        "Calcular delta de missingness: 0.19-0.04=0.15.",
+        "Segmentar por sitio y localizar el aumento en un origen concreto."
+      ],
+      "result": "Se observa un incremento de 15 puntos porcentuales concentrado en un sitio.",
+      "interpretation": "El resultado justifica investigación upstream, no una conclusión clínica."
+    },
+    {
+      "title": "Procedencia de una tabla longitudinal derivada",
+      "scenario": "Una tabla daily_summary deriva de measurements y encounters mediante un job versionado.",
+      "steps": [
+        "Crear entidades/datasets para inputs y output.",
+        "Registrar Job y Run con run_id, versión de código y parámetros.",
+        "Añadir column lineage para daily_mean y source_count."
+      ],
+      "result": "El dossier permite recorrer desde daily_mean hasta las columnas y ejecución que lo generaron.",
+      "interpretation": "El grafo facilita trazabilidad; no prueba que la fórmula sea clínicamente válida."
+    },
+    {
+      "title": "Impacto de una conversión de unidad defectuosa",
+      "scenario": "La release B1 aplica factor incorrecto a una variable sintética y varios productos dependen de ella.",
+      "steps": [
+        "Detectar la anomalía por plausibilidad y fixture negativo.",
+        "Usar linaje para identificar transformación upstream y outputs downstream.",
+        "Emitir B2 corregida con changelog, supersesión y nuevo manifest."
+      ],
+      "result": "Se identifica causa, alcance y nueva release sin sobrescribir B1.",
+      "interpretation": "Versionado y linaje permiten explicar qué cambió y qué consumidores deben recalcular."
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Laboratorio integrador: dossier reproducible de calidad, procedencia y versiones",
+      "estimated_time_minutes": 420,
+      "instructions": [
+        "Trabajar únicamente con datos sintéticos o abiertos no identificables; no conectar EHR, PACS, LIS, dispositivos ni cuentas reales.",
+        "Crear tres releases B0, B1 y B2 para que los cambios y correcciones puedan compararse de forma reproducible.",
+        "Guardar código, reglas, parámetros y versiones en archivos de texto legibles y mantener identificadores estables.",
+        "Ejecutar primero profiling y después checks definidos explícitamente; no ocultar fallos críticos en promedios.",
+        "Conservar outputs intermedios necesarios para auditar cálculos y negative fixtures.",
+        "Documentar procedencia y linaje en una representación simple además de cualquier librería utilizada.",
+        "Usar umbrales exclusivamente educativos y etiquetarlos como sintéticos.",
+        "Separar verificación técnica, validación externa y cualquier inferencia clínica.",
+        "Registrar decisiones de quarantine/block con reason_code y evidencia.",
+        "Finalizar con una revisión por pares que intente reproducir un hallazgo y una corrección."
+      ],
+      "problems": [
+        "Definir el uso previsto del dataset sintético y seleccionar seis campos críticos.",
+        "Construir B0 como baseline, B1 con defectos conocidos y B2 como release corregida.",
+        "Crear un diccionario de datos con tipo, unidad, dominio, nulabilidad y semántica temporal.",
+        "Definir al menos doce checks distribuidos entre completitud, conformidad, consistencia, plausibilidad, unicidad y actualidad.",
+        "Para cada porcentaje, declarar numerador, denominador y población evaluada.",
+        "Incluir negative fixtures para unidad incompatible, clave huérfana, fecha imposible y duplicado técnico.",
+        "Separar qué checks son verificación interna y cuáles requieren referencia externa.",
+        "Perfilar missingness, cardinalidad, cuantiles y códigos desconocidos en B0 y B1.",
+        "Comparar B0/B1 usando reglas versionadas y localizar un drift de calidad.",
+        "Implementar un quality gate con estados pass, warning, quarantine y block usando umbrales sintéticos.",
+        "Construir una tabla de cuarentena con reason_code, rule_version y run_id.",
+        "Representar procedencia conceptual con Entity, Activity y Agent para una transformación.",
+        "Representar el mismo flujo como Dataset–Job–Run de OpenLineage.",
+        "Crear un ejemplo FHIR Provenance sintético que apunte a un recurso FHIR ficticio.",
+        "Construir linaje de columna para al menos dos variables derivadas.",
+        "Calcular coverage de linaje para los outputs críticos declarados.",
+        "Crear release manifest con data/schema/vocabulary/code/rule version y hashes.",
+        "Demostrar por qué cambiar solo la etiqueta latest impide reproducibilidad.",
+        "Corregir un defecto en B2 sin sobrescribir B1 y documentar changelog/supersesión.",
+        "Realizar root-cause analysis upstream para un fallo y justificar la evidencia.",
+        "Realizar impact analysis downstream e identificar qué productos deberían regenerarse.",
+        "Entregar un dossier final que explique qué usos sintéticos están respaldados, qué hallazgos siguen abiertos y qué responsabilidades pasan a U5/U6."
+      ],
+      "deliverables": [
+        "README con uso previsto, alcance y límites.",
+        "Dataset sintético B0/B1/B2 y generador reproducible.",
+        "Diccionario de datos y contrato de campos críticos.",
+        "Catálogo versionado de checks con dimensión, regla, denominador, umbral y severidad.",
+        "Reporte comparativo de profiling y drift B0→B1→B2.",
+        "Fixtures negativos y evidencia de que cada regla falla cuando debe.",
+        "Tabla de cuarentena con reason_code, rule_version y run_id.",
+        "Grafo de procedencia/linaje en formato legible con upstream/downstream.",
+        "Ejemplos W3C PROV conceptual, OpenLineage Dataset–Job–Run y FHIR Provenance sintético.",
+        "Release manifest con hashes y versiones separadas.",
+        "Changelog y relación de corrección/supersesión entre releases.",
+        "Dossier final de calidad/procedencia con quality gates, root cause, impacto y límites."
+      ],
+      "checking_criteria": [
+        "El uso previsto y la población evaluada están escritos antes de las métricas.",
+        "Existen B0, B1 y B2 reproducibles y diferenciables.",
+        "Cada check tiene identificador, dimensión, versión, severidad y resultado.",
+        "Los porcentajes declaran numerador y denominador.",
+        "Hay al menos doce checks y están cubiertas las seis dimensiones requeridas.",
+        "Los negative fixtures activan de manera específica las reglas esperadas.",
+        "Verificación interna y validación externa están etiquetadas por separado.",
+        "El reporte de drift conserva población y versión de regla o explica sus cambios.",
+        "El quality gate conserva fallos críticos y no usa un promedio opaco como sustituto.",
+        "Quarantine registra reason_code, rule_version y run_id.",
+        "El grafo distingue procedencia, linaje y logs.",
+        "El modelo PROV contiene Entity, Activity y Agent coherentes.",
+        "OpenLineage distingue Dataset, Job y Run con run_id.",
+        "FHIR Provenance se presenta como metadata de procedencia, no como prueba de verdad clínica.",
+        "Hay column lineage para al menos dos outputs derivados.",
+        "Coverage de linaje declara alcance y denominador.",
+        "El manifest separa versiones de data, schema, vocabulary, code y rules.",
+        "Los hashes se usan para identidad de bytes y no como indicador de calidad.",
+        "Ningún resultado reproducible depende exclusivamente de la etiqueta latest.",
+        "B2 corrige sin sobrescribir la evidencia de B1.",
+        "El changelog permite reconstruir qué cambió entre releases.",
+        "Root cause se apoya en evidencia upstream y no solo en correlación temporal.",
+        "Impact analysis enumera consumidores downstream afectados.",
+        "El dossier indica hallazgos abiertos y excepciones.",
+        "Los datos utilizados son sintéticos o no identificables.",
+        "El informe no declara exactitud clínica, cumplimiento regulatorio ni readiness productiva."
+      ]
+    }
+  ],
+  "common_errors": [
+    {
+      "error": "Calcular completitud sin denominador",
+      "correction": "Definir primero población elegible y qué cuenta como esperado."
+    },
+    {
+      "error": "Tratar missing como error universal",
+      "correction": "Distinguir ausente, no aplicable, estructural y defecto de captura."
+    },
+    {
+      "error": "Confundir conformidad con verdad",
+      "correction": "Añadir validación externa cuando la pregunta requiere correspondencia con referencia."
+    },
+    {
+      "error": "Usar rangos fisiológicos universales",
+      "correction": "Versionar referencias y declarar población, unidad, método y contexto."
+    },
+    {
+      "error": "Eliminar duplicados por igualdad de valores",
+      "correction": "Definir identidad del evento antes de deduplicar."
+    },
+    {
+      "error": "Comparar releases con reglas distintas",
+      "correction": "Fijar versión de regla o documentar el cambio metodológico."
+    },
+    {
+      "error": "No probar que un check pueda fallar",
+      "correction": "Añadir negative fixtures con resultado esperado."
+    },
+    {
+      "error": "Confundir logs con linaje",
+      "correction": "Registrar dependencias de datasets/columnas además de eventos de ejecución."
+    },
+    {
+      "error": "Omitir run_id",
+      "correction": "Anclar outputs a una ejecución concreta del job."
+    },
+    {
+      "error": "Tratar FHIR Provenance como certificación",
+      "correction": "Usarlo para procedencia; validar contenido por mecanismos separados."
+    },
+    {
+      "error": "Usar hash como score de calidad",
+      "correction": "Limitar el hash a identidad/integridad de bytes."
+    },
+    {
+      "error": "Sobrescribir una release corregida",
+      "correction": "Crear nueva versión y conservar changelog/supersesión."
+    },
+    {
+      "error": "Usar latest en un análisis reproducible",
+      "correction": "Fijar release_id o snapshot_id y versiones auxiliares."
+    },
+    {
+      "error": "Promediar un fallo crítico",
+      "correction": "Mantener gates y severidades por check."
+    },
+    {
+      "error": "Borrar cuarentena sin evidencia",
+      "correction": "Conservar reason_code, regla y ejecución para investigación."
+    },
+    {
+      "error": "Inferir root cause por proximidad",
+      "correction": "Confirmar la causa con evidencia reproducible."
+    },
+    {
+      "error": "Confundir procedencia con causalidad clínica",
+      "correction": "Limitar el grafo a origen y transformaciones de datos."
+    },
+    {
+      "error": "Declarar producción o validez clínica por pasar U4",
+      "correction": "Restringir la conclusión al uso sintético evaluado y transferir operación/gobernanza a U5/U6."
+    }
+  ],
+  "self_assessment": [
+    {
+      "question": "¿Por qué 98 % de completitud es ambiguo?",
+      "answer": "Porque falta saber qué elementos se esperaban, cuál es la población evaluada y cómo se trataron los no aplicables."
+    },
+    {
+      "question": "¿Qué diferencia verificación de validación externa?",
+      "answer": "La verificación comprueba reglas declaradas de la implementación; la validación compara contra una referencia independiente adecuada para la pregunta."
+    },
+    {
+      "question": "¿Una foreign key aprobada prueba identidad correcta?",
+      "answer": "No. Solo prueba que la referencia existe; la asociación puede ser semánticamente equivocada."
+    },
+    {
+      "question": "¿Para qué sirve un negative fixture?",
+      "answer": "Para demostrar que una regla detecta un defecto conocido y evitar tests que siempre producen verde."
+    },
+    {
+      "question": "¿Qué aporta run_id?",
+      "answer": "Distingue una ejecución concreta de un job y permite enlazar inputs, outputs, parámetros y evidencia."
+    },
+    {
+      "question": "¿Lineage y log son sinónimos?",
+      "answer": "No. Lineage representa dependencias de datos; el log registra eventos de ejecución."
+    },
+    {
+      "question": "¿FHIR Provenance certifica un recurso?",
+      "answer": "No. Documenta procedencia y agentes según la información registrada; la exactitud se evalúa por otros medios."
+    },
+    {
+      "question": "¿Qué demuestra un hash estable?",
+      "answer": "Que los bytes comparados son idénticos bajo el algoritmo usado; no demuestra calidad ni validez clínica."
+    },
+    {
+      "question": "¿Por qué versionar vocabulario y código por separado?",
+      "answer": "Porque ambos pueden cambiar el significado o resultado aun cuando el archivo de datos sea el mismo."
+    },
+    {
+      "question": "¿Qué problema tiene latest?",
+      "answer": "Su referente puede cambiar, por lo que no identifica de forma estable la entrada de un análisis."
+    },
+    {
+      "question": "¿Por qué evitar un score compuesto único?",
+      "answer": "Puede ocultar un fallo crítico bajo promedios de métricas benignas."
+    },
+    {
+      "question": "¿Qué debe contener un dossier de U4?",
+      "answer": "Uso previsto, perfil, reglas/versiones, resultados, fixtures, procedencia/linaje, manifest, decisiones, root cause, impacto y límites."
+    }
+  ],
+  "biomedical_connections": [
+    {
+      "domain": "Datos longitudinales clínicos",
+      "connection": "Permite rastrear correcciones, tiempos y derivaciones sin asumir que un registro técnicamente válido es clínicamente correcto.",
+      "boundary": "Ejemplos sintéticos; no valida expedientes reales."
+    },
+    {
+      "domain": "OMOP y datos observacionales",
+      "connection": "Los patrones de quality checks de OHDSI muestran cómo parametrizar conformidad, completitud y plausibilidad en un CDM.",
+      "boundary": "No se declara que superar DQD garantice comparabilidad o idoneidad para un estudio."
+    },
+    {
+      "domain": "FHIR",
+      "connection": "FHIR Provenance ejemplifica procedencia de recursos y agentes vinculados a targets.",
+      "boundary": "No se conecta a servidores clínicos reales ni se interpreta información de pacientes."
+    },
+    {
+      "domain": "Analítica biomédica",
+      "connection": "Versiones, linaje y manifests permiten reproducir qué datos alimentaron una tabla o feature derivada.",
+      "boundary": "Reproducibilidad de datos no equivale a validez de un modelo predictivo."
+    },
+    {
+      "domain": "Laboratorio y dispositivos",
+      "connection": "Unidades, timestamps y procedencia son esenciales para integrar mediciones de fuentes heterogéneas.",
+      "boundary": "No se validan instrumentos ni se establecen límites fisiológicos universales."
+    },
+    {
+      "domain": "Gobernanza de datos",
+      "connection": "El dossier crea evidencia técnica para decisiones posteriores de acceso, retención y publicación.",
+      "boundary": "Privacidad, autorización y políticas reales se reservan para U6."
+    }
+  ],
+  "sources": [
+    {
+      "title": "Data Quality Vocabulary (DQV)",
+      "organization": "World Wide Web Consortium (W3C)",
+      "url": "https://www.w3.org/TR/vocab-dqv/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "PROV-O: The PROV Ontology",
+      "organization": "World Wide Web Consortium (W3C)",
+      "url": "https://www.w3.org/TR/prov-o/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "PROV Overview",
+      "organization": "World Wide Web Consortium (W3C)",
+      "url": "https://www.w3.org/TR/prov-overview/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "FHIR R5 Provenance",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/R5/provenance.html",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "FHIR R5 Provenance definitions",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/R5/provenance-definitions.html",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "OpenLineage Documentation",
+      "organization": "OpenLineage",
+      "url": "https://openlineage.io/docs/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "OpenLineage Specification",
+      "organization": "OpenLineage",
+      "url": "https://openlineage.io/docs/spec/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "A Harmonized Data Quality Assessment Terminology and Framework for the Secondary Use of Electronic Health Record Data",
+      "organization": "Kahn MG et al.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/27738328/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "Methods and dimensions of electronic health record data quality assessment: enabling reuse for clinical research",
+      "organization": "Weiskopf NG, Weng C",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/22733976/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "Data Quality Assessment in Healthcare: A 365-Dimension Framework",
+      "organization": "Lewis AE et al.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/36774260/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "DataQualityDashboard",
+      "organization": "OHDSI",
+      "url": "https://github.com/OHDSI/DataQualityDashboard",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "OMOP Common Data Model",
+      "organization": "OHDSI",
+      "url": "https://ohdsi.github.io/CommonDataModel/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "The FAIR Guiding Principles for scientific data management and stewardship",
+      "organization": "Wilkinson MD et al.",
+      "url": "https://www.nature.com/articles/sdata201618",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "FAIR Principle R1.2: provenance",
+      "organization": "GO FAIR",
+      "url": "https://www.go-fair.org/fair-principles/r1-2-metadata-associated-detailed-provenance/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "Apache Iceberg Specification",
+      "organization": "Apache Iceberg",
+      "url": "https://iceberg.apache.org/spec/",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "PostgreSQL Constraints",
+      "organization": "PostgreSQL Global Development Group",
+      "url": "https://www.postgresql.org/docs/current/ddl-constraints.html",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "FHIR R5 Observation",
+      "organization": "HL7 International",
+      "url": "https://hl7.org/fhir/R5/observation.html",
+      "accessed": "2026-08-25"
+    },
+    {
+      "title": "The Unified Code for Units of Measure",
+      "organization": "Regenstrief Institute / UCUM",
+      "url": "https://ucum.org/ucum",
+      "accessed": "2026-08-25"
+    }
+  ],
+  "editorial_notice": "Unidad educativa para ingeniería de datos biomédicos con datasets exclusivamente sintéticos o abiertos no identificables. No conecta EHR, PACS, LIS, dispositivos o cuentas reales; no configura credenciales ni controles de acceso; no interpreta datos de pacientes. Los umbrales del laboratorio son sintéticos y no establecen límites clínicos universales. Pasar los quality gates de U4 no certifica exactitud clínica, cumplimiento regulatorio, seguridad, privacidad ni readiness productiva. Las versiones de estándares, vocabularios y herramientas deben revalidarse antes de uso profesional; U5 aborda orquestación/observabilidad y U6 privacidad, acceso y productos de datos."
+}
