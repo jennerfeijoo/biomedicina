@@ -37,7 +37,7 @@ class HistoriasClinicasUnit01CuratedTests(unittest.TestCase):
             "solicitud → realización → observación → informe",
             "tiempo clínicamente relevante",
             "procedencia",
-            "versiones",
+            "versión",
             "ausencia de registro",
         ):
             self.assertIn(phrase, objectives)
