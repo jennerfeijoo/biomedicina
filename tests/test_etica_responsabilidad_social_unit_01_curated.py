@@ -1,4 +1,4 @@
-# Final user-authored trigger after generated public-site synchronization.
+# Final user-authored trigger after moral-residue and publication metadata synchronization.
 from __future__ import annotations
 
 import json
