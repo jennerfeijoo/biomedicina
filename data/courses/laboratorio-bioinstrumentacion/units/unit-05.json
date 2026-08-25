@@ -1,0 +1,750 @@
+{
+  "$schema": "../../../../schemas/academic/unit-v1.schema.json",
+  "schema_version": "1.0",
+  "id": "LABBIO-U05",
+  "course_id": "laboratorio-bioinstrumentacion",
+  "order": 5,
+  "slug": "integracion-de-prototipo",
+  "title": "Integración de prototipo",
+  "status": {
+    "content": "complete",
+    "sources": "traceable",
+    "pedagogy": "complete",
+    "multimedia": "planned",
+    "internal_review": "pending",
+    "external_review": "pending",
+    "publication": "published_provisional"
+  },
+  "purpose": "Integrar, mediante simulación, bancos eléctricos equivalentes y prototipos no conectados a personas, los bloques desarrollados en U1–U4 en una arquitectura coherente de medición: contratos de interfaz, alimentación y referencia, ADC y temporización, firmware, buffers, comunicación, configuración y carcasa/interconexión. La unidad busca demostrar integración técnica reproducible y localizar fallos entre subsistemas; no constituye verificación final del sistema, seguridad eléctrica, EMC, validación clínica ni autorización de uso en personas.",
+  "prerequisite_unit_ids": [
+    "LABBIO-U01",
+    "LABBIO-U02",
+    "LABBIO-U03",
+    "LABBIO-U04"
+  ],
+  "course_learning_outcome_ids": [
+    "LABBIO-LO05",
+    "LABBIO-LO07"
+  ],
+  "learning_outcomes": [
+    {
+      "id": "LABBIO-U05-LO01",
+      "statement": "Traducir requisitos de medición en una arquitectura de bloques e interfaces con señales, alimentación, datos, temporización, unidades, rangos y responsabilidades explícitas."
+    },
+    {
+      "id": "LABBIO-U05-LO02",
+      "statement": "Dimensionar caudal de datos, presupuesto temporal y buffers para evitar pérdidas silenciosas entre adquisición, procesamiento, almacenamiento y comunicación."
+    },
+    {
+      "id": "LABBIO-U05-LO03",
+      "statement": "Analizar alimentación, desacoplo, retorno de corrientes y separación funcional analógica/digital sin convertir reglas de diseño en recetas universales independientes del datasheet y del layout."
+    },
+    {
+      "id": "LABBIO-U05-LO04",
+      "statement": "Implementar un contrato mínimo de firmware que conserve frecuencia de muestreo, configuración del ADC, marcas temporales, contador de secuencia, versión y estado de error junto con los datos."
+    },
+    {
+      "id": "LABBIO-U05-LO05",
+      "statement": "Diseñar pruebas de integración por interfaces que distingan fallos de sensor/front-end, adquisición, firmware, transporte y visualización antes de modificar varios subsistemas a la vez."
+    },
+    {
+      "id": "LABBIO-U05-LO06",
+      "statement": "Construir un expediente reproducible de integración con diagrama, tabla de interfaces, versiones, presupuestos, pruebas, fallos conocidos y límites, dejando la aceptación final para U6."
+    }
+  ],
+  "topics": [
+    {
+      "id": "LABBIO-U05-T01",
+      "title": "1. Arquitectura e interfaces: integrar no es simplemente conectar",
+      "blocks": [
+        {
+          "id": "LABBIO-U05-T01-B01",
+          "type": "equation",
+          "latex": "V_{out,max}<V_{ADC,max}\\quad\\text{y}\\quad V_{out,min}>V_{ADC,min}",
+          "label": "Condición de compatibilidad de rango entre la salida analógica de una etapa y la entrada válida del ADC, incluyendo margen para tolerancias y transitorios.",
+          "variables": {
+            "V_out,max": "máximo previsto a la salida de la etapa anterior",
+            "V_out,min": "mínimo previsto a la salida de la etapa anterior",
+            "V_ADC,max": "máximo permitido por la entrada del ADC",
+            "V_ADC,min": "mínimo permitido por la entrada del ADC"
+          }
+        }
+      ],
+      "key_points": [
+        "Modelar interfaces antes de cablear o programar.",
+        "Declarar rangos, referencias, temporización, formato y estados de error.",
+        "Seleccionar protocolos desde requisitos y datasheets, no por costumbre.",
+        "Tratar carcasa, conectores y cableado como parte de la integración, no como validación de seguridad."
+      ],
+      "subtopics": [
+        {
+          "id": "LABBIO-U05-T01-ST01",
+          "title": "Modelar interfaces antes de cablear o programar",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T01-ST01-B01",
+              "type": "paragraph",
+              "text": "Una integración reproducible comienza con un modelo de arquitectura. Cada bloque —fuente o sensor equivalente, front-end analógico, filtro, ADC, microcontrolador, almacenamiento, comunicación y visualización— debe tener entradas, salidas, alimentación, referencia, temporización y responsable definidos. El objetivo es que una falla observable pueda rastrearse hasta una interfaz concreta. Conectar módulos que funcionan por separado sin declarar esas interfaces produce un prototipo difícil de depurar porque rango eléctrico, formato digital o temporización pueden ser incompatibles aunque cada componente cumpla su propia prueba aislada."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T01-ST02",
+          "title": "Declarar rangos, referencias, temporización, formato y estados de error",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T01-ST02-B01",
+              "type": "paragraph",
+              "text": "Un contrato de interfaz especifica qué se entrega y bajo qué condiciones. En una interfaz analógica interesan, entre otros, rango de tensión o corriente, impedancias, referencia, ancho de banda y límites absolutos del componente. En una interfaz digital deben quedar definidos protocolo, niveles lógicos, sentido, frecuencia de reloj o baud rate, formato de trama, endianess cuando aplique, significado de campos y respuesta a errores. En una interfaz de software se añaden versión, unidades, escalas y estados. La tabla de interfaces es por tanto parte del diseño y no documentación posterior."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T01-ST03",
+          "title": "Seleccionar protocolos desde requisitos y datasheets, no por costumbre",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T01-ST03-B01",
+              "type": "paragraph",
+              "text": "Los protocolos no son intercambiables solo porque todos transporten bits. I²C emplea líneas compartidas y temporización especificada por el estándar; SPI usa reloj y selección de dispositivo con parámetros como polaridad y fase dependientes de cada periférico; USART asíncrono requiere compatibilidad de baud rate y formato de trama. La práctica no busca memorizar un protocolo universalmente mejor, sino leer el datasheet, establecer un contrato verificable y observar con herramientas de simulación o analizador lógico si el intercambio real coincide con ese contrato."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T01-ST04",
+          "title": "Tratar carcasa, conectores y cableado como parte de la integración, no como validación de seguridad",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T01-ST04-B01",
+              "type": "paragraph",
+              "text": "La carcasa y el cableado también crean interfaces: conectores, longitud de conductores, alivio de tensión, accesibilidad, separación de nodos sensibles y rutas de retorno pueden modificar el comportamiento eléctrico. En U5 se documentan como restricciones de integración y se prueban con montajes seguros de baja energía. No se afirma que una carcasa educativa proporcione aislamiento, protección contra choque, biocompatibilidad o desempeño EMC. Esas afirmaciones exigen requisitos y ensayos específicos fuera del alcance de esta unidad."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LABBIO-U05-T02",
+      "title": "2. Temporización, caudal de datos y conservación de integridad",
+      "blocks": [
+        {
+          "id": "LABBIO-U05-T02-B01",
+          "type": "equation",
+          "latex": "R_{raw}=f_s N_{ch}\\frac{N_b}{8}",
+          "label": "Caudal bruto de datos de muestras antes de overhead de protocolo.",
+          "variables": {
+            "R_raw": "bytes por segundo de muestras",
+            "f_s": "muestras por segundo por canal",
+            "N_ch": "número de canales",
+            "N_b": "bits almacenados por muestra"
+          }
+        },
+        {
+          "id": "LABBIO-U05-T02-B02",
+          "type": "equation",
+          "latex": "R_{link}\\ge R_{raw}(1+\\eta)M",
+          "label": "Regla de presupuesto: el enlace debe cubrir muestras, overhead relativo y margen de diseño; M y eta deben justificarse para el sistema.",
+          "variables": {
+            "R_link": "caudal útil disponible del enlace",
+            "eta": "fracción de overhead",
+            "M": "factor de margen mayor que uno"
+          }
+        },
+        {
+          "id": "LABBIO-U05-T02-B03",
+          "type": "equation",
+          "latex": "\\Delta B=(R_{prod}-R_{cons})\\Delta t",
+          "label": "Crecimiento aproximado de ocupación de buffer durante un intervalo cuando productor y consumidor mantienen tasas distintas.",
+          "variables": {
+            "Delta B": "cambio de ocupación",
+            "R_prod": "tasa de producción",
+            "R_cons": "tasa de consumo",
+            "Delta t": "duración del desequilibrio"
+          }
+        }
+      ],
+      "key_points": [
+        "Presupuestar caudal incluyendo overhead y margen.",
+        "Usar buffers para absorber variabilidad, no para ocultar déficit sostenido de ancho de banda.",
+        "Registrar contador de secuencia, timestamp y errores de transporte.",
+        "Distinguir tiempo de adquisición de tiempo de transmisión."
+      ],
+      "subtopics": [
+        {
+          "id": "LABBIO-U05-T02-ST01",
+          "title": "Presupuestar caudal incluyendo overhead y margen",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T02-ST01-B01",
+              "type": "paragraph",
+              "text": "La adquisición solo es útil si cada muestra puede atravesar la cadena sin pérdidas no detectadas. El caudal bruto depende de frecuencia de muestreo, número de canales y bits por muestra, pero la comunicación añade cabeceras, marcas temporales, separadores, checksums o CRC y otros bytes de protocolo. Un enlace con tasa nominal superior al caudal medio todavía puede fallar si existen ráfagas, latencias variables o tareas que bloquean al procesador. Por ello se calcula un presupuesto de caudal y se añade margen antes de escoger buffers y mecanismo de transporte."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T02-ST02",
+          "title": "Usar buffers para absorber variabilidad, no para ocultar déficit sostenido de ancho de banda",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T02-ST02-B01",
+              "type": "paragraph",
+              "text": "Un buffer desacopla temporalmente productor y consumidor, pero no crea ancho de banda. Si la adquisición produce datos de forma sostenida más rápido que el consumidor, la ocupación crecerá hasta desbordarse. La prueba de integración debe observar máximos de ocupación, overruns y pérdidas bajo el peor caso previsto. Los contadores de secuencia convierten una pérdida silenciosa en un evento detectable; las marcas temporales permiten distinguir una muestra perdida de un intervalo irregular. Una gráfica visualmente suave no sustituye estas comprobaciones."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T02-ST03",
+          "title": "Registrar contador de secuencia, timestamp y errores de transporte",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T02-ST03-B01",
+              "type": "paragraph",
+              "text": "La temporización debe tener una fuente de verdad. Si el ADC se dispara por temporizador pero el firmware asigna timestamps cuando transmite, el tiempo registrado puede incluir jitter de software y cola de comunicaciones. La unidad separa instante de adquisición, instante de procesamiento e instante de transmisión. Cuando sea posible, la marca temporal debe quedar asociada al evento de muestreo o a una referencia temporal documentada. La precisión necesaria depende del uso, y no se presupone que el reloj interno del microcontrolador sea suficientemente exacto sin verificar su especificación."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T02-ST04",
+          "title": "Distinguir tiempo de adquisición de tiempo de transmisión",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T02-ST04-B01",
+              "type": "paragraph",
+              "text": "La integridad de transporte puede reforzarse con detección de errores. Paridad y errores de framing ayudan en USART; muchos protocolos incorporan mecanismos propios; un CRC puede detectar numerosas alteraciones de trama pero no demuestra autenticidad, seguridad informática ni ausencia absoluta de errores. En este laboratorio se usa un checksum o CRC como indicador técnico de corrupción junto con contador de secuencia y longitud esperada. El objetivo es que una trama corrupta, duplicada, omitida o reordenada no se confunda con una medición válida."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LABBIO-U05-T03",
+      "title": "3. Alimentación, desacoplo, tierra y acoplamiento entre dominios",
+      "blocks": [
+        {
+          "id": "LABBIO-U05-T03-B01",
+          "type": "equation",
+          "latex": "P_{tot}\\approx\\sum_i V_i I_i",
+          "label": "Presupuesto de potencia aproximado por suma de dominios de alimentación, útil para comprobar capacidad y margen.",
+          "variables": {
+            "P_tot": "potencia eléctrica total estimada",
+            "V_i": "tensión del dominio i",
+            "I_i": "corriente del dominio i"
+          }
+        },
+        {
+          "id": "LABBIO-U05-T03-B02",
+          "type": "equation",
+          "latex": "t_{ideal}\\approx\\frac{C_{bat}}{I_{avg}}",
+          "label": "Estimación idealizada de autonomía para introducir el presupuesto energético; no representa una batería real sin correcciones.",
+          "variables": {
+            "t_ideal": "autonomía ideal",
+            "C_bat": "capacidad nominal compatible en unidades de corriente-tiempo",
+            "I_avg": "corriente media"
+          }
+        }
+      ],
+      "key_points": [
+        "Razonar con rutas de corriente y referencias, no con etiquetas de tierra aisladas del layout.",
+        "Aplicar desacoplo según datasheet y frecuencia de perturbación.",
+        "Presupuestar potencia media y picos con margen.",
+        "No confundir pruebas de acoplamiento educativas con conformidad EMC o seguridad."
+      ],
+      "subtopics": [
+        {
+          "id": "LABBIO-U05-T03-ST01",
+          "title": "Razonar con rutas de corriente y referencias, no con etiquetas de tierra aisladas del layout",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T03-ST01-B01",
+              "type": "paragraph",
+              "text": "Al integrar electrónica analógica y digital aparece un problema que no era visible al probar cada bloque de forma aislada: las corrientes de conmutación, referencias y retornos comparten impedancias físicas. Analog Devices destaca que ADC y otros circuitos mixtos deben tratarse considerando rutas de corriente, desacoplo y grounding, no aplicando mecánicamente la etiqueta AGND/DGND. La meta educativa es dibujar por dónde circulan las corrientes y minimizar el acoplamiento de transitorios digitales hacia nodos analógicos sensibles siguiendo las recomendaciones del datasheet y del diseño concreto."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T03-ST02",
+          "title": "Aplicar desacoplo según datasheet y frecuencia de perturbación",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T03-ST02-B01",
+              "type": "paragraph",
+              "text": "El desacoplo local reduce la impedancia de alimentación vista por un integrado durante transitorios rápidos. Un condensador no es ideal y su efectividad depende de valor, ESR/ESL, frecuencia y geometría de conexión. Por eso una lista de valores copiada de otro circuito no sustituye las recomendaciones del fabricante ni el layout. En un prototipo educativo se compara una configuración nominal con una perturbación controlada de alimentación o con una ruta de retorno deliberadamente peor y se observa el efecto sobre una señal sintética, sin trabajar con tensiones peligrosas."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T03-ST03",
+          "title": "Presupuestar potencia media y picos con margen",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T03-ST03-B01",
+              "type": "paragraph",
+              "text": "El presupuesto de potencia suma consumos medios y, cuando sea relevante, picos de corriente de sensor, front-end, ADC, microcontrolador, memoria y enlace. También debe comprobarse que reguladores y fuentes mantienen tensión dentro de especificación durante transitorios. El consumo medio permite estimar autonomía de manera aproximada, pero una batería real depende de química, temperatura, tasa de descarga y eficiencia del convertidor. U5 usa el presupuesto para detectar incompatibilidades de integración, no para certificar autonomía ni seguridad de una batería."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T03-ST04",
+          "title": "No confundir pruebas de acoplamiento educativas con conformidad EMC o seguridad",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T03-ST04-B01",
+              "type": "paragraph",
+              "text": "Separar dominios funcionales no significa crear cortes arbitrarios en el plano de tierra. Un retorno mal entendido puede obligar a corrientes digitales a atravesar regiones sensibles o generar diferencias de referencia entre bloques. La prueba correcta combina esquema, layout o maqueta de interconexión y medida/simulación de perturbaciones. El resultado que se documenta es compatibilidad en las condiciones ensayadas; la compatibilidad electromagnética normativa requiere equipos, configuraciones y procedimientos específicos y queda fuera del alcance de U5."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LABBIO-U05-T04",
+      "title": "4. Firmware, configuración y depuración de integración",
+      "blocks": [
+        {
+          "id": "LABBIO-U05-T04-B01",
+          "type": "equation",
+          "latex": "x_{phys}=a\\,code+b",
+          "label": "Ejemplo de conversión de código digital a magnitud física; coeficientes, unidades y versión de calibración deben quedar asociados a los datos.",
+          "variables": {
+            "x_phys": "magnitud física estimada",
+            "code": "código digital",
+            "a": "factor de escala",
+            "b": "offset"
+          }
+        },
+        {
+          "id": "LABBIO-U05-T04-B02",
+          "type": "equation",
+          "latex": "L_{loss}=1-\\frac{N_{rec}}{N_{exp}}",
+          "label": "Fracción observada de registros perdidos respecto de los esperados en una prueba delimitada; exige definir cómo se calcula N_exp.",
+          "variables": {
+            "L_loss": "fracción de pérdida",
+            "N_rec": "registros recibidos válidos",
+            "N_exp": "registros esperados"
+          }
+        }
+      ],
+      "key_points": [
+        "Versionar firmware, configuración y escala junto con los datos.",
+        "Instrumentar secuencia, timestamp y flags para hacer visibles los fallos.",
+        "Depurar por interfaces con entradas patrón y puntos de prueba.",
+        "Cerrar U5 con una baseline integrada; reservar la verificación final para U6."
+      ],
+      "subtopics": [
+        {
+          "id": "LABBIO-U05-T04-ST01",
+          "title": "Versionar firmware, configuración y escala junto con los datos",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T04-ST01-B01",
+              "type": "paragraph",
+              "text": "Firmware y hardware forman una configuración conjunta. Cambiar la ganancia del front-end, frecuencia del temporizador, referencia del ADC, orden de bytes o escala de conversión puede cambiar el significado del mismo código digital. Por ello cada registro de datos debe poder asociarse a una versión de firmware y a una configuración suficiente para reconstruir la adquisición. La gestión de configuración no se limita a guardar archivos: identifica elementos controlados, versiones y cambios para preservar integridad y trazabilidad, una práctica coherente con la ingeniería de sistemas y software descrita por NASA."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T04-ST02",
+          "title": "Instrumentar secuencia, timestamp y flags para hacer visibles los fallos",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T04-ST02-B01",
+              "type": "paragraph",
+              "text": "El contrato mínimo de datos incluye identificador de versión, frecuencia de muestreo efectiva, canales y orden, escala/unidades, timestamp o contador temporal, contador de secuencia y flags de estado relevantes. No todos esos campos deben viajar en cada muestra; pueden existir en cabecera o metadatos, siempre que la asociación sea inequívoca. Un archivo sin metadatos que obliga a recordar manualmente qué firmware o ganancia se usó no es un resultado reproducible."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T04-ST03",
+          "title": "Depurar por interfaces con entradas patrón y puntos de prueba",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T04-ST03-B01",
+              "type": "paragraph",
+              "text": "La depuración de integración debe reducir grados de libertad. Se empieza por una entrada patrón conocida y se observa el sistema en puntos de prueba definidos. Si el ADC contiene el código esperado pero la aplicación muestra valores incorrectos, el foco pasa a escala, empaquetado o transporte y no al sensor. Si aparecen saltos en contador de secuencia sin error analógico, se investiga buffer o enlace. Modificar hardware, filtros y firmware simultáneamente destruye esta capacidad de localizar causalmente el fallo."
+            }
+          ]
+        },
+        {
+          "id": "LABBIO-U05-T04-ST04",
+          "title": "Cerrar U5 con una baseline integrada; reservar la verificación final para U6",
+          "blocks": [
+            {
+              "id": "LABBIO-U05-T04-ST04-B01",
+              "type": "paragraph",
+              "text": "U5 concluye cuando existe una configuración integrada que satisface pruebas técnicas de interfaces bajo condiciones explícitas y cuyo estado puede reconstruirse. No concluye que el sistema completo está verificado. U6 tomará esta baseline y definirá matriz requisito→prueba→criterio→evidencia, repetibilidad, incertidumbre global y reporte final. Dejar requisitos fallidos o riesgos abiertos registrados es preferible a ocultarlos para presentar un prototipo aparentemente terminado."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "id": "LABBIO-U05-EJ01",
+      "title": "Ejemplo 1: presupuesto de caudal para cuatro canales",
+      "scenario": "Cuatro canales se almacenan a 1000 muestras/s y 16 bits por muestra. Cada bloque de 100 muestras añade 24 bytes de cabecera y CRC; se desea margen del 50 %.",
+      "reasoning_steps": [
+        "Calcular caudal bruto: 1000×4×16/8=8000 B/s.",
+        "Cada bloque transporta 100×4×2=800 bytes de muestra y 24 bytes de overhead.",
+        "El overhead relativo es 24/800=0.03 aproximadamente.",
+        "El caudal medio aproximado es 8000×1.03=8240 B/s.",
+        "Con margen 1.5, exigir al menos 12.36 kB/s de throughput útil sostenido y probar además ráfagas/latencia."
+      ],
+      "interpretation": "Un enlace nominal debe evaluarse por throughput útil y peor caso, no solo por su cifra de baud rate.",
+      "limitations": [
+        "No incluye codificación física concreta ni latencia del sistema operativo receptor."
+      ]
+    },
+    {
+      "id": "LABBIO-U05-EJ02",
+      "title": "Ejemplo 2: un buffer no corrige un déficit sostenido",
+      "scenario": "La adquisición produce 20 kB/s, pero una tarea de almacenamiento consume 18 kB/s durante cinco segundos.",
+      "reasoning_steps": [
+        "Calcular diferencia sostenida: 2 kB/s.",
+        "Multiplicar por 5 s: la ocupación crece 10 kB.",
+        "Si el buffer tiene 8 kB, el overrun es inevitable antes de terminar el intervalo.",
+        "Aumentar temporalmente el buffer solo desplaza el fallo si la diferencia persiste.",
+        "Corregir throughput, reducir producción o introducir una estrategia explícita de pérdida/backpressure según requisitos."
+      ],
+      "interpretation": "La prueba debe instrumentar máxima ocupación y overruns para no ocultar pérdida de muestras.",
+      "limitations": [
+        "Asume tasas constantes durante el intervalo."
+      ]
+    },
+    {
+      "id": "LABBIO-U05-EJ03",
+      "title": "Ejemplo 3: detectar incompatibilidad de configuración SPI",
+      "scenario": "El ADC devuelve códigos alternantes incoherentes aunque la entrada sintética DC es estable.",
+      "reasoning_steps": [
+        "Confirmar primero que la salida analógica al ADC está estable y en rango.",
+        "Leer en el datasheet el modo SPI requerido, ancho de palabra y temporización de chip select.",
+        "Capturar SCK, CS y datos con analizador lógico simulado o banco seguro.",
+        "Comparar polaridad/fase y fronteras de palabra con el contrato.",
+        "Corregir solo la configuración digital y repetir la misma entrada patrón."
+      ],
+      "interpretation": "Una salida incoherente puede originarse en la interfaz y no en el sensor ni en la calibración.",
+      "limitations": [
+        "El ejemplo no cubre integridad de señal de alta velocidad ni EMC."
+      ]
+    },
+    {
+      "id": "LABBIO-U05-EJ04",
+      "title": "Ejemplo 4: presupuesto de potencia y pico transitorio",
+      "scenario": "Un prototipo usa 3.3 V: front-end 8 mA, ADC 4 mA, MCU 25 mA medio y radio 10 mA medio, con picos de radio de 90 mA.",
+      "reasoning_steps": [
+        "Sumar corriente media: 47 mA.",
+        "Estimar potencia media ideal: 3.3×0.047≈0.155 W.",
+        "Separar el pico: durante transmisión la demanda puede aumentar decenas de mA.",
+        "Comprobar fuente/regulador y desacoplo con el pico, no solo con la media.",
+        "Medir si el evento de radio perturba referencia o señal sintética del front-end."
+      ],
+      "interpretation": "Un presupuesto medio aceptable no garantiza estabilidad durante transitorios.",
+      "limitations": [
+        "No estima autonomía real de batería ni disipación térmica detallada."
+      ]
+    },
+    {
+      "id": "LABBIO-U05-EJ05",
+      "title": "Ejemplo 5: localizar pérdida con contador de secuencia",
+      "scenario": "Se esperaban 10 000 registros; el receptor almacena 9 970 y encuentra saltos en los contadores 2401–2410 y 7011–7030.",
+      "reasoning_steps": [
+        "Calcular pérdida observada: 30/10000=0.003 o 0.3 %.",
+        "Usar los rangos de secuencia para confirmar que no son solo filas duplicadas o una visualización omitida.",
+        "Comparar logs de overrun del microcontrolador y errores del enlace en esos intervalos.",
+        "Repetir con una entrada patrón y aumentar carga de transmisión de forma controlada.",
+        "Asignar el fallo al primer punto donde desaparece la secuencia y no a la señal analógica por defecto."
+      ],
+      "interpretation": "La instrumentación de metadatos convierte una discrepancia cuantificable en una pista para localizar el subsistema responsable.",
+      "limitations": [
+        "El contador no detecta por sí solo corrupción de contenido dentro de una trama recibida."
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "id": "LABBIO-U05-ACT01",
+      "title": "Actividad guiada: construir la tabla de interfaces",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [
+        "LABBIO-U01",
+        "LABBIO-U02",
+        "LABBIO-U03",
+        "LABBIO-U04"
+      ],
+      "instructions": [
+        "Usa únicamente el prototipo sintético o equivalente eléctrico definido en U1–U4; no conectes personas ni red eléctrica.",
+        "Dibuja sensor/fuente equivalente → front-end → filtro/ADC → MCU → almacenamiento/comunicación → aplicación.",
+        "Para cada frontera define señal, rango, referencia, unidades, dirección y temporización.",
+        "Añade alimentación, tierra/retorno y conectores relevantes.",
+        "Define un punto de prueba para cada interfaz.",
+        "Asocia cada parámetro con una fuente: datasheet, configuración de firmware o decisión de diseño."
+      ],
+      "tasks": [
+        "Identifica el máximo y mínimo de entrada del ADC y compáralos con U4.",
+        "Declara la referencia usada para convertir códigos a voltios.",
+        "Define formato de palabra y orden de canales.",
+        "Declara f_s configurada y fuente del reloj.",
+        "Selecciona SPI, I²C o USART para dos interfaces hipotéticas y justifica por requisitos.",
+        "Define niveles lógicos compatibles.",
+        "Calcula caudal bruto de datos.",
+        "Añade overhead y margen.",
+        "Define cómo detectar una muestra perdida.",
+        "Define cómo identificar versión de firmware y configuración.",
+        "Dibuja rutas de alimentación y retornos principales.",
+        "Enumera tres fallos que una tabla incompleta ocultaría."
+      ],
+      "deliverables": [
+        "Diagrama de bloques.",
+        "Tabla de interfaces.",
+        "Presupuesto de caudal.",
+        "Mapa de alimentación/retornos.",
+        "Lista de puntos de prueba.",
+        "Registro de fuentes de cada parámetro."
+      ],
+      "checking_criteria": [
+        "Todas las interfaces tienen unidades y rangos.",
+        "La temporización está explícita.",
+        "El protocolo se justifica con requisitos y datasheet.",
+        "Existe margen de caudal documentado.",
+        "Versiones y configuración quedan asociadas a los datos.",
+        "Los puntos de prueba permiten aislar subsistemas.",
+        "No hay conexiones humanas ni de red.",
+        "La tabla distingue requisito, decisión y evidencia."
+      ],
+      "estimated_duration_minutes": 120,
+      "status": "curated_internal_review_pending"
+    },
+    {
+      "id": "LABBIO-U05-ACT02",
+      "title": "Actividad de dominio: integrar una cadena de medición sintética end-to-end",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [
+        "LABBIO-U01",
+        "LABBIO-U02",
+        "LABBIO-U03",
+        "LABBIO-U04"
+      ],
+      "instructions": [
+        "Integra una fuente sintética reproducible con el front-end/modelo de U3 y la adquisición de U4.",
+        "Implementa o simula firmware con temporizador de adquisición, buffer, contador de secuencia, timestamp y flags de error.",
+        "Empaqueta datos con cabecera de configuración y un mecanismo simple de detección de corrupción.",
+        "Transmite o simula el transporte hacia un receptor que reconstruya magnitud, unidades y tiempo.",
+        "Registra versión de firmware, parámetros de build/configuración y versión de calibración.",
+        "Inyecta fallos de forma individual: pérdida de trama, cambio de escala, overrun, modo SPI incorrecto y perturbación de alimentación simulada.",
+        "Localiza cada fallo usando puntos de prueba y logs antes de modificar componentes.",
+        "Predefine criterios de éxito de integración; no uses todavía una matriz final de verificación U6."
+      ],
+      "tasks": [
+        "Calcular caudal nominal y con margen.",
+        "Dimensionar un buffer para una pausa transitoria especificada.",
+        "Medir máxima ocupación del buffer.",
+        "Detectar una secuencia perdida.",
+        "Detectar una trama corrupta.",
+        "Distinguir timestamp de adquisición y de recepción.",
+        "Reconstruir correctamente unidades físicas desde códigos.",
+        "Cambiar la escala de firmware sin actualizar metadata y demostrar el fallo.",
+        "Introducir un error de modo SPI y localizarlo en la interfaz.",
+        "Introducir jitter o latencia de transmisión y comprobar si afecta al timestamp de adquisición.",
+        "Estimar potencia media por bloques.",
+        "Introducir un pico de consumo simulado y observar la referencia/salida.",
+        "Comparar ruta de retorno nominal con una alternativa deliberadamente peor en simulación o baja energía.",
+        "Registrar cada fallo con síntoma, hipótesis, prueba y resolución.",
+        "Repetir la entrada patrón después de cada corrección.",
+        "Congelar una baseline integrada con hashes/versiones.",
+        "Enumerar defectos conocidos que pasan a U6.",
+        "Redactar límites técnicos, clínicos y regulatorios."
+      ],
+      "deliverables": [
+        "Arquitectura versionada.",
+        "Tabla de interfaces final de U5.",
+        "Firmware o pseudocódigo reproducible.",
+        "Especificación de trama y metadatos.",
+        "Presupuesto de caudal y buffer.",
+        "Presupuesto de potencia.",
+        "Capturas o trazas de puntos de prueba.",
+        "Tabla de fallos inyectados.",
+        "Registro de configuración.",
+        "Datos sintéticos crudos y reconstruidos.",
+        "Baseline candidata para U6.",
+        "Lista de riesgos/limitaciones abiertas."
+      ],
+      "checking_criteria": [
+        "La cadena es reproducible desde una entrada sintética conocida.",
+        "No hay pérdidas silenciosas en el ensayo nominal.",
+        "Secuencia y timestamps tienen significado definido.",
+        "Los metadatos permiten reconstruir escala y configuración.",
+        "Cada fallo se localiza antes de cambiar múltiples subsistemas.",
+        "El buffer tiene justificación cuantitativa.",
+        "El throughput se mide o simula con overhead.",
+        "El presupuesto de potencia incluye picos relevantes.",
+        "Se siguen datasheets para grounding/desacoplo sin reglas universales.",
+        "La baseline identifica hardware, firmware y parámetros.",
+        "Los defectos abiertos no se ocultan.",
+        "No se declara verificación final ni seguridad clínica/regulatoria."
+      ],
+      "estimated_duration_minutes": 150,
+      "status": "curated_internal_review_pending"
+    },
+    {
+      "id": "LABBIO-U05-ACT03",
+      "title": "Reto de transferencia: depurar un prototipo integrado con tres fallos simultáneos",
+      "purpose": "Aplicar los resultados de aprendizaje de la unidad mediante un producto documentado y verificable.",
+      "prerequisite_unit_ids": [
+        "LABBIO-U01",
+        "LABBIO-U02",
+        "LABBIO-U03",
+        "LABBIO-U04"
+      ],
+      "instructions": [
+        "Recibe logs, capturas de interfaz y datos sintéticos de una baseline con fallos desconocidos.",
+        "No modifiques el diseño inicialmente; formula hipótesis por interfaz.",
+        "Usa una entrada patrón y puntos de prueba para localizar el primer desacoplamiento respecto del resultado esperado.",
+        "Cambia una variable por vez y conserva evidencia antes–después.",
+        "Actualiza el registro de configuración tras cada corrección.",
+        "Entrega una baseline corregida y defectos que deben ser verificados en U6."
+      ],
+      "tasks": [
+        "Detectar un cambio de f_s no reflejado en metadata.",
+        "Detectar una pérdida por overrun del buffer.",
+        "Detectar una escala física incompatible con la referencia ADC.",
+        "Distinguir un error de transporte de una perturbación analógica.",
+        "Calcular pérdida por contador de secuencia.",
+        "Comprobar si el caudal útil tiene margen suficiente.",
+        "Revisar coherencia entre firmware, tabla de interfaces y datos.",
+        "Documentar la causa raíz más probable de cada fallo.",
+        "Proponer las pruebas U6 que impedirían una regresión."
+      ],
+      "deliverables": [
+        "Árbol de hipótesis.",
+        "Evidencia por punto de prueba.",
+        "Registro antes–después.",
+        "Baseline corregida.",
+        "Handoff explícito a U6."
+      ],
+      "checking_criteria": [
+        "Se modifica una variable por vez.",
+        "Cada conclusión tiene un punto de observación que la sostiene.",
+        "La configuración final es reconstruible.",
+        "La aceptación final queda explícitamente fuera de U5."
+      ],
+      "estimated_duration_minutes": 150,
+      "status": "curated_internal_review_pending"
+    }
+  ],
+  "assessment_file": "assessments/unit-05.json",
+  "glossary_entry_ids": [
+    "LABBIO-GLO-101",
+    "LABBIO-GLO-102",
+    "LABBIO-GLO-103",
+    "LABBIO-GLO-104",
+    "LABBIO-GLO-105",
+    "LABBIO-GLO-106",
+    "LABBIO-GLO-107",
+    "LABBIO-GLO-108",
+    "LABBIO-GLO-109",
+    "LABBIO-GLO-110",
+    "LABBIO-GLO-111",
+    "LABBIO-GLO-112",
+    "LABBIO-GLO-113",
+    "LABBIO-GLO-114",
+    "LABBIO-GLO-115",
+    "LABBIO-GLO-116",
+    "LABBIO-GLO-117",
+    "LABBIO-GLO-118",
+    "LABBIO-GLO-119",
+    "LABBIO-GLO-120",
+    "LABBIO-GLO-121",
+    "LABBIO-GLO-122",
+    "LABBIO-GLO-123",
+    "LABBIO-GLO-124",
+    "LABBIO-GLO-125",
+    "LABBIO-GLO-126",
+    "LABBIO-GLO-127",
+    "LABBIO-GLO-128",
+    "LABBIO-GLO-129",
+    "LABBIO-GLO-130"
+  ],
+  "source_ids": [
+    "mt-031-grounding-data-converters-and-solving-the-mystery-of-agnd-and-dgnd",
+    "mt-101-decoupling-techniques",
+    "i2c-bus-specification-and-user-manual-um10204-rev-7",
+    "tb3215-getting-started-with-spi",
+    "tb3216-getting-started-with-usart",
+    "avr-device-usart-introduction",
+    "an1148-cyclic-redundancy-check-crc",
+    "nasa-systems-engineering-handbook-nasa-sp-2016-6105-rev-2",
+    "nasa-software-engineering-requirements-npr-7150-2d-chapter-5",
+    "swe-081-identify-software-configuration-management-items"
+  ],
+  "claim_ids": [
+    "LABBIO-U05-C001",
+    "LABBIO-U05-C002",
+    "LABBIO-U05-C003",
+    "LABBIO-U05-C004",
+    "LABBIO-U05-C005",
+    "LABBIO-U05-C006",
+    "LABBIO-U05-C007",
+    "LABBIO-U05-C008"
+  ],
+  "media_ids": [
+    "LABBIO-U05-MED01"
+  ],
+  "common_errors": [
+    {
+      "error": "Conectar bloques sin contrato de interfaz.",
+      "correction": "Definir rango, referencia, temporización, formato, unidades y comportamiento de error antes de integrar."
+    },
+    {
+      "error": "Elegir SPI, I²C o UART por familiaridad.",
+      "correction": "Derivar la elección de throughput, topología, distancia, pines, temporización y requisitos de los dispositivos."
+    },
+    {
+      "error": "Comparar baud rate nominal con datos crudos sin overhead.",
+      "correction": "Calcular throughput útil incluyendo bits de trama, cabeceras, metadatos y margen."
+    },
+    {
+      "error": "Usar un buffer para compensar una tasa de consumo siempre menor que la producción.",
+      "correction": "Corregir el déficit sostenido; el buffer solo absorbe diferencias transitorias finitas."
+    },
+    {
+      "error": "Asignar timestamps únicamente al recibir los datos en el PC.",
+      "correction": "Definir el evento temporal de interés y asociar la marca lo más cerca posible del muestreo cuando sea necesario."
+    },
+    {
+      "error": "Guardar datos sin versión de firmware ni configuración.",
+      "correction": "Asociar baseline, parámetros, escala, unidades y calibración de forma inequívoca."
+    },
+    {
+      "error": "Separar AGND y DGND por una regla universal.",
+      "correction": "Seguir datasheet y analizar rutas de retorno, impedancias y layout del sistema concreto."
+    },
+    {
+      "error": "Evaluar una fuente solo por consumo medio.",
+      "correction": "Comprobar picos de corriente, transitorios, caída de tensión y desacoplo."
+    },
+    {
+      "error": "Modificar hardware, firmware y filtros a la vez para arreglar un fallo.",
+      "correction": "Localizar primero el primer punto de divergencia y cambiar una variable por vez."
+    },
+    {
+      "error": "Confundir CRC con seguridad o garantía de integridad absoluta.",
+      "correction": "Usarlo como detección de errores dentro de un modelo de fallos definido; seguridad informática requiere mecanismos adicionales."
+    },
+    {
+      "error": "Dar por terminado el curso cuando el prototipo transmite una gráfica plausible.",
+      "correction": "U5 entrega una baseline integrada; U6 debe verificar requisitos, criterios, repetibilidad e incertidumbre final."
+    },
+    {
+      "error": "Interpretar una carcasa o aislamiento funcional como conformidad médica.",
+      "correction": "No afirmar seguridad eléctrica, EMC o uso humano sin procesos y ensayos específicos."
+    }
+  ],
+  "biomedical_connections": [
+    "Registradores de biosignales: la trazabilidad de f_s, ganancia, referencia, firmware y calibración es necesaria para interpretar correctamente los datos adquiridos.",
+    "Wearables: el compromiso entre throughput, memoria, radio y consumo obliga a diseñar la cadena completa en lugar de optimizar un bloque aislado.",
+    "Instrumentación de rehabilitación o biomecánica: timestamps y pérdidas de muestras condicionan la sincronización entre sensores y cualquier análisis temporal posterior.",
+    "Dispositivos médicos: una integración funcional de laboratorio no demuestra seguridad eléctrica, EMC, software médico ni validez clínica; esas capas requieren procesos y evidencia adicionales."
+  ],
+  "editorial_notice": "Unidad educativa en revisión. La curación interna no constituye revisión disciplinar externa. Las prácticas se limitan a simulación, fuentes eléctricas equivalentes y prototipos de baja energía sin conexión a personas, red eléctrica ni dispositivos médicos en servicio. La integración funcional aquí descrita no constituye seguridad eléctrica, EMC, ciberseguridad, validación fisiológica o clínica, conformidad IEC 60601, IEC 62304 ni autorización de uso médico. Las recomendaciones de grounding, desacoplo, buses y temporización deben contrastarse con datasheets y requisitos del hardware concreto. U5 entrega una baseline integrada; la verificación final y el reporte global corresponden a U6. Revisión disciplinar humana permanece pendiente. Revisión disciplinaria humana pendiente; las prácticas autónomas no autorizan uso con personas, certificación de seguridad, validación clínica ni conformidad regulatoria.",
+  "legacy_origin": "data/generated_units/laboratorio-bioinstrumentacion/unit-05.json"
+}
