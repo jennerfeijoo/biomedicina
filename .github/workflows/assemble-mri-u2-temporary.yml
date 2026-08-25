@@ -29,14 +29,16 @@ jobs:
           import tarfile
 
           root = Path('.tmp/mri_u2')
-          parts = [(root / f'part{i:02d}').read_text(encoding='utf-8').strip() for i in range(1, 8)]
-          expected = [4000, 4000, 4000, 4000, 4000, 4000, 36]
+          names = ['part01', 'fix02a', 'fix02b', 'part03', 'part04', 'part05', 'part06', 'part07']
+          expected = [4000, 2000, 2000, 4000, 4000, 4000, 4000, 36]
+          parts = [(root / name).read_text(encoding='utf-8').strip() for name in names]
           actual = [len(part) for part in parts]
           if actual != expected:
               raise SystemExit(f'Longitudes de payload inválidas: {actual} != {expected}')
+          if sum(actual) != 24036:
+              raise SystemExit(f'Longitud total inválida: {sum(actual)}')
 
-          payload = ''.join(parts)
-          raw = base64.b64decode(payload, validate=True)
+          raw = base64.b64decode(''.join(parts), validate=True)
           with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as archive:
               unit_member = archive.extractfile('unit-02.json')
               test_member = archive.extractfile('test_u2.py')
