@@ -6,386 +6,530 @@
   "slug": "integracion-de-prototipo",
   "title": "Integración de prototipo",
   "status": "review",
-  "purpose": "Integrar hardware, firmware, comunicación y carcasa para resolver un caso de construcción de un sistema de medición funcional con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Integrar, mediante simulación, bancos eléctricos equivalentes y prototipos no conectados a personas, los bloques desarrollados en U1–U4 en una arquitectura coherente de medición: contratos de interfaz, alimentación y referencia, ADC y temporización, firmware, buffers, comunicación, configuración y carcasa/interconexión. La unidad busca demostrar integración técnica reproducible y localizar fallos entre subsistemas; no constituye verificación final del sistema, seguridad eléctrica, EMC, validación clínica ni autorización de uso en personas.",
   "learning_objectives": [
-    "Definir hardware, firmware y comunicación y carcasa mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte hardware con firmware y delimite el papel de comunicación y carcasa.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre construcción de un sistema de medición funcional con incertidumbre y límites.",
-    "Transferir el método de Integración de prototipo a un escenario nuevo y justificar qué debe revalidarse."
+    "Traducir requisitos de medición en una arquitectura de bloques e interfaces con señales, alimentación, datos, temporización, unidades, rangos y responsabilidades explícitas.",
+    "Dimensionar caudal de datos, presupuesto temporal y buffers para evitar pérdidas silenciosas entre adquisición, procesamiento, almacenamiento y comunicación.",
+    "Analizar alimentación, desacoplo, retorno de corrientes y separación funcional analógica/digital sin convertir reglas de diseño en recetas universales independientes del datasheet y del layout.",
+    "Implementar un contrato mínimo de firmware que conserve frecuencia de muestreo, configuración del ADC, marcas temporales, contador de secuencia, versión y estado de error junto con los datos.",
+    "Diseñar pruebas de integración por interfaces que distingan fallos de sensor/front-end, adquisición, firmware, transporte y visualización antes de modificar varios subsistemas a la vez.",
+    "Construir un expediente reproducible de integración con diagrama, tabla de interfaces, versiones, presupuestos, pruebas, fallos conocidos y límites, dejando la aceptación final para U6."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Integración de prototipo",
+      "heading": "1. Arquitectura e interfaces: integrar no es simplemente conectar",
       "paragraphs": [
-        "La unidad «Integración de prototipo» sitúa hardware, firmware y comunicación y carcasa dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Bioinstrumentación, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Integración de prototipo» en Laboratorio de Bioinstrumentación, «hardware», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Integración de prototipo», «firmware», aporta otra dimensión al problema de Laboratorio de Bioinstrumentación: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con hardware debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Integración de prototipo» en Laboratorio de Bioinstrumentación, «comunicación y carcasa», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en Integración de prototipo.",
-        "Relacionar hardware, firmware y comunicación y carcasa mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Integración de prototipo» dentro de Laboratorio de Bioinstrumentación, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Laboratorio de Bioinstrumentación, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre hardware o firmware debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Integración de prototipo», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Laboratorio de Bioinstrumentación, la incertidumbre de «Integración de prototipo» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: construcción de un sistema de medición funcional",
-      "paragraphs": [
-        "En la unidad «Integración de prototipo» de Laboratorio de Bioinstrumentación, el caso conductor es construcción de un sistema de medición funcional. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Integración de prototipo» conecta hardware con firmware y utiliza comunicación y carcasa como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «construcción de un sistema de medición funcional» en Laboratorio de Bioinstrumentación, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Integración de prototipo» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de construcción de un sistema de medición funcional y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Una integración reproducible comienza con un modelo de arquitectura. Cada bloque —fuente o sensor equivalente, front-end analógico, filtro, ADC, microcontrolador, almacenamiento, comunicación y visualización— debe tener entradas, salidas, alimentación, referencia, temporización y responsable definidos. El objetivo es que una falla observable pueda rastrearse hasta una interfaz concreta. Conectar módulos que funcionan por separado sin declarar esas interfaces produce un prototipo difícil de depurar porque rango eléctrico, formato digital o temporización pueden ser incompatibles aunque cada componente cumpla su propia prueba aislada.",
+        "Un contrato de interfaz especifica qué se entrega y bajo qué condiciones. En una interfaz analógica interesan, entre otros, rango de tensión o corriente, impedancias, referencia, ancho de banda y límites absolutos del componente. En una interfaz digital deben quedar definidos protocolo, niveles lógicos, sentido, frecuencia de reloj o baud rate, formato de trama, endianess cuando aplique, significado de campos y respuesta a errores. En una interfaz de software se añaden versión, unidades, escalas y estados. La tabla de interfaces es por tanto parte del diseño y no documentación posterior.",
+        "Los protocolos no son intercambiables solo porque todos transporten bits. I²C emplea líneas compartidas y temporización especificada por el estándar; SPI usa reloj y selección de dispositivo con parámetros como polaridad y fase dependientes de cada periférico; USART asíncrono requiere compatibilidad de baud rate y formato de trama. La práctica no busca memorizar un protocolo universalmente mejor, sino leer el datasheet, establecer un contrato verificable y observar con herramientas de simulación o analizador lógico si el intercambio real coincide con ese contrato.",
+        "La carcasa y el cableado también crean interfaces: conectores, longitud de conductores, alivio de tensión, accesibilidad, separación de nodos sensibles y rutas de retorno pueden modificar el comportamiento eléctrico. En U5 se documentan como restricciones de integración y se prueban con montajes seguros de baja energía. No se afirma que una carcasa educativa proporcione aislamiento, protección contra choque, biocompatibilidad o desempeño EMC. Esas afirmaciones exigen requisitos y ensayos específicos fuera del alcance de esta unidad."
       ],
       "equations": [
         {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
+          "latex": "V_{out,max}<V_{ADC,max}\\quad\\text{y}\\quad V_{out,min}>V_{ADC,min}",
+          "meaning": "Condición de compatibilidad de rango entre la salida analógica de una etapa y la entrada válida del ADC, incluyendo margen para tolerancias y transitorios.",
           "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
+            "V_out,max": "máximo previsto a la salida de la etapa anterior",
+            "V_out,min": "mínimo previsto a la salida de la etapa anterior",
+            "V_ADC,max": "máximo permitido por la entrada del ADC",
+            "V_ADC,min": "mínimo permitido por la entrada del ADC"
           }
         }
       ],
       "key_points": [
-        "Delimitar el caso de construcción de un sistema de medición funcional antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Modelar interfaces antes de cablear o programar.",
+        "Declarar rangos, referencias, temporización, formato y estados de error.",
+        "Seleccionar protocolos desde requisitos y datasheets, no por costumbre.",
+        "Tratar carcasa, conectores y cableado como parte de la integración, no como validación de seguridad."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Temporización, caudal de datos y conservación de integridad",
       "paragraphs": [
-        "La reproducibilidad de «Integración de prototipo» en Laboratorio de Bioinstrumentación requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Integración de prototipo» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Laboratorio de Bioinstrumentación separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Integración de prototipo» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de hardware, firmware y comunicación y carcasa debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Laboratorio de Bioinstrumentación.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre construcción de un sistema de medición funcional. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Laboratorio de Bioinstrumentación como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "La adquisición solo es útil si cada muestra puede atravesar la cadena sin pérdidas no detectadas. El caudal bruto depende de frecuencia de muestreo, número de canales y bits por muestra, pero la comunicación añade cabeceras, marcas temporales, separadores, checksums o CRC y otros bytes de protocolo. Un enlace con tasa nominal superior al caudal medio todavía puede fallar si existen ráfagas, latencias variables o tareas que bloquean al procesador. Por ello se calcula un presupuesto de caudal y se añade margen antes de escoger buffers y mecanismo de transporte.",
+        "Un buffer desacopla temporalmente productor y consumidor, pero no crea ancho de banda. Si la adquisición produce datos de forma sostenida más rápido que el consumidor, la ocupación crecerá hasta desbordarse. La prueba de integración debe observar máximos de ocupación, overruns y pérdidas bajo el peor caso previsto. Los contadores de secuencia convierten una pérdida silenciosa en un evento detectable; las marcas temporales permiten distinguir una muestra perdida de un intervalo irregular. Una gráfica visualmente suave no sustituye estas comprobaciones.",
+        "La temporización debe tener una fuente de verdad. Si el ADC se dispara por temporizador pero el firmware asigna timestamps cuando transmite, el tiempo registrado puede incluir jitter de software y cola de comunicaciones. La unidad separa instante de adquisición, instante de procesamiento e instante de transmisión. Cuando sea posible, la marca temporal debe quedar asociada al evento de muestreo o a una referencia temporal documentada. La precisión necesaria depende del uso, y no se presupone que el reloj interno del microcontrolador sea suficientemente exacto sin verificar su especificación.",
+        "La integridad de transporte puede reforzarse con detección de errores. Paridad y errores de framing ayudan en USART; muchos protocolos incorporan mecanismos propios; un CRC puede detectar numerosas alteraciones de trama pero no demuestra autenticidad, seguridad informática ni ausencia absoluta de errores. En este laboratorio se usa un checksum o CRC como indicador técnico de corrupción junto con contador de secuencia y longitud esperada. El objetivo es que una trama corrupta, duplicada, omitida o reordenada no se confunda con una medición válida."
+      ],
+      "equations": [
+        {
+          "latex": "R_{raw}=f_s N_{ch}\\frac{N_b}{8}",
+          "meaning": "Caudal bruto de datos de muestras antes de overhead de protocolo.",
+          "variables": {
+            "R_raw": "bytes por segundo de muestras",
+            "f_s": "muestras por segundo por canal",
+            "N_ch": "número de canales",
+            "N_b": "bits almacenados por muestra"
+          }
+        },
+        {
+          "latex": "R_{link}\\ge R_{raw}(1+\\eta)M",
+          "meaning": "Regla de presupuesto: el enlace debe cubrir muestras, overhead relativo y margen de diseño; M y eta deben justificarse para el sistema.",
+          "variables": {
+            "R_link": "caudal útil disponible del enlace",
+            "eta": "fracción de overhead",
+            "M": "factor de margen mayor que uno"
+          }
+        },
+        {
+          "latex": "\\Delta B=(R_{prod}-R_{cons})\\Delta t",
+          "meaning": "Crecimiento aproximado de ocupación de buffer durante un intervalo cuando productor y consumidor mantienen tasas distintas.",
+          "variables": {
+            "Delta B": "cambio de ocupación",
+            "R_prod": "tasa de producción",
+            "R_cons": "tasa de consumo",
+            "Delta t": "duración del desequilibrio"
+          }
+        }
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Presupuestar caudal incluyendo overhead y margen.",
+        "Usar buffers para absorber variabilidad, no para ocultar déficit sostenido de ancho de banda.",
+        "Registrar contador de secuencia, timestamp y errores de transporte.",
+        "Distinguir tiempo de adquisición de tiempo de transmisión."
+      ]
+    },
+    {
+      "heading": "3. Alimentación, desacoplo, tierra y acoplamiento entre dominios",
+      "paragraphs": [
+        "Al integrar electrónica analógica y digital aparece un problema que no era visible al probar cada bloque de forma aislada: las corrientes de conmutación, referencias y retornos comparten impedancias físicas. Analog Devices destaca que ADC y otros circuitos mixtos deben tratarse considerando rutas de corriente, desacoplo y grounding, no aplicando mecánicamente la etiqueta AGND/DGND. La meta educativa es dibujar por dónde circulan las corrientes y minimizar el acoplamiento de transitorios digitales hacia nodos analógicos sensibles siguiendo las recomendaciones del datasheet y del diseño concreto.",
+        "El desacoplo local reduce la impedancia de alimentación vista por un integrado durante transitorios rápidos. Un condensador no es ideal y su efectividad depende de valor, ESR/ESL, frecuencia y geometría de conexión. Por eso una lista de valores copiada de otro circuito no sustituye las recomendaciones del fabricante ni el layout. En un prototipo educativo se compara una configuración nominal con una perturbación controlada de alimentación o con una ruta de retorno deliberadamente peor y se observa el efecto sobre una señal sintética, sin trabajar con tensiones peligrosas.",
+        "El presupuesto de potencia suma consumos medios y, cuando sea relevante, picos de corriente de sensor, front-end, ADC, microcontrolador, memoria y enlace. También debe comprobarse que reguladores y fuentes mantienen tensión dentro de especificación durante transitorios. El consumo medio permite estimar autonomía de manera aproximada, pero una batería real depende de química, temperatura, tasa de descarga y eficiencia del convertidor. U5 usa el presupuesto para detectar incompatibilidades de integración, no para certificar autonomía ni seguridad de una batería.",
+        "Separar dominios funcionales no significa crear cortes arbitrarios en el plano de tierra. Un retorno mal entendido puede obligar a corrientes digitales a atravesar regiones sensibles o generar diferencias de referencia entre bloques. La prueba correcta combina esquema, layout o maqueta de interconexión y medida/simulación de perturbaciones. El resultado que se documenta es compatibilidad en las condiciones ensayadas; la compatibilidad electromagnética normativa requiere equipos, configuraciones y procedimientos específicos y queda fuera del alcance de U5."
+      ],
+      "equations": [
+        {
+          "latex": "P_{tot}\\approx\\sum_i V_i I_i",
+          "meaning": "Presupuesto de potencia aproximado por suma de dominios de alimentación, útil para comprobar capacidad y margen.",
+          "variables": {
+            "P_tot": "potencia eléctrica total estimada",
+            "V_i": "tensión del dominio i",
+            "I_i": "corriente del dominio i"
+          }
+        },
+        {
+          "latex": "t_{ideal}\\approx\\frac{C_{bat}}{I_{avg}}",
+          "meaning": "Estimación idealizada de autonomía para introducir el presupuesto energético; no representa una batería real sin correcciones.",
+          "variables": {
+            "t_ideal": "autonomía ideal",
+            "C_bat": "capacidad nominal compatible en unidades de corriente-tiempo",
+            "I_avg": "corriente media"
+          }
+        }
+      ],
+      "key_points": [
+        "Razonar con rutas de corriente y referencias, no con etiquetas de tierra aisladas del layout.",
+        "Aplicar desacoplo según datasheet y frecuencia de perturbación.",
+        "Presupuestar potencia media y picos con margen.",
+        "No confundir pruebas de acoplamiento educativas con conformidad EMC o seguridad."
+      ]
+    },
+    {
+      "heading": "4. Firmware, configuración y depuración de integración",
+      "paragraphs": [
+        "Firmware y hardware forman una configuración conjunta. Cambiar la ganancia del front-end, frecuencia del temporizador, referencia del ADC, orden de bytes o escala de conversión puede cambiar el significado del mismo código digital. Por ello cada registro de datos debe poder asociarse a una versión de firmware y a una configuración suficiente para reconstruir la adquisición. La gestión de configuración no se limita a guardar archivos: identifica elementos controlados, versiones y cambios para preservar integridad y trazabilidad, una práctica coherente con la ingeniería de sistemas y software descrita por NASA.",
+        "El contrato mínimo de datos incluye identificador de versión, frecuencia de muestreo efectiva, canales y orden, escala/unidades, timestamp o contador temporal, contador de secuencia y flags de estado relevantes. No todos esos campos deben viajar en cada muestra; pueden existir en cabecera o metadatos, siempre que la asociación sea inequívoca. Un archivo sin metadatos que obliga a recordar manualmente qué firmware o ganancia se usó no es un resultado reproducible.",
+        "La depuración de integración debe reducir grados de libertad. Se empieza por una entrada patrón conocida y se observa el sistema en puntos de prueba definidos. Si el ADC contiene el código esperado pero la aplicación muestra valores incorrectos, el foco pasa a escala, empaquetado o transporte y no al sensor. Si aparecen saltos en contador de secuencia sin error analógico, se investiga buffer o enlace. Modificar hardware, filtros y firmware simultáneamente destruye esta capacidad de localizar causalmente el fallo.",
+        "U5 concluye cuando existe una configuración integrada que satisface pruebas técnicas de interfaces bajo condiciones explícitas y cuyo estado puede reconstruirse. No concluye que el sistema completo está verificado. U6 tomará esta baseline y definirá matriz requisito→prueba→criterio→evidencia, repetibilidad, incertidumbre global y reporte final. Dejar requisitos fallidos o riesgos abiertos registrados es preferible a ocultarlos para presentar un prototipo aparentemente terminado."
+      ],
+      "equations": [
+        {
+          "latex": "x_{phys}=a\\,code+b",
+          "meaning": "Ejemplo de conversión de código digital a magnitud física; coeficientes, unidades y versión de calibración deben quedar asociados a los datos.",
+          "variables": {
+            "x_phys": "magnitud física estimada",
+            "code": "código digital",
+            "a": "factor de escala",
+            "b": "offset"
+          }
+        },
+        {
+          "latex": "L_{loss}=1-\\frac{N_{rec}}{N_{exp}}",
+          "meaning": "Fracción observada de registros perdidos respecto de los esperados en una prueba delimitada; exige definir cómo se calcula N_exp.",
+          "variables": {
+            "L_loss": "fracción de pérdida",
+            "N_rec": "registros recibidos válidos",
+            "N_exp": "registros esperados"
+          }
+        }
+      ],
+      "key_points": [
+        "Versionar firmware, configuración y escala junto con los datos.",
+        "Instrumentar secuencia, timestamp y flags para hacer visibles los fallos.",
+        "Depurar por interfaces con entradas patrón y puntos de prueba.",
+        "Cerrar U5 con una baseline integrada; reservar la verificación final para U6."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "hardware",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "firmware",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "comunicación y carcasa",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Integración de prototipo",
-      "definition": "Dominio de estudio que integra hardware, firmware, comunicación y carcasa para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de construcción de un sistema de medición funcional usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term": "arquitectura de sistema", "definition": "Organización de bloques, responsabilidades e interfaces que permite razonar sobre el funcionamiento integrado."},
+    {"term": "interfaz", "definition": "Frontera documentada entre subsistemas donde se especifican magnitudes, formatos, temporización, referencias y comportamientos esperados."},
+    {"term": "contrato de interfaz", "definition": "Conjunto verificable de condiciones que productor y consumidor de una señal, energía o dato deben cumplir."},
+    {"term": "baseline", "definition": "Configuración identificada de hardware, firmware, parámetros y documentación que sirve como referencia controlada para pruebas posteriores."},
+    {"term": "firmware", "definition": "Software ejecutado por el sistema embebido que configura periféricos, adquiere, procesa, almacena o transmite datos."},
+    {"term": "configuración", "definition": "Conjunto de versiones y parámetros que determinan el comportamiento reproducible del prototipo."},
+    {"term": "SPI", "definition": "Interfaz serial síncrona con reloj generado por el host y selección de dispositivo; modo y temporización deben coincidir con el periférico concreto."},
+    {"term": "I²C", "definition": "Bus serial síncrono de dos líneas con direccionamiento y requisitos eléctricos/temporales definidos por la especificación y los dispositivos conectados."},
+    {"term": "USART", "definition": "Periférico de comunicación serial síncrona o asíncrona; en modo asíncrono requiere configuración compatible de baud rate y formato de trama."},
+    {"term": "baud rate", "definition": "Tasa de símbolos de un enlace; en una UART binaria habitual se relaciona con la tasa de bits, pero el throughput útil depende de bits de trama y protocolo."},
+    {"term": "throughput útil", "definition": "Cantidad de datos de aplicación transferidos correctamente por unidad de tiempo después del overhead."},
+    {"term": "overhead", "definition": "Bytes, bits o tiempo consumidos por cabeceras, delimitadores, metadatos, control y verificación que no son muestras de señal."},
+    {"term": "buffer", "definition": "Memoria temporal que desacopla diferencias transitorias entre productor y consumidor de datos."},
+    {"term": "overrun", "definition": "Pérdida o sobrescritura porque nuevos datos llegan antes de que el sistema procese o retire los anteriores."},
+    {"term": "contador de secuencia", "definition": "Número monotónico asociado a registros o tramas para detectar omisiones, duplicados o reordenamientos."},
+    {"term": "timestamp", "definition": "Marca temporal vinculada a un evento definido; su significado depende del reloj y del punto donde se asigna."},
+    {"term": "jitter", "definition": "Variación temporal de un evento respecto de su temporización ideal o esperada."},
+    {"term": "CRC", "definition": "Código de redundancia cíclica usado para detectar ciertos patrones de error en datos; no garantiza autenticidad ni ausencia de todo error."},
+    {"term": "framing error", "definition": "Error detectado cuando una trama serial no presenta la estructura temporal o bits de parada esperados."},
+    {"term": "decoupling", "definition": "Red local de alimentación destinada a ofrecer baja impedancia a perturbaciones y transitorios en un rango de frecuencia relevante."},
+    {"term": "ruta de retorno", "definition": "Trayectoria física que cierra la corriente de una señal o alimentación y cuya impedancia puede acoplar perturbaciones entre bloques."},
+    {"term": "grounding", "definition": "Estrategia de referencias y retornos eléctricos; debe analizarse mediante corrientes, impedancias y layout, no solo nombres AGND/DGND."},
+    {"term": "presupuesto de potencia", "definition": "Estimación trazable de consumo por bloques, condiciones y margen para comprobar compatibilidad de fuente o batería."},
+    {"term": "pico de corriente", "definition": "Demanda transitoria que puede superar el consumo medio y causar caída de tensión o perturbación si la fuente no responde adecuadamente."},
+    {"term": "metadatos de adquisición", "definition": "Información que permite interpretar datos: configuración, unidades, escalas, frecuencia, canales, versión y procedencia."},
+    {"term": "procedencia", "definition": "Registro de origen y transformaciones que permite reconstruir cómo se obtuvo un dato o resultado."},
+    {"term": "gestión de configuración", "definition": "Disciplina para identificar elementos controlados, gestionar cambios y mantener coherencia entre producto, versiones y documentación."},
+    {"term": "punto de prueba", "definition": "Ubicación definida donde se observa una señal o estado para localizar fallos entre interfaces."},
+    {"term": "prueba de integración", "definition": "Ensayo que comprueba la interacción entre dos o más subsistemas bajo entradas y criterios explícitos."},
+    {"term": "modo de fallo", "definition": "Forma específica en que un elemento o interacción puede dejar de cumplir la función prevista."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Integración de prototipo",
-      "scenario": "Un equipo propone estudiar construcción de un sistema de medición funcional, pero su pregunta mezcla hardware, firmware y comunicación y carcasa sin definir unidades, referencias ni resultado admisible.",
+      "title": "Ejemplo 1: presupuesto de caudal para cuatro canales",
+      "scenario": "Cuatro canales se almacenan a 1000 muestras/s y 16 bits por muestra. Cada bloque de 100 muestras añade 24 bytes de cabecera y CRC; se desea margen del 50 %.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de hardware, firmware y comunicación y carcasa.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Calcular caudal bruto: 1000×4×16/8=8000 B/s.",
+        "Cada bloque transporta 100×4×2=800 bytes de muestra y 24 bytes de overhead.",
+        "El overhead relativo es 24/800=0.03 aproximadamente.",
+        "El caudal medio aproximado es 8000×1.03=8240 B/s.",
+        "Con margen 1.5, exigir al menos 12.36 kB/s de throughput útil sostenido y probar además ráfagas/latencia."
       ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-      ]
+      "calculation": "R_raw=8000 B/s; R_con_overhead≈8240 B/s; objetivo con margen≈12.36 kB/s.",
+      "interpretation": "Un enlace nominal debe evaluarse por throughput útil y peor caso, no solo por su cifra de baud rate.",
+      "limitations": ["No incluye codificación física concreta ni latencia del sistema operativo receptor."]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre hardware y firmware en el caso de construcción de un sistema de medición funcional; una condición vinculada con comunicación y carcasa podría producir el mismo patrón.",
+      "title": "Ejemplo 2: un buffer no corrige un déficit sostenido",
+      "scenario": "La adquisición produce 20 kB/s, pero una tarea de almacenamiento consume 18 kB/s durante cinco segundos.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar comunicación y carcasa como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Calcular diferencia sostenida: 2 kB/s.",
+        "Multiplicar por 5 s: la ocupación crece 10 kB.",
+        "Si el buffer tiene 8 kB, el overrun es inevitable antes de terminar el intervalo.",
+        "Aumentar temporalmente el buffer solo desplaza el fallo si la diferencia persiste.",
+        "Corregir throughput, reducir producción o introducir una estrategia explícita de pérdida/backpressure según requisitos."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "calculation": "ΔB=(20−18) kB/s × 5 s = 10 kB.",
+      "interpretation": "La prueba debe instrumentar máxima ocupación y overruns para no ocultar pérdida de muestras.",
+      "limitations": ["Asume tasas constantes durante el intervalo."]
+    },
+    {
+      "title": "Ejemplo 3: detectar incompatibilidad de configuración SPI",
+      "scenario": "El ADC devuelve códigos alternantes incoherentes aunque la entrada sintética DC es estable.",
+      "reasoning_steps": [
+        "Confirmar primero que la salida analógica al ADC está estable y en rango.",
+        "Leer en el datasheet el modo SPI requerido, ancho de palabra y temporización de chip select.",
+        "Capturar SCK, CS y datos con analizador lógico simulado o banco seguro.",
+        "Comparar polaridad/fase y fronteras de palabra con el contrato.",
+        "Corregir solo la configuración digital y repetir la misma entrada patrón."
+      ],
+      "calculation": "No requiere una ecuación: la evidencia es correspondencia temporal entre contrato y captura.",
+      "interpretation": "Una salida incoherente puede originarse en la interfaz y no en el sensor ni en la calibración.",
+      "limitations": ["El ejemplo no cubre integridad de señal de alta velocidad ni EMC."]
+    },
+    {
+      "title": "Ejemplo 4: presupuesto de potencia y pico transitorio",
+      "scenario": "Un prototipo usa 3.3 V: front-end 8 mA, ADC 4 mA, MCU 25 mA medio y radio 10 mA medio, con picos de radio de 90 mA.",
+      "reasoning_steps": [
+        "Sumar corriente media: 47 mA.",
+        "Estimar potencia media ideal: 3.3×0.047≈0.155 W.",
+        "Separar el pico: durante transmisión la demanda puede aumentar decenas de mA.",
+        "Comprobar fuente/regulador y desacoplo con el pico, no solo con la media.",
+        "Medir si el evento de radio perturba referencia o señal sintética del front-end."
+      ],
+      "calculation": "P_media≈155 mW; la prueba de pico se evalúa con corriente instantánea y caída de tensión observada.",
+      "interpretation": "Un presupuesto medio aceptable no garantiza estabilidad durante transitorios.",
+      "limitations": ["No estima autonomía real de batería ni disipación térmica detallada."]
+    },
+    {
+      "title": "Ejemplo 5: localizar pérdida con contador de secuencia",
+      "scenario": "Se esperaban 10 000 registros; el receptor almacena 9 970 y encuentra saltos en los contadores 2401–2410 y 7011–7030.",
+      "reasoning_steps": [
+        "Calcular pérdida observada: 30/10000=0.003 o 0.3 %.",
+        "Usar los rangos de secuencia para confirmar que no son solo filas duplicadas o una visualización omitida.",
+        "Comparar logs de overrun del microcontrolador y errores del enlace en esos intervalos.",
+        "Repetir con una entrada patrón y aumentar carga de transmisión de forma controlada.",
+        "Asignar el fallo al primer punto donde desaparece la secuencia y no a la señal analógica por defecto."
+      ],
+      "calculation": "L_loss=1−9970/10000=0.003=0.3 %.",
+      "interpretation": "La instrumentación de metadatos convierte una discrepancia cuantificable en una pista para localizar el subsistema responsable.",
+      "limitations": ["El contador no detecta por sí solo corrupción de contenido dentro de una trama recibida."]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Actividad guiada: construir la tabla de interfaces",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Usa únicamente el prototipo sintético o equivalente eléctrico definido en U1–U4; no conectes personas ni red eléctrica.",
+        "Dibuja sensor/fuente equivalente → front-end → filtro/ADC → MCU → almacenamiento/comunicación → aplicación.",
+        "Para cada frontera define señal, rango, referencia, unidades, dirección y temporización.",
+        "Añade alimentación, tierra/retorno y conectores relevantes.",
+        "Define un punto de prueba para cada interfaz.",
+        "Asocia cada parámetro con una fuente: datasheet, configuración de firmware o decisión de diseño."
       ],
       "problems": [
-        "Define hardware mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo firmware modifica o complementa a hardware.",
-        "Propón una prueba que distinga el papel de comunicación y carcasa de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Identifica el máximo y mínimo de entrada del ADC y compáralos con U4.",
+        "Declara la referencia usada para convertir códigos a voltios.",
+        "Define formato de palabra y orden de canales.",
+        "Declara f_s configurada y fuente del reloj.",
+        "Selecciona SPI, I²C o USART para dos interfaces hipotéticas y justifica por requisitos.",
+        "Define niveles lógicos compatibles.",
+        "Calcula caudal bruto de datos.",
+        "Añade overhead y margen.",
+        "Define cómo detectar una muestra perdida.",
+        "Define cómo identificar versión de firmware y configuración.",
+        "Dibuja rutas de alimentación y retornos principales.",
+        "Enumera tres fallos que una tabla incompleta ocultaría."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Diagrama de bloques.",
+        "Tabla de interfaces.",
+        "Presupuesto de caudal.",
+        "Mapa de alimentación/retornos.",
+        "Lista de puntos de prueba.",
+        "Registro de fuentes de cada parámetro."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "Todas las interfaces tienen unidades y rangos.",
+        "La temporización está explícita.",
+        "El protocolo se justifica con requisitos y datasheet.",
+        "Existe margen de caudal documentado.",
+        "Versiones y configuración quedan asociadas a los datos.",
+        "Los puntos de prueba permiten aislar subsistemas.",
+        "No hay conexiones humanas ni de red.",
+        "La tabla distingue requisito, decisión y evidencia."
       ]
     },
     {
-      "title": "Taller de evidencia: construcción de un sistema de medición funcional",
+      "title": "Actividad de dominio: integrar una cadena de medición sintética end-to-end",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Integra una fuente sintética reproducible con el front-end/modelo de U3 y la adquisición de U4.",
+        "Implementa o simula firmware con temporizador de adquisición, buffer, contador de secuencia, timestamp y flags de error.",
+        "Empaqueta datos con cabecera de configuración y un mecanismo simple de detección de corrupción.",
+        "Transmite o simula el transporte hacia un receptor que reconstruya magnitud, unidades y tiempo.",
+        "Registra versión de firmware, parámetros de build/configuración y versión de calibración.",
+        "Inyecta fallos de forma individual: pérdida de trama, cambio de escala, overrun, modo SPI incorrecto y perturbación de alimentación simulada.",
+        "Localiza cada fallo usando puntos de prueba y logs antes de modificar componentes.",
+        "Predefine criterios de éxito de integración; no uses todavía una matriz final de verificación U6."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para hardware, firmware y comunicación y carcasa.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Calcular caudal nominal y con margen.",
+        "Dimensionar un buffer para una pausa transitoria especificada.",
+        "Medir máxima ocupación del buffer.",
+        "Detectar una secuencia perdida.",
+        "Detectar una trama corrupta.",
+        "Distinguir timestamp de adquisición y de recepción.",
+        "Reconstruir correctamente unidades físicas desde códigos.",
+        "Cambiar la escala de firmware sin actualizar metadata y demostrar el fallo.",
+        "Introducir un error de modo SPI y localizarlo en la interfaz.",
+        "Introducir jitter o latencia de transmisión y comprobar si afecta al timestamp de adquisición.",
+        "Estimar potencia media por bloques.",
+        "Introducir un pico de consumo simulado y observar la referencia/salida.",
+        "Comparar ruta de retorno nominal con una alternativa deliberadamente peor en simulación o baja energía.",
+        "Registrar cada fallo con síntoma, hipótesis, prueba y resolución.",
+        "Repetir la entrada patrón después de cada corrección.",
+        "Congelar una baseline integrada con hashes/versiones.",
+        "Enumerar defectos conocidos que pasan a U6.",
+        "Redactar límites técnicos, clínicos y regulatorios."
       ],
       "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Arquitectura versionada.",
+        "Tabla de interfaces final de U5.",
+        "Firmware o pseudocódigo reproducible.",
+        "Especificación de trama y metadatos.",
+        "Presupuesto de caudal y buffer.",
+        "Presupuesto de potencia.",
+        "Capturas o trazas de puntos de prueba.",
+        "Tabla de fallos inyectados.",
+        "Registro de configuración.",
+        "Datos sintéticos crudos y reconstruidos.",
+        "Baseline candidata para U6.",
+        "Lista de riesgos/limitaciones abiertas."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
+        "La cadena es reproducible desde una entrada sintética conocida.",
+        "No hay pérdidas silenciosas en el ensayo nominal.",
+        "Secuencia y timestamps tienen significado definido.",
+        "Los metadatos permiten reconstruir escala y configuración.",
+        "Cada fallo se localiza antes de cambiar múltiples subsistemas.",
+        "El buffer tiene justificación cuantitativa.",
+        "El throughput se mide o simula con overhead.",
+        "El presupuesto de potencia incluye picos relevantes.",
+        "Se siguen datasheets para grounding/desacoplo sin reglas universales.",
+        "La baseline identifica hardware, firmware y parámetros.",
+        "Los defectos abiertos no se ocultan.",
+        "No se declara verificación final ni seguridad clínica/regulatoria."
       ]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
+      "title": "Reto de transferencia: depurar un prototipo integrado con tres fallos simultáneos",
       "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
+        "Recibe logs, capturas de interfaz y datos sintéticos de una baseline con fallos desconocidos.",
+        "No modifiques el diseño inicialmente; formula hipótesis por interfaz.",
+        "Usa una entrada patrón y puntos de prueba para localizar el primer desacoplamiento respecto del resultado esperado.",
+        "Cambia una variable por vez y conserva evidencia antes–después.",
+        "Actualiza el registro de configuración tras cada corrección.",
+        "Entrega una baseline corregida y defectos que deben ser verificados en U6."
       ],
       "tasks": [
-        "Transfiere el método a un caso distinto de construcción de un sistema de medición funcional y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte hardware, firmware y comunicación y carcasa.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
+        "Detectar un cambio de f_s no reflejado en metadata.",
+        "Detectar una pérdida por overrun del buffer.",
+        "Detectar una escala física incompatible con la referencia ADC.",
+        "Distinguir un error de transporte de una perturbación analógica.",
+        "Calcular pérdida por contador de secuencia.",
+        "Comprobar si el caudal útil tiene margen suficiente.",
+        "Revisar coherencia entre firmware, tabla de interfaces y datos.",
+        "Documentar la causa raíz más probable de cada fallo.",
+        "Proponer las pruebas U6 que impedirían una regresión."
       ],
       "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
+        "Árbol de hipótesis.",
+        "Evidencia por punto de prueba.",
+        "Registro antes–después.",
+        "Baseline corregida.",
+        "Handoff explícito a U6."
       ],
       "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Se modifica una variable por vez.",
+        "Cada conclusión tiene un punto de observación que la sostiene.",
+        "La configuración final es reconstruible.",
+        "La aceptación final queda explícitamente fuera de U5."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar hardware como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar hardware en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre hardware y firmware demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir comunicación y carcasa después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Integración de prototipo al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    {"error": "Conectar bloques sin contrato de interfaz.", "correction": "Definir rango, referencia, temporización, formato, unidades y comportamiento de error antes de integrar."},
+    {"error": "Elegir SPI, I²C o UART por familiaridad.", "correction": "Derivar la elección de throughput, topología, distancia, pines, temporización y requisitos de los dispositivos."},
+    {"error": "Comparar baud rate nominal con datos crudos sin overhead.", "correction": "Calcular throughput útil incluyendo bits de trama, cabeceras, metadatos y margen."},
+    {"error": "Usar un buffer para compensar una tasa de consumo siempre menor que la producción.", "correction": "Corregir el déficit sostenido; el buffer solo absorbe diferencias transitorias finitas."},
+    {"error": "Asignar timestamps únicamente al recibir los datos en el PC.", "correction": "Definir el evento temporal de interés y asociar la marca lo más cerca posible del muestreo cuando sea necesario."},
+    {"error": "Guardar datos sin versión de firmware ni configuración.", "correction": "Asociar baseline, parámetros, escala, unidades y calibración de forma inequívoca."},
+    {"error": "Separar AGND y DGND por una regla universal.", "correction": "Seguir datasheet y analizar rutas de retorno, impedancias y layout del sistema concreto."},
+    {"error": "Evaluar una fuente solo por consumo medio.", "correction": "Comprobar picos de corriente, transitorios, caída de tensión y desacoplo."},
+    {"error": "Modificar hardware, firmware y filtros a la vez para arreglar un fallo.", "correction": "Localizar primero el primer punto de divergencia y cambiar una variable por vez."},
+    {"error": "Confundir CRC con seguridad o garantía de integridad absoluta.", "correction": "Usarlo como detección de errores dentro de un modelo de fallos definido; seguridad informática requiere mecanismos adicionales."},
+    {"error": "Dar por terminado el curso cuando el prototipo transmite una gráfica plausible.", "correction": "U5 entrega una baseline integrada; U6 debe verificar requisitos, criterios, repetibilidad e incertidumbre final."},
+    {"error": "Interpretar una carcasa o aislamiento funcional como conformidad médica.", "correction": "No afirmar seguridad eléctrica, EMC o uso humano sin procesos y ensayos específicos."
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar construcción de un sistema de medición funcional?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan hardware y firmware?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; comunicación y carcasa puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre comunicación y carcasa?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre construcción de un sistema de medición funcional?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Integración de prototipo?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question": "¿Qué información mínima debe tener un contrato de interfaz analógica?", "answer": "Rango, referencia, unidades, impedancias o carga relevante, banda/temporización, límites y punto de prueba.", "reasoning": "Sin esas condiciones dos bloques pueden ser individualmente correctos pero incompatibles.", "common_error": "Anotar solo el nombre de la señal."},
+    {"question": "¿Por qué un enlace de 115200 baud no equivale a 115200 bytes/s?", "answer": "Baud describe símbolos; además cada byte suele transportar bits de inicio/parada y existe overhead de protocolo.", "reasoning": "El throughput útil se calcula con el formato real.", "common_error": "Dividir o no dividir por ocho sin considerar trama."},
+    {"question": "¿Cuándo un buffer evita un overrun?", "answer": "Cuando la diferencia productor–consumidor es transitoria y su integral cabe en el buffer con margen.", "reasoning": "Si Rprod>Rcons sostenidamente, cualquier buffer finito termina lleno.", "common_error": "Aumentar memoria sin corregir throughput."},
+    {"question": "¿Para qué sirve un contador de secuencia?", "answer": "Para detectar omisiones, duplicados o reordenamientos entre registros o tramas.", "reasoning": "Hace observables pérdidas que una señal suave podría ocultar.", "common_error": "Usarlo como sustituto de timestamp."},
+    {"question": "¿Qué diferencia hay entre timestamp de adquisición y de recepción?", "answer": "El primero representa cuándo se obtuvo la muestra; el segundo cuándo llegó a otra etapa y puede incluir colas y latencia.", "reasoning": "Confundirlos introduce jitter de transporte en la variable temporal.", "common_error": "Marcar todo al llegar al PC."},
+    {"question": "¿Por qué AGND y DGND no deben separarse ciegamente?", "answer": "Porque el comportamiento depende de rutas de retorno, impedancias, corrientes y recomendaciones del componente/layout.", "reasoning": "Un corte mal ubicado puede empeorar la referencia analógica.", "common_error": "Aplicar una regla de una sola figura a cualquier placa."},
+    {"question": "¿Qué debe acompañar a un archivo de datos para ser reproducible?", "answer": "Versión/configuración, canales, f_s, unidades, escala/calibración, definición temporal y procedencia suficiente.", "reasoning": "Los mismos códigos pueden representar magnitudes distintas bajo otra configuración.", "common_error": "Confiar en el nombre del archivo."},
+    {"question": "¿Qué prueba localiza si un fallo está antes o después del ADC?", "answer": "Aplicar entrada patrón y observar simultáneamente o secuencialmente la señal analógica del punto de prueba y los códigos ADC esperados.", "reasoning": "El primer punto de divergencia restringe las hipótesis.", "common_error": "Cambiar el sensor antes de revisar códigos."},
+    {"question": "¿Qué demuestra un CRC correcto?", "answer": "Que la trama recibida pasó el mecanismo de detección empleado; no demuestra autenticidad ni ausencia de todos los errores posibles.", "reasoning": "Todo código de detección tiene un modelo y cobertura finitos.", "common_error": "Llamarlo cifrado o garantía total."},
+    {"question": "¿Qué diferencia a U5 de U6?", "answer": "U5 construye y depura una baseline integrada; U6 realiza la verificación sistemática final contra requisitos y criterios con reporte de incertidumbre.", "reasoning": "Separar integración y aceptación evita declarar éxito global por una demostración funcional.", "common_error": "Usar una demo end-to-end como verificación final."},
+    {"question": "¿Por qué el presupuesto de potencia debe incluir picos?", "answer": "Porque una fuente que soporta la media puede caer durante transitorios y perturbar MCU, ADC o referencia.", "reasoning": "La estabilidad depende también de impedancia y respuesta temporal de la alimentación.", "common_error": "Sumar solo corrientes típicas."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Construcción de un sistema de medición funcional."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    "Registradores de biosignales: la trazabilidad de f_s, ganancia, referencia, firmware y calibración es necesaria para interpretar correctamente los datos adquiridos.",
+    "Wearables: el compromiso entre throughput, memoria, radio y consumo obliga a diseñar la cadena completa en lugar de optimizar un bloque aislado.",
+    "Instrumentación de rehabilitación o biomecánica: timestamps y pérdidas de muestras condicionan la sincronización entre sensores y cualquier análisis temporal posterior.",
+    "Dispositivos médicos: una integración funcional de laboratorio no demuestra seguridad eléctrica, EMC, software médico ni validez clínica; esas capas requieren procesos y evidencia adicionales."
   ],
   "sources": [
     {
-      "title": "SciPy Signal",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
-      "type": "documentación",
-      "description": "Procesamiento digital, filtrado y análisis espectral.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "MT-031: Grounding Data Converters and Solving the Mystery of AGND and DGND",
+      "authors": "Walt Kester, James Bryant, Mike Byrne / Analog Devices",
+      "year": 2009,
+      "url": "https://www.analog.com/MT-031",
+      "type": "tutorial técnico oficial",
+      "supports": ["mixed-signal grounding", "return currents", "ADC integration"],
+      "verification_status": "verified_directly"
     },
     {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "MT-101: Decoupling Techniques",
+      "authors": "Walt Kester / Analog Devices",
+      "year": 2009,
+      "url": "https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf",
+      "type": "tutorial técnico oficial",
+      "supports": ["power decoupling", "supply impedance", "high-frequency transients"],
+      "verification_status": "verified_directly"
     },
     {
-      "title": "CDRH Learn",
-      "organization": "U.S. FDA",
-      "url": "https://www.fda.gov/training-and-continuing-education/cdrh-learn",
-      "type": "formación regulatoria",
-      "description": "Módulos oficiales sobre dispositivos y evidencia.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "I2C-bus specification and user manual UM10204, Rev. 7",
+      "authors": "NXP Semiconductors",
+      "year": 2021,
+      "url": "https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
+      "type": "especificación oficial",
+      "supports": ["I2C electrical interface", "timing", "controller/target communication"],
+      "verification_status": "verified_directly"
     },
     {
-      "title": "GNU Radio documentation",
-      "organization": "GNU Radio project",
-      "url": "https://wiki.gnuradio.org/index.php/Main_Page",
-      "type": "documentación abierta",
-      "description": "Simulación y procesamiento de señales por bloques.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "TB3215: Getting Started with SPI",
+      "authors": "Microchip Technology",
+      "year": 2021,
+      "url": "https://www.microchip.com/en-us/application-notes/tb3215",
+      "type": "technical brief oficial",
+      "supports": ["SPI operation", "host/client configuration", "data exchange"],
+      "verification_status": "verified_directly"
     },
     {
-      "title": "University Physics Volume 2",
-      "organization": "OpenStax",
-      "url": "https://openstax.org/details/books/university-physics-volume-2",
-      "type": "libro abierto",
-      "description": "Electricidad, magnetismo, circuitos y ondas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "TB3216: Getting Started with USART",
+      "authors": "Microchip Technology",
+      "year": 2021,
+      "url": "https://www.microchip.com/en-us/application-notes/tb3216",
+      "type": "technical brief oficial",
+      "supports": ["USART configuration", "asynchronous serial transport", "frame configuration"],
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "AVR Device USART Introduction",
+      "authors": "Microchip Technology",
+      "year": 2023,
+      "url": "https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/8-bit-avr/structure/usart-intro/",
+      "type": "documentación oficial",
+      "supports": ["receive buffers", "overrun detection", "framing and parity errors"],
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "AN1148: Cyclic Redundancy Check (CRC)",
+      "authors": "Sudhir Bommena / Microchip Technology",
+      "year": 2007,
+      "url": "https://ww1.microchip.com/downloads/en/AppNotes/01148a.pdf",
+      "type": "application note oficial",
+      "supports": ["CRC error detection", "message remainder model", "communication integrity checks"],
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "NASA Systems Engineering Handbook, NASA/SP-2016-6105 Rev 2",
+      "authors": "Hirshorn SR, Voss LD, Bromley LK",
+      "year": 2017,
+      "url": "https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20170001761.pdf",
+      "type": "handbook oficial",
+      "supports": ["interface management", "configuration management", "systems integration"],
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "NASA Software Engineering Requirements NPR 7150.2D — Chapter 5",
+      "authors": "NASA Office of the Chief Engineer",
+      "year": 2022,
+      "url": "https://nodis3.gsfc.nasa.gov/displayDir.cfm?Internal_ID=N_PR_7150_002D_&page_name=Chapter5",
+      "type": "requisito institucional oficial",
+      "supports": ["software configuration management", "configuration integrity", "change traceability"],
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "SWE-081 — Identify Software Configuration Management Items",
+      "authors": "NASA Software Engineering Handbook",
+      "year": 2021,
+      "url": "https://swehb.nasa.gov/spaces/SWEHBVB/pages/32604561/SWE-081%2B-%2BIdentify%2BSoftware%2BCM%2BItems",
+      "type": "guía oficial",
+      "supports": ["version-controlled software items", "configuration identification", "reproducibility"],
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad educativa en revisión. La curación interna no constituye revisión disciplinar externa. Las prácticas se limitan a simulación, fuentes eléctricas equivalentes y prototipos de baja energía sin conexión a personas, red eléctrica ni dispositivos médicos en servicio. La integración funcional aquí descrita no constituye seguridad eléctrica, EMC, ciberseguridad, validación fisiológica o clínica, conformidad IEC 60601, IEC 62304 ni autorización de uso médico. Las recomendaciones de grounding, desacoplo, buses y temporización deben contrastarse con datasheets y requisitos del hardware concreto. U5 entrega una baseline integrada; la verificación final y el reporte global corresponden a U6. Revisión disciplinar humana permanece pendiente."
 }
