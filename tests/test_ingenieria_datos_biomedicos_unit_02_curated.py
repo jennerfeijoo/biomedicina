@@ -31,7 +31,7 @@ class IngenieriaDatosBiomedicosUnit02CuratedTests(unittest.TestCase):
         for phrase in (
             "etl y elt",
             "copia raw inmutable",
-            "validación estructural",
+            "errores estructurales",
             "ucum",
             "effective/event time",
             "accepted/quarantine",
@@ -119,7 +119,7 @@ class IngenieriaDatosBiomedicosUnit02CuratedTests(unittest.TestCase):
             "conceptmap",
             "source-is-narrower-than-target",
             "source-is-broader-than-target",
-            "null, cero, falso, cadena vacía",
+            "ausente, cero, falso, cadena vacía, null y no aplicable",
             "mapping_status=unresolved",
         ):
             self.assertIn(phrase, text)
@@ -235,13 +235,10 @@ class IngenieriaDatosBiomedicosUnit02CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, purpose)
 
-    def test_published_descriptor_when_promoted_matches_canonical_purpose(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        description = detailed[2]["description"]
-        if description != self.unit["purpose"]:
-            self.skipTest("Descriptor curricular todavía no promovido por el workflow de publicación")
-        self.assertEqual(description, self.unit["purpose"])
+        self.assertEqual(detailed[2]["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
