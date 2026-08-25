@@ -50,9 +50,10 @@ def test_unit_04_preserves_core_sensory_prosthesis_distinctions():
         "canal funcional",
     ]:
         assert marker in text
-    assert "número de electrodos" in text
-    assert "agudeza visual" in text
+    assert "contar electrodos no equivale a medir resolución sensorial" in text
+    assert "número de electrodos" in text and "agudeza visual" in text
     assert "canales" in text and "independientes" in text
+    assert "cuadrícula perfecta" in text and "no una predicción" in text
 
 
 def test_unit_04_has_substantial_pedagogy_and_assessment():
