@@ -1,0 +1,348 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = ROOT / "data" / "course_redevelopment" / "economia-gestion-empresas" / "units" / "unit-03.json"
+MIRROR = ROOT / "data" / "generated_units" / "economia-gestion-empresas" / "unit-03.json"
+GENERIC = "Concepto de la unidad que debe definirse mediante entidades observables"
+
+
+def write(payload: dict) -> None:
+    text = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    SOURCE.write_text(text, encoding="utf-8")
+    MIRROR.parent.mkdir(parents=True, exist_ok=True)
+    MIRROR.write_text(text, encoding="utf-8")
+
+
+def main() -> int:
+    unit = json.loads(SOURCE.read_text(encoding="utf-8"))
+    unit.update({
+        "purpose": "Analizar y mejorar operaciones de laboratorios y servicios biomédicos sintéticos mediante mapas de proceso, demanda y capacidad, flujo, colas, cuellos de botella, inventario, medidas de calidad y ciclos de mejora, distinguiendo eficiencia operativa de calidad clínica, acreditación, estrategia de mercado y evaluación económica sanitaria.",
+        "learning_objectives": [
+            "Representar un proceso de servicio mediante frontera, unidad de flujo, etapas, colas, recursos, tiempos, retrabajos y salidas, diferenciando tiempo de proceso de tiempo total de permanencia.",
+            "Cuantificar demanda, capacidad efectiva, throughput, utilización y cuello de botella con unidades y horizonte temporal explícitos, identificando cuándo una media oculta variación relevante.",
+            "Aplicar la relación de Little L=λW a un sistema estable y con fronteras coherentes, interpretando sus variables sin convertirla en un modelo completo de distribución de esperas.",
+            "Diseñar un control básico de inventario mediante consumo, lead time, punto de pedido y stock de seguridad, haciendo explícito el compromiso entre rotura de stock, caducidad, coste y espacio.",
+            "Distinguir medida de resultado, de proceso y de balance y evaluar una propuesta de cambio con datos temporales y ciclos PDSA a pequeña escala antes de una implementación más amplia.",
+            "Construir un expediente operativo reproducible para un laboratorio o servicio biomédico ficticio, con baseline, intervención, sensibilidad, medidas de balance y límites que no confundan mejora local con validación clínica, acreditación o conformidad regulatoria."
+        ],
+        "theory_sections": [
+            {
+                "heading": "1. Procesos, demanda, capacidad y cuellos de botella",
+                "paragraphs": [
+                    "Una operación transforma entradas en salidas mediante una secuencia de actividades y recursos. Para estudiarla debe definirse primero la frontera: qué evento inicia el proceso, qué evento lo termina, cuál es la unidad de flujo y qué etapas quedan fuera. En un laboratorio sintético, la unidad puede ser una muestra, una orden o un lote; mezclar estas unidades conduce a tasas y tiempos incompatibles. Un mapa de proceso útil registra trabajo, espera, decisión, transferencia, retrabajo y salida, en vez de dibujar solo departamentos.",
+                    "Demanda y capacidad deben expresarse con el mismo horizonte y unidad. La demanda es la cantidad de unidades que solicitan servicio por intervalo; la capacidad es la cantidad que un recurso o proceso puede completar bajo condiciones declaradas. Conviene distinguir capacidad nominal de capacidad efectiva: pausas, mantenimiento, configuración, cambios de lote, indisponibilidad de personal y restricciones de calendario reducen lo realmente utilizable. Comparar demanda semanal con capacidad diaria sin conversión temporal produce una conclusión inválida aunque los números parezcan razonables.",
+                    "En un proceso en serie, el cuello de botella es la etapa cuya capacidad efectiva restringe el throughput sostenible del conjunto. Aumentar capacidad en una etapa no limitante puede no cambiar la salida total y solo desplazar inventario o espera. Por eso la intervención debe probarse sobre el sistema y no sobre una métrica aislada. La capacidad del proceso se aproxima por la etapa limitante solo cuando la ruta, unidades, disponibilidad y reglas operativas son compatibles con esa simplificación.",
+                    "La utilización expresa cuánto de una capacidad definida se usa durante un periodo. Un valor alto no equivale automáticamente a eficiencia: cuando demanda y tiempos de servicio varían, operar muy cerca del límite puede hacer crecer colas y retrasos de forma no lineal. La guía NHS sobre demanda y capacidad enfatiza medir variación, suavizarla cuando sea posible y después ajustar capacidad. En esta unidad, utilización es una señal de tensión del sistema, no un objetivo universal de maximización.",
+                    "La primera disciplina de mejora es construir una baseline antes de proponer soluciones. Para cada etapa se registran entradas, capacidad efectiva, volumen completado, tiempo de proceso, tiempo de espera, retrabajo y pérdidas observables. El resultado debe permitir distinguir un problema de falta de capacidad de uno de variabilidad, mala secuenciación, transferencia, stock, información o retrabajo. Sin baseline, una reducción aparente del tiempo puede ser simplemente un cambio de mezcla o de periodo."
+                ],
+                "equations": [
+                    {
+                        "latex": "C_i=\\frac{T_{avail,i}}{t_{proc,i}}",
+                        "meaning": "Capacidad teórica simplificada de una etapa cuando una unidad consume un tiempo de proceso aproximadamente constante dentro del periodo considerado.",
+                        "variables": {"C_i": "unidades por periodo en la etapa i", "T_avail,i": "tiempo efectivo disponible", "t_proc,i": "tiempo de proceso por unidad"}
+                    },
+                    {
+                        "latex": "C_{process}=\\min_i(C_i)",
+                        "meaning": "Aproximación de capacidad de un proceso en serie por su etapa limitante, válida solo bajo la ruta y supuestos declarados.",
+                        "variables": {"C_process": "capacidad del proceso", "C_i": "capacidad efectiva de cada etapa"}
+                    },
+                    {
+                        "latex": "u=\\frac{X}{C_{effective}}",
+                        "meaning": "Utilización simplificada del recurso o proceso durante un mismo periodo.",
+                        "variables": {"u": "utilización", "X": "throughput observado", "C_effective": "capacidad efectiva definida"}
+                    }
+                ],
+                "key_points": [
+                    "Definir frontera, unidad de flujo y horizonte antes de comparar tasas o tiempos.",
+                    "Capacidad nominal y efectiva no son equivalentes cuando existen pérdidas de disponibilidad.",
+                    "El cuello de botella limita el throughput del proceso; optimizar otra etapa puede no mejorar la salida total.",
+                    "Utilización alta puede aumentar vulnerabilidad a variación y colas; no debe maximizarse de forma automática."
+                ]
+            },
+            {
+                "heading": "2. Flujo, colas, throughput y tiempo de respuesta",
+                "paragraphs": [
+                    "El tiempo total que una unidad permanece en un sistema incluye más que trabajo activo. Puede contener espera previa, procesamiento, transporte, bloqueo, cola entre etapas, revisión y retrabajo. En laboratorios, el turnaround time debe definirse con eventos de inicio y fin concretos; no es lo mismo medir desde recepción hasta resultado técnico que desde solicitud hasta disponibilidad para el usuario. Una mejora solo es interpretable si mantiene la misma definición antes y después.",
+                    "Little demostró que, bajo condiciones de estabilidad y medias bien definidas, el número medio de unidades en el sistema L se relaciona con la tasa media de llegada o throughput λ y el tiempo medio en el sistema W mediante L=λW. La fortaleza de esta relación es que no exige una distribución Poisson concreta para formular la identidad promedio, pero sí exige coherencia de frontera, periodo y población. No predice percentiles, máximos ni la forma de la distribución de espera.",
+                    "La ecuación puede usarse como control de consistencia. Si un proceso estable completa en promedio 12 unidades por hora y cada unidad permanece 2 horas desde entrada hasta salida, se esperan aproximadamente 24 unidades simultáneamente dentro de esa frontera. Si el conteo observado es muy distinto, antes de concluir que la ley falla se revisan unidades, ventanas temporales, estabilidad, unidades abandonadas, lotes y eventos de inicio/fin.",
+                    "Las medias pueden ocultar colas críticas. Dos sistemas con el mismo tiempo promedio pueden tener distribuciones muy distintas; por eso se recomienda complementar media con mediana, percentiles, máximos razonables, serie temporal y estratificación por tipo de trabajo cuando el caso lo justifica. Un aumento del percentil 90 mientras la media permanece estable puede revelar una cola episódica importante. La unidad enseña análisis operativo, no un compromiso clínico de turnaround para pruebas reales.",
+                    "Reducir trabajo en proceso puede disminuir tiempo de permanencia si el throughput se conserva y el sistema permanece estable, pero no toda reducción de cola es una mejora: una regla que prioriza un grupo puede empeorar otro, o una política de liberación puede aumentar rechazos y retrabajos. Por eso cada cambio debe acompañarse de una medida de balance y de una descripción explícita de quién o qué unidad puede resultar desplazada."
+                ],
+                "equations": [
+                    {
+                        "latex": "L=\\lambda W",
+                        "meaning": "Ley de Little para promedios de largo plazo en un sistema estable y con frontera coherente.",
+                        "variables": {"L": "número medio de unidades dentro del sistema", "lambda": "tasa media de flujo o llegada compatible con la frontera", "W": "tiempo medio de permanencia por unidad"}
+                    },
+                    {
+                        "latex": "W=\\frac{L}{\\lambda}",
+                        "meaning": "Forma despejada de Little para estimar tiempo medio cuando L y λ pertenecen al mismo sistema estable.",
+                        "variables": {"W": "tiempo medio", "L": "WIP medio", "lambda": "throughput medio"}
+                    }
+                ],
+                "key_points": [
+                    "Turnaround time exige eventos de inicio y fin explícitos y constantes entre comparaciones.",
+                    "Little relaciona promedios de flujo, inventario en proceso y tiempo; no describe por sí sola la distribución de esperas.",
+                    "Media, percentiles y evolución temporal responden a preguntas diferentes y conviene conservarlas juntas.",
+                    "Toda intervención de flujo necesita medidas de balance para detectar desplazamiento de problemas."
+                ]
+            },
+            {
+                "heading": "3. Inventario, abastecimiento y continuidad operativa",
+                "paragraphs": [
+                    "Inventario en un laboratorio o servicio biomédico puede incluir reactivos, consumibles, repuestos y material de apoyo. Mantener demasiado stock inmoviliza recursos, ocupa espacio y puede aumentar caducidad u obsolescencia; mantener demasiado poco aumenta riesgo de rotura y suspensión del servicio. WHO incluye compras e inventario como un elemento esencial del sistema de calidad de laboratorio y recomienda registros, especificaciones, proveedores, pruebas de recepción, almacenamiento y un sistema normalizado de pedidos.",
+                    "El punto de pedido responde cuándo iniciar reposición, no cuánto valor clínico tiene el producto. En un modelo determinista elemental, demanda media por unidad de tiempo multiplicada por lead time cubre el consumo esperado durante la reposición; un stock de seguridad añade una reserva frente a incertidumbre. La fórmula es una herramienta educativa: demanda variable, lead time variable, lotes mínimos, caducidad, temperatura, criticidad y sustitutos requieren un modelo más rico.",
+                    "El stock de seguridad no es gratis ni elimina el riesgo. Aumentarlo puede reducir probabilidad de rotura bajo un modelo, pero incrementa inventario medio y exposición a caducidad, deterioro y coste de oportunidad. En insumos críticos, la política debe documentar nivel de servicio, supuestos y procedimiento de excepción. El estudiante debe distinguir una decisión operacional de inventario de una especificación clínica o regulatoria sobre qué reactivo puede utilizarse.",
+                    "La trazabilidad de inventario incluye identificador, lote cuando corresponda, fecha de recepción, fecha de apertura, caducidad, cantidad, condiciones de almacenamiento y movimientos. Un recuento físico y el registro electrónico pueden divergir; esa discrepancia es evidencia que debe investigarse. Una política de reposición basada en un dato incorrecto de existencias puede fallar aunque la fórmula esté bien implementada.",
+                    "La mejora del inventario se evalúa con varias dimensiones: frecuencia de roturas, días o unidades disponibles, caducidad/desperdicio, urgencias de compra y continuidad del proceso. Reducir inventario sin observar stockouts puede parecer eficiente en una ventana corta y trasladar riesgo al futuro. La actividad de esta unidad exige un escenario adverso de lead time o demanda y conserva tanto resultados favorables como desfavorables."
+                ],
+                "equations": [
+                    {
+                        "latex": "ROP=dL+SS",
+                        "meaning": "Punto de pedido simplificado: demanda esperada durante el lead time más stock de seguridad.",
+                        "variables": {"ROP": "nivel que dispara reposición", "d": "demanda media por unidad de tiempo", "L": "lead time en unidades de tiempo compatibles", "SS": "stock de seguridad"}
+                    }
+                ],
+                "key_points": [
+                    "Inventario equilibra continuidad frente a coste, espacio, obsolescencia y caducidad.",
+                    "El punto de pedido depende de demanda, lead time y política de stock de seguridad, no de una cifra universal.",
+                    "Registros, lotes, caducidad y movimientos forman parte del control del inventario, no solo el conteo final.",
+                    "Una política debe someterse a escenarios de variabilidad y medir stockouts además de inventario promedio."
+                ]
+            },
+            {
+                "heading": "4. Calidad operacional, medidas y mejora continua",
+                "paragraphs": [
+                    "Calidad no significa simplemente rapidez. ISO 15189:2022 especifica requisitos de calidad y competencia para laboratorios médicos, mientras el manual y toolkit WHO organizan la gestión de calidad en elementos como control de procesos, compras e inventario, gestión de incidencias y mejora. Esta unidad usa esos marcos para enseñar disciplina operacional, pero no evalúa conformidad completa ni acredita un laboratorio. Una mejora de tiempo que deteriora exactitud, integridad de muestras o trazabilidad no es una mejora global.",
+                    "IHI distingue medidas de resultado, proceso y balance para aprendizaje y mejora. Una medida de resultado pregunta qué ocurre finalmente al sistema o usuario; una de proceso pregunta si los pasos se ejecutan como se diseñaron; una de balance busca problemas nuevos causados por el cambio. En un caso sintético de laboratorio, turnaround puede ser resultado operacional, porcentaje de lotes procesados según secuencia una medida de proceso y tasa de retrabajo una medida de balance.",
+                    "El Model for Improvement plantea definir qué se intenta lograr, cómo se sabrá si un cambio es mejora y qué cambio puede producirla. Los ciclos Plan-Do-Study-Act prueban cambios a pequeña escala, comparan observaciones con predicciones y usan lo aprendido para decidir el siguiente ciclo. Probar no equivale a implementar: una prueba local reversible genera aprendizaje; implementar implica hacer permanente el cambio y requiere evidencia y soporte más amplios.",
+                    "Una serie temporal es preferible a comparar dos promedios aislados cuando se estudia mejora. Deben anotarse los momentos de intervención y conservar suficientes puntos basales y posteriores para observar tendencia y variabilidad. Un descenso después del cambio no demuestra causalidad por sí solo: pueden cambiar demanda, mezcla, personal, horarios o instrumentos. La conclusión debe usar lenguaje proporcional y proponer una siguiente prueba discriminante.",
+                    "La mejora continua termina esta unidad conectando operaciones con responsabilidad. Un cambio se acepta provisionalmente cuando mejora la medida objetivo sin deteriorar medidas de balance relevantes y cuando sus supuestos, datos y condiciones quedan trazados. Extender el resultado a pacientes reales, acreditación ISO 15189, regulación, estrategia de mercado o coste-efectividad exige evidencia adicional y pertenece a otros procesos o unidades del currículo."
+                ],
+                "key_points": [
+                    "Rapidez es solo una dimensión; calidad operacional exige considerar trazabilidad, errores, retrabajos y otras consecuencias.",
+                    "Resultado, proceso y balance deben medirse juntos para detectar mejoras parciales que dañan otra parte del sistema.",
+                    "PDSA prueba y adapta cambios de forma iterativa; una prueba local no equivale a implementación ni validación externa.",
+                    "Los datos deben observarse en el tiempo y cualquier inferencia causal debe permanecer proporcional al diseño y controles disponibles."
+                ]
+            }
+        ],
+        "glossary": [
+            {"term": "proceso", "definition": "Secuencia delimitada de actividades, decisiones, esperas y transferencias que transforma entradas en salidas para una unidad de flujo definida."},
+            {"term": "unidad de flujo", "definition": "Entidad cuya trayectoria se sigue a través del proceso, por ejemplo una muestra, orden, lote o solicitud sintética."},
+            {"term": "demanda", "definition": "Cantidad de unidades que solicitan servicio por un intervalo temporal definido."},
+            {"term": "capacidad nominal", "definition": "Máximo teórico bajo condiciones ideales o de diseño antes de descontar pérdidas de disponibilidad."},
+            {"term": "capacidad efectiva", "definition": "Capacidad utilizable bajo calendario, mantenimiento, pausas, configuraciones y restricciones operativas declaradas."},
+            {"term": "throughput", "definition": "Tasa de unidades completadas que atraviesan la frontera de salida del sistema por unidad de tiempo."},
+            {"term": "utilización", "definition": "Proporción entre actividad realizada y capacidad definida durante el mismo horizonte temporal."},
+            {"term": "cuello de botella", "definition": "Etapa o recurso cuya capacidad efectiva restringe el flujo sostenible del proceso bajo la configuración analizada."},
+            {"term": "tiempo de proceso", "definition": "Tiempo durante el cual una unidad recibe trabajo activo en una etapa definida."},
+            {"term": "tiempo de espera", "definition": "Tiempo en que una unidad permanece sin procesamiento activo mientras espera recurso, decisión o transferencia."},
+            {"term": "turnaround time", "definition": "Tiempo entre eventos de inicio y fin explícitamente definidos para una unidad de flujo."},
+            {"term": "WIP", "definition": "Trabajo en proceso: número de unidades que se encuentran dentro de la frontera del sistema en un momento o promedio."},
+            {"term": "Ley de Little", "definition": "Relación de promedios L=λW para un sistema estable con frontera, población y unidades coherentes."},
+            {"term": "variabilidad", "definition": "Cambios en demanda, tiempos, mezcla o disponibilidad que modifican comportamiento y colas aun cuando los promedios sean similares."},
+            {"term": "percentil", "definition": "Valor por debajo del cual se encuentra una proporción especificada de observaciones de una distribución."},
+            {"term": "inventario", "definition": "Existencias controladas para sostener una operación, como consumibles, reactivos o repuestos dentro del escenario educativo."},
+            {"term": "lead time", "definition": "Tiempo transcurrido entre iniciar una reposición y disponer del artículo para uso bajo la definición del sistema."},
+            {"term": "punto de pedido", "definition": "Nivel de inventario que activa una orden de reposición según una política declarada."},
+            {"term": "stock de seguridad", "definition": "Reserva añadida al consumo esperado para amortiguar incertidumbre de demanda o reposición bajo un nivel de servicio elegido."},
+            {"term": "rotura de stock", "definition": "Situación en la que no existe inventario disponible para satisfacer una necesidad conforme a la política definida."},
+            {"term": "medida de resultado", "definition": "Indicador que refleja el efecto final que el equipo desea mejorar dentro del sistema definido."},
+            {"term": "medida de proceso", "definition": "Indicador que evalúa si actividades o pasos del sistema se ejecutan de acuerdo con el diseño previsto."},
+            {"term": "medida de balance", "definition": "Indicador que vigila consecuencias no deseadas de un cambio en otra parte o dimensión del sistema."},
+            {"term": "PDSA", "definition": "Ciclo Plan-Do-Study-Act usado para planificar, probar, estudiar y adaptar cambios en secuencia."},
+            {"term": "baseline", "definition": "Descripción cuantificada del desempeño previo a una intervención usando definiciones y ventana temporal explícitas."},
+            {"term": "retrabajo", "definition": "Trabajo adicional necesario porque una unidad debe repetir, corregir o completar una etapa que no produjo la salida aceptable inicialmente."}
+        ],
+        "worked_examples": [
+            {
+                "title": "Capacidad y cuello de botella en un flujo de tres etapas",
+                "scenario": "Un laboratorio ficticio opera 420 minutos efectivos por turno. Preparación tarda 7 min/unidad, análisis 10 min/unidad y revisión 6 min/unidad; se ignoran lotes y variación en este ejemplo inicial.",
+                "reasoning_steps": [
+                    "Capacidad preparación = 420/7 = 60 unidades/turno.",
+                    "Capacidad análisis = 420/10 = 42 unidades/turno.",
+                    "Capacidad revisión = 420/6 = 70 unidades/turno.",
+                    "La capacidad simplificada del proceso es min(60,42,70)=42; análisis es el cuello de botella."
+                ],
+                "interpretation": "Acelerar revisión sin cambiar análisis no eleva la capacidad máxima simplificada del flujo completo.",
+                "limitations": ["Supone una ruta en serie, tiempos constantes y disponibilidad equivalente.", "No modela variabilidad, colas, lotes, fallos ni priorización."]
+            },
+            {
+                "title": "Utilización alta no significa ausencia de cola",
+                "scenario": "Una etapa tiene capacidad efectiva de 50 unidades/día y completa 47; la demanda diaria fluctúa entre 38 y 55.",
+                "reasoning_steps": [
+                    "Utilización observada simplificada = 47/50 = 0,94 o 94 %.",
+                    "La media no muestra días con demanda superior a capacidad.",
+                    "En esos días se acumula trabajo pendiente que debe absorberse después.",
+                    "Antes de aumentar la utilización objetivo, graficar demanda, capacidad, WIP y tiempos por día."
+                ],
+                "interpretation": "94 % describe uso promedio del periodo, no garantía de buen flujo; la variabilidad puede producir cola.",
+                "limitations": ["No es un modelo de colas probabilístico.", "No estima una distribución de espera a partir de utilización sola."]
+            },
+            {
+                "title": "Control de consistencia con la Ley de Little",
+                "scenario": "Un proceso sintético estable completa 12 órdenes/hora y el tiempo medio entrada-salida es 2 horas.",
+                "reasoning_steps": [
+                    "Definir λ=12 órdenes/h y W=2 h bajo la misma frontera.",
+                    "L=λW=12×2=24 órdenes promedio dentro del sistema.",
+                    "Comparar el valor con un conteo promedio de WIP medido en la misma ventana.",
+                    "Si difiere mucho, revisar estabilidad, abandonos, lotes, unidades y eventos de entrada/salida."
+                ],
+                "interpretation": "El sistema debería contener alrededor de 24 órdenes en promedio bajo las condiciones declaradas.",
+                "limitations": ["No predice percentiles ni máximo de cola.", "No debe aplicarse mezclando horarios o poblaciones incompatibles."]
+            },
+            {
+                "title": "Media estable con cola de cola larga",
+                "scenario": "Antes de un cambio, tiempos sintéticos son 40,45,50,55,60 min. Después son 30,32,34,36,118 min.",
+                "reasoning_steps": [
+                    "Media antes = 50 min; media después = 50 min.",
+                    "La mayoría de casos después es más rápida, pero aparece un caso de 118 min.",
+                    "Una única media concluiría 'sin cambio' y ocultaría heterogeneidad.",
+                    "Reportar distribución/percentiles y estudiar la causa del extremo antes de declarar mejora."
+                ],
+                "interpretation": "Una medida central aislada puede ocultar empeoramiento para una fracción del flujo.",
+                "limitations": ["Muestra pequeña deliberadamente didáctica.", "No permite inferencia estadística sobre un servicio real."]
+            },
+            {
+                "title": "Punto de pedido con stock de seguridad",
+                "scenario": "Un consumible ficticio usa 18 unidades/día, el lead time declarado es 4 días y la política asigna 30 unidades de stock de seguridad.",
+                "reasoning_steps": [
+                    "Demanda esperada durante lead time = 18×4 = 72 unidades.",
+                    "ROP = 72+30 = 102 unidades.",
+                    "Al alcanzar 102 unidades disponibles según la convención del inventario, se dispara la reposición.",
+                    "Probar escenarios de demanda de 24/día o lead time de 6 días para comprobar sensibilidad."
+                ],
+                "interpretation": "102 es un umbral de política bajo supuestos, no una garantía de ausencia de stockout.",
+                "limitations": ["No deriva estadísticamente el stock de seguridad.", "No incorpora caducidad, lote mínimo ni sustitutos."]
+            },
+            {
+                "title": "PDSA con medida de balance",
+                "scenario": "Un flujo sintético cambia la liberación de lotes buscando bajar turnaround. Baseline: mediana 95 min y retrabajo 3 %. Prueba pequeña: mediana 76 min y retrabajo 9 %.",
+                "reasoning_steps": [
+                    "Definir objetivo: reducir turnaround sin aumentar retrabajo por encima del límite preestablecido.",
+                    "La medida objetivo mejora 19 min en la prueba.",
+                    "La medida de balance empeora de 3 % a 9 %.",
+                    "No implementar aún; estudiar por qué crece retrabajo, adaptar el cambio y ejecutar otro ciclo."
+                ],
+                "interpretation": "La prueba produjo aprendizaje, pero no evidencia suficiente de mejora global.",
+                "limitations": ["Ejemplo sintético sin inferencia causal formal.", "Implementación real exigiría más condiciones, datos, riesgos y gobernanza."]
+            }
+        ],
+        "guided_activities": [
+            {
+                "title": "Actividad guiada: rediseño reproducible de un flujo sintético de laboratorio",
+                "instructions": [
+                    "Trabaja solo con el conjunto ficticio entregado; no uses nombres, muestras, tiempos, resultados ni información de pacientes o laboratorios reales.",
+                    "Congela la frontera del proceso, la unidad de flujo, el horizonte temporal y las definiciones de cada métrica antes de calcular.",
+                    "Dibuja un mapa de proceso que separe trabajo activo, espera, transferencia, decisión y retrabajo; no uses solo un organigrama.",
+                    "Construye una baseline con demanda, capacidad efectiva, throughput, utilización, WIP y turnaround por etapa y para el proceso completo.",
+                    "Comprueba al menos una relación con Little y documenta si las condiciones del caso permiten usarla como control de consistencia.",
+                    "Diseña una política de inventario para un consumible ficticio con lead time, punto de pedido, stock de seguridad y un escenario adverso.",
+                    "Propón una única intervención operacional pequeña; define predicción, medida de resultado, proceso y balance antes de inspeccionar el escenario posterior.",
+                    "Ejecuta un ciclo PDSA simulado y conserva resultados desfavorables; no reajustes el criterio después de conocer la salida.",
+                    "Cierra diferenciando mejora operacional local de calidad clínica, acreditación ISO 15189, estrategia de mercado, coste-efectividad o cumplimiento regulatorio."
+                ],
+                "problems": [
+                    "Define entrada, salida, unidad de flujo y cinco etapas del proceso sintético y justifica dos elementos que quedan fuera de la frontera.",
+                    "Calcula capacidad nominal y efectiva para cada etapa usando tiempos y disponibilidad suministrados.",
+                    "Identifica el cuello de botella y explica por qué mejorar una etapa no limitante puede no aumentar throughput.",
+                    "Calcula utilización por etapa en tres días y marca cuándo demanda supera capacidad efectiva.",
+                    "Separa tiempo activo y espera para diez unidades y calcula turnaround total por unidad.",
+                    "Calcula media, mediana y un percentil alto del turnaround; explica qué muestra cada resumen.",
+                    "Estima WIP esperado con L=λW en una ventana estable y compáralo con el WIP observado.",
+                    "Explica dos razones por las que Little podría no cerrar exactamente en una ventana corta o inestable.",
+                    "Construye un gráfico temporal de demanda, throughput, WIP y turnaround e identifica una asociación que requiera prueba adicional.",
+                    "Calcula un punto de pedido para un consumible y repite el cálculo bajo mayor demanda y lead time más largo.",
+                    "Enumera al menos cuatro costes o riesgos de aumentar excesivamente el stock de seguridad.",
+                    "Define una medida de resultado, una de proceso y dos de balance para la intervención propuesta.",
+                    "Predice cuantitativamente el efecto de la intervención antes de revelar los datos posteriores del escenario.",
+                    "Compara baseline y prueba PDSA y decide adoptar, adaptar o abandonar el cambio con justificación.",
+                    "Identifica un posible efecto distributivo o de priorización: qué tipo de unidad podría esperar más aunque la media global mejore.",
+                    "Redacta un memo de máximo 220 palabras con hallazgo, magnitud, incertidumbre, medida de balance y siguiente prueba."
+                ],
+                "deliverables": [
+                    "Mapa de proceso con frontera, unidad de flujo, tiempos activos, esperas, decisiones, transferencias y retrabajo.",
+                    "Tabla demanda-capacidad-throughput-utilización por etapa y horizonte.",
+                    "Análisis de cuello de botella con una intervención candidata y una alternativa descartada.",
+                    "Tabla de turnaround y WIP con comprobación de Little y condiciones de validez.",
+                    "Gráfico temporal anotado de la baseline y la prueba.",
+                    "Política de inventario con ROP, stock de seguridad y dos escenarios de sensibilidad.",
+                    "Ficha PDSA con predicción previa, resultado, proceso, balances y decisión adoptar/adaptar/abandonar.",
+                    "Memo final y registro de límites, datos faltantes y preguntas reservadas para U4–U6 o evaluación profesional."
+                ],
+                "checking_criteria": [
+                    "Todas las tasas usan la misma unidad temporal o muestran conversión explícita.",
+                    "La capacidad efectiva no se confunde con la nominal.",
+                    "El cuello de botella se identifica a partir de capacidad/flujo y no por intuición narrativa.",
+                    "Little usa L, λ y W de la misma frontera y periodo y no se presenta como distribución de cola.",
+                    "Turnaround conserva la misma definición antes y después.",
+                    "La política de inventario declara demanda, lead time, stock de seguridad y supuestos.",
+                    "La intervención tiene predicción y criterios definidos antes del resultado.",
+                    "Existe al menos una medida de balance capaz de detectar daño desplazado.",
+                    "Los resultados desfavorables permanecen en la entrega y se interpretan.",
+                    "El memo separa mejora operativa de acreditación, validación clínica, estrategia y evaluación económica."
+                ]
+            }
+        ],
+        "common_errors": [
+            {"error": "Comparar demanda diaria con capacidad semanal sin convertir unidades.", "correction": "Usar el mismo horizonte y la misma unidad de flujo antes de calcular brechas o utilización."},
+            {"error": "Llamar capacidad a la producción observada.", "correction": "Separar capacidad disponible de throughput realmente completado y documentar pérdidas de disponibilidad."},
+            {"error": "Optimizar la etapa más rápida esperando aumentar el throughput total.", "correction": "Identificar primero el cuello de botella y probar el efecto sistémico del cambio."},
+            {"error": "Tratar 100 % de utilización como objetivo universal.", "correction": "Analizar variabilidad, colas, prioridades y necesidad de capacidad de protección antes de fijar objetivos."},
+            {"error": "Aplicar L=λW mezclando WIP de todo el sistema con throughput de una subetapa.", "correction": "Mantener la misma frontera, población, periodo y unidades para L, λ y W."},
+            {"error": "Concluir que la media de turnaround representa a todas las unidades.", "correction": "Revisar distribución, percentiles, extremos y estratos además de la media."},
+            {"error": "Aumentar stock de seguridad sin medir caducidad ni coste de inventario.", "correction": "Equilibrar stockouts con caducidad, almacenamiento, capital y variabilidad de reposición."},
+            {"error": "Usar un punto de pedido calculado con un saldo de inventario no fiable.", "correction": "Verificar registros, recepciones, consumos, lotes y recuento físico antes de automatizar reposición."},
+            {"error": "Declarar mejora porque una única métrica objetivo baja.", "correction": "Añadir medidas de proceso y balance y observar datos en el tiempo."},
+            {"error": "Confundir una prueba PDSA pequeña con implementación permanente.", "correction": "Usar la prueba para aprender, adaptar y repetir antes de escalar el cambio."},
+            {"error": "Presentar una mejora operacional como evidencia de calidad clínica o acreditación.", "correction": "Limitar la conclusión al proceso sintético y declarar la evidencia adicional necesaria para otras afirmaciones."}
+        ],
+        "self_assessment": [
+            {"question": "¿Qué debe definirse antes de medir un proceso?", "answer": "Frontera, evento de entrada y salida, unidad de flujo, horizonte y definiciones de las métricas.", "reasoning": "Sin estos elementos, tasas y tiempos pueden referirse a sistemas distintos.", "common_error": "Empezar a calcular con datos de departamentos sin definir el flujo completo."},
+            {"question": "Un recurso dispone de 360 min efectivos y procesa 6 min/unidad. ¿Capacidad teórica simplificada?", "answer": "60 unidades por periodo.", "reasoning": "C=360/6=60 bajo el supuesto de tiempo por unidad constante.", "common_error": "Confundir 60 con throughput garantizado."},
+            {"question": "Etapas con capacidades 70, 45 y 80 unidades/día: ¿cuál limita el proceso en serie simplificado?", "answer": "La etapa de 45 unidades/día.", "reasoning": "La mínima capacidad efectiva restringe la salida sostenible si la ruta y supuestos son compatibles.", "common_error": "Elegir la etapa de 80 por ser la de mayor actividad."},
+            {"question": "¿Por qué una utilización de 95 % no prueba que el proceso sea eficiente?", "answer": "Porque no describe variabilidad, colas, prioridades, retrabajo ni medidas de balance.", "reasoning": "Un sistema muy cargado puede acumular espera ante fluctuaciones pequeñas.", "common_error": "Interpretar utilización alta como calidad alta."},
+            {"question": "Con λ=8 unidades/h y W=1,5 h, ¿L según Little?", "answer": "12 unidades en promedio.", "reasoning": "L=8×1,5=12 si sistema, frontera y periodo son coherentes y estables.", "common_error": "Presentar 12 como máximo de cola."},
+            {"question": "¿Qué NO proporciona L=λW?", "answer": "No proporciona por sí sola percentiles, distribución de espera, prioridad, causalidad ni capacidad óptima.", "reasoning": "Es una relación de promedios bajo condiciones generales, no un modelo completo de colas.", "common_error": "Usarla para predecir el peor caso."},
+            {"question": "Demanda 15 unidades/día, lead time 5 días y SS=20: ¿ROP?", "answer": "95 unidades.", "reasoning": "ROP=15×5+20=95.", "common_error": "Olvidar compatibilidad de unidades entre demanda y lead time."},
+            {"question": "¿Por qué no siempre conviene aumentar stock de seguridad?", "answer": "Porque reduce un tipo de riesgo pero aumenta inventario, coste, espacio, caducidad u obsolescencia.", "reasoning": "La política debe equilibrar consecuencias y sensibilidad.", "common_error": "Suponer que más inventario siempre aumenta calidad."},
+            {"question": "¿Qué función tiene una medida de balance?", "answer": "Detectar si el cambio mejora una dimensión a costa de empeorar otra parte del sistema.", "reasoning": "Evita declarar éxito por una optimización local.", "common_error": "Usar solo la métrica que motivó el proyecto."},
+            {"question": "Una prueba PDSA mejora turnaround pero triplica retrabajo. ¿Debe implementarse automáticamente?", "answer": "No; debe estudiarse el balance, adaptar la intervención y probar de nuevo.", "reasoning": "PDSA genera aprendizaje y la mejora global requiere observar efectos no deseados.", "common_error": "Implementar por una sola métrica favorable."},
+            {"question": "¿Qué queda fuera aunque el flujo sintético mejore?", "answer": "Acreditación ISO 15189, validación clínica, conformidad regulatoria, estrategia de mercado y coste-efectividad formal.", "reasoning": "Cada afirmación requiere un marco, evidencia y autoridad distintos.", "common_error": "Generalizar eficiencia operacional a calidad o valor sanitario."}
+        ],
+        "biomedical_connections": [
+            {"topic": "Laboratorios biomédicos", "connection": "Permite mapear recepción, preparación, análisis, revisión y liberación como flujo operativo sin usar datos de pacientes."},
+            {"topic": "Ingeniería clínica", "connection": "Ayuda a distinguir capacidad de equipos, disponibilidad, mantenimiento y throughput real en servicios técnicos."},
+            {"topic": "Cadena de suministro sanitaria", "connection": "Introduce trazabilidad de inventario, lead time, stock de seguridad, rotura y caducidad de consumibles."},
+            {"topic": "Mejora de calidad", "connection": "Integra medidas de resultado, proceso y balance con ciclos PDSA y series temporales."},
+            {"topic": "Gestión hospitalaria", "connection": "Relaciona demanda, capacidad, WIP y turnaround sin convertir métricas operativas en conclusiones clínicas."}
+        ],
+        "sources": [
+            {"title": "A Proof for the Queuing Formula: L = λW", "organization": "INFORMS / Operations Research", "year": 1961, "url": "https://pubsonline.informs.org/doi/abs/10.1287/opre.9.3.383", "type": "artículo metodológico primario", "description": "Prueba original de la relación de Little entre número medio en sistema, tasa media y tiempo medio bajo condiciones de estabilidad.", "verification_status": "verified_directly"},
+            {"title": "ISO 15189:2022 — Medical laboratories — Requirements for quality and competence", "organization": "International Organization for Standardization", "year": 2022, "url": "https://www.iso.org/standard/76677.html", "type": "estándar internacional — ficha oficial", "description": "Confirma la edición 4 vigente y su alcance de requisitos de calidad y competencia para laboratorios médicos.", "verification_status": "verified_directly"},
+            {"title": "Laboratory quality management system: handbook", "organization": "World Health Organization", "year": 2011, "url": "https://www.who.int/publications/i/item/9789241548274", "type": "manual institucional", "description": "Referencia integral para gestión de calidad de laboratorios de salud, incluyendo procesos, inventario, incidencias y mejora.", "verification_status": "verified_directly"},
+            {"title": "Laboratory Quality Management System Training Toolkit", "organization": "World Health Organization / CDC / CLSI collaboration", "url": "https://extranet.who.int/hslp/content/LQMS-training-toolkit", "type": "toolkit institucional", "description": "Módulos sobre equipos, compras e inventario, control de procesos, incidencias y mejora continua.", "verification_status": "verified_directly"},
+            {"title": "Activities Phase 2 — Purchasing and Inventory", "organization": "World Health Organization — LQSI", "url": "https://extranet.who.int/lqsi/activitiesqse/2/12", "type": "herramienta institucional", "description": "Recomienda inventario de existencias, registro de control, pruebas de recepción, sistema normalizado de pedidos y almacenamiento adecuado.", "verification_status": "verified_directly"},
+            {"title": "Model for Improvement", "organization": "Institute for Healthcare Improvement", "url": "https://www.ihi.org/library/model-for-improvement", "type": "marco institucional de mejora", "description": "Presenta las tres preguntas del Model for Improvement y el uso de ciclos PDSA para probar y adaptar cambios.", "verification_status": "verified_directly"},
+            {"title": "Model for Improvement: Establishing Measures", "organization": "Institute for Healthcare Improvement", "url": "https://www.ihi.org/library/model-for-improvement/establishing-measures", "type": "guía institucional de medición", "description": "Distingue medidas de resultado, proceso y balance y recomienda observar datos a través del tiempo.", "verification_status": "verified_directly"},
+            {"title": "Model for Improvement: Testing Changes", "organization": "Institute for Healthcare Improvement", "url": "https://www.ihi.org/library/model-for-improvement/testing-changes", "type": "guía institucional de mejora", "description": "Describe PDSA como prueba secuencial a pequeña escala con predicción, observación y aprendizaje antes de implementación amplia.", "verification_status": "verified_directly"},
+            {"title": "How to align capacity with demand in general practice", "organization": "NHS England", "year": 2024, "url": "https://www.england.nhs.uk/long-read/how-to-align-capacity-with-demand-in-general-practice/", "type": "guía institucional de operaciones sanitarias", "description": "Propone medir variación de demanda/capacidad, suavizar variación y ajustar capacidad para reducir cuellos de botella y colas.", "verification_status": "verified_directly"},
+            {"title": "Inventory Management — Principles of Finance", "organization": "OpenStax", "url": "https://openstax.org/books/principles-finance/pages/19-5-inventory-management", "type": "texto universitario abierto", "description": "Explica compromisos de inventario, costes de mantenimiento, pedido y rotura de stock y su relación con operaciones.", "verification_status": "verified_directly"},
+            {"title": "Inventory Models for Uncertain Demand — Fundamentals of Operations Management", "organization": "eCampusOntario Pressbooks", "url": "https://ecampusontario.pressbooks.pub/fundamentalsopsmgmt/chapter/8-7-inventory-models-for-uncertain-demand/", "type": "texto universitario abierto", "description": "Presenta el punto de pedido con demanda durante lead time y stock de seguridad bajo supuestos explícitos.", "verification_status": "verified_directly"}
+        ],
+        "editorial_notice": "Material educativo curado internamente y mantenido en estado review. Las fuentes se verificaron directamente para este alcance, incluida ISO 15189:2022 como edición vigente a agosto de 2026. La unidad no constituye revisión disciplinar externa, auditoría operativa, acreditación ISO 15189, asesoría de gestión, validación clínica, conformidad regulatoria ni garantía de desempeño de un laboratorio real. Todas las actividades usan procesos, inventarios y datos sintéticos; cualquier traslado a un servicio real exige autorización, contexto local, gobernanza y evaluación profesional."
+    })
+    write(unit)
+    text = SOURCE.read_text(encoding="utf-8")
+    assert GENERIC.casefold() not in text.casefold()
+    assert SOURCE.read_bytes() == MIRROR.read_bytes()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
