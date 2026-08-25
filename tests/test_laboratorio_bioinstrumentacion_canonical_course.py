@@ -44,7 +44,7 @@ class LaboratorioBioinstrumentacionCanonicalCourseTests(unittest.TestCase):
         for concept in (
             "mensurando",
             "sensor",
-            "biopotencial",
+            "front-end",
             "muestreo",
             "integr",
             "verific",
