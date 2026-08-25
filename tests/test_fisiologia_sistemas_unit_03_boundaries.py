@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 UNIT = ROOT / "data" / "course_redevelopment" / "fisiologia-sistemas" / "units" / "unit-03.json"
+SUBJECT = ROOT / "data" / "subjects" / "biologicas-medicas" / "fisiologia-sistemas.json"
 
 
 class FisiologiaSistemasUnit03BoundaryTests(unittest.TestCase):
@@ -13,6 +14,7 @@ class FisiologiaSistemasUnit03BoundaryTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = json.loads(UNIT.read_text(encoding="utf-8"))
         cls.text = UNIT.read_text(encoding="utf-8").casefold()
+        cls.subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
 
     def test_spo2_and_vo2_are_not_diagnostic_shortcuts(self) -> None:
         errors = json.dumps(self.unit["common_errors"], ensure_ascii=False).casefold()
@@ -24,6 +26,13 @@ class FisiologiaSistemasUnit03BoundaryTests(unittest.TestCase):
         notice = self.unit["editorial_notice"].casefold()
         for phrase in ("no constituye diagnóstico", "indicación de oxígeno", "transfusión", "vasopresores", "objetivos de reanimación"):
             self.assertIn(phrase, notice)
+
+    def test_published_subject_descriptor_matches_curated_u3(self) -> None:
+        published = next(item for item in self.subject["detailed_units"] if item["unit"] == 3)
+        self.assertEqual(published["title"], self.unit["title"])
+        self.assertEqual(published["description"], self.unit["purpose"])
+        self.assertIn("cadena acoplada", published["description"].casefold())
+        self.assertNotIn("integrar perfusión, ventilación, transporte de oxígeno para resolver", published["description"].casefold())
 
 
 if __name__ == "__main__":
