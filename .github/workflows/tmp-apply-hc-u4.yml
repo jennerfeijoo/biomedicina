@@ -16,12 +16,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Assemble validated payload
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Materialize and validate canonical U4
         shell: bash
         run: |
           set -euo pipefail
-          cat .tmp/hc_u4/part01.b64 .tmp/hc_u4/part02.b64 .tmp/hc_u4/part03.b64 .tmp/hc_u4/part04.b64 .tmp/hc_u4/part05.b64 .tmp/hc_u4/part06.b64 > /tmp/hc_u4.b64
-          base64 -d /tmp/hc_u4.b64 > /tmp/hc_u4.tgz
+          echo "payload chars: $(wc -c < .tmp/hc_u4_payload.b64)"
+          base64 -d .tmp/hc_u4_payload.b64 > /tmp/hc_u4.tgz
+          sha256sum /tmp/hc_u4.tgz
           echo 'c4a3fe59902c78202190638fe97a9b3141c9db6f2d9bd480080727664adffd40  /tmp/hc_u4.tgz' | sha256sum -c -
           mkdir -p /tmp/hc_u4
           tar -xzf /tmp/hc_u4.tgz -C /tmp/hc_u4
@@ -32,13 +36,16 @@ jobs:
           cp /tmp/hc_u4/unit-04.json data/generated_units/historias-clinicas-terminologias-estandares/unit-04.json
           cp /tmp/hc_u4/test.py tests/test_historias_clinicas_unit_04_curated.py
           cmp data/course_redevelopment/historias-clinicas-terminologias-estandares/units/unit-04.json data/generated_units/historias-clinicas-terminologias-estandares/unit-04.json
-          rm -rf .tmp/hc_u4 .tmp/hc_u4_payload.b64 .github/workflows/tmp-apply-hc-u4.yml
+          python scripts/validate_generated_units.py
+          python tests/test_historias_clinicas_unit_04_curated.py
+          rm -rf .tmp/hc_u4 .tmp/hc_u4_payload.b64 .tmp/u4_payload
+          rm -f .github/workflows/tmp-apply-hc-u4.yml .github/workflows/assemble-historias-u4-temp.yml
           git add -A
           git diff --cached --check
-      - name: Commit canonical U4
+      - name: Commit canonical U4 and clean transfer artifacts
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Curación académica de Historias Clínicas U4'
-          git push
+          git commit -m 'Materializar curación de Historias Clínicas U4'
+          git push origin HEAD:${GITHUB_REF_NAME}
