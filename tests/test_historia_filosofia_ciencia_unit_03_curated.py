@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "historia-filosofia-ciencia" / "units" / "unit-03.json"
 MIRROR = ROOT / "data" / "generated_units" / "historia-filosofia-ciencia" / "unit-03.json"
+SUBJECT = ROOT / "data" / "subjects" / "gestion-etica-comunicacion" / "historia-filosofia-ciencia.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -66,7 +67,7 @@ class HistoriaFilosofiaCienciaUnit03CuratedTests(unittest.TestCase):
             "no todo ajuste es ad hoc",
         ):
             self.assertIn(phrase, text)
-        self.assertIn("no significa que una teoría científica sea falsa", text)
+        self.assertIn("la idea no dice que una teoría científica sea falsa", text)
 
     def test_kuhn_section_distinguishes_anomaly_crisis_and_revolution(self) -> None:
         text = json.dumps(self.unit["theory_sections"][1], ensure_ascii=False).casefold()
@@ -153,6 +154,11 @@ class HistoriaFilosofiaCienciaUnit03CuratedTests(unittest.TestCase):
     def test_curricular_boundary_reserves_measurement_and_power(self) -> None:
         self.assertIn("u4 desarrollará medición, clasificación y objetividad", self.text)
         self.assertIn("u5 analizará instituciones, colonialidad, género e industria", self.text)
+
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
+        subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
+        published = next(x for x in subject["detailed_units"] if x["unit"] == 3)
+        self.assertEqual(published["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
