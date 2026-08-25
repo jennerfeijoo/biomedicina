@@ -7,7 +7,10 @@ SOURCE = ROOT / 'data/course_redevelopment/ingenieria-datos-biomedicos/units/uni
 MIRROR = ROOT / 'data/generated_units/ingenieria-datos-biomedicos/unit-05.json'
 DESCRIPTOR = ROOT / 'data/subjects/ingenieria-biomedica/ingenieria-datos-biomedicos.json'
 PUBLIC = ROOT / 'ingenieria-biomedica/ingenieria-datos-biomedicos/unidades/unidad-05.html'
-TEMP_REPAIR_WORKFLOW = ROOT / '.github/workflows/patch-idb-u5-final-boundary.yml'
+TEMP_REPAIR_WORKFLOWS = [
+    ROOT / '.github/workflows/patch-idb-u5-final-boundary.yml',
+    ROOT / '.github/workflows/patch-idb-u5-privacy-word.yml',
+]
 
 
 class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
@@ -22,7 +25,8 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertEqual(self.data['slug'], 'orquestacion-y-observabilidad')
         self.assertEqual(self.data['title'], 'Orquestación y observabilidad')
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
-        self.assertFalse(TEMP_REPAIR_WORKFLOW.exists())
+        for workflow in TEMP_REPAIR_WORKFLOWS:
+            self.assertFalse(workflow.exists())
 
     def test_generic_template_and_irrelevant_classifier_equation_are_removed(self):
         self.assertNotIn('concepto de la unidad que debe definirse mediante entidades observables', self.text)
@@ -67,7 +71,7 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertIn('u4', purpose)
         self.assertIn('u6', purpose)
         self.assertIn('quality gates', purpose)
-        for concept in ['seudonimización', 'minimización', 'autorización', 'productos de datos']:
+        for concept in ['privacidad', 'seudonimización', 'minimización', 'autorización', 'productos de datos']:
             self.assertIn(concept, purpose)
         self.assertNotIn('interoperabilidad', purpose)
         self.assertIn('no se conectan ehr', notice)
@@ -118,7 +122,7 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertEqual(unit['title'], self.data['title'])
         self.assertEqual(unit['description'], self.data['purpose'])
         published_description = unit['description'].lower()
-        for concept in ['seudonimización', 'minimización', 'autorización', 'productos de datos']:
+        for concept in ['privacidad', 'seudonimización', 'minimización', 'autorización', 'productos de datos']:
             self.assertIn(concept, published_description)
         self.assertNotIn('interoperabilidad', published_description)
 
