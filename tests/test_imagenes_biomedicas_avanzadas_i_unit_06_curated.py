@@ -98,12 +98,15 @@ class TestImagenesBiomedicasAvanzadasIUnit06Curated(unittest.TestCase):
         self.assertIn("desempeño técnico, validez científica y utilidad clínica son capas distintas", self.text)
         self.assertIn("no certifica un dispositivo", self.text)
 
-    def test_qiba_ibsi_and_uncertainty_are_used_with_correct_scope(self) -> None:
+    def test_qiba_ibsi_best_dicom_and_uncertainty_are_used_with_correct_scope(self) -> None:
         self.assertIn("qiba profiles", self.text)
         self.assertIn("ibsi", self.text)
+        self.assertIn("best biomarkers", self.text)
+        self.assertIn("dicom standard current edition", self.text)
         self.assertIn("objeto digital", self.text)
         self.assertIn("armonización reduce variabilidad pero no crea utilidad clínica automáticamente", self.text)
         self.assertIn("cambios de versión obligan a revisar qué claims técnicos requieren revalidación", self.text)
+        self.assertIn("qiba, ibsi, nist, dicom y best se usan como referencias metodológicas", self.text)
 
     def test_examples_require_interpretation_and_limits(self) -> None:
         for example in self.unit["worked_examples"]:
@@ -123,7 +126,14 @@ class TestImagenesBiomedicasAvanzadasIUnit06Curated(unittest.TestCase):
             self.assertEqual(source["verification_status"], "verified_directly")
             self.assertTrue(source["url"].startswith("https://"))
         urls = " ".join(source["url"].lower() for source in self.unit["sources"])
-        for domain in ["pmc.ncbi.nlm.nih.gov", "theibsi.github.io", "rsna.org", "nist.gov", "ncbi.nlm.nih.gov"]:
+        for domain in [
+            "pmc.ncbi.nlm.nih.gov",
+            "theibsi.github.io",
+            "rsna.org",
+            "nist.gov",
+            "ncbi.nlm.nih.gov",
+            "dicomstandard.org",
+        ]:
             self.assertIn(domain, urls)
 
     def test_editorial_notice_blocks_clinical_or_regulatory_overreach(self) -> None:
