@@ -54,7 +54,7 @@ class HistoriasClinicasUnit05CuratedTests(unittest.TestCase):
         text = json.dumps(self.unit["theory_sections"][0], ensure_ascii=False).casefold()
         for phrase in (
             "kahn", "conformance", "completeness", "plausibility",
-            "denominador", "atemporal", "temporal", "uniqueness",
+            "denominador", "atemporal", "temporal", "entidad que debería ser única",
             "uso previsto", "evidencia insuficiente",
         ):
             self.assertIn(phrase, text)
@@ -75,7 +75,7 @@ class HistoriasClinicasUnit05CuratedTests(unittest.TestCase):
         for phrase in (
             "autenticación", "autorización", "consentimiento", "mínimo privilegio",
             "rbac", "abac", "fhir r5 consent", "fhir r5 permission",
-            "security labels", "purpose",
+            "security labels", "propósito de uso",
         ):
             self.assertIn(phrase, text)
         self.assertIn("consent técnicamente válido no prueba", text)
@@ -85,7 +85,7 @@ class HistoriasClinicasUnit05CuratedTests(unittest.TestCase):
         text = json.dumps(self.unit["theory_sections"][3], ensure_ascii=False).casefold()
         for phrase in (
             "auditevent", "provenance", "log", "integridad", "retención",
-            "acceso masivo", "propósito distinto",
+            "lectura masiva", "propósito distinto",
         ):
             self.assertIn(phrase, text)
         self.assertIn("no usar uno como sustituto universal del otro", text)
