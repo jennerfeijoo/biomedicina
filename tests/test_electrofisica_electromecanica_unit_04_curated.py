@@ -63,7 +63,8 @@ class ElectrofisicaElectromecanicaUnit04CuratedTests(unittest.TestCase):
         ).casefold()
         self.assertIn("efecto directo", theory)
         self.assertIn("efecto inverso", theory)
-        self.assertIn("carga generada y la tensión leída", theory)
+        self.assertIn("fuente de carga", theory)
+        self.assertIn("la tensión observada depende del circuito conectado", theory)
         self.assertIn("u5", theory)
 
     def test_strain_bridge_and_lvdt_are_not_overgeneralized(self) -> None:
