@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Human-authored validation trigger after generated public pages were synchronized.
+
 import json
 import unittest
 from pathlib import Path
