@@ -148,27 +148,23 @@ class HistoriasClinicasUnit06CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, notice)
 
-    def test_publication_when_generated(self) -> None:
-        if not PUBLIC_UNIT.exists():
-            self.skipTest("Página pública pendiente de sincronización automática")
+    def test_publication_is_synchronized(self) -> None:
+        self.assertTrue(PUBLIC_UNIT.exists())
         public_text = PUBLIC_UNIT.read_text(encoding="utf-8")
         self.assertIn(self.unit["purpose"], public_text)
 
-    def test_descriptor_when_promoted(self) -> None:
+    def test_descriptor_is_promoted(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[6]["description"] != self.unit["purpose"]:
-            self.skipTest("Descriptor curricular pendiente de promoción automática")
         self.assertEqual(detailed[6]["description"], self.unit["purpose"])
 
-    def test_catalog_when_course_closure_is_published(self) -> None:
+    def test_catalog_closes_course_against_known_template_markers(self) -> None:
         catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
         specificity = catalog["dimensions"]["specificity"]
-        pending = set(specificity["template_detected"])
-        if "historias-clinicas-terminologias-estandares" in pending:
-            self.skipTest("Catálogo editorial pendiente de sincronización automática")
         screened = set(specificity["screened_no_known_template_marker"])
+        pending = set(specificity["template_detected"])
         self.assertIn("historias-clinicas-terminologias-estandares", screened)
+        self.assertNotIn("historias-clinicas-terminologias-estandares", pending)
 
 
 if __name__ == "__main__":
