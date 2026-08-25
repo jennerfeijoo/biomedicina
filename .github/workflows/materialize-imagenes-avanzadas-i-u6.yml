@@ -1,0 +1,51 @@
+name: Materialize Imagenes Avanzadas I U6
+
+on:
+  push:
+    branches:
+      - codex/imagenes-avanzadas-i-u6-control-calidad
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/imagenes-avanzadas-i-u6-control-calidad
+          fetch-depth: 0
+      - name: Assemble and validate payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/imagenes-avanzadas-i-u6/part*.b64 > /tmp/u6.b64
+          test "$(wc -c < /tmp/u6.b64)" -eq 27192
+          base64 -d /tmp/u6.b64 > /tmp/u6.tar.gz
+          mkdir -p /tmp/u6
+          tar -xzf /tmp/u6.tar.gz -C /tmp/u6
+          python -m json.tool /tmp/u6/unit.json >/dev/null
+          python -m py_compile /tmp/u6/test.py
+          mkdir -p data/course_redevelopment/imagenes-biomedicas-avanzadas-i/units
+          mkdir -p data/generated_units/imagenes-biomedicas-avanzadas-i
+          cp /tmp/u6/unit.json data/course_redevelopment/imagenes-biomedicas-avanzadas-i/units/unit-06.json
+          cp /tmp/u6/unit.json data/generated_units/imagenes-biomedicas-avanzadas-i/unit-06.json
+          cp /tmp/u6/test.py tests/test_imagenes_biomedicas_avanzadas_i_unit_06_curated.py
+          cmp -s data/course_redevelopment/imagenes-biomedicas-avanzadas-i/units/unit-06.json data/generated_units/imagenes-biomedicas-avanzadas-i/unit-06.json
+      - name: Remove transfer artifacts
+        shell: bash
+        run: |
+          rm -rf .tmp/imagenes-avanzadas-i-u6
+          rm -f .github/workflows/materialize-imagenes-avanzadas-i-u6.yml
+      - name: Commit curated unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --exit-code && exit 0 || true
+          git commit -m "Curación académica de Imágenes Biomédicas Avanzadas I U6"
+          git push origin HEAD:codex/imagenes-avanzadas-i-u6-control-calidad
