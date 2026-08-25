@@ -60,8 +60,9 @@ class EticaResponsabilidadSocialUnit05CuratedTests(unittest.TestCase):
         self.assertIn("aproximadamente el 85 %", self.text)
         self.assertIn("alrededor del 15 %", self.text)
         self.assertIn("referencia global, no una regla", self.text)
-        for concept in ("punzocortantes", "infecciosos", "químicos o farmacéuticos", "radiactivos", "residuos eléctricos o electrónicos"):
+        for concept in ("punzocortantes", "infecciosos", "químicos o farmacéuticos", "radiactivos", "eléctricos o electrónicos"):
             self.assertIn(concept, self.text)
+        self.assertIn("el residuo electrónico puede contener baterías", self.text)
         self.assertIn("minimización", self.text)
         self.assertIn("reciclabilidad teórica y reciclaje real", self.text)
 
