@@ -81,6 +81,12 @@ class ElectrofisicaElectromecanicaUnit05CuratedTests(unittest.TestCase):
         self.assertIn("error estacionario", self.text)
         self.assertIn("tiempo de establecimiento", self.text)
 
+    def test_biomedical_tracking_does_not_become_clinical_efficacy(self) -> None:
+        self.assertIn("u5 no prescribe una estrategia terapéutica", self.text)
+        self.assertIn("una buena simulación no demuestra seguridad ni eficacia clínica", self.text)
+        self.assertIn("inferir eficacia clínica de un seguimiento de trayectoria", self.text)
+        self.assertIn("el desempeño de control no demuestra beneficio terapéutico ni validez clínica", self.text)
+
     def test_guided_activity_is_scaffolded_reproducible_and_safe(self) -> None:
         activities = self.unit["guided_activities"]
         self.assertEqual(len(activities), 1)
