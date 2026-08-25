@@ -32,40 +32,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Curate Ética de investigación U2 and self-clean
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/curate_etica_u2_temp.py')
-          lines = path.read_text(encoding='utf-8').splitlines()
-          fixed = False
-          for i, line in enumerate(lines):
-              if '"error": "Ocultar resultados negativos o inconclusos' in line:
-                  if not line.rstrip().endswith('}'):
-                      lines[i] = line + '}'
-                      fixed = True
-                  break
-          if not fixed:
-              raise SystemExit('Expected missing closing brace in final common_error was not found')
-          path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-          PY
-          python -m py_compile scripts/curate_etica_u2_temp.py
-          python scripts/curate_etica_u2_temp.py
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/synchronize-generated-site.yml
-          rm -f scripts/curate_etica_u2_temp.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            data/course_redevelopment/etica-responsabilidad-social/units/unit-02.json \
-            data/generated_units/etica-responsabilidad-social/unit-02.json \
-            scripts/curate_etica_u2_temp.py \
-            .github/workflows/synchronize-generated-site.yml
-          git commit -m "Curate Ética y Responsabilidad Social U2"
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
-
       - name: Validate structured academic sources
         shell: bash
         run: |
