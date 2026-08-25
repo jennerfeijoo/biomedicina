@@ -7,15 +7,16 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PAYLOAD = ROOT / ".tmp" / "imagenes_avanzadas_i_u5_payload.b64"
+PARTS = [ROOT / ".tmp" / f"imagenes_avanzadas_i_u5_part{i:02d}.b64" for i in range(1, 10)]
 SOURCE = ROOT / "data" / "course_redevelopment" / "imagenes-biomedicas-avanzadas-i" / "units" / "unit-05.json"
 MIRROR = ROOT / "data" / "generated_units" / "imagenes-biomedicas-avanzadas-i" / "unit-05.json"
 TEST = ROOT / "tests" / "test_imagenes_biomedicas_avanzadas_i_unit_05_curated.py"
 WORKFLOW = ROOT / ".github" / "workflows" / "materialize-imagenes-avanzadas-i-u5.yml"
 SELF = Path(__file__)
+OLD_PAYLOAD = ROOT / ".tmp" / "imagenes_avanzadas_i_u5_payload.b64"
 EXPECTED_SHA256 = "315493c322b6562b85be91f479f10259d5c94b4b91bd50ae0ac200d2177bcdad"
 
-encoded = "".join(PAYLOAD.read_text(encoding="utf-8").split())
+encoded = "".join("".join(p.read_text(encoding="utf-8").split()) for p in PARTS)
 raw = zlib.decompress(base64.b64decode(encoded))
 actual = hashlib.sha256(raw).hexdigest()
 if actual != EXPECTED_SHA256:
@@ -24,7 +25,6 @@ if actual != EXPECTED_SHA256:
 obj = json.loads(raw.decode("utf-8"))
 unit = obj["unit"]
 test_content = obj["test"]
-
 assert unit["subject_id"] == "imagenes-biomedicas-avanzadas-i"
 assert unit["unit"] == 5
 assert unit["slug"] == "registro-y-fusion"
@@ -38,14 +38,12 @@ text = json.dumps(unit, ensure_ascii=False, indent=2) + "\n"
 SOURCE.write_text(text, encoding="utf-8")
 MIRROR.write_text(text, encoding="utf-8")
 TEST.write_text(test_content, encoding="utf-8")
-
 json.loads(SOURCE.read_text(encoding="utf-8"))
 assert SOURCE.read_bytes() == MIRROR.read_bytes()
 assert "concepto de la unidad que debe definirse mediante entidades observables" not in text.casefold()
 assert "cnr=" not in text.casefold()
 
-for path in (PAYLOAD, SELF, WORKFLOW):
+for path in [*PARTS, OLD_PAYLOAD, SELF, WORKFLOW]:
     if path.exists():
         path.unlink()
-
-print("U5 materializada y validada; artefactos temporales retirados.")
+print("U5 materializada y validada; temporales retirados.")
