@@ -148,6 +148,18 @@ class HistoriasClinicasUnit06CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, notice)
 
+    def test_traceable_requirement_coverage_is_quantified_without_overclaim(self) -> None:
+        equations = [eq for section in self.unit["theory_sections"] for eq in section.get("equations", [])]
+        self.assertTrue(any("Cobertura" in eq.get("latex", "") for eq in equations))
+        first = json.dumps(self.unit["theory_sections"][0], ensure_ascii=False).casefold()
+        self.assertIn("cobertura trazable de requisitos", first)
+        self.assertIn("100 % de cobertura trazable no demuestra", first)
+        activity = self.unit["guided_activities"][0]
+        joined = " ".join(activity["problems"] + activity["checking_criteria"]).casefold()
+        self.assertIn("cobertura trazable", joined)
+        self.assertIn("numerador", joined)
+        self.assertIn("denominador", joined)
+
     def test_publication_is_synchronized(self) -> None:
         self.assertTrue(PUBLIC_UNIT.exists())
         public_text = PUBLIC_UNIT.read_text(encoding="utf-8")
