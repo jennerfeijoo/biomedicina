@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-04.json'
 MIRROR = ROOT / 'data/generated_units/ingenieria-datos-biomedicos/unit-04.json'
 DESCRIPTOR = ROOT / 'data/subjects/ingenieria-biomedica/ingenieria-datos-biomedicos.json'
+PUBLIC = ROOT / 'ingenieria-biomedica/ingenieria-datos-biomedicos/unidades/unidad-04.html'
 
 
 class IngenieriaDatosBiomedicosUnit04Curated(unittest.TestCase):
@@ -104,10 +105,13 @@ class IngenieriaDatosBiomedicosUnit04Curated(unittest.TestCase):
             self.assertIn(family, source_text)
         self.assertTrue(all(s.get('accessed') == '2026-08-25' for s in self.data['sources']))
 
-    def test_published_descriptor_matches_canonical_purpose(self):
+    def test_published_descriptor_and_html_match_canonical_purpose(self):
         descriptor = json.loads(DESCRIPTOR.read_text(encoding='utf-8'))
         unit = next(item for item in descriptor['detailed_units'] if item['unit'] == 4)
         self.assertEqual(unit['description'], self.data['purpose'])
+        self.assertTrue(PUBLIC.exists(), 'La página pública de U4 debe existir.')
+        public_text = PUBLIC.read_text(encoding='utf-8')
+        self.assertIn(self.data['purpose'], public_text)
 
 
 if __name__ == '__main__':
