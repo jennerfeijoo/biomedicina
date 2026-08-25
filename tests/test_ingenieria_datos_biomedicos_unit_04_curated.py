@@ -43,7 +43,7 @@ class IngenieriaDatosBiomedicosUnit04Curated(unittest.TestCase):
             self.assertIn(concept, self.text)
         self.assertIn("drop_duplicates", self.text)
         self.assertIn("no demuestra identidad clínica correcta", self.text)
-        self.assertIn("no demuestra que los datos pasaron", self.text)
+        self.assertIn("no significa que los datos pasaron", self.text)
 
     def test_provenance_models_are_distinguished(self):
         for concept in ["w3c prov", "entity", "activity", "agent", "wasgeneratedby", "wasderivedfrom", "fhir provenance", "auditevent", "openlineage", "job", "run", "dataset", "facet"]:
@@ -74,7 +74,7 @@ class IngenieriaDatosBiomedicosUnit04Curated(unittest.TestCase):
         self.assertIn("no conecta ehr", notice)
         self.assertIn("u5", notice)
         self.assertIn("u6", notice)
-        self.assertIn("no certifica", notice)
+        self.assertIn("no constituyen certificación", notice)
 
     def test_academic_depth(self):
         self.assertGreaterEqual(len(self.data["learning_objectives"]), 6)
