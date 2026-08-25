@@ -126,7 +126,7 @@ class EticaResponsabilidadSocialUnit02CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, notice)
         self.assertIn("u3", notice)
-        self.assertIn("no reducir la decisión a una puntuación moral", purpose)
+        self.assertIn("sin reducir la decisión a una puntuación moral", purpose)
         self.assertIn("personas reales", purpose)
 
 
