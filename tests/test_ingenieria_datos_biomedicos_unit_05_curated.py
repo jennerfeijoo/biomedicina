@@ -10,6 +10,7 @@ PUBLIC = ROOT / 'ingenieria-biomedica/ingenieria-datos-biomedicos/unidades/unida
 TEMP_REPAIR_WORKFLOWS = [
     ROOT / '.github/workflows/patch-idb-u5-final-boundary.yml',
     ROOT / '.github/workflows/patch-idb-u5-privacy-word.yml',
+    ROOT / '.github/workflows/diagnose-idb-u5-test.yml',
 ]
 
 
@@ -78,7 +79,7 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertIn('no declara que un run exitoso pruebe calidad', notice)
         self.assertIn('se reservan para u6', notice)
         self.assertIn('control de acceso', notice)
-        self.assertIn('no constituyen garantías de producción', notice)
+        self.assertIn('no garantías de disponibilidad ni de corrección biomédica en producción', notice)
 
     def test_academic_depth(self):
         self.assertGreaterEqual(len(self.data['learning_objectives']), 6)
