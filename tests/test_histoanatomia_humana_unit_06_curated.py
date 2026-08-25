@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "histoanatomia-humana" / "units" / "unit-06.json"
 MIRROR = ROOT / "data" / "generated_units" / "histoanatomia-humana" / "unit-06.json"
 SUBJECT = ROOT / "data" / "subjects" / "biologicas-medicas" / "histoanatomia-humana.json"
+CATALOG = ROOT / "data" / "catalog_statuses.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -216,13 +217,15 @@ class HistoanatomiaHumanaUnit06CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, purpose)
 
-    def test_published_descriptor_matches_when_promoted(self) -> None:
+    def test_published_descriptor_and_catalog_are_closed(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[6]["description"] == self.unit["purpose"]:
-            self.assertEqual(detailed[6]["description"], self.unit["purpose"])
-        else:
-            self.skipTest("El publicador aún no ha promovido el propósito canónico de U6.")
+        self.assertEqual(detailed[6]["description"], self.unit["purpose"])
+
+        catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+        specificity = catalog["dimensions"]["specificity"]
+        self.assertIn("histoanatomia-humana", specificity["screened_no_known_template_marker"])
+        self.assertNotIn("histoanatomia-humana", specificity["template_detected"])
 
 
 if __name__ == "__main__":
