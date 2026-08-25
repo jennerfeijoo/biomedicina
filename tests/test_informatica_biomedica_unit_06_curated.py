@@ -165,7 +165,7 @@ class TestInformaticaBiomedicaUnit06Curated(unittest.TestCase):
         ]:
             self.assertIn(concept, self.text)
         self.assertIn("instalar software no equivale a implementar un sistema sociotécnico", self.text)
-        self.assertIn("go-live no es un final", self.text)
+        self.assertIn("no es un final: es un cambio de fase", self.text)
 
     def test_lifecycle_monitoring_exceptions_revalidation_and_retirement_are_explicit(self) -> None:
         for concept in [
