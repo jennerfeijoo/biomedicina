@@ -6,387 +6,320 @@
   "slug": "calidad-privacidad-y-gobernanza",
   "title": "Calidad, privacidad y gobernanza",
   "status": "review",
-  "purpose": "Integrar completitud, acceso, consentimiento y auditoría para resolver un caso de uso secundario responsable de datos con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Evaluar y gobernar el uso primario y secundario de datos clínicos sintéticos mediante criterios de calidad dependientes del uso, minimización de datos, reglas de acceso, consentimiento o base de autorización documentada, trazabilidad y auditoría. La unidad reutiliza los modelos y terminologías de U1–U4, distingue calidad de datos de privacidad y seguridad, separa Consent, Permission, AuditEvent y Provenance como funciones diferentes, y reserva para U6 la implementación institucional, las pruebas de conformidad integrales y la gestión del cambio.",
   "learning_objectives": [
-    "Definir completitud, acceso y consentimiento y auditoría mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte completitud con acceso y delimite el papel de consentimiento y auditoría.",
-    "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-    "Resolver y comunicar un caso sobre uso secundario responsable de datos con incertidumbre y límites.",
-    "Transferir el método de Calidad, privacidad y gobernanza a un escenario nuevo y justificar qué debe revalidarse."
+    "Evaluar calidad de datos clínicos según el uso previsto mediante conformance, completeness y plausibility, distinguiendo presencia, conformidad estructural, coherencia temporal y aptitud para una pregunta concreta.",
+    "Diseñar un conjunto de datos mínimo para un uso secundario sintético mediante propósito explícito, variables necesarias, procedencia, retención y riesgo de identificación, evitando equiparar seudonimización con anonimización.",
+    "Modelar decisiones de acceso mediante actor o rol, recurso o categoría de datos, acción, propósito de uso, contexto, vigencia y decisión permit/deny, distinguiendo autenticación, autorización y consentimiento.",
+    "Representar decisiones y evidencias de gobernanza con FHIR R5 Consent, Permission, AuditEvent, Provenance y security labels, explicando qué registra cada artefacto y qué no demuestra por sí solo.",
+    "Construir una matriz de gobernanza para uso secundario que vincule propósito, responsable, base o autorización aplicable, datos mínimos, controles de calidad, acceso, auditoría, retención, revisión y criterio de cierre.",
+    "Auditar un escenario sintético con casos positivos y negativos, documentar excepciones y riesgos residuales, y delimitar para U6 la implementación, validación institucional y gestión del cambio sin presentar el ejercicio como asesoría legal ni aprobación ética."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Calidad, privacidad y gobernanza",
+      "heading": "1. Calidad de datos: aptitud para el uso, no una etiqueta absoluta",
       "paragraphs": [
-        "La unidad «Calidad, privacidad y gobernanza» sitúa completitud, acceso y consentimiento y auditoría dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Historias Clínicas, Terminologías y Estándares, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Calidad, privacidad y gobernanza» en Historias Clínicas, Terminologías y Estándares, «completitud», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Calidad, privacidad y gobernanza», «acceso», aporta otra dimensión al problema de Historias Clínicas, Terminologías y Estándares: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con completitud debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Calidad, privacidad y gobernanza» en Historias Clínicas, Terminologías y Estándares, «consentimiento y auditoría», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "La calidad de un dato clínico no es una propiedad única que pueda resumirse en «bueno» o «malo» sin declarar el uso previsto. Un conjunto suficiente para contabilizar encuentros puede ser inadecuado para reconstruir dosis, tiempos o resultados. Por eso U5 comienza con una pregunta operativa: qué decisión o análisis se quiere sostener, qué unidad de observación se necesita y qué error sería material para ese uso.",
+        "El marco armonizado de Kahn y colaboradores organiza la evaluación intrínseca de datos EHR en conformance, completeness y plausibility. Conformance pregunta si valores, relaciones y cálculos cumplen especificaciones declaradas; completeness pregunta si los valores esperados están presentes; plausibility pregunta si valores, distribuciones y secuencias son creíbles respecto de reglas internas o referencias externas. Las tres categorías responden preguntas diferentes y no deben colapsarse en un porcentaje global.",
+        "Completeness se mide respecto de un denominador y una expectativa. Decir «95 % completo» carece de significado si no se especifica qué campo, qué población, qué ventana temporal y por qué ese campo debería existir. Además, la ausencia puede ser informativa: que no haya un resultado porque nunca se solicitó una prueba no equivale a que el sistema haya perdido el resultado. U1 ayuda a distinguir ausencia clínica, ausencia documental y dato faltante.",
+        "La plausibilidad puede ser atemporal o temporal. Una fecha de alta anterior al ingreso viola una relación temporal; una frecuencia imposible o una unidad incompatible puede ser atemporalmente implausible; una duplicación de una entidad que debería ser única puede señalar un problema de identidad. Estas comprobaciones detectan incoherencias, pero una regla superada no demuestra automáticamente cuál de los valores es verdadero.",
+        "Calidad también es dependiente del flujo de transformación. Un recurso FHIR puede ser conforme al perfil de U4 y, aun así, conservar un código semánticamente inadecuado de U3, duplicar pacientes o perder procedencia. Por eso la evaluación de calidad debe trazarse hasta la fuente, la transformación y la versión, y debe repetirse cuando cambian origen, perfil, terminología o propósito del análisis.",
+        "El producto de U5 no asigna una puntuación moral ni clínica a un dataset. Construye un perfil de calidad con métricas separadas, criterios de aceptación definidos antes de mirar resultados, excepciones documentadas y una conclusión limitada al uso. Si una dimensión crítica no puede evaluarse, el resultado correcto es «evidencia insuficiente» y no una media que oculte la carencia."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Calidad, privacidad y gobernanza.",
-        "Relacionar completitud, acceso y consentimiento y auditoría mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "La calidad de datos depende siempre del uso previsto.",
+        "Conformance, completeness y plausibility responden preguntas diferentes y complementarias.",
+        "Completeness requiere denominador, población, ventana y expectativa documentados.",
+        "Ausencia documental no equivale automáticamente a evento clínico ausente.",
+        "Plausibilidad detecta incoherencias pero no demuestra por sí sola verdad.",
+        "Cambios de fuente o propósito obligan a reevaluar calidad."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Privacidad, minimización, seudonimización y riesgo de identificación",
       "paragraphs": [
-        "Para «Calidad, privacidad y gobernanza» dentro de Historias Clínicas, Terminologías y Estándares, el flujo recomendado es definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Historias Clínicas, Terminologías y Estándares, la evidencia pertinente incluye diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre completitud o acceso debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Calidad, privacidad y gobernanza», los controles mínimos son caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Historias Clínicas, Terminologías y Estándares, la incertidumbre de «Calidad, privacidad y gobernanza» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "La privacidad comienza antes de otorgar permisos: empieza al definir por qué se necesitan los datos y qué información es realmente necesaria. Como referencia jurisdiccional explícita, los principios del GDPR incluyen limitación de la finalidad, minimización, exactitud, limitación del plazo de conservación, integridad/confidencialidad y responsabilidad. La unidad usa estos principios para razonar sobre diseño, pero no asume que el GDPR sea la única norma aplicable a todo escenario.",
+        "Minimizar no significa eliminar variables arbitrariamente. El equipo debe justificar cada campo contra el propósito y conservar suficiente información para responder la pregunta sin introducir datos «por si acaso». Una tabla de minimización vincula variable, necesidad, granularidad mínima, periodo requerido y riesgo asociado. Si una variable no cambia la capacidad de cumplir el propósito definido, su inclusión requiere una justificación adicional.",
+        "Seudonimización y anonimización no son sinónimos. La Comisión Europea señala que datos seudonimizados que todavía pueden reidentificarse siguen siendo datos personales bajo GDPR, mientras que la anonimización exige que la persona deje de ser identificable. Por tanto, sustituir un nombre por un hash o código no autoriza a llamar «anónimo» al conjunto ni elimina automáticamente el riesgo de enlace con otras fuentes.",
+        "La guía de HHS para HIPAA ilustra otra jurisdicción y dos métodos regulatorios concretos de desidentificación —Expert Determination y Safe Harbor—, y también advierte que el riesgo de identificación no es literalmente cero. U5 no mezcla estos métodos con GDPR como si fueran equivalentes; los usa para enseñar que «desidentificado», «seudonimizado» y «anónimo» dependen de definiciones, contexto, adversario, información auxiliar y marco aplicable.",
+        "El riesgo de identificación cambia al combinar datasets. Edad exacta, fechas raras, ubicación, diagnóstico poco frecuente o secuencias temporales pueden convertirse en cuasi-identificadores aunque cada elemento aislado parezca inocuo. Por ello la actividad compara una versión rica con una versión minimizada y documenta qué utilidad se pierde y qué superficie de identificación se reduce, sin calcular una falsa probabilidad universal de reidentificación.",
+        "La retención forma parte del diseño. Un dato necesario hoy puede dejar de ser necesario cuando termina el proyecto, y las copias derivadas, logs, tablas intermedias y exportaciones deben aparecer en el inventario del ciclo de vida. La unidad exige una regla sintética de revisión, archivo o eliminación y diferencia esa decisión educativa de cualquier obligación legal real, que depende de jurisdicción e institución."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "La privacidad se diseña desde propósito, minimización y ciclo de vida.",
+        "Seudonimización no convierte automáticamente datos personales en anónimos.",
+        "Anonimización y desidentificación dependen del marco y del contexto.",
+        "Cuasi-identificadores pueden emerger al combinar múltiples fuentes clínicas.",
+        "Minimizar exige justificar granularidad, utilidad y riesgo de cada variable.",
+        "La retención incluye copias derivadas, exportaciones y registros auxiliares."
       ]
     },
     {
-      "heading": "Aplicación razonada: uso secundario responsable de datos",
+      "heading": "3. Acceso, autorización, consentimiento y propósito de uso",
       "paragraphs": [
-        "En la unidad «Calidad, privacidad y gobernanza» de Historias Clínicas, Terminologías y Estándares, el caso conductor es uso secundario responsable de datos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Calidad, privacidad y gobernanza» conecta completitud con acceso y utiliza consentimiento y auditoría como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «uso secundario responsable de datos» en Historias Clínicas, Terminologías y Estándares, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Calidad, privacidad y gobernanza» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de uso secundario responsable de datos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
-      ],
-      "equations": [
-        {
-          "latex": "PPV=\\frac{Se\\,\\pi}{Se\\,\\pi+(1-Sp)(1-\\pi)}",
-          "meaning": "Valor predictivo positivo como función de sensibilidad, especificidad y prevalencia; muestra por qué el contexto modifica la interpretación.",
-          "variables": {
-            "Se": "sensibilidad",
-            "Sp": "especificidad",
-            "\\pi": "prevalencia"
-          }
-        }
+        "Autenticación responde quién presenta una identidad; autorización responde qué acción puede realizar esa identidad bajo unas condiciones; consentimiento registra elecciones o permisos dentro de un contexto; y la base que hace legítimo un tratamiento puede depender de políticas y leyes externas. Estas nociones se relacionan, pero ninguna sustituye a las demás. Tener sesión iniciada no autoriza cualquier acceso, y tener consentimiento registrado no demuestra que una operación concreta esté permitida.",
+        "Una decisión de acceso reproducible declara al menos actor o rol, recurso o categoría de datos, acción, propósito de uso, contexto, periodo de vigencia y decisión. El principio de mínimo privilegio exige conceder solo las capacidades necesarias para la tarea definida. Los modelos RBAC agrupan permisos por roles; los modelos ABAC incorporan atributos del actor, recurso y contexto. U5 usa ambos como patrones conceptuales sin pretender diseñar una arquitectura productiva completa.",
+        "FHIR R5 Consent representa elecciones que permiten o niegan acciones a destinatarios o roles para propósitos y periodos concretos dentro de un contexto de política. La propia especificación distingue el recurso interoperable de la validez jurídica del documento o directiva subyacente. Por eso un Consent técnicamente válido no prueba que exista una base legal suficiente ni que el sistema esté aplicando correctamente sus restricciones.",
+        "FHIR R5 Permission ofrece reglas declarativas de acceso para datos y contexto y está marcado como recurso en desarrollo. Puede ayudar a representar reglas que no encajan en Consent o derivadas de él, pero su presencia tampoco implementa un motor de autorización. La regla debe evaluarse frente a la solicitud real y producir una decisión observable permit/deny con razones y obligaciones cuando correspondan.",
+        "Los security labels de FHIR añaden metadatos que pueden contribuir a decisiones de acceso y obligaciones de manejo. La especificación advierte que las etiquetas dependen de un marco de política y acuerdos de confianza; una etiqueta no hace cumplir una política por sí sola. La unidad obliga a documentar qué etiqueta se reconoce, qué regla activa y qué ocurre si el receptor no entiende la etiqueta.",
+        "El caso de uso secundario separa consentimiento de otras bases o autorizaciones posibles. El alumno no decide qué fundamento jurídico aplica a un hospital real. En su lugar, recibe una política sintética que declara propósito, actores permitidos, condiciones y excepciones, y comprueba si las decisiones de acceso implementadas son coherentes con esa política. Los conflictos se registran como hallazgos de gobernanza que requerirían revisión competente."
       ],
       "key_points": [
-        "Delimitar el caso de uso secundario responsable de datos antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Autenticación, autorización, consentimiento y base jurídica son conceptos distintos.",
+        "Una regla de acceso declara actor, acción, dato, propósito y contexto.",
+        "RBAC y ABAC son patrones diferentes para expresar decisiones de acceso.",
+        "FHIR Consent representa elecciones pero no prueba validez jurídica automática.",
+        "FHIR Permission expresa reglas y no sustituye un motor de autorización.",
+        "Security labels requieren políticas y acuerdos que definan su significado."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "4. Auditoría, procedencia y evidencia de uso responsable",
       "paragraphs": [
-        "La reproducibilidad de «Calidad, privacidad y gobernanza» en Historias Clínicas, Terminologías y Estándares requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Calidad, privacidad y gobernanza» es esta: un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción. Por ello, la entrega de Historias Clínicas, Terminologías y Estándares separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Calidad, privacidad y gobernanza» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de completitud, acceso y consentimiento y auditoría debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Historias Clínicas, Terminologías y Estándares.",
-        "El producto de dominio será un prototipo reproducible con contrato de datos y plan de validación sobre uso secundario responsable de datos. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Historias Clínicas, Terminologías y Estándares como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Una política de acceso necesita evidencia de lo que ocurrió. FHIR AuditEvent registra eventos relevantes para operaciones, privacidad y seguridad, incluyendo quién actuó, qué acción se intentó, cuándo ocurrió, sobre qué entidad y cuál fue el resultado. Un log útil debe permitir investigar accesos permitidos y denegados, pero su mera existencia no demuestra que cada acceso tuviera un propósito apropiado.",
+        "FHIR Provenance responde otra pregunta: describe entidades, agentes y actividades que produjeron, transformaron o influyeron en un recurso. La especificación explica que Provenance y AuditEvent se solapan parcialmente pero tienen focos distintos: Provenance ayuda a evaluar origen y confianza del contenido; AuditEvent registra actividades de uso y operación. U5 exige no usar uno como sustituto universal del otro.",
+        "Una auditoría debe ser interpretable. Registrar solo un identificador de usuario y una marca temporal puede ser insuficiente si no se conoce acción, recurso, propósito, resultado o contexto. A la inversa, almacenar en logs datos clínicos completos puede aumentar innecesariamente la exposición. El diseño sintético busca el mínimo de información que permita atribución y revisión sin copiar contenido clínico que no sea necesario.",
+        "Los registros también necesitan integridad, sincronización temporal, retención y control de acceso. Un sistema en el que el mismo usuario auditado puede borrar silenciosamente su propio rastro tiene una debilidad evidente de gobernanza. La unidad no diseña mecanismos criptográficos productivos, pero exige declarar quién puede leer o administrar logs, qué eventos son obligatorios y cómo se detectan huecos o secuencias imposibles.",
+        "Auditar no es revisar cada evento manualmente. Se diseñan consultas y reglas de detección: acceso fuera de horario definido por el escenario, lectura masiva, intento denegado repetido, acceso por un rol inesperado, uso con propósito distinto al autorizado o ausencia de AuditEvent cuando el flujo exigía uno. Cada regla necesita umbral, denominador y explicación; un patrón anómalo es señal para investigar, no prueba automática de conducta indebida.",
+        "El cierre de esta capa combina U1–U4: el objeto accedido conserva identidad, contexto, terminología, versión e interoperabilidad; Provenance explica cómo llegó a ese estado; AuditEvent explica quién lo utilizó; Consent, Permission o la política sintética explican qué uso se esperaba. La coherencia entre estas evidencias permite una auditoría más fuerte que inspeccionar cualquiera por separado."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un prototipo reproducible con contrato de datos y plan de validación que pueda ser auditado y corregido."
+        "AuditEvent documenta eventos de uso y operación para revisión posterior.",
+        "Provenance documenta origen y transformación del contenido clínico.",
+        "AuditEvent y Provenance se complementan pero no son intercambiables.",
+        "Los logs deben permitir investigar sin copiar datos innecesarios.",
+        "Una anomalía de auditoría requiere investigación y no demuestra culpabilidad.",
+        "La gobernanza mejora al reconciliar política, procedencia y eventos observados."
+      ]
+    },
+    {
+      "heading": "5. Gobernanza del uso secundario: decisiones, ciclo de vida y rendición de cuentas",
+      "paragraphs": [
+        "Gobernanza significa asignar decisiones, responsables, evidencia y mecanismos de revisión durante todo el ciclo de vida del dato. Para un uso secundario, el punto de partida no es «tenemos una base de datos», sino una finalidad delimitada, una población, una pregunta, un responsable del dato, un responsable del análisis y un conjunto de condiciones para acceso, transformación, resultados y cierre.",
+        "El plan de gobernanza integra un perfil de calidad con la evaluación de privacidad. Un dataset puede ser técnicamente completo pero excesivo para el propósito; puede estar minimizado pero ser incapaz de responder la pregunta; puede ser plausible pero proceder de una transformación sin trazabilidad. Por ello U5 mantiene columnas separadas para aptitud del dato, necesidad, riesgo, autorización, controles y evidencia.",
+        "El uso secundario requiere gestionar cambios de propósito y reutilizaciones posteriores. Que un conjunto haya sido autorizado para una pregunta no convierte automáticamente cualquier análisis futuro en compatible. La unidad incorpora una puerta de cambio: si cambia propósito, población, variables, receptor, enlace con otras fuentes, duración o producto de salida, se reevalúan minimización, calidad, acceso, riesgo y la autorización o política aplicable.",
+        "Las salidas también pueden revelar información. Una tabla agregada con celdas muy pequeñas, una lista de fechas raras o un modelo que memoriza registros puede crear riesgos aunque los datos de entrada estuvieran seudonimizados. La práctica exige revisar productos de salida mediante reglas sintéticas de divulgación y registrar decisiones de supresión, agregación o no publicación, sin presentar estas reglas como umbrales legales universales.",
+        "La rendición de cuentas exige poder reconstruir quién aprobó qué, sobre qué versión, con qué evidencia, durante qué periodo y qué excepciones quedaron abiertas. El entregable incluye un registro de decisiones y una matriz RACI simplificada para separar responsable de la decisión, ejecutor, consultado e informado. La matriz organiza gobernanza; no reemplaza la autoridad formal que una institución o jurisdicción asigne.",
+        "U6 tomará este paquete para implementación y validación: desplegar reglas en un entorno sintético, ejecutar pruebas de conformidad y gestionar cambios. U5 termina antes de esa fase. Su producto es un dossier de gobernanza auditable y razonado, no una autorización institucional, una evaluación ética, una DPIA formal, un dictamen de protección de datos ni asesoría jurídica."
+      ],
+      "key_points": [
+        "Gobernanza asigna decisiones, responsables, evidencia y ciclos de revisión.",
+        "Calidad suficiente no implica minimización ni autorización suficiente.",
+        "Un cambio de propósito obliga a reevaluar condiciones de gobernanza.",
+        "Las salidas analíticas también pueden generar riesgo de divulgación.",
+        "Rendición de cuentas exige versiones, decisiones y excepciones trazables.",
+        "U6 implementará y validará lo gobernado conceptualmente en U5."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "completitud",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "acceso",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "consentimiento y auditoría",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema de información clínica con datos, semántica, usuarios, decisiones y riesgos; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Calidad, privacidad y gobernanza",
-      "definition": "Dominio de estudio que integra completitud, acceso, consentimiento y auditoría para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de uso secundario responsable de datos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"Calidad de datos","definition":"Grado en que los datos son aptos para un uso definido y cumplen expectativas explícitas de representación, presencia y plausibilidad."},
+    {"term":"Fitness for use","definition":"Principio según el cual la suficiencia de los datos debe evaluarse respecto de una tarea o decisión concreta."},
+    {"term":"Conformance","definition":"Cumplimiento de valores, relaciones o cálculos con especificaciones internas o externas declaradas."},
+    {"term":"Value conformance","definition":"Cumplimiento de formato, tipo, dominio o valores permitidos por un elemento."},
+    {"term":"Relational conformance","definition":"Cumplimiento de relaciones, claves, cardinalidades o restricciones entre elementos y entidades."},
+    {"term":"Computational conformance","definition":"Coincidencia de valores derivados con la especificación formal del cálculo que los produce."},
+    {"term":"Completeness","definition":"Presencia de valores o registros esperados respecto de un denominador, población, ventana y regla definidos."},
+    {"term":"Plausibility","definition":"Credibilidad de valores, distribuciones o relaciones respecto de reglas internas o referencias externas."},
+    {"term":"Uniqueness plausibility","definition":"Evaluación de duplicados o identidades múltiples donde el objeto debería ser único."},
+    {"term":"Atemporal plausibility","definition":"Evaluación de valores y relaciones que pueden juzgarse sin depender de una secuencia temporal."},
+    {"term":"Temporal plausibility","definition":"Evaluación de secuencias, transiciones, densidades y relaciones dependientes del tiempo."},
+    {"term":"Missingness","definition":"Patrón y mecanismo por el que valores esperados no están presentes en un conjunto de datos."},
+    {"term":"Denominador","definition":"Conjunto de oportunidades o unidades respecto del cual se calcula una proporción de completitud u otra métrica."},
+    {"term":"Criterio de aceptación","definition":"Umbral o condición definido antes de inspeccionar resultados para decidir si una evidencia satisface el uso previsto."},
+    {"term":"Uso previsto","definition":"Pregunta, tarea o decisión concreta para la que se evalúa la aptitud de los datos."},
+    {"term":"Propósito de uso","definition":"Razón declarada por la que se pretende acceder, procesar, compartir o reutilizar información."},
+    {"term":"Minimización de datos","definition":"Selección de datos adecuados, pertinentes y limitados a lo necesario para un propósito definido."},
+    {"term":"Limitación de la finalidad","definition":"Principio de vincular el procesamiento a propósitos específicos y evaluar cambios de propósito antes de reutilizar datos."},
+    {"term":"Limitación de conservación","definition":"Principio de no conservar datos personales durante más tiempo del necesario para el propósito aplicable."},
+    {"term":"Privacidad desde el diseño","definition":"Incorporación temprana de principios y controles de privacidad en la definición y arquitectura del procesamiento."},
+    {"term":"Privacidad por defecto","definition":"Configuración que limita por defecto cantidad, retención y accesibilidad de datos a lo necesario."},
+    {"term":"Dato personal","definition":"Información relativa a una persona identificada o identificable según el marco jurídico que resulte aplicable."},
+    {"term":"Seudonimización","definition":"Transformación que sustituye identificadores directos por otros valores pero conserva posibilidad de reidentificación bajo ciertas condiciones."},
+    {"term":"Anonimización","definition":"Transformación que busca que una persona deje de ser identificable de forma irreversible según el contexto y estándar aplicable."},
+    {"term":"Desidentificación","definition":"Término usado en marcos como HIPAA para procesos que reducen identificabilidad conforme a reglas específicas."},
+    {"term":"Cuasi-identificador","definition":"Atributo que puede contribuir a identificar a una persona cuando se combina con otros datos o fuentes."},
+    {"term":"Riesgo de reidentificación","definition":"Posibilidad de volver a asociar datos transformados con una persona mediante información disponible y capacidades razonables."},
+    {"term":"Autenticación","definition":"Proceso de establecer o verificar la identidad de un usuario, sistema o cliente."},
+    {"term":"Autorización","definition":"Decisión sobre si un actor autenticado puede realizar una acción concreta bajo condiciones definidas."},
+    {"term":"Mínimo privilegio","definition":"Principio de conceder únicamente permisos necesarios para la tarea y periodo definidos."},
+    {"term":"RBAC","definition":"Control de acceso basado en roles que agrupa capacidades según funciones organizativas definidas."},
+    {"term":"ABAC","definition":"Control de acceso basado en atributos del actor, recurso, acción y contexto para evaluar reglas."},
+    {"term":"Consent","definition":"Recurso FHIR que representa elecciones de permitir o negar acciones a actores o roles en un contexto y periodo."},
+    {"term":"Permission","definition":"Recurso FHIR R5 en desarrollo para expresar reglas declarativas de acceso sobre datos y contexto."},
+    {"term":"Security label","definition":"Metadato asociado a recursos o bundles que puede participar en decisiones de acceso y obligaciones de manejo."},
+    {"term":"PurposeOfUse","definition":"Categoría que expresa la finalidad declarada de una operación sobre información dentro de un marco de política."},
+    {"term":"AuditEvent","definition":"Recurso FHIR para registrar eventos relevantes de operación, privacidad o seguridad con actores, acciones y resultados."},
+    {"term":"Provenance","definition":"Recurso FHIR que registra entidades, agentes y actividades que produjeron o modificaron información."},
+    {"term":"Log de auditoría","definition":"Registro de eventos diseñado para reconstruir accesos, cambios, decisiones o fallos relevantes."},
+    {"term":"Trazabilidad","definition":"Capacidad de reconstruir el recorrido de un dato, decisión o transformación mediante identificadores, versiones y evidencias."},
+    {"term":"Integridad de log","definition":"Propiedad de conservar registros de auditoría de forma que alteraciones, huecos o borrados indebidos puedan detectarse."},
+    {"term":"Retención","definition":"Periodo y reglas para conservar, revisar, archivar o eliminar datos y sus copias derivadas."},
+    {"term":"Uso secundario","definition":"Uso de datos recogidos originalmente para una finalidad distinta, como investigación, calidad, planificación o análisis."},
+    {"term":"Data use agreement","definition":"Acuerdo que delimita propósito, participantes, datos, usos permitidos, restricciones, salvaguardas y responsabilidades."},
+    {"term":"Gobernanza de datos","definition":"Sistema de decisiones, responsables, reglas, evidencias y mecanismos de revisión aplicados al ciclo de vida del dato."},
+    {"term":"Rendición de cuentas","definition":"Capacidad de demostrar qué decisiones se tomaron, por quién, con qué autoridad, evidencia y resultado."},
+    {"term":"RACI","definition":"Matriz que distingue quién ejecuta, quién responde por la decisión, quién es consultado y quién informado."},
+    {"term":"Riesgo residual","definition":"Riesgo que permanece después de aplicar los controles previstos y que debe documentarse y aceptarse o tratarse."},
+    {"term":"Excepción","definition":"Desviación autorizada o hallazgo no resuelto que requiere motivo, responsable, vigencia y revisión."},
+    {"term":"Puerta de cambio","definition":"Criterio que obliga a reevaluar gobernanza cuando cambia propósito, datos, población, receptor, enlace, retención o salida."},
+    {"term":"Divulgación","definition":"Revelación de información a un destinatario o contexto, intencional o accidental, que debe evaluarse según política y riesgo."},
+    {"term":"Supresión","definition":"Eliminación deliberada de valores o celdas de una salida para reducir riesgo de divulgación según reglas definidas."},
+    {"term":"Agregación","definition":"Combinación de registros o categorías en grupos más amplios para reducir granularidad y potencialmente riesgo de identificación."}
   ],
   "worked_examples": [
-    {
-      "title": "Del problema amplio a una evidencia verificable en Calidad, privacidad y gobernanza",
-      "scenario": "Un equipo propone estudiar uso secundario responsable de datos, pero su pregunta mezcla completitud, acceso y consentimiento y auditoría sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de completitud, acceso y consentimiento y auditoría.",
-        "Seleccionar diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y registrar procedencia y condiciones.",
-        "Predefinir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un prototipo reproducible con contrato de datos y plan de validación trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-      ]
-    },
-    {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre completitud y acceso en el caso de uso secundario responsable de datos; una condición vinculada con consentimiento y auditoría podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar consentimiento y auditoría como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
-    }
+    {"title":"Completitud alta que no responde al uso","scenario":"Un dataset sintético de laboratorio tiene 98 % de resultados presentes, pero el proyecto necesita tiempo entre orden, toma de muestra y validación y la hora de toma falta en 40 %.","reasoning_steps":["Definir la pregunta y la unidad de observación antes de resumir calidad.","Separar completitud global de completitud de los campos críticos para el uso.","Calcular denominador y ausencia de specimen collection time en la población relevante.","Comprobar si la ausencia se concentra por centro, periodo o tipo de prueba.","Concluir aptitud solo para los usos que la evidencia permite."],"interpretation":"Una métrica global favorable no compensa la ausencia de un elemento crítico para una pregunta temporal.","limitations":["Los datos son sintéticos.","No se infiere el mecanismo real de missingness.","No se prescribe un umbral universal de completitud."]},
+    {"title":"Seudónimo estable con riesgo de enlace","scenario":"Un conjunto secundario sustituye identificadores directos por códigos estables pero conserva fecha completa, código postal detallado y un diagnóstico raro.","reasoning_steps":["Inventariar identificadores directos y cuasi-identificadores.","Distinguir seudonimización de anonimización.","Identificar fuentes auxiliares hipotéticas que podrían facilitar enlace.","Proponer una versión minimizada con menor granularidad temporal y geográfica.","Documentar la pérdida de utilidad y el riesgo residual sin afirmar anonimato."],"interpretation":"Eliminar nombres no basta para demostrar anonimización; la combinabilidad de atributos importa.","limitations":["No calcula una probabilidad real de reidentificación.","No aplica un dictamen jurídico.","La utilidad depende de la pregunta del caso."]},
+    {"title":"Consent registrado pero acceso no permitido por el caso","scenario":"Existe un Consent sintético activo para investigación, pero la solicitud procede de un rol no incluido y fuera del periodo del proyecto.","reasoning_steps":["Separar existencia del Consent de la decisión de autorización concreta.","Identificar actor, acción, dato, purpose of use, periodo y contexto.","Evaluar la regla sintética de acceso con esos atributos.","Registrar la decisión deny y el motivo.","Crear un AuditEvent del intento sin afirmar incumplimiento legal."],"interpretation":"Un artefacto de consentimiento no autoriza por sí solo todas las operaciones relacionadas con un propósito.","limitations":["La política es educativa.","No determina bases legales reales.","No sustituye revisión institucional."]},
+    {"title":"AuditEvent y Provenance responden preguntas distintas","scenario":"Un Observation sintético fue transformado desde HL7 v2 y después consultado por una aplicación de investigación.","reasoning_steps":["Usar Provenance para registrar origen, transformación, agente y versión del Observation.","Usar AuditEvent para registrar la lectura por la aplicación.","Relacionar ambos con el recurso objetivo sin duplicar innecesariamente contenido clínico.","Comprobar que el acceso tenía propósito y contexto esperados.","Registrar cualquier discrepancia entre política, procedencia y uso observado."],"interpretation":"Procedencia explica cómo se produjo el dato; auditoría ayuda a reconstruir cómo fue utilizado.","limitations":["No diseña almacenamiento seguro de logs.","No prueba integridad criptográfica.","Todos los actores son sintéticos."]},
+    {"title":"Cambio de propósito activa nueva revisión","scenario":"Un dataset aprobado en el ejercicio para validar calidad de un flujo se quiere reutilizar para entrenar un modelo predictivo sintético.","reasoning_steps":["Comparar propósito original y nuevo propósito.","Identificar variables, población, enlaces, receptores y salidas que cambian.","Reevaluar minimización, calidad requerida y riesgo de identificación.","Reevaluar política o autorización sintética y reglas de acceso.","Registrar decisión de no reutilizar hasta cerrar los nuevos requisitos."],"interpretation":"La disponibilidad previa del dato no convierte un nuevo propósito en automáticamente aceptable.","limitations":["No evalúa ética de un estudio real.","No constituye una DPIA.","No decide obligaciones regulatorias."]}
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Taller integrador: dossier de gobernanza para uso secundario de datos clínicos sintéticos",
+      "estimated_time_minutes": 360,
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja exclusivamente con registros, usuarios, políticas, consentimientos, permisos y logs sintéticos; no introduzcas datos identificables ni credenciales reales.",
+        "Declara el propósito del uso secundario, población, unidad de observación, periodo, responsables y producto de salida antes de medir calidad o conceder acceso.",
+        "Reutiliza U1 para contexto temporal y procedencia, U2 para estructura e identidad, U3 para terminologías y U4 para perfiles e intercambio.",
+        "Evalúa conformance, completeness y plausibility por separado y define denominadores y criterios de aceptación antes de observar los resultados.",
+        "Construye una tabla de minimización que justifique cada variable, granularidad y periodo requerido.",
+        "Distingue dato directo, seudónimo, cuasi-identificador y dato anonimizado; nunca declares anonimato solo por reemplazar identificadores.",
+        "Modela acceso con actor o rol, recurso, acción, purpose of use, contexto, vigencia y decisión; separa autenticación, autorización y consentimiento.",
+        "Utiliza Consent, Permission, security labels, AuditEvent y Provenance como artefactos con funciones distintas y documenta sus límites.",
+        "Predefine casos permitidos y denegados, anomalías de auditoría y criterios para revisar un cambio de propósito.",
+        "Reserva U6 para implementación institucional, pruebas integrales y gestión del cambio; el dossier de U5 no constituye aprobación legal, ética ni de seguridad."
       ],
       "problems": [
-        "Define completitud mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo acceso modifica o complementa a completitud.",
-        "Propón una prueba que distinga el papel de consentimiento y auditoría de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Define el propósito secundario sintético y una pregunta que el dataset deba responder.",
+        "Define la unidad de observación y explica por qué un cambio de unidad alteraría las métricas de calidad.",
+        "Construye tres comprobaciones de value, relational o computational conformance y define el resultado esperado.",
+        "Calcula completitud para cuatro campos críticos usando denominadores explícitos y distingue dato no esperado de dato faltante.",
+        "Diseña dos reglas de atemporal plausibility y dos de temporal plausibility.",
+        "Identifica un caso de duplicación que pertenezca a uniqueness plausibility y explica cómo lo investigarías.",
+        "Compara verificación interna con validación frente a una referencia externa para una misma dimensión de calidad.",
+        "Clasifica qué métricas son críticas, informativas o no aplicables al propósito y justifica los criterios de aceptación.",
+        "Construye un inventario de variables y marca cuáles son necesarias, prescindibles o requieren menor granularidad.",
+        "Identifica identificadores directos y al menos cinco cuasi-identificadores del escenario sintético.",
+        "Compara una versión seudonimizada y una versión minimizada y documenta utilidad perdida y riesgo residual.",
+        "Define una regla de retención y enumera copias derivadas, exportaciones y logs a los que también debe aplicarse.",
+        "Construye una política sintética con actor, rol, datos, acción, purpose of use, vigencia y decisión permit o deny.",
+        "Compara RBAC y ABAC para dos solicitudes y explica qué atributo contextual cambia la decisión.",
+        "Representa un Consent FHIR R5 conceptual con subject, period, decision, purpose y actores pertinentes.",
+        "Representa una Permission conceptual para una regla que no deba confundirse con el consentimiento del sujeto.",
+        "Define dos security labels y explica qué política o acuerdo les da significado operacional.",
+        "Diseña cuatro solicitudes positivas y cuatro negativas y predefine la decisión y la razón esperadas.",
+        "Construye un AuditEvent sintético para una lectura permitida y otro para un intento denegado.",
+        "Construye un Provenance para un recurso transformado y explica por qué no sustituye al AuditEvent.",
+        "Diseña tres consultas de auditoría: acceso masivo, propósito inesperado y ausencia de registro obligatorio.",
+        "Analiza una anomalía de auditoría sin convertirla automáticamente en prueba de abuso y define la investigación siguiente.",
+        "Construye una matriz de cambio de propósito y enumera qué reevaluar si cambian receptor, enlace de datasets o producto de salida.",
+        "Entrega un dossier final con calidad, minimización, política, acceso, auditoría, riesgos residuales, excepciones y aspectos que U6 deberá implementar y validar."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Ficha de propósito, población, unidad de observación y responsables.",
+        "Diccionario de variables con procedencia y versiones.",
+        "Perfil de calidad con conformance, completeness y plausibility separadas.",
+        "Tabla de denominadores, criterios de aceptación y resultados.",
+        "Inventario de datos y tabla de minimización.",
+        "Mapa de identificadores, cuasi-identificadores y transformaciones de privacidad.",
+        "Regla de retención y ciclo de vida de copias derivadas.",
+        "Matriz de acceso actor–dato–acción–propósito–contexto–decisión.",
+        "Consent y Permission FHIR sintéticos con límites documentados.",
+        "Conjunto de AuditEvent y Provenance sintéticos.",
+        "Matriz de casos positivos y negativos y consultas de auditoría.",
+        "Dossier de gobernanza con riesgos residuales, excepciones, decisiones y handoff a U6."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: uso secundario responsable de datos",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir uso y unidad de observación → modelar datos y significado → implementar transformación → validar técnica y clínicamente → vigilar desempeño.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para completitud, acceso y consentimiento y auditoría.",
-        "Selecciona entre diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Prototipo reproducible con contrato de datos y plan de validación.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de uso secundario responsable de datos y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte completitud, acceso y consentimiento y auditoría.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "El caso usa únicamente información y credenciales sintéticas.",
+        "El propósito se define antes de seleccionar variables o métricas.",
+        "La unidad de observación y la población quedan explícitas.",
+        "Conformance, completeness y plausibility no se fusionan en una única puntuación.",
+        "Cada métrica de completitud tiene denominador y regla de expectativa.",
+        "Las reglas de plausibilidad distinguen relaciones atemporales y temporales.",
+        "Duplicación se trata como hipótesis a investigar y no como verdad automática.",
+        "Los criterios de aceptación se definen antes de inspeccionar resultados.",
+        "Cada variable se justifica por necesidad y granularidad mínima.",
+        "Seudonimización no se etiqueta como anonimización.",
+        "El riesgo de enlace mediante cuasi-identificadores queda documentado.",
+        "La retención contempla datasets, derivados, exportaciones y logs.",
+        "Autenticación, autorización, consentimiento y base aplicable no se confunden.",
+        "Las decisiones de acceso incluyen actor, acción, dato, propósito, contexto y vigencia.",
+        "RBAC y ABAC se distinguen por el tipo de regla que expresan.",
+        "FHIR Consent se usa como representación de elecciones y no como prueba jurídica automática.",
+        "FHIR Permission se reconoce como recurso R5 en desarrollo y no como motor de acceso.",
+        "Security labels se vinculan a políticas o acuerdos explícitos.",
+        "AuditEvent y Provenance se usan para preguntas diferentes.",
+        "Los logs minimizan contenido clínico sin perder capacidad de investigación.",
+        "Las anomalías de auditoría generan investigación y no acusaciones automáticas.",
+        "Los casos denegados tienen razones esperadas predefinidas.",
+        "Los cambios de propósito activan reevaluación de calidad, minimización, acceso y riesgo.",
+        "Las salidas del análisis se revisan también por riesgo de divulgación.",
+        "El dossier declara riesgos residuales, excepciones y lo que debe validar U6."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar completitud como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar completitud en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre completitud y acceso demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir consentimiento y auditoría después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir caso sintético conocido, esquema inválido, código ausente, cambio de distribución y prueba de acceso, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Calidad, privacidad y gobernanza al uso clínico o real.",
-      "correction": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"error":"Llamar «de alta calidad» a un dataset sin declarar uso previsto.","correction":"Definir primero la pregunta, población, unidad de observación y errores materiales; después evaluar dimensiones separadas."},
+    {"error":"Usar una tasa global de completitud como prueba suficiente.","correction":"Calcular completitud por elementos críticos con denominadores y expectativas específicas del uso."},
+    {"error":"Tratar un valor implausible como prueba automática de que el registro es falso.","correction":"Usar la regla como señal de revisión y buscar fuente, contexto, unidad, transformación o referencia independiente."},
+    {"error":"Confundir ausencia documental con ausencia del fenómeno clínico.","correction":"Distinguir dato no esperado, no capturado, perdido, no aplicable y evento clínico verdaderamente ausente."},
+    {"error":"Decir que un hash o código hace anónimos los datos.","correction":"Clasificarlo como seudonimización cuando exista posibilidad de reidentificación y evaluar cuasi-identificadores y contexto."},
+    {"error":"Eliminar variables sin considerar la pregunta analítica.","correction":"Minimizar justificando necesidad y granularidad, y registrar la utilidad que se pierde con cada reducción."},
+    {"error":"Aplicar HIPAA Safe Harbor y GDPR como si fueran la misma definición.","correction":"Tratar cada marco como jurisdiccional y no trasladar automáticamente términos o condiciones entre ellos."},
+    {"error":"Suponer que autenticación implica autorización.","correction":"Evaluar una decisión separada sobre actor, acción, recurso, propósito, contexto y vigencia."},
+    {"error":"Tratar consentimiento como única base posible o como permiso universal.","correction":"Separar elecciones de consentimiento de otras políticas o bases aplicables y limitar el alcance al contexto declarado."},
+    {"error":"Interpretar un Consent FHIR válido como consentimiento legalmente suficiente.","correction":"Usar FHIR para representación e intercambio y remitir validez jurídica y política a la autoridad competente."},
+    {"error":"Usar Permission como si implementara por sí solo el control de acceso.","correction":"Tratarlo como regla declarativa que debe ser evaluada por una infraestructura de autorización."},
+    {"error":"Confiar en security labels sin definir una política compartida.","correction":"Documentar significado, obligaciones, receptor esperado y comportamiento ante etiquetas desconocidas."},
+    {"error":"Usar AuditEvent y Provenance como sinónimos.","correction":"Registrar uso y operación con AuditEvent y origen o transformación con Provenance según la pregunta de trazabilidad."},
+    {"error":"Guardar contenido clínico completo en cada log por «auditoría».","correction":"Registrar la evidencia mínima necesaria para atribución e investigación y proteger los logs como datos sensibles."},
+    {"error":"Concluir abuso porque una regla de auditoría detectó una anomalía.","correction":"Clasificar la señal como hallazgo para investigar, preservar contexto y permitir explicaciones alternativas."},
+    {"error":"Permitir reutilización porque el dataset ya estaba disponible.","correction":"Activar revisión cuando cambia propósito, población, variables, receptor, enlaces, retención o salida."},
+    {"error":"Revisar privacidad solo en los datos de entrada.","correction":"Evaluar también tablas, exportaciones, modelos y otras salidas por riesgo de divulgación o memorización."},
+    {"error":"Presentar el dossier educativo como aprobación institucional o legal.","correction":"Mantener escenarios sintéticos y remitir implementación, conformidad, evaluación ética y jurídica y gestión del cambio a procesos competentes y U6."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar uso secundario responsable de datos?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan completitud y acceso?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; consentimiento y auditoría puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre consentimiento y auditoría?",
-      "answer": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre uso secundario responsable de datos?",
-      "answer": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Calidad, privacidad y gobernanza?",
-      "answer": "Producir un prototipo reproducible con contrato de datos y plan de validación auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question":"¿Por qué la calidad de datos no puede resumirse sin un uso previsto?","answer":"Porque la importancia de presencia, granularidad, temporalidad y error depende de la pregunta o decisión que los datos deben sostener.","reasoning":"Una misma fuente puede ser adecuada para un uso descriptivo e inadecuada para una inferencia temporal o causal.","common_error":"Llamar bueno o malo al dataset sin especificar tarea."},
+    {"question":"¿Qué diferencia conformance, completeness y plausibility?","answer":"Conformance evalúa cumplimiento de especificaciones; completeness presencia esperada; plausibility credibilidad de valores, distribuciones o secuencias.","reasoning":"Cada categoría puede fallar de forma independiente y requiere evidencia distinta.","common_error":"Combinar las tres en una puntuación opaca."},
+    {"question":"¿Por qué 95 % de completitud no es interpretable por sí solo?","answer":"Porque faltan el campo, denominador, población, ventana temporal y regla que determina cuándo el valor debería existir.","reasoning":"El porcentaje depende de qué oportunidades cuentan como esperadas.","common_error":"Usar el total de filas como denominador universal."},
+    {"question":"¿Seudonimización equivale a anonimización?","answer":"No. Si existe información adicional o un mecanismo que permita reidentificar, la seudonimización no demuestra anonimización.","reasoning":"La identificabilidad depende de combinaciones, contexto y recursos además de identificadores directos.","common_error":"Llamar anónimo a un dataset porque no contiene nombres."},
+    {"question":"¿Por qué no se deben mezclar Safe Harbor de HIPAA y GDPR?","answer":"Porque son marcos jurídicos distintos con conceptos y condiciones propias; una técnica válida bajo uno no prueba cumplimiento del otro.","reasoning":"La gobernanza debe declarar jurisdicción y autoridad aplicable.","common_error":"Tratar «desidentificado» como categoría universal."},
+    {"question":"¿Qué diferencia autenticación de autorización?","answer":"Autenticación establece identidad; autorización decide si esa identidad puede realizar una acción concreta bajo condiciones definidas.","reasoning":"Conocer quién es un usuario no determina todo lo que puede hacer.","common_error":"Conceder acceso amplio después de un login correcto."},
+    {"question":"¿Qué aporta FHIR Consent y qué no demuestra?","answer":"Representa elecciones de permitir o negar acciones en un contexto, propósito y periodo; no demuestra por sí solo validez legal ni aplicación correcta de la política.","reasoning":"Representación interoperable y fundamento jurídico son capas diferentes.","common_error":"Usar recurso válido como prueba de consentimiento suficiente."},
+    {"question":"¿Qué papel puede tener FHIR Permission?","answer":"Puede expresar reglas declarativas de acceso para datos y contexto; el recurso está en desarrollo y no sustituye al motor que evalúa y aplica decisiones.","reasoning":"Una política serializada no ejecuta el control.","common_error":"Confundir regla con enforcement."},
+    {"question":"¿Por qué AuditEvent no sustituye Provenance?","answer":"AuditEvent se centra en eventos de uso u operación; Provenance en cómo un recurso fue producido o transformado y por qué agentes.","reasoning":"Ambos pueden compartir datos, pero responden preguntas de trazabilidad distintas.","common_error":"Usar solo logs de acceso para explicar el origen del dato."},
+    {"question":"¿Un acceso anómalo demuestra abuso?","answer":"No. Es una señal que requiere investigación, contexto, política aplicable y explicación del actor o flujo.","reasoning":"Los detectores pueden producir falsos positivos o excepciones legítimas.","common_error":"Convertir una regla de monitorización en veredicto."},
+    {"question":"¿Cuándo debe reabrirse la gobernanza de un uso secundario?","answer":"Cuando cambian propósito, población, variables, enlace con otras fuentes, receptor, retención, método o salida de forma material.","reasoning":"Esos cambios pueden alterar necesidad, calidad, identificabilidad y autorización.","common_error":"Suponer que una aprobación inicial cubre usos futuros."},
+    {"question":"¿Qué debe contener el handoff a U6?","answer":"Propósito, perfil de calidad, minimización, políticas y reglas, artefactos Consent o Permission, matriz de acceso, auditoría, riesgos residuales, excepciones y cambios que requieren validación.","reasoning":"U6 necesita requisitos verificables para implementar y gestionar cambios.","common_error":"Entregar solo una narrativa sin criterios comprobables."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Uso secundario responsable de datos."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Diccionarios, perfiles de datos, pruebas de interoperabilidad, métricas de desempeño, auditorías y evaluación de uso."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Un modelo o una interfaz técnicamente correctos no garantizan utilidad clínica, equidad, seguridad ni adopción."
-    }
+    {"topic":"Investigación clínica observacional","connection":"El perfil de calidad y la minimización ayudan a decidir si datos rutinarios sintéticos son aptos para una pregunta secundaria sin asumir que disponibilidad equivale a validez."},
+    {"topic":"Redes de datos sanitarios","connection":"Conformance, completeness, plausibility y procedencia permiten comparar nodos sin reducir calidad a una única métrica global."},
+    {"topic":"Historia clínica interoperable","connection":"Consent, Permission, security labels, AuditEvent y Provenance añaden capas de gobernanza a los recursos y flujos FHIR trabajados en U4."},
+    {"topic":"Analítica y aprendizaje automático","connection":"Cambios de propósito, enlace de fuentes y salidas de modelos requieren reevaluar minimización, calidad, riesgo de identificación y reglas de acceso."},
+    {"topic":"Gestión hospitalaria","connection":"Matrices de roles, propósito de uso, retención y auditoría convierten reglas abstractas en decisiones revisables antes de una implementación real."},
+    {"topic":"Seguridad del paciente y confianza","connection":"Datos de mala calidad o accesos no gobernados pueden producir decisiones incorrectas o pérdida de confianza, por lo que calidad y privacidad deben auditarse sin confundirlas."}
   ],
   "sources": [
-    {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos clínicos y fisiológicos para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "OHDSI",
-      "organization": "Observational Health Data Sciences and Informatics",
-      "url": "https://www.ohdsi.org/",
-      "type": "comunidad y estándar abierto",
-      "description": "Modelo común de datos y análisis observacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "UMLS",
-      "organization": "National Library of Medicine",
-      "url": "https://www.nlm.nih.gov/research/umls/",
-      "type": "sistema terminológico",
-      "description": "Integración y correspondencia entre vocabularios biomédicos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Privacy Framework",
-      "organization": "NIST",
-      "url": "https://www.nist.gov/privacy-framework",
-      "type": "marco oficial",
-      "description": "Gestión de riesgos de privacidad en sistemas de información.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "HL7 FHIR",
-      "organization": "HL7 International",
-      "url": "https://hl7.org/fhir/",
-      "type": "estándar sanitario",
-      "description": "Modelo de recursos e interfaces de interoperabilidad.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"A Harmonized Data Quality Assessment Terminology and Framework for the Secondary Use of Electronic Health Record Data","organization":"Electronic Data Methods Forum / PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC5051581/","type":"artículo revisado por pares","description":"Marco armonizado de conformance, completeness y plausibility para datos EHR secundarios.","verification_status":"verified_directly"},
+    {"title":"Methods and dimensions of electronic health record data quality assessment: enabling reuse for clinical research","organization":"JAMIA / PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC3555312/","type":"revisión revisada por pares","description":"Revisión de dimensiones y métodos de evaluación de calidad de datos EHR y dependencia del uso.","verification_status":"verified_directly"},
+    {"title":"Principles of personal data processing under the GDPR","organization":"European Commission","url":"https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/principles-gdpr_en","type":"guía institucional oficial","description":"Principios de finalidad, minimización, conservación, exactitud, integridad, confidencialidad y responsabilidad.","verification_status":"verified_directly"},
+    {"title":"Data protection explained","organization":"European Commission","url":"https://commission.europa.eu/law/law-topic/data-protection/data-protection-explained_en","type":"guía institucional oficial","description":"Explica dato personal, seudonimización y diferencia con anonimización irreversible en el marco GDPR.","verification_status":"verified_directly"},
+    {"title":"Data protection by design and by default","organization":"European Commission","url":"https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations/what-does-data-protection-design-and-default-mean_en","type":"guía institucional oficial","description":"Referencia para privacidad desde el diseño, minimización, conservación corta y accesibilidad limitada por defecto.","verification_status":"verified_directly"},
+    {"title":"Guidance Regarding Methods for De-identification of Protected Health Information","organization":"U.S. Department of Health and Human Services","url":"https://www.hhs.gov/hipaa/for-professionals/special-topics/de-identification/index.html","type":"guía regulatoria oficial","description":"Describe Expert Determination y Safe Harbor y los límites del riesgo residual bajo HIPAA.","verification_status":"verified_directly"},
+    {"title":"Minimum Necessary Requirement","organization":"U.S. Department of Health and Human Services","url":"https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/minimum-necessary-requirement/index.html","type":"guía regulatoria oficial","description":"Referencia jurisdiccional sobre limitar usos, divulgaciones y solicitudes al mínimo necesario cuando la regla aplica.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Security and Privacy Module","organization":"HL7 International","url":"https://www.hl7.org/fhir/R5/secpriv-module.html","type":"estándar y documentación oficial","description":"Módulo FHIR sobre autorización, consentimiento, auditoría, procedencia, etiquetas y desidentificación.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Consent","organization":"HL7 International","url":"https://fhir.hl7.org/fhir/consent.html","type":"estándar oficial","description":"Recurso para representar elecciones de permitir o negar acciones en contextos y periodos determinados.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Permission","organization":"HL7 International","url":"https://fhir.hl7.org/fhir/permission.html","type":"estándar oficial","description":"Recurso R5 en desarrollo para expresar reglas declarativas de acceso sobre datos y contexto.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 AuditEvent","organization":"HL7 International","url":"https://www.hl7.org/fhir/R5/auditevent.html","type":"estándar oficial","description":"Recurso para registrar eventos relevantes de operación, privacidad y seguridad.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Provenance","organization":"HL7 International","url":"https://hl7.org/fhir/provenance.html","type":"estándar oficial","description":"Recurso para registrar entidades, agentes y actividades que producen o modifican recursos.","verification_status":"verified_directly"},
+    {"title":"FHIR R5 Security Labels","organization":"HL7 International","url":"https://fhir.hl7.org/fhir/security-labels.html","type":"documentación oficial","description":"Describe etiquetas de seguridad como metadatos dependientes de políticas y acuerdos de confianza.","verification_status":"verified_directly"},
+    {"title":"FHIR Security","organization":"HL7 International","url":"https://hl7.org/fhir/security.html","type":"documentación oficial","description":"Delimita autenticación, autorización, control de acceso, auditoría y sensibilidad de logs en sistemas FHIR.","verification_status":"verified_directly"},
+    {"title":"NIST Privacy Framework 1.0","organization":"National Institute of Standards and Technology","url":"https://www.nist.gov/privacy-framework","type":"marco institucional oficial","description":"Marco voluntario para identificar y gestionar riesgos de privacidad; la página distingue la versión 1.0 de la actualización 1.1 en desarrollo.","verification_status":"verified_directly"},
+    {"title":"NIST Privacy Framework 1.1 Initial Public Draft","organization":"National Institute of Standards and Technology","url":"https://www.nist.gov/privacy-framework/new-projects/privacy-framework-version-11","type":"borrador institucional oficial","description":"Borrador 1.1 usado para enseñar versionado: no debe citarse como versión final publicada.","verification_status":"verified_directly"},
+    {"title":"Health Data Governance for the Digital Age","organization":"OECD","url":"https://www.oecd.org/en/publications/health-data-governance-for-the-digital-age_68b60796-en.html","type":"informe institucional","description":"Implementa y explica la Recomendación OECD sobre gobernanza de datos sanitarios, privacidad y uso para interés público.","verification_status":"verified_directly"},
+    {"title":"Facilitating the secondary use of health data for public interest purposes across borders","organization":"OECD","url":"https://www.oecd.org/en/publications/facilitating-the-secondary-use-of-health-data-for-public-interest-purposes-across-borders_d7b90d15-en.html","type":"documento institucional","description":"Análisis 2025 de bases, procesos y gobernanza para uso secundario de datos de salud entre jurisdicciones.","verification_status":"verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo basado exclusivamente en datasets, identidades, políticas, consentimientos, permisos y logs sintéticos. No constituye asesoría jurídica, una DPIA formal, aprobación ética, autorización institucional, diseño de seguridad productiva ni validación de un sistema clínico. GDPR y HIPAA se presentan como ejemplos jurisdiccionales distintos y no deben combinarse ni extrapolarse sin revisión competente. U5 cubre calidad, privacidad y gobernanza; U6 queda reservada para implementación, pruebas integrales de conformidad, despliegue y gestión del cambio. Requiere revisión disciplinar externa antes de considerarse verificado y no sustituye políticas institucionales ni autoridades de protección de datos."
 }
