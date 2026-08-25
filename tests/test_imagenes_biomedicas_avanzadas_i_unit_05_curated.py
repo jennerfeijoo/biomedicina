@@ -196,11 +196,9 @@ class ImagenesBiomedicasAvanzadasIUnit05CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, notice)
 
-    def test_published_descriptor_matches_when_promoted(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         published = next(x for x in subject["detailed_units"] if x["unit"] == 5)
-        if published["description"] != self.unit["purpose"]:
-            self.skipTest("El descriptor se vuelve estricto después de la promoción automática.")
         self.assertEqual(published["description"], self.unit["purpose"])
 
 
