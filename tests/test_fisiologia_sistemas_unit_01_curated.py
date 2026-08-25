@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "fisiologia-sistemas" / "units" / "unit-01.json"
 MIRROR = ROOT / "data" / "generated_units" / "fisiologia-sistemas" / "unit-01.json"
+SUBJECT = ROOT / "data" / "subjects" / "biologicas-medicas" / "fisiologia-sistemas.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -137,6 +138,12 @@ class FisiologiaSistemasUnit01CuratedTests(unittest.TestCase):
             "ni para interpretar casos reales de pacientes",
         ):
             self.assertIn(phrase, notice)
+
+    def test_published_descriptor_tracks_curated_unit_purpose(self) -> None:
+        subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
+        unit_one = next(item for item in subject["detailed_units"] if item["unit"] == 1)
+        self.assertEqual(unit_one["title"], self.unit["title"])
+        self.assertEqual(unit_one["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
