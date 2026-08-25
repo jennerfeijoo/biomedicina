@@ -111,17 +111,14 @@ class HistoriaFilosofiaCienciaUnit04CuratedTests(unittest.TestCase):
 
     def test_clinical_boundary_is_explicit(self) -> None:
         notice = self.unit["editorial_notice"].casefold()
-        for phrase in ("todos los valores", "sintéticos", "no interpreta resultados de laboratorio", "no diagnostica", "no recomienda"):
+        for phrase in ("todos los valores", "sintéticos", "no interpreta resultados de laboratorio", "no recomienda diagnóstico", "no certifica"):
             self.assertIn(phrase, notice)
 
-    def test_descriptor_when_promoted_matches_canonical_purpose(self) -> None:
-        if not DESCRIPTOR.exists():
-            self.skipTest("descriptor curricular aún no materializado")
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
+        self.assertTrue(DESCRIPTOR.exists())
         descriptor = json.loads(DESCRIPTOR.read_text(encoding="utf-8"))
         detailed = next((u for u in descriptor.get("detailed_units", []) if u.get("unit") == 4), None)
         self.assertIsNotNone(detailed)
-        if detailed.get("description") != self.unit["purpose"]:
-            self.skipTest("el publicador aún no promovió U4 al descriptor")
         self.assertEqual(detailed["description"], self.unit["purpose"])
 
 
