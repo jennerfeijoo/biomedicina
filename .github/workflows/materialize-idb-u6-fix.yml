@@ -1,0 +1,50 @@
+name: Materializar Ingeniería de Datos Biomédicos U6 corregido
+
+on:
+  push:
+    branches:
+      - codex/ingenieria-datos-biomedicos-u6-privacidad-productos
+    paths:
+      - .github/workflows/materialize-idb-u6-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/ingenieria-datos-biomedicos-u6-privacidad-productos
+          fetch-depth: 0
+      - name: Extraer payloads, validar y materializar
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64, json, zlib
+          from pathlib import Path
+          root = Path('.')
+          carrier = (root / '.github/workflows/materialize-idb-u6.yml').read_text(encoding='utf-8')
+          unit_b64 = carrier.split("<<'UNITPAYLOAD'\n", 1)[1].split('\nUNITPAYLOAD', 1)[0].strip()
+          test_b64 = carrier.split("<<'TESTPAYLOAD'\n", 1)[1].split('\nTESTPAYLOAD', 1)[0].strip()
+          unit = zlib.decompress(base64.b64decode(unit_b64)).decode('utf-8')
+          test = zlib.decompress(base64.b64decode(test_b64)).decode('utf-8')
+          parsed = json.loads(unit)
+          assert parsed['subject_id'] == 'ingenieria-datos-biomedicos'
+          assert parsed['unit'] == 6
+          assert parsed['slug'] == 'privacidad-y-productos-de-datos'
+          src = root / 'data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-06.json'
+          mirror = root / 'data/generated_units/ingenieria-datos-biomedicos/unit-06.json'
+          test_path = root / 'tests/test_ingenieria_datos_biomedicos_unit_06_curated.py'
+          src.write_text(unit, encoding='utf-8')
+          mirror.write_text(unit, encoding='utf-8')
+          test_path.write_text(test, encoding='utf-8')
+          assert src.read_bytes() == mirror.read_bytes()
+          PY
+          git rm .github/workflows/materialize-idb-u6.yml .github/workflows/materialize-idb-u6-fix.yml
+          git add data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-06.json data/generated_units/ingenieria-datos-biomedicos/unit-06.json tests/test_ingenieria_datos_biomedicos_unit_06_curated.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Curar Ingeniería de Datos Biomédicos U6 — Privacidad y productos de datos'
+          git push origin HEAD:codex/ingenieria-datos-biomedicos-u6-privacidad-productos
