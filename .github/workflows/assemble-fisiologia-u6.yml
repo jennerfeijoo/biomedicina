@@ -1,18 +1,17 @@
-name: Assemble temporary Fisiologia U6
+name: Cleanup temporary Fisiologia U6 payload
 
 on:
   push:
     branches:
       - codex/fisiologia-sistemas-u6-modelos-integradores
     paths:
-      - '.tmp/u6_payload/**'
       - '.github/workflows/assemble-fisiologia-u6.yml'
 
 permissions:
   contents: write
 
 jobs:
-  assemble:
+  cleanup:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -20,31 +19,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: codex/fisiologia-sistemas-u6-modelos-integradores
-      - name: Assemble and validate payload
+      - name: Remove temporary transfer files
         shell: bash
         run: |
           set -euo pipefail
-          cat .tmp/u6_payload/fix01_01.b64 .tmp/u6_payload/fix01_02.b64 .tmp/u6_payload/fix01_03.b64 .tmp/u6_payload/fix01_04.b64 > /tmp/part01.correct.b64
-          cat .tmp/u6_payload/fix03_01.b64 .tmp/u6_payload/fix03_02.b64 .tmp/u6_payload/fix03_03a.b64 .tmp/u6_payload/fix03_03b.b64 .tmp/u6_payload/fix03_04.b64 > /tmp/part03.correct.b64
-          test "$(wc -c < /tmp/part01.correct.b64)" -eq 6700
-          test "$(wc -c < .tmp/u6_payload/part02.b64)" -eq 6700
-          test "$(wc -c < /tmp/part03.correct.b64)" -eq 6700
-          test "$(wc -c < .tmp/u6_payload/part04.b64)" -eq 6608
-          cat /tmp/part01.correct.b64 .tmp/u6_payload/part02.b64 /tmp/part03.correct.b64 .tmp/u6_payload/part04.b64 | base64 -d > /tmp/fisiologia-u6.tar.gz
-          tar -xzf /tmp/fisiologia-u6.tar.gz -C .
-          python -m json.tool data/course_redevelopment/fisiologia-sistemas/units/unit-06.json >/dev/null
-          cmp data/course_redevelopment/fisiologia-sistemas/units/unit-06.json data/generated_units/fisiologia-sistemas/unit-06.json
-      - name: Commit assembled U6
+          rm -rf .tmp/u6_payload
+          rm -f .github/workflows/assemble-fisiologia-u6.yml
+      - name: Commit cleanup
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/course_redevelopment/fisiologia-sistemas/units/unit-06.json \
-                  data/generated_units/fisiologia-sistemas/unit-06.json \
-                  tests/test_fisiologia_sistemas_unit_06_curated.py
+          git add -A .tmp/u6_payload .github/workflows/assemble-fisiologia-u6.yml
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m 'Materializar Fisiologia de Sistemas U6'
+          git commit -m 'Retirar transferencia temporal de Fisiologia U6'
           git push origin HEAD:codex/fisiologia-sistemas-u6-modelos-integradores
