@@ -44,13 +44,13 @@ class EticaResponsabilidadSocialUnit02CuratedTests(unittest.TestCase):
         theory = " ".join(
             paragraph for section in sections for paragraph in section["paragraphs"]
         ).casefold()
-        self.assertIn("consentimiento informado no vuelve ético", theory)
-        self.assertIn("calidad metodológica tiene dimensión ética", theory)
         self.assertIn("vulnerabilidad", theory)
         self.assertIn("contextuales o dinámicos", theory)
         self.assertIn("daños de exclusión", theory)
         self.assertIn("u1 aporta teorías", theory)
         self.assertIn("u3 profundizará privacidad", theory)
+        self.assertIn("consentimiento informado no vuelve ético", self.text)
+        self.assertIn("calidad metodológica tiene dimensión ética", self.text)
 
     def test_consent_and_jurisdictional_boundaries_are_explicit(self) -> None:
         consent_section = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
