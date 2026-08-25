@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "fisiologia-sistemas" / "units" / "unit-02.json"
 MIRROR = ROOT / "data" / "generated_units" / "fisiologia-sistemas" / "unit-02.json"
+SUBJECT = ROOT / "data" / "subjects" / "biologicas-medicas" / "fisiologia-sistemas.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -15,6 +16,7 @@ class FisiologiaSistemasUnit02CuratedTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = json.loads(SOURCE.read_text(encoding="utf-8"))
         cls.text = SOURCE.read_text(encoding="utf-8").casefold()
+        cls.subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
 
     def test_generated_unit_is_exact_redevelopment_mirror(self) -> None:
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
@@ -135,6 +137,13 @@ class FisiologiaSistemasUnit02CuratedTests(unittest.TestCase):
             "no deben transformarse en rangos clínicos",
         ):
             self.assertIn(phrase, notice)
+
+    def test_published_subject_descriptor_uses_curated_u2_purpose(self) -> None:
+        published_u2 = next(item for item in self.subject["detailed_units"] if item["unit"] == 2)
+        self.assertEqual(published_u2["title"], self.unit["title"])
+        self.assertEqual(published_u2["description"], self.unit["purpose"])
+        self.assertIn("múltiples escalas temporales", published_u2["description"].casefold())
+        self.assertNotIn("integrar ejes, ritmos, estrés y conducta para resolver", published_u2["description"].casefold())
 
 
 if __name__ == "__main__":
