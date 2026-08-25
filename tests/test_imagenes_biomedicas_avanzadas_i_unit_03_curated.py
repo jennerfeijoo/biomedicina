@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "imagenes-biomedicas-avanzadas-i" / "units" / "unit-03.json"
 MIRROR = ROOT / "data" / "generated_units" / "imagenes-biomedicas-avanzadas-i" / "unit-03.json"
+SUBJECT = ROOT / "data" / "subjects" / "ingenieria-biomedica" / "imagenes-biomedicas-avanzadas-i.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -29,7 +30,7 @@ class ImagenesBiomedicasAvanzadasIUnit03CuratedTests(unittest.TestCase):
         objectives = " ".join(self.unit["learning_objectives"]).casefold()
         for phrase in (
             "pulse-echo",
-            "beamforming",
+            "beamformer",
             "delay-and-sum",
             "doppler",
             "prf",
@@ -154,7 +155,7 @@ class ImagenesBiomedicasAvanzadasIUnit03CuratedTests(unittest.TestCase):
         self.assertGreaterEqual(len(activity["checking_criteria"]), 25)
         joined = " ".join(activity["instructions"] + activity["problems"] + activity["checking_criteria"]).casefold()
         for phrase in (
-            "rf channel data",
+            "rf de canal",
             "aliasing",
             "shear-wave speed",
             "ground truth",
@@ -192,6 +193,11 @@ class ImagenesBiomedicasAvanzadasIUnit03CuratedTests(unittest.TestCase):
             "u4 continúa con imagen nuclear cuantitativa",
         ):
             self.assertIn(phrase, notice)
+
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
+        subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
+        published = next(x for x in subject["detailed_units"] if x["unit"] == 3)
+        self.assertEqual(published["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
