@@ -29,7 +29,7 @@ class HistoriasClinicasUnit04CuratedTests(unittest.TestCase):
         objectives = " ".join(self.unit["learning_objectives"]).casefold()
         for phrase in (
             "transporte", "hl7 v2", "fhir r5", "bundle",
-            "structuredefinition", "capabilitystatement", "v2→fhir",
+            "structuredefinition", "capacidades esperadas del servidor", "v2→fhir",
             "parseo", "conformidad", "semántica", "api", "extremo a extremo",
             "u5", "u6",
         ):
