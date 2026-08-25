@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "fisiologia-sistemas" / "units" / "unit-06.json"
 MIRROR = ROOT / "data" / "generated_units" / "fisiologia-sistemas" / "unit-06.json"
+SUBJECT = ROOT / "data" / "subjects" / "biologicas-medicas" / "fisiologia-sistemas.json"
+CATALOG = ROOT / "data" / "catalog_statuses.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -15,6 +17,8 @@ class FisiologiaSistemasUnit06CuratedTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = json.loads(SOURCE.read_text(encoding="utf-8"))
         cls.text = SOURCE.read_text(encoding="utf-8").casefold()
+        cls.subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
+        cls.catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
 
     def test_generated_unit_is_exact_redevelopment_mirror(self) -> None:
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
@@ -140,6 +144,20 @@ class FisiologiaSistemasUnit06CuratedTests(unittest.TestCase):
             "cualquier transferencia a personas",
         ):
             self.assertIn(phrase, notice)
+
+    def test_published_descriptor_tracks_canonical_u6_purpose(self) -> None:
+        published = next(item for item in self.subject["detailed_units"] if item["unit"] == 6)
+        self.assertEqual(published["description"], self.unit["purpose"])
+
+    def test_course_remains_outside_template_detected_catalog(self) -> None:
+        specificity = self.catalog["dimensions"]["specificity"]
+        self.assertIn("fisiologia-sistemas", specificity["screened_no_known_template_marker"])
+        self.assertNotIn("fisiologia-sistemas", specificity["template_detected"])
+        self.assertEqual(self.catalog["counts"]["template_detected"], len(specificity["template_detected"]))
+        self.assertEqual(
+            self.catalog["counts"]["screened_no_known_template_marker"],
+            len(specificity["screened_no_known_template_marker"]),
+        )
 
 
 if __name__ == "__main__":
