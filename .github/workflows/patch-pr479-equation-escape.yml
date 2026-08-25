@@ -1,0 +1,46 @@
+name: Normalize PR479 coverage equation
+
+on:
+  push:
+    branches:
+      - codex/historias-clinicas-u6-implementacion-validacion
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/historias-clinicas-u6-implementacion-validacion
+          fetch-depth: 0
+      - name: Normalize MathJax equation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = Path('data/course_redevelopment/historias-clinicas-terminologias-estandares/units/unit-06.json')
+          mirror = Path('data/generated_units/historias-clinicas-terminologias-estandares/unit-06.json')
+          data = json.loads(source.read_text(encoding='utf-8'))
+          equations = data['theory_sections'][0].setdefault('equations', [])
+          target = next(eq for eq in equations if 'Cobertura' in eq.get('latex', ''))
+          target['latex'] = r'\mathrm{Cobertura}_{req}=\frac{N_{req\,con\,prueba\,ejecutada}}{N_{req\,verificables}}'
+          rendered = json.dumps(data, ensure_ascii=False, indent=2) + '\n'
+          source.write_text(rendered, encoding='utf-8')
+          mirror.write_text(rendered, encoding='utf-8')
+          assert json.loads(rendered)['theory_sections'][0]['equations'][0]['latex'].startswith('\\mathrm')
+          assert not json.loads(rendered)['theory_sections'][0]['equations'][0]['latex'].startswith('\\\\')
+          assert source.read_bytes() == mirror.read_bytes()
+          PY
+      - name: Remove temporary workflow
+        run: git rm .github/workflows/patch-pr479-equation-escape.yml
+      - name: Commit normalized equation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Normaliza ecuación de cobertura de Historias Clínicas U6'
+          git push origin HEAD:codex/historias-clinicas-u6-implementacion-validacion
