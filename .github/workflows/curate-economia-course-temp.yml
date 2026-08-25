@@ -1,0 +1,65 @@
+name: Temporary canonical Economía course closure
+
+on:
+  push:
+    branches:
+      - codex/economia-gestion-empresas-course-completion
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: codex/economia-gestion-empresas-course-completion
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Generate canonical course
+        run: python scripts/curate_economia_gestion_course_temp.py
+
+      - name: Validate canonical academic corpus
+        run: |
+          python scripts/validate_academic_courses.py
+          python -m unittest tests.test_academic_course_schema tests.test_economia_gestion_empresas_course_completion
+
+      - name: Validate curriculum and advanced units
+        run: |
+          python scripts/validate_curriculum.py
+          python scripts/validate_generated_units.py
+          python scripts/audit_curriculum_completeness.py
+          python scripts/audit_course_readiness.py
+
+      - name: Generate public course
+        run: |
+          python scripts/generate_site.py --force --subject economia-gestion-empresas --with-units
+          python scripts/sync_catalog_statuses.py
+          python scripts/audit_public_unit_alignment.py --strict
+          python scripts/validate_links.py
+
+      - name: Remove temporary machinery
+        run: |
+          rm -f scripts/curate_economia_gestion_course_temp.py
+          rm -f .github/workflows/curate-economia-course-temp.yml
+          rm -f global-generation.txt
+
+      - name: Commit canonical closure
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Close canonical Economía y Gestión de Empresas course"
+          git push origin HEAD:codex/economia-gestion-empresas-course-completion
