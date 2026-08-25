@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "economia-gestion-empresas" / "units" / "unit-06.json"
 MIRROR = ROOT / "data" / "generated_units" / "economia-gestion-empresas" / "unit-06.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
+# Final human-authored validation trigger after generated-site synchronization.
 
 
 class EconomiaGestionEmpresasUnit06CuratedTests(unittest.TestCase):
@@ -54,7 +55,7 @@ class EconomiaGestionEmpresasUnit06CuratedTests(unittest.TestCase):
         ):
             self.assertIn(concept, theory)
         self.assertIn("no es una ley cuantitativa universal", theory)
-        self.assertIn("no demuestra causalidad", theory)
+        self.assertIn("no autorizan a atribuir causalidad", theory)
 
     def test_core_equations_preserve_interpretive_limits(self):
         equations = {e["latex"] for section in self.unit["theory_sections"] for e in section.get("equations", [])}
@@ -127,7 +128,7 @@ class EconomiaGestionEmpresasUnit06CuratedTests(unittest.TestCase):
             "validación clínica",
         ):
             self.assertIn(phrase, notice)
-        self.assertIn("no confundir gobernanza con gestión diaria", purpose)
+        self.assertIn("sin confundir gobernanza con gestión diaria", purpose)
         self.assertIn("cumplimiento documentado con certificación", purpose)
 
 
