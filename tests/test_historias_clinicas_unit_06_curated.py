@@ -163,10 +163,11 @@ class HistoriasClinicasUnit06CuratedTests(unittest.TestCase):
 
     def test_catalog_when_course_closure_is_published(self) -> None:
         catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
-        pending = set(catalog.get("template_detected", []))
+        specificity = catalog["dimensions"]["specificity"]
+        pending = set(specificity["template_detected"])
         if "historias-clinicas-terminologias-estandares" in pending:
             self.skipTest("Catálogo editorial pendiente de sincronización automática")
-        screened = set(catalog.get("screened_no_known_template_marker", []))
+        screened = set(specificity["screened_no_known_template_marker"])
         self.assertIn("historias-clinicas-terminologias-estandares", screened)
 
 
