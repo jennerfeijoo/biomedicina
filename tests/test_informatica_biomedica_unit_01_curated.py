@@ -175,15 +175,10 @@ class InformaticaBiomedicaUnit01CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, purpose)
 
-    def test_descriptor_may_be_promoted_after_publication(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        published = detailed[1]["description"]
-        self.assertTrue(
-            published == self.unit["purpose"] or
-            published.startswith("Integrar tipos de datos, ciclo de vida, procedencia"),
-            "El descriptor U1 debe ser el canónico o el placeholder previo a promoción."
-        )
+        self.assertEqual(detailed[1]["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
