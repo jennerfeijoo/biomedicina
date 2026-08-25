@@ -117,15 +117,15 @@ class HistoanatomiaHumanaUnit01CuratedTests(unittest.TestCase):
         for phrase in ("no constituye entrenamiento diagnóstico", "se reserva para u2", "no garantizan resolución real", "decisiones asistenciales"):
             self.assertIn(phrase, notice)
 
-    def test_publication_contract_after_publisher_runs(self) -> None:
-        if not SUBJECT.exists() or not CATALOG.exists():
-            self.skipTest("Publication artifacts are not present in this checkout")
+    def test_published_descriptor_matches_curated_unit(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        old = "Integrar planos anatómicos, preparación histológica, microscopía para resolver un caso de orientación de imágenes, cortes y muestras con evidencia, controles, incertidumbre y comunicación proporcional."
-        if detailed[1]["description"] == old:
-            self.skipTest("Publisher has not regenerated the descriptor yet")
         self.assertEqual(detailed[1]["description"], self.unit["purpose"])
+
+    def test_course_remains_template_detected_until_units_2_to_6_are_curated(self) -> None:
+        catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+        pending = catalog["dimensions"]["specificity"]["template_detected"]
+        self.assertIn("histoanatomia-humana", pending)
 
 
 if __name__ == "__main__":
