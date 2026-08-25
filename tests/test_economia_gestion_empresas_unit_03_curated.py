@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Final human trigger for U3 validation; academic content is unchanged.
+# Final human trigger after publication metadata synchronization; academic U3 content is unchanged.
 
 import json
 import unittest
