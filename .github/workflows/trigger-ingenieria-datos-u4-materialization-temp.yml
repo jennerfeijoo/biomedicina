@@ -11,48 +11,7 @@ permissions:
 
 jobs:
   materialize:
-    if: github.head_ref == 'codex/ingenieria-datos-biomedicos-u4-calidad-procedencia'
+    if: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: codex/ingenieria-datos-biomedicos-u4-calidad-procedencia
-          fetch-depth: 0
-      - name: Reuse stored compressed payload and materialize U4
-        shell: bash
-        run: |
-          python - <<'PY'
-          import base64, json, re, zlib
-          from pathlib import Path
-          carrier = Path('.github/workflows/materialize-ingenieria-datos-u4-temp.yml').read_text(encoding='utf-8')
-          def extract(name):
-              match = re.search(rf"{name} = '''([^']+)'''", carrier)
-              if not match:
-                  raise SystemExit(f'No se encontró {name}')
-              return zlib.decompress(base64.b64decode(match.group(1)))
-          unit = extract('unit_b64')
-          test = extract('test_b64')
-          source = Path('data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-04.json')
-          mirror = Path('data/generated_units/ingenieria-datos-biomedicos/unit-04.json')
-          regression = Path('tests/test_ingenieria_datos_biomedicos_unit_04_curated.py')
-          source.write_bytes(unit)
-          mirror.write_bytes(unit)
-          regression.write_bytes(test)
-          parsed = json.loads(unit.decode('utf-8'))
-          assert parsed['subject_id'] == 'ingenieria-datos-biomedicos'
-          assert parsed['unit'] == 4
-          assert source.read_bytes() == mirror.read_bytes()
-          print('Materialización verificada:', len(unit), len(test))
-          PY
-      - name: Commit functional U4 and remove temporary workflows
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-04.json \
-                  data/generated_units/ingenieria-datos-biomedicos/unit-04.json \
-                  tests/test_ingenieria_datos_biomedicos_unit_04_curated.py
-          git rm .github/workflows/materialize-ingenieria-datos-u4-temp.yml \
-                 .github/workflows/trigger-ingenieria-datos-u4-materialization-temp.yml
-          git commit -m 'Curación académica de Ingeniería de Datos Biomédicos U4'
-          git push origin HEAD:codex/ingenieria-datos-biomedicos-u4-calidad-procedencia
+      - run: echo "Materialización temporal desactivada durante carga de fragmentos"
