@@ -30,7 +30,7 @@ class HistoriasClinicasUnit03CuratedTests(unittest.TestCase):
         for phrase in (
             "terminología clínica", "clasificación", "code system", "value set",
             "snomed ct", "loinc", "foundation", "mms", "mapeos sintéticos",
-            "sistema, versión, código", "u4",
+            "código, sistema, versión", "u4",
         ):
             self.assertIn(phrase, objectives)
 
@@ -66,7 +66,7 @@ class HistoriasClinicasUnit03CuratedTests(unittest.TestCase):
         text = json.dumps(self.unit["theory_sections"][2], ensure_ascii=False).casefold()
         for phrase in (
             "component", "property", "time", "system", "scale", "method",
-            "coincidencia del analito no basta", "unidades", "información insuficiente",
+            "el mapeo debe comparar atributos", "unidades", "información insuficiente",
             "2.83", "19 de agosto de 2026",
         ):
             self.assertIn(phrase, text)
@@ -77,7 +77,7 @@ class HistoriasClinicasUnit03CuratedTests(unittest.TestCase):
         for phrase in (
             "foundation component", "múltiples padres", "linearización",
             "mortality and morbidity statistics", "extension codes",
-            "clasificación estadística", "no es una sustitución carácter por carácter",
+            "codificación estadística", "no es una sustitución carácter por carácter",
             "2026-01",
         ):
             self.assertIn(phrase, text)
