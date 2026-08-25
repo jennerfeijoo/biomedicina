@@ -10,7 +10,7 @@ MIRROR = ROOT / "data/generated_units/informatica-biomedica/unit-06.json"
 
 
 def test_informatica_biomedica_u6_publication_checkpoint() -> None:
-    """Keep the final U6 publication pass anchored to its canonical governance content."""
+    """Final user-authored checkpoint after publication synchronization of U6."""
     source = json.loads(SOURCE.read_text(encoding="utf-8"))
     mirror = json.loads(MIRROR.read_text(encoding="utf-8"))
 
