@@ -46,7 +46,7 @@ class HistoriasClinicasUnit05CuratedTests(unittest.TestCase):
         headings = " ".join(x["heading"] for x in sections).casefold()
         for phrase in (
             "calidad de datos orientada al uso", "privacidad en uso secundario",
-            "acceso y consentimiento", "provenance", "gobernanza del uso secundario",
+            "acceso y consentimiento", "procedencia", "gobernanza del uso secundario",
         ):
             self.assertIn(phrase, headings)
 
