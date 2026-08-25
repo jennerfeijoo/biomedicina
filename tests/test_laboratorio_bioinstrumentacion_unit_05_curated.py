@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-# Final user-authored trigger after JSON repair and temporary-workflow cleanup.
+# User-authored trigger after public HTML synchronization.
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "laboratorio-bioinstrumentacion" / "units" / "unit-05.json"
 MIRROR = ROOT / "data" / "generated_units" / "laboratorio-bioinstrumentacion" / "unit-05.json"
