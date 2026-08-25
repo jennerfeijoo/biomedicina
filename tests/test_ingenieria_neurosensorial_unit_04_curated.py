@@ -75,7 +75,7 @@ def test_unit_04_has_substantial_pedagogy_and_assessment():
 def test_unit_04_keeps_curricular_and_clinical_boundaries():
     unit = load(SOURCE)
     text = SOURCE.read_text(encoding="utf-8").lower()
-    scope = (unit.get("professional_scope", {}).get("excluded", "") + " " + unit.get("editorial_notice", "")).lower()
+    scope = (unit.get("professional_scope", "") + " " + unit.get("editorial_notice", "")).lower()
     assert "u3" in text and "u5" in text and "u6" in text
     for marker in ["program", "cirug", "parámetros", "clínic"]:
         assert marker in scope
@@ -100,8 +100,6 @@ def test_unit_04_publication_matches_after_promotion():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 4)
-    # Before the publisher promotes U4 this remains non-blocking. A final
-    # regression will make equality strict once descriptor and HTML are committed.
     if detail["description"] == source["purpose"] and PUBLIC.exists():
         public_text = PUBLIC.read_text(encoding="utf-8").lower()
         for marker in ["implante coclear", "fosfeno", "lazo cerrado", "matriz de confusión"]:
