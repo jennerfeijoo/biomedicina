@@ -77,6 +77,7 @@ class IngenieriaDatosBiomedicosUnit05Curated(unittest.TestCase):
         self.assertIn('no se conectan ehr', notice)
         self.assertIn('no declara que un run exitoso pruebe calidad', notice)
         self.assertIn('se reservan para u6', notice)
+        self.assertIn('control de acceso', notice)
         self.assertIn('no constituyen garantías de producción', notice)
 
     def test_academic_depth(self):
