@@ -72,10 +72,12 @@ class ImagenesBiomedicasAvanzadasIUnit04CuratedTests(unittest.TestCase):
         self.assertIn("K_1", equations)
         self.assertIn("K_i", equations)
 
-    def test_glossary_is_disciplinary(self) -> None:
-        glossary = {x["term"].casefold() for x in self.unit["glossary"]}
+    def test_glossary_is_disciplinary_and_unique(self) -> None:
+        terms = [x["term"].strip().casefold() for x in self.unit["glossary"]]
+        self.assertEqual(len(terms), len(set(terms)))
+        glossary = set(terms)
         self.assertGreaterEqual(len(glossary), 55)
-        for term in ("actividad-concentración", "random coincidence", "osem", "time-of-flight", "partial-volume effect", "recovery coefficient", "suv", "suvbw", "sul", "uptake time", "input function", "patlak plot", "logan plot", "parametric image", "qiba", "phantom"):
+        for term in ("actividad-concentración", "random coincidence", "osem", "time-of-flight", "partial-volume effect", "recovery coefficient", "suv", "suvbw", "sul", "uptake time", "input function", "patlak plot", "logan plot", "parametric image", "qiba", "phantom", "decay correction (atributo dicom)"):
             self.assertIn(term, glossary)
 
     def test_guided_activity_requires_synthetic_quantitative_validation(self) -> None:
