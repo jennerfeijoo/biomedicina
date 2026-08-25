@@ -32,6 +32,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Curate Economia y Gestion U4
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/curate_economia_gestion_empresas_u4_temp.py
+
       - name: Validate structured academic sources
         shell: bash
         run: |
@@ -40,6 +46,7 @@ jobs:
           python scripts/validate_generated_units.py
           python scripts/audit_curriculum_completeness.py
           python scripts/validate_pilot_foundations.py
+          python -m unittest tests.test_economia_gestion_empresas_unit_04_curated
           if [[ -f data/course_migrations/bioinstrumentacion-public-canonical-v1.json ]]; then
             python scripts/preflight_bioinstrumentation_atomic_migration.py
             python scripts/validate_bioinstrumentation_public_canonical.py
@@ -57,28 +64,23 @@ jobs:
           python scripts/audit_public_unit_alignment.py --strict
           python scripts/validate_links.py
 
-      - name: Upload synchronization diagnostic
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: generated-site-synchronization
-          path: global-generation.txt
-          if-no-files-found: warn
-
-      - name: Commit deterministic public site
+      - name: Restore permanent workflow and remove temporary curator
         shell: bash
         run: |
+          set -euo pipefail
+          git show origin/main:.github/workflows/synchronize-generated-site.yml > .github/workflows/synchronize-generated-site.yml
+          rm -f scripts/curate_economia_gestion_empresas_u4_temp.py global-generation.txt
+
+      - name: Commit curated unit and synchronized site
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            ciencias-basicas \
-            biologicas-medicas \
-            ingenieria-biomedica \
-            gestion-etica-comunicacion \
-            catalogo
+          git add -A
           if git diff --cached --quiet; then
-            echo "El sitio público ya está sincronizado con sus fuentes estructuradas."
+            echo "No hay cambios después de curar U4."
             exit 0
           fi
-          git commit -m "Synchronize generated public site"
+          git commit -m "Curate Economía y Gestión de Empresas U4"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
