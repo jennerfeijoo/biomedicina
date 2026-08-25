@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "course_redevelopment" / "fisiologia-sistemas" / "units" / "unit-04.json"
 MIRROR = ROOT / "data" / "generated_units" / "fisiologia-sistemas" / "unit-04.json"
+SUBJECT = ROOT / "data" / "subjects" / "biologicas-medicas" / "fisiologia-sistemas.json"
 GENERIC = "concepto de la unidad que debe definirse mediante entidades observables"
 
 
@@ -15,6 +16,7 @@ class FisiologiaSistemasUnit04CuratedTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = json.loads(SOURCE.read_text(encoding="utf-8"))
         cls.text = SOURCE.read_text(encoding="utf-8").casefold()
+        cls.subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
 
     def test_generated_unit_is_exact_redevelopment_mirror(self) -> None:
         self.assertEqual(SOURCE.read_bytes(), MIRROR.read_bytes())
@@ -133,6 +135,13 @@ class FisiologiaSistemasUnit04CuratedTests(unittest.TestCase):
             "datos exclusivamente sintéticos",
         ):
             self.assertIn(phrase, notice)
+
+    def test_published_subject_descriptor_uses_curated_u4_purpose(self) -> None:
+        published_u4 = next(item for item in self.subject["detailed_units"] if item["unit"] == 4)
+        self.assertEqual(published_u4["title"], self.unit["title"])
+        self.assertEqual(published_u4["description"], self.unit["purpose"])
+        self.assertIn("cantidad corporal de concentración", published_u4["description"].casefold())
+        self.assertNotIn("integrar volumen, electrolitos, glucosa y energía para resolver", published_u4["description"].casefold())
 
 
 if __name__ == "__main__":
