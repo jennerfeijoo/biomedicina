@@ -11,7 +11,67 @@ permissions:
 
 jobs:
   materialize:
-    if: false
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Materialización temporal desactivada durante carga de fragmentos"
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Materialize canonical U4 from embedded payload
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import re
+          import zlib
+          from pathlib import Path
+
+          carrier = Path('.github/workflows/materialize-ingenieria-datos-u4-temp.yml').read_text(encoding='utf-8')
+          unit_match = re.search(r"unit_b64\s*=\s*'''(.*?)'''", carrier, flags=re.S)
+          test_match = re.search(r"test_b64\s*=\s*'''(.*?)'''", carrier, flags=re.S)
+          if not unit_match or not test_match:
+              raise SystemExit('No se encontraron unit_b64/test_b64 en el workflow portador')
+
+          unit_bytes = zlib.decompress(base64.b64decode(''.join(unit_match.group(1).split())))
+          test_bytes = base64.b64decode(''.join(test_match.group(1).split()))
+          unit = json.loads(unit_bytes.decode('utf-8'))
+
+          assert unit['subject_id'] == 'ingenieria-datos-biomedicos'
+          assert unit['unit'] == 4
+          assert unit['slug'] == 'calidad-y-procedencia'
+          assert len(unit.get('theory_sections', [])) >= 5
+          assert len(unit.get('glossary', [])) >= 30
+          assert len(unit.get('references', [])) >= 10
+
+          source = Path('data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-04.json')
+          mirror = Path('data/generated_units/ingenieria-datos-biomedicos/unit-04.json')
+          test_path = Path('tests/test_ingenieria_datos_biomedicos_unit_04_curated.py')
+          source.parent.mkdir(parents=True, exist_ok=True)
+          mirror.parent.mkdir(parents=True, exist_ok=True)
+          test_path.parent.mkdir(parents=True, exist_ok=True)
+          source.write_bytes(unit_bytes)
+          mirror.write_bytes(unit_bytes)
+          test_path.write_bytes(test_bytes)
+          assert source.read_bytes() == mirror.read_bytes()
+          PY
+
+      - name: Remove temporary transfer infrastructure
+        shell: bash
+        run: |
+          rm -rf .tmp/u4_payload
+          rm -f .github/workflows/materialize-ingenieria-datos-u4-temp.yml
+          rm -f .github/workflows/trigger-ingenieria-datos-u4-materialization-temp.yml
+
+      - name: Commit canonical U4
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --exit-code && exit 0
+          git commit -m "Curar Ingeniería de Datos Biomédicos U4"
+          git push origin HEAD:${{ github.head_ref }}
