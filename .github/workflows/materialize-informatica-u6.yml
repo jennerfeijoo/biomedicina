@@ -1,0 +1,55 @@
+name: Materialize Informatica Biomedica U6
+
+on:
+  push:
+    branches:
+      - codex/informatica-biomedica-u6-gobernanza-implementacion
+    paths:
+      - .github/workflows/materialize-informatica-u6.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/informatica-biomedica-u6-gobernanza-implementacion
+          fetch-depth: 0
+
+      - name: Reconstruct and verify payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/ib_u6_payload/part00.b64 \
+              .tmp/ib_u6_payload/part01.b64 \
+              .tmp/ib_u6_payload/part02.b64 \
+              .tmp/ib_u6_payload/part03.b64 \
+              .tmp/ib_u6_payload/part04.b64 > /tmp/payload.b64
+          base64 -d /tmp/payload.b64 > /tmp/payload.tar.gz
+          echo "74bfe219fe205a5828f96bb575ed70eb00702c06472c3e09358c2cec79c212d2  /tmp/payload.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/payload.tar.gz -C .
+          python -m json.tool data/course_redevelopment/informatica-biomedica/units/unit-06.json >/dev/null
+          cmp data/course_redevelopment/informatica-biomedica/units/unit-06.json data/generated_units/informatica-biomedica/unit-06.json
+          python -m unittest tests.test_informatica_biomedica_unit_06_curated
+
+      - name: Remove transfer scaffolding
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp/ib_u6_payload
+          rm -f .github/workflows/materialize-informatica-u6.yml
+
+      - name: Commit curated unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Curación académica de Informática Biomédica U6"
+          git push origin HEAD:codex/informatica-biomedica-u6-gobernanza-implementacion
