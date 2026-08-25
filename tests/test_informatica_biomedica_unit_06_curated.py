@@ -106,7 +106,7 @@ class TestInformaticaBiomedicaUnit06Curated(unittest.TestCase):
         self.assertIn("privacy framework 1.0", self.text)
         self.assertIn("privacy framework 1.1", self.text)
         self.assertIn("initial public draft", self.text)
-        self.assertIn("1.1 sigue como initial public draft", self.text)
+        self.assertIn("1.1 continúa publicada como initial public draft", self.text)
 
     def test_controls_logging_and_assessment_are_bounded(self) -> None:
         for concept in [
