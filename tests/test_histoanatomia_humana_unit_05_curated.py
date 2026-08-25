@@ -185,12 +185,10 @@ class HistoanatomiaHumanaUnit05CuratedTests(unittest.TestCase):
         ):
             self.assertIn(phrase, purpose)
 
-    def test_published_descriptor_is_current_or_awaiting_publisher(self) -> None:
+    def test_published_descriptor_matches_curated_unit(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        current = detailed[5]["description"]
-        old = "Integrar órganos y microarquitectura, unidades funcionales, relaciones anatómicas para resolver un caso de interpretación de biopsias y alteraciones funcionales con evidencia, controles, incertidumbre y comunicación proporcional."
-        self.assertIn(current, {old, self.unit["purpose"]})
+        self.assertEqual(detailed[5]["description"], self.unit["purpose"])
 
 
 if __name__ == "__main__":
