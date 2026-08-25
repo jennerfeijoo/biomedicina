@@ -31,9 +31,7 @@ class HistoanatomiaHumanaUnit02CuratedTests(unittest.TestCase):
         for phrase in (
             "epitelios de revestimiento",
             "tejido conectivo",
-            "músculo esquelético",
-            "músculo cardiaco",
-            "músculo liso",
+            "músculo esquelético, cardiaco y liso",
             "tejido nervioso",
             "rasgos positivos y negativos",
         ):
