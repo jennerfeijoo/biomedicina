@@ -6,386 +6,920 @@
   "slug": "registro-y-fusion",
   "title": "Registro y fusión",
   "status": "review",
-  "purpose": "Integrar transformaciones, métricas de similitud, multimodalidad para resolver un caso de integración anatómica y funcional con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar, ejecutar y auditar registros rígidos, afines y deformables con datos de imagen sintéticos o abiertos no identificables, conectando geometría física, transformaciones, métricas de similitud, optimización, remuestreo, fusión multimodal y validación geométrica para que cada alineación conserve dirección, sistema de coordenadas, incertidumbre, evidencia independiente y límites de uso.",
   "learning_objectives": [
-    "Definir transformaciones, métricas de similitud y multimodalidad mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte transformaciones con métricas de similitud y delimite el papel de multimodalidad.",
-    "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-    "Resolver y comunicar un caso sobre integración anatómica y funcional con incertidumbre y límites.",
-    "Transferir el método de Registro y fusión a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir índice de voxel, coordenada física, orientación, spacing, origin y Frame of Reference, y representar explícitamente qué imagen es fija, cuál es móvil y en qué dirección actúa cada transformación.",
+    "Seleccionar entre transformaciones rígidas, de similitud, afines y deformables según la geometría plausible del problema, explicando grados de libertad, inicialización, regularización y riesgo de sobreajuste.",
+    "Comparar métricas de similitud como mean squares, correlación y mutual information, justificando su uso en registro mono o multimodal sin equiparar el valor de la métrica con exactitud anatómica.",
+    "Aplicar remuestreo e interpolación de forma coherente con el tipo de dato, distinguiendo imagen de intensidad, mapa cuantitativo y etiqueta, y evitando degradación por interpolaciones repetidas.",
+    "Validar registros con transformaciones sintéticas conocidas, landmarks independientes, target registration error, inspección localizada y análisis de deformación, separando overlap de segmentación de error geométrico.",
+    "Construir un pipeline reproducible de registro y fusión multimodal con metadatos, parámetros, semillas, transformaciones y criterios de aceptación trazables, sin convertir una fusión visualmente plausible en evidencia clínica."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Registro y fusión",
+      "heading": "Geometría antes del algoritmo: espacios físicos, referencias y dirección de la transformación",
       "paragraphs": [
-        "La unidad «Registro y fusión» sitúa transformaciones, métricas de similitud y multimodalidad dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Imágenes Biomédicas Avanzadas I, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Registro y fusión» en Imágenes Biomédicas Avanzadas I, «transformaciones», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Registro y fusión», «métricas de similitud», aporta otra dimensión al problema de Imágenes Biomédicas Avanzadas I: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con transformaciones debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Registro y fusión» en Imágenes Biomédicas Avanzadas I, «multimodalidad», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en Registro y fusión.",
-        "Relacionar transformaciones, métricas de similitud y multimodalidad mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Registro y fusión» dentro de Imágenes Biomédicas Avanzadas I, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Imágenes Biomédicas Avanzadas I, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre transformaciones o métricas de similitud debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Registro y fusión», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Imágenes Biomédicas Avanzadas I, la incertidumbre de «Registro y fusión» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: integración anatómica y funcional",
-      "paragraphs": [
-        "En la unidad «Registro y fusión» de Imágenes Biomédicas Avanzadas I, el caso conductor es integración anatómica y funcional. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Registro y fusión» conecta transformaciones con métricas de similitud y utiliza multimodalidad como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «integración anatómica y funcional» en Imágenes Biomédicas Avanzadas I, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Registro y fusión» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de integración anatómica y funcional y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Registrar imágenes significa estimar una relación espacial entre dos dominios. Un voxel es un índice discreto dentro de una matriz; una coordenada física expresa una posición en un sistema geométrico con unidades. Dos volúmenes pueden tener la misma matriz y representar regiones físicas distintas si cambian spacing, origin u orientación. Por eso el primer paso no es elegir un optimizador, sino auditar la geometría y los metadatos que definen dónde está cada muestra.",
+        "La convención fija/móvil debe escribirse antes de ejecutar el método. En marcos como SimpleITK, el transform usado para remuestreo suele mapear puntos del dominio fijo o de salida hacia el dominio móvil del que se tomarán intensidades. Esta dirección puede parecer contraintuitiva si se piensa solo en mover la imagen móvil sobre la fija. Confundir T fixed→moving con su inversa produce resultados plausibles pero geométricamente incorrectos.",
+        "Las transformaciones rígidas preservan distancias y ángulos mediante rotación y traslación. Son apropiadas cuando el objeto puede considerarse rígido en el contexto de uso. Una transformación de similitud añade escala isotrópica; una afín permite escala anisotrópica y shear. Aumentar grados de libertad puede mejorar una métrica incluso cuando la transformación deja de representar un movimiento físicamente plausible.",
+        "DICOM define objetos de Spatial Registration para expresar relaciones entre Frames of Reference. El Frame of Reference UID ayuda a establecer qué instancias comparten un sistema espacial, pero no sustituye la verificación de posición, orientación, matriz de transformación y referencias a instancias concretas. La unidad usa DICOM como mecanismo de trazabilidad y no como garantía automática de que el registro sea correcto.",
+        "Una matriz homogénea permite componer transformaciones y conservar traslación y parte lineal en una sola representación. La composición no es conmutativa: aplicar A después de B no equivale en general a aplicar B después de A. Un pipeline reproducible conserva el orden, el centro de rotación y la convención de coordenadas, en lugar de registrar solo seis o doce números sin contexto.",
+        "La fusión es una etapa posterior al registro: superponer colores, transparencias o contornos no cambia la geometría subyacente. Una visualización combinada puede ayudar a inspeccionar un resultado, pero no constituye por sí sola una medida de error. La salida fundamental de registro es una transformación con procedencia; la imagen fusionada es una representación derivada."
       ],
       "equations": [
         {
-          "latex": "CNR=\\frac{|\\mu_1-\\mu_2|}{\\sigma_n}",
-          "meaning": "Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.",
+          "latex": "\\\\mathbf{x}'=\\\\mathbf{R}(\\\\mathbf{x}-\\\\mathbf{c})+\\\\mathbf{t}+\\\\mathbf{c}",
+          "meaning": "Transformación rígida alrededor de un centro c, con rotación R y traslación t.",
           "variables": {
-            "\\mu": "media regional",
-            "\\sigma_n": "desviación del ruido"
+            "\\\\mathbf{x}": "punto de entrada en coordenadas físicas",
+            "\\\\mathbf{x}'": "punto transformado",
+            "\\\\mathbf{R}": "matriz de rotación",
+            "\\\\mathbf{t}": "vector de traslación",
+            "\\\\mathbf{c}": "centro de rotación"
+          }
+        },
+        {
+          "latex": "\\\\tilde{\\\\mathbf{x}}'=\\\\mathbf{H}\\\\tilde{\\\\mathbf{x}}",
+          "meaning": "Representación homogénea para componer una transformación afín y su traslación.",
+          "variables": {
+            "\\\\mathbf{H}": "matriz homogénea",
+            "\\\\tilde{\\\\mathbf{x}}": "coordenada física homogénea"
           }
         }
       ],
       "key_points": [
-        "Delimitar el caso de integración anatómica y funcional antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Índice de voxel y coordenada física no son intercambiables.",
+        "Spacing, origin y orientación forman parte de la geometría registrada.",
+        "La dirección fixed→moving debe quedar declarada y verificada.",
+        "Más grados de libertad no implican una transformación más válida.",
+        "Frame of Reference aporta contexto espacial pero no certifica exactitud.",
+        "La transformación es el resultado geométrico; la fusión es una visualización derivada."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Transformación, métrica, optimizador e inicialización: el problema de registro como estimación",
       "paragraphs": [
-        "La reproducibilidad de «Registro y fusión» en Imágenes Biomédicas Avanzadas I requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Registro y fusión» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Imágenes Biomédicas Avanzadas I separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Registro y fusión» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de transformaciones, métricas de similitud y multimodalidad debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Imágenes Biomédicas Avanzadas I.",
-        "El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre integración anatómica y funcional. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Imágenes Biomédicas Avanzadas I como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un método de registro combina al menos cuatro componentes: una familia de transformaciones, una función de similitud o costo, un optimizador y una estrategia de interpolación durante la evaluación. La elección de cada componente cambia el problema que se está resolviendo. No existe un algoritmo universal que sea óptimo para todas las anatomías, modalidades, campos de visión y usos.",
+        "Mean squares funciona cuando intensidades correspondientes deberían ser comparables en una escala semejante. Correlación tolera ciertas transformaciones lineales de intensidad. Mutual information mide dependencia estadística y es ampliamente usada cuando la correspondencia entre intensidades es multimodal o no lineal. Ninguna de estas métricas observa anatomía como lo haría un experto; solo optimiza la relación matemática definida.",
+        "La inicialización determina la región del espacio de parámetros que explora el optimizador. Identidad, alineación de centros, landmarks o una transformación previa son estrategias diferentes. Si las imágenes apenas se solapan al inicio, una métrica puede no contener información suficiente para guiar la optimización. Un resultado fallido no se arregla necesariamente aumentando iteraciones.",
+        "Los esquemas multirresolución suavizan y reducen las imágenes para capturar primero desplazamientos grandes y refinar después. Esta estrategia modifica el paisaje de optimización y debe registrar shrink factors, smoothing sigmas y unidades. El muestreo estocástico de voxels también puede cambiar el resultado entre ejecuciones si no se fija una semilla.",
+        "La función objetivo puede incluir un término de similitud y un término de regularización. En transformaciones deformables, la regularización penaliza deformaciones poco suaves o físicamente poco plausibles. Elegir lambda demasiado pequeño puede sobreajustar ruido o artefactos; elegirlo demasiado grande puede impedir capturar desplazamientos reales.",
+        "El valor final de la métrica es una propiedad del objetivo y de la implementación, no una unidad universal de exactitud espacial. Dos registros con métricas diferentes no se comparan simplemente por cuál produce el número menor. La validación geométrica usa información independiente del objetivo de optimización siempre que sea posible."
+      ],
+      "equations": [
+        {
+          "latex": "\\\\hat{\\\\theta}=\\\\arg\\\\min_{\\\\theta} D(I_f, I_m\\\\circ T_{\\\\theta})+\\\\lambda R(T_{\\\\theta})",
+          "meaning": "Formulación general de registro como optimización de similitud más regularización.",
+          "variables": {
+            "\\\\theta": "parámetros de transformación",
+            "D": "término de disimilitud o costo",
+            "I_f": "imagen fija",
+            "I_m": "imagen móvil",
+            "T_{\\\\theta}": "transformación parametrizada",
+            "R": "regularizador",
+            "\\\\lambda": "peso de regularización"
+          }
+        }
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido."
+        "Transformación, métrica, optimizador e interpolador definen conjuntamente el registro.",
+        "Mean squares requiere una relación de intensidad más directa que mutual information.",
+        "Mutual information favorece dependencia estadística y no demuestra correspondencia anatómica.",
+        "La inicialización puede determinar convergencia o fracaso incluso con el mismo algoritmo.",
+        "Multirresolución y muestreo deben versionarse porque cambian el resultado.",
+        "La métrica optimizada no sustituye una evaluación geométrica independiente."
+      ]
+    },
+    {
+      "heading": "Remuestreo e interpolación: cómo una transformación se convierte en una imagen alineada",
+      "paragraphs": [
+        "La transformación actúa sobre puntos; para crear una nueva imagen en la rejilla fija es necesario remuestrear la imagen móvil. El remuestreador recorre puntos de la rejilla de salida, los transforma hacia el dominio móvil y estima allí una intensidad. Separar transform y resampling evita el error conceptual de pensar que registrar significa copiar voxels de una matriz a otra.",
+        "La interpolación lineal es una opción común para intensidades continuas porque equilibra costo y suavidad. B-spline u otros interpoladores de orden superior pueden ser útiles en determinados contextos, pero modifican la respuesta espacial y pueden producir overshoot. La elección debe evaluarse según el uso, no por una preferencia estética.",
+        "Las etiquetas discretas no deben interpolarse como intensidades ordinarias. Interpolación lineal de una máscara con códigos 0, 1 y 2 puede crear valores sin significado de clase. Nearest-neighbor preserva etiquetas discretas, aunque el contorno remuestreado sigue sujeto a efectos de rejilla. Cuando se propagan segmentaciones, la validación del registro y la del contorno son problemas relacionados pero distintos.",
+        "Cada remuestreo puede suavizar, alterar bordes o modificar estadísticas locales. Encadenar múltiples resamplings, por ejemplo rigid→affine→deformable guardando una imagen en cada paso, introduce degradación acumulada. Es preferible componer transformaciones y remuestrear una sola vez cuando el flujo y el software lo permiten.",
+        "La fusión multimodal puede combinar CT con PET, MR con PET o secuencias MR diferentes. Las modalidades aportan contrastes y resoluciones diferentes; por eso la fusión debe conservar qué imagen aporta anatomía, qué mapa aporta cuantificación y qué interpolación se aplicó. Un overlay bonito no garantiza que una lesión, borde o estructura pequeña esté alineada localmente.",
+        "Los mapas cuantitativos requieren cautela adicional. Interpolar SUV, ADC u otros mapas cambia muestras y puede afectar extremos o regiones pequeñas. U5 no define decisiones clínicas a partir de esas variaciones; enseña a registrar el procedimiento y a evaluar sensibilidad de las métricas posteriores a la interpolación."
+      ],
+      "equations": [
+        {
+          "latex": "I_{out}(\\\\mathbf{x}_f)=\\\\mathcal{I}\\\\left(I_m, T_{f\\\\rightarrow m}(\\\\mathbf{x}_f)\\\\right)",
+          "meaning": "Remuestreo de la imagen móvil sobre la rejilla fija mediante una transformación y un interpolador.",
+          "variables": {
+            "I_{out}": "imagen remuestreada",
+            "\\\\mathbf{x}_f": "punto de la rejilla fija",
+            "T_{f\\\\rightarrow m}": "transformación desde coordenadas fijas hacia móviles",
+            "\\\\mathcal{I}": "operador de interpolación",
+            "I_m": "imagen móvil"
+          }
+        }
+      ],
+      "key_points": [
+        "Registro estima una transformación; remuestreo genera una imagen derivada.",
+        "El interpolador debe corresponder al tipo de dato y uso posterior.",
+        "Nearest-neighbor evita crear clases inexistentes en mapas de etiquetas.",
+        "Remuestreos repetidos pueden degradar información y deben minimizarse.",
+        "Una fusión visual convincente no constituye validación geométrica local.",
+        "Mapas cuantitativos deben auditar sensibilidad a interpolación y rejilla."
+      ]
+    },
+    {
+      "heading": "Registro deformable: campos de desplazamiento, regularización y plausibilidad geométrica",
+      "paragraphs": [
+        "El registro deformable permite desplazamientos que varían espacialmente. Puede representarse mediante B-splines, campos de desplazamiento, velocidades u otras parametrizaciones. Esta flexibilidad es útil cuando la anatomía cambia entre adquisiciones, pero también aumenta el riesgo de ajustar ruido, pérdida de señal o diferencias que no corresponden a deformación física.",
+        "Un campo de desplazamiento u(x) define T(x)=x+u(x). La suavidad visual del campo no garantiza invertibilidad ni plausibilidad. El Jacobiano de la transformación resume el cambio local de volumen: valores positivos representan orientaciones localmente preservadas; determinantes cercanos a cero implican compresión extrema; valores no positivos pueden indicar folding en una transformación que pretendía ser difeomórfica.",
+        "Regularización y parametrización expresan supuestos sobre la deformación posible. Un B-spline con grid muy fino puede capturar variaciones locales que un grid grueso no representa, pero también puede adaptarse a ruido o artefactos. El análisis de sensibilidad debe variar resolución de control, peso de regularización o escala y observar qué partes de la conclusión son estables.",
+        "La consistencia inversa compara, cuando existen transformaciones en ambas direcciones, cuánto se aproxima T_AB seguido de T_BA a la identidad. Un error pequeño de consistencia inversa es informativo pero no demuestra exactitud anatómica: dos transformaciones pueden ser mutuamente consistentes y estar equivocadas de manera parecida.",
+        "DICOM Deformable Spatial Registration puede describir relaciones mediante matrices y deformation grids entre marcos de referencia. Ese objeto facilita intercambio y trazabilidad de transformaciones, pero el consumidor debe verificar qué Source Frame of Reference, rejilla, resolución y transformaciones se codificaron. Serializar un campo no lo valida.",
+        "La propagación de contornos o mapas mediante deformación requiere criterios dependientes del uso. Una deformación aceptable para visualización cualitativa puede ser insuficiente para medir una estructura pequeña o transferir una región. U5 trata estas salidas con datos sintéticos y no aprueba uso clínico ni transferencia de dosis."
+      ],
+      "equations": [
+        {
+          "latex": "T(\\\\mathbf{x})=\\\\mathbf{x}+\\\\mathbf{u}(\\\\mathbf{x})",
+          "meaning": "Representación de una transformación deformable mediante un campo de desplazamiento.",
+          "variables": {
+            "T": "transformación espacial",
+            "\\\\mathbf{x}": "posición física",
+            "\\\\mathbf{u}(\\\\mathbf{x})": "desplazamiento local"
+          }
+        },
+        {
+          "latex": "J_T(\\\\mathbf{x})=\\\\det\\\\left(\\\\nabla T(\\\\mathbf{x})\\\\right)",
+          "meaning": "Determinante Jacobiano local de la transformación, usado para examinar cambios volumétricos y folding.",
+          "variables": {
+            "J_T": "determinante Jacobiano",
+            "\\\\nabla T": "Jacobiano matricial de la transformación"
+          }
+        }
+      ],
+      "key_points": [
+        "Deformable significa mayor flexibilidad y también mayor riesgo de sobreajuste.",
+        "El campo de desplazamiento debe evaluarse en coordenadas físicas y no solo visualmente.",
+        "Jacobianos no positivos alertan de folding cuando se espera una transformación invertible.",
+        "Regularización expresa supuestos y debe entrar en el análisis de sensibilidad.",
+        "Consistencia inversa no equivale por sí sola a exactitud anatómica.",
+        "DICOM puede serializar deformaciones pero no validar su uso."
+      ]
+    },
+    {
+      "heading": "Validación geométrica y fusión multimodal: medir error donde importa",
+      "paragraphs": [
+        "La validación debe responder a la pregunta de si se alineó correctamente la anatomía relevante para este uso y no a si terminó el optimizador. Una transformación sintética conocida permite medir recuperación en condiciones controladas. En datos reales, landmarks independientes, superficies, regiones o estructuras no utilizadas durante la optimización aportan referencias externas parciales.",
+        "Target registration error es la distancia entre la posición transformada de un target y su referencia. Fiducial registration error mide residual en fiduciales utilizados para estimar el registro y puede ser bajo incluso cuando el error en targets alejados es mayor. Por ello FRE no debe venderse como TRE y los puntos usados para ajustar no son automáticamente una validación independiente.",
+        "Dice u otras métricas de overlap pueden ser útiles al comparar segmentaciones propagadas, pero mezclan error de registro con geometría, tamaño de la estructura y error de segmentación. Un órgano grande puede mostrar Dice alto pese a errores locales relevantes. Para registro, se combinan métricas según el uso: TRE de landmarks, distancias de superficie, inspección localizada, Jacobianos y controles sintéticos.",
+        "La revisión visual sigue siendo útil para detectar fallos groseros y patrones localizados. Checkerboards, bordes superpuestos, diferencias y landmarks ayudan a inspeccionar. Sin embargo, la evaluación visual depende del observador y del contraste; debe complementar medidas cuantitativas, no reemplazarlas.",
+        "El error de registro no es necesariamente uniforme en el volumen. Métodos recientes estiman error o confianza espacialmente variable, lo que recuerda que una única cifra global puede ocultar zonas de fallo. U5 no convierte mapas de confianza en garantías; los usa para enseñar que la incertidumbre debe localizarse cuando el uso también es local.",
+        "El informe final conserva imágenes fuente, metadatos geométricos, Frame of Reference, transformaciones, dirección, parámetros, semillas, versiones, interpoladores, métricas de optimización y métricas independientes de validación. El resultado puede apoyar investigación o docencia, pero no diagnostica, no planifica procedimientos ni autoriza uso clínico. U6 profundizará en control de calidad cuantitativo y reproducibilidad."
+      ],
+      "equations": [
+        {
+          "latex": "TRE_i=\\\\left\\\\|T(\\\\mathbf{p}_i)-\\\\mathbf{q}_i\\\\right\\\\|_2",
+          "meaning": "Error de registro en un landmark target independiente.",
+          "variables": {
+            "TRE_i": "target registration error del punto i",
+            "\\\\mathbf{p}_i": "landmark móvil",
+            "\\\\mathbf{q}_i": "referencia fija",
+            "T": "transformación estimada"
+          }
+        },
+        {
+          "latex": "Dice(A,B)=\\\\frac{2|A\\\\cap B|}{|A|+|B|}",
+          "meaning": "Overlap entre dos regiones; útil como métrica complementaria, no como sustituto universal de exactitud geométrica.",
+          "variables": {
+            "A,B": "regiones o segmentaciones comparadas"
+          }
+        }
+      ],
+      "key_points": [
+        "Validar requiere una referencia independiente del objetivo optimizado cuando sea posible.",
+        "FRE y TRE responden a preguntas diferentes y no deben confundirse.",
+        "Dice depende del tamaño y la segmentación además del registro.",
+        "Inspección visual complementa pero no reemplaza métricas geométricas.",
+        "El error puede variar espacialmente y una cifra global puede ocultarlo.",
+        "Criterios de aceptación dependen del uso y no son universales."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "transformaciones",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "imagen fija",
+      "definition": "Imagen que define el dominio de referencia para el problema de registro."
     },
     {
-      "term": "métricas de similitud",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "imagen móvil",
+      "definition": "Imagen cuyo dominio se relaciona con el fijo mediante la transformación estimada."
     },
     {
-      "term": "multimodalidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "índice de voxel",
+      "definition": "Coordenada discreta de una muestra dentro de la matriz de imagen."
     },
     {
-      "term": "Registro y fusión",
-      "definition": "Dominio de estudio que integra transformaciones, métricas de similitud, multimodalidad para resolver un problema delimitado y verificable."
+      "term": "coordenada física",
+      "definition": "Posición expresada en un sistema espacial con unidades, orientación y origen."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de integración anatómica y funcional usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "spacing",
+      "definition": "Separación física entre muestras adyacentes en cada eje de una imagen."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "origin",
+      "definition": "Posición física asociada al origen de índices de la imagen."
     },
     {
-      "term": "Evidencia",
-      "definition": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "direction cosines",
+      "definition": "Vectores que describen la orientación de los ejes de una imagen en el espacio físico."
     },
     {
-      "term": "Control",
-      "definition": "Fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Frame of Reference",
+      "definition": "Sistema espacial DICOM identificado por un Frame of Reference UID."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Frame of Reference UID",
+      "definition": "Identificador DICOM del marco espacial asociado a instancias relacionadas."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "transformación rígida",
+      "definition": "Transformación que combina rotación y traslación preservando distancias."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "transformación de similitud",
+      "definition": "Transformación rígida ampliada con escala isotrópica."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "transformación afín",
+      "definition": "Transformación lineal más traslación que puede incluir escala anisotrópica y shear."
+    },
+    {
+      "term": "transformación deformable",
+      "definition": "Transformación cuya relación espacial varía localmente."
+    },
+    {
+      "term": "centro de rotación",
+      "definition": "Punto físico alrededor del cual se parametriza una rotación."
+    },
+    {
+      "term": "matriz homogénea",
+      "definition": "Representación matricial aumentada que integra parte lineal y traslación."
+    },
+    {
+      "term": "composición de transformaciones",
+      "definition": "Aplicación ordenada de varias transformaciones para obtener un único mapeo."
+    },
+    {
+      "term": "transformación inversa",
+      "definition": "Mapeo que revierte una transformación cuando existe y puede calcularse."
+    },
+    {
+      "term": "mean squares",
+      "definition": "Métrica basada en diferencias cuadráticas de intensidad entre imágenes."
+    },
+    {
+      "term": "correlación",
+      "definition": "Métrica que cuantifica asociación lineal entre intensidades correspondientes."
+    },
+    {
+      "term": "mutual information",
+      "definition": "Métrica de dependencia estadística entre distribuciones de intensidad, usada frecuentemente en multimodalidad."
+    },
+    {
+      "term": "normalized mutual information",
+      "definition": "Variante normalizada de mutual information para determinadas condiciones de registro."
+    },
+    {
+      "term": "función objetivo",
+      "definition": "Cantidad matemática optimizada para estimar parámetros de registro."
+    },
+    {
+      "term": "optimizador",
+      "definition": "Algoritmo que actualiza parámetros para mejorar la función objetivo."
+    },
+    {
+      "term": "inicialización",
+      "definition": "Estimación inicial de la transformación antes de optimizar."
+    },
+    {
+      "term": "capture range",
+      "definition": "Región del espacio de parámetros desde la que un método puede converger al óptimo deseado."
+    },
+    {
+      "term": "multirresolución",
+      "definition": "Registro por niveles de escala con reducción y suavizado progresivos."
+    },
+    {
+      "term": "sampling",
+      "definition": "Selección de muestras de imagen usadas para estimar una métrica."
+    },
+    {
+      "term": "semilla aleatoria",
+      "definition": "Valor que controla reproducibilidad cuando el muestreo u optimización usan aleatoriedad."
+    },
+    {
+      "term": "regularización",
+      "definition": "Término o restricción que penaliza transformaciones no deseadas."
+    },
+    {
+      "term": "B-spline transform",
+      "definition": "Transformación deformable parametrizada mediante funciones base B-spline y puntos de control."
+    },
+    {
+      "term": "campo de desplazamiento",
+      "definition": "Campo vectorial que asigna un desplazamiento local a posiciones espaciales."
+    },
+    {
+      "term": "diffeomorfismo",
+      "definition": "Transformación suave e invertible con inversa suave bajo las condiciones matemáticas correspondientes."
+    },
+    {
+      "term": "determinante Jacobiano",
+      "definition": "Determinante de la derivada espacial de una transformación, relacionado con cambio de volumen local."
+    },
+    {
+      "term": "folding",
+      "definition": "Pérdida local de orientación o invertibilidad asociada típicamente a Jacobiano no positivo."
+    },
+    {
+      "term": "consistencia inversa",
+      "definition": "Medida de cuánto una transformación y su inversa estimada componen aproximadamente la identidad."
+    },
+    {
+      "term": "remuestreo",
+      "definition": "Proceso de evaluar una imagen sobre una nueva rejilla mediante transformación e interpolación."
+    },
+    {
+      "term": "interpolación lineal",
+      "definition": "Interpolación continua basada en combinación lineal local de muestras vecinas."
+    },
+    {
+      "term": "nearest-neighbor",
+      "definition": "Interpolación que toma el valor de la muestra más cercana y preserva etiquetas discretas."
+    },
+    {
+      "term": "B-spline interpolation",
+      "definition": "Interpolación suave basada en funciones B-spline."
+    },
+    {
+      "term": "rejilla de salida",
+      "definition": "Conjunto de posiciones físicas donde se genera la imagen remuestreada."
+    },
+    {
+      "term": "fusión multimodal",
+      "definition": "Visualización o integración de imágenes de modalidades distintas después de establecer una relación espacial."
+    },
+    {
+      "term": "checkerboard",
+      "definition": "Visualización alternada de dos imágenes usada para inspección cualitativa del registro."
+    },
+    {
+      "term": "overlay",
+      "definition": "Superposición visual de imágenes, bordes o mapas en un mismo espacio."
+    },
+    {
+      "term": "landmark",
+      "definition": "Punto anatómico o sintético identificable usado para ajuste o evaluación."
+    },
+    {
+      "term": "fiducial",
+      "definition": "Marcador o punto de referencia usado para establecer correspondencias espaciales."
+    },
+    {
+      "term": "FRE",
+      "definition": "Fiducial registration error medido sobre fiduciales usados en el registro."
+    },
+    {
+      "term": "TRE",
+      "definition": "Target registration error medido en targets de interés, idealmente independientes del ajuste."
+    },
+    {
+      "term": "Dice coefficient",
+      "definition": "Métrica de overlap entre dos regiones o segmentaciones."
+    },
+    {
+      "term": "surface distance",
+      "definition": "Distancia entre superficies usada como complemento de evaluación geométrica."
+    },
+    {
+      "term": "Hausdorff distance",
+      "definition": "Máxima distancia mínima entre dos conjuntos de puntos o superficies bajo una definición especificada."
+    },
+    {
+      "term": "ground truth sintético",
+      "definition": "Transformación o geometría conocida por construcción usada para evaluar recuperación."
+    },
+    {
+      "term": "mapa de error",
+      "definition": "Representación espacial de una estimación de error de registro."
+    },
+    {
+      "term": "mapa de confianza",
+      "definition": "Representación espacial de confianza o incertidumbre estimada del registro."
+    },
+    {
+      "term": "Spatial Registration IOD",
+      "definition": "Objeto DICOM que describe relaciones espaciales entre Frames of Reference."
+    },
+    {
+      "term": "Deformable Spatial Registration IOD",
+      "definition": "Objeto DICOM que puede representar deformaciones mediante rejillas y matrices."
+    },
+    {
+      "term": "Source Frame of Reference",
+      "definition": "Marco espacial fuente referenciado en un objeto de registro deformable DICOM."
+    },
+    {
+      "term": "transform provenance",
+      "definition": "Registro de origen, parámetros, versión, dirección y composición de una transformación."
+    },
+    {
+      "term": "uso previsto",
+      "definition": "Tarea concreta para la que se evalúa si la exactitud del registro es suficiente."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Registro y fusión",
-      "scenario": "Un equipo propone estudiar integración anatómica y funcional, pero su pregunta mezcla transformaciones, métricas de similitud y multimodalidad sin definir unidades, referencias ni resultado admisible.",
+      "title": "Dirección de transformación en una traslación sintética",
+      "scenario": "Una imagen móvil sintética está desplazada +8 mm en x respecto de la fija. El pipeline estima correctamente la relación geométrica pero el remuestreo aplica T en la dirección opuesta.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de transformaciones, métricas de similitud y multimodalidad.",
-        "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.",
-        "Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Escribir las coordenadas físicas de un landmark homólogo en ambas imágenes.",
+        "Declarar explícitamente si T mapea fixed→moving o moving→fixed.",
+        "Aplicar T y T^{-1} al landmark antes de remuestrear la imagen completa.",
+        "Comprobar qué dirección produce correspondencia física y documentar la convención.",
+        "Remuestrear una sola vez y medir TRE sobre landmarks no usados para ajustar."
       ],
-      "interpretation": "El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "Un registro puede tener parámetros numéricamente correctos y producir una imagen mal alineada si la dirección del transform se interpreta al revés.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+        "Caso de traslación pura y geometría conocida.",
+        "No representa distorsión ni deformación anatómica.",
+        "El TRE sintético no establece exactitud clínica."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre transformaciones y métricas de similitud en el caso de integración anatómica y funcional; una condición vinculada con multimodalidad podría producir el mismo patrón.",
+      "title": "CT–MR: elegir una métrica compatible con multimodalidad",
+      "scenario": "Dos volúmenes sintéticos comparten geometría pero sus intensidades no mantienen una relación de igualdad voxel a voxel.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar multimodalidad como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Comparar el supuesto de mean squares con el patrón de intensidades entre modalidades.",
+        "Calcular o simular el paisaje de correlación y mutual information alrededor de la transformación correcta.",
+        "Usar la misma inicialización y familia de transformación para que la comparación sea interpretable.",
+        "Registrar el óptimo de cada métrica y medir TRE independiente.",
+        "Concluir con la métrica geométrica, no con el valor bruto de la función objetivo."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "Mutual information puede ser apropiada para multimodalidad porque explota dependencia estadística, pero su máximo no demuestra por sí solo alineación anatómica correcta.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "La relación sintética entre modalidades es simplificada.",
+        "El resultado depende de bins, muestreo e inicialización.",
+        "No demuestra desempeño en CT/MR clínico."
+      ]
+    },
+    {
+      "title": "Interpolar una segmentación sin crear clases falsas",
+      "scenario": "Una máscara sintética usa 0=fondo, 1=órgano y 2=estructura adyacente y debe propagarse mediante una transformación rígida.",
+      "reasoning_steps": [
+        "Remuestrear una copia con interpolación lineal y enumerar valores no enteros creados.",
+        "Remuestrear otra copia con nearest-neighbor.",
+        "Comparar bordes y volumen de cada clase contra una referencia transformada conocida.",
+        "Separar error de rejilla de error de transformación.",
+        "Documentar que la elección del interpolador depende de la semántica del dato."
+      ],
+      "interpretation": "Interpolar etiquetas como intensidades puede producir códigos sin significado; nearest-neighbor preserva clases, aunque no elimina error geométrico.",
+      "limitations": [
+        "Máscara sintética simple.",
+        "No evalúa segmentación probabilística.",
+        "No autoriza propagación clínica de contornos."
+      ]
+    },
+    {
+      "title": "Deformación que mejora overlap pero introduce folding",
+      "scenario": "Un algoritmo deformable aumenta Dice en una estructura sintética, pero una región del campo presenta Jacobiano no positivo.",
+      "reasoning_steps": [
+        "Calcular Dice antes y después del registro.",
+        "Evaluar el mapa de determinante Jacobiano.",
+        "Localizar voxels con J≤0 y revisar el campo de desplazamiento.",
+        "Comparar con una regularización más fuerte y medir TRE en landmarks independientes.",
+        "Decidir si la mejora de overlap compensa o no la pérdida de plausibilidad según el objetivo educativo."
+      ],
+      "interpretation": "Mejor overlap no legitima una deformación con folding cuando se esperaba un mapeo invertible.",
+      "limitations": [
+        "El umbral depende de la propiedad geométrica esperada.",
+        "Jacobiano positivo no garantiza exactitud anatómica.",
+        "No se transfieren conclusiones a pacientes."
+      ]
+    },
+    {
+      "title": "FRE bajo y TRE alto en targets alejados",
+      "scenario": "Cuatro fiduciales sintéticos agrupados cerca del centro producen un ajuste rígido con FRE pequeño, pero dos targets periféricos muestran error mayor.",
+      "reasoning_steps": [
+        "Ajustar la transformación usando solo los fiduciales.",
+        "Calcular FRE en los puntos usados para el ajuste.",
+        "Calcular TRE en targets independientes distribuidos en el volumen.",
+        "Cambiar la geometría de fiduciales y repetir.",
+        "Explicar por qué residual de ajuste y error en targets no son la misma magnitud."
+      ],
+      "interpretation": "Un FRE pequeño no garantiza TRE pequeño; la geometría y localización de los targets importan.",
+      "limitations": [
+        "Modelo rígido sintético.",
+        "Los landmarks tienen error simulado conocido.",
+        "No establece tolerancias clínicas universales."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Laboratorio reproducible de registro y fusión multimodal con ground truth sintético",
+      "estimated_time_minutes": 390,
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja exclusivamente con imágenes sintéticas o abiertas no identificables y conserva archivos originales sin sobreescribir.",
+        "Define antes del análisis fixed image, moving image, sistemas físicos, unidades, dirección del transform y uso previsto del resultado.",
+        "Construye una transformación sintética conocida que combine traslación/rotación y, en una segunda fase, una deformación suave controlada.",
+        "Versiona transformación, métrica, optimizador, inicialización, niveles multirresolución, sampling, semilla e interpolador.",
+        "Reserva landmarks independientes para validación y no los uses para ajustar el transform que luego evaluarás con TRE.",
+        "Evalúa una configuración monomodal y una multimodal usando métricas apropiadas y registra tanto el valor objetivo como métricas geométricas independientes.",
+        "Compón transforms antes del remuestreo final siempre que sea posible y registra cuántos resamplings recibe cada imagen.",
+        "Evalúa imágenes de intensidad y etiquetas con interpoladores distintos y justifica cada elección.",
+        "En la deformación, genera mapa de desplazamiento, Jacobiano y una prueba de sensibilidad a regularización.",
+        "Cierra con un informe que separe optimización, validación, incertidumbre, fallo posible y límite de uso."
       ],
       "problems": [
-        "Define transformaciones mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo métricas de similitud modifica o complementa a transformaciones.",
-        "Propón una prueba que distinga el papel de multimodalidad de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Reconstruye las coordenadas físicas de cinco voxels a partir de índice, spacing, origin y orientación.",
+        "Demuestra con un landmark la diferencia entre T_fixed→moving y T_moving→fixed.",
+        "Compón dos transformaciones homogéneas y verifica que invertir el orden cambia el resultado.",
+        "Compara rigid y affine bajo una perturbación que solo requiere movimiento rígido y detecta sobreajuste afín.",
+        "Compara mean squares y mutual information en un par monomodal y en un par multimodal sintético.",
+        "Perturba la inicialización y determina a partir de qué desplazamiento el optimizador converge a otra solución.",
+        "Ejecuta dos seeds de sampling y cuantifica la variación de parámetros estimados.",
+        "Implementa un esquema multirresolución y documenta shrink factors y smoothing sigmas.",
+        "Remuestrea una imagen de intensidad con nearest-neighbor y linear y compara artefactos.",
+        "Remuestrea una máscara con linear y nearest-neighbor y enumera valores de clase inválidos creados por linear.",
+        "Compara un pipeline con tres resamplings secuenciales frente a composición de transforms y un solo resampling.",
+        "Calcula TRE en al menos ocho landmarks no usados en la optimización y reporta mediana, percentil 95 y máximo.",
+        "Calcula FRE en fiduciales de ajuste y explica por qué no sustituye el TRE.",
+        "Compara Dice y TRE en una estructura grande y otra pequeña y explica la dependencia con tamaño.",
+        "Aplica una deformación sintética conocida y estima error del campo en una rejilla de puntos.",
+        "Calcula el determinante Jacobiano y localiza regiones con compresión, expansión y folding si existe.",
+        "Varía regularización o spacing de puntos de control y construye una curva error–complejidad.",
+        "Exporta o representa conceptualmente la relación mediante DICOM Spatial Registration o Deformable Spatial Registration e identifica Frames of Reference fuente/destino.",
+        "Construye una fusión PET/CT o MR/PET sintética y demuestra que el overlay no detecta por sí solo todos los errores locales.",
+        "Redacta un criterio de aceptación dependiente del uso educativo que combine una métrica geométrica, una inspección localizada y una condición de plausibilidad.",
+        "Crea un mapa de error o confianza sintético y muestra un caso donde la media global oculta una región localmente mala.",
+        "Repite el pipeline después de cambiar interpolador, nivel de regularización y sampling; identifica qué conclusiones permanecen."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Ficha de geometría fixed/moving con spacing, origin, orientación, Frame of Reference y unidades.",
+        "Diagrama de dirección y composición de transformaciones.",
+        "Archivo o tabla de parámetros completos del registro.",
+        "Comparación cuantitativa de métricas de similitud y convergencia.",
+        "Tabla FRE/TRE con landmarks de ajuste separados de targets de validación.",
+        "Comparación de interpoladores para intensidad y etiquetas.",
+        "Mapa o resumen de Jacobiano y deformación.",
+        "Análisis de sensibilidad a inicialización, sampling y regularización.",
+        "Visualización multimodal con checkerboard/overlay acompañada de métricas independientes.",
+        "Informe reproducible final con limitaciones y siguiente prueba."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: integración anatómica y funcional",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para transformaciones, métricas de similitud y multimodalidad.",
-        "Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Pipeline de imagen reproducible con informe cuantitativo.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de integración anatómica y funcional y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte transformaciones, métricas de similitud y multimodalidad.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Fixed y moving están definidos sin ambigüedad.",
+        "La dirección de cada transformación está documentada.",
+        "Índices y coordenadas físicas no se mezclan.",
+        "Spacing, origin y orientación se conservan en la trazabilidad.",
+        "El tipo de transformación se justifica por la deformación plausible.",
+        "La inicialización se registra antes de optimizar.",
+        "La métrica se elige según la relación entre modalidades.",
+        "El valor objetivo no se presenta como error espacial universal.",
+        "Sampling y seed están versionados.",
+        "Los niveles multirresolución son reproducibles.",
+        "Las transformaciones se componen antes del remuestreo final cuando procede.",
+        "Las etiquetas no generan clases intermedias por interpolación inapropiada.",
+        "Los landmarks de validación no fueron usados para el ajuste.",
+        "FRE y TRE se reportan como magnitudes distintas.",
+        "Dice se interpreta como overlap y no como TRE.",
+        "La evaluación incluye al menos una métrica localizada.",
+        "El campo deformable se inspecciona además de la imagen fusionada.",
+        "El Jacobiano se interpreta con la convención de transformación declarada.",
+        "La sensibilidad a regularización se reporta.",
+        "DICOM Frame of Reference se usa como trazabilidad, no como prueba de exactitud.",
+        "La fusión visual se acompaña de validación cuantitativa.",
+        "Las transformaciones y versiones pueden reconstruirse.",
+        "La incertidumbre se propaga hasta la conclusión.",
+        "Los criterios de aceptación están ligados al uso previsto.",
+        "No se formula diagnóstico, planificación clínica ni aprobación de uso asistencial."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar transformaciones como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar transformaciones en una explicación."
+      "error": "Confundir índice de voxel con posición física.",
+      "correction": "Convertir explícitamente usando spacing, origin y orientación antes de comparar puntos."
     },
     {
-      "error": "Afirmar que una relación entre transformaciones y métricas de similitud demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Aplicar la transformación en la dirección opuesta.",
+      "correction": "Documentar fixed→moving y verificar T/T^{-1} con landmarks antes de remuestrear."
     },
     {
-      "error": "Añadir multimodalidad después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Usar affine porque mejora la métrica en un problema rígido.",
+      "correction": "Elegir grados de libertad por plausibilidad geométrica y validar contra ground truth."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Comparar valores brutos de métricas diferentes.",
+      "correction": "Usar cada métrica para optimización y comparar exactitud con medidas geométricas independientes."
     },
     {
-      "error": "Generalizar la conclusión de Registro y fusión al uso clínico o real.",
-      "correction": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+      "error": "Concluir que mutual information alta implica anatomía bien alineada.",
+      "correction": "Validar localmente con landmarks, superficies o perturbación conocida."
+    },
+    {
+      "error": "Aumentar iteraciones para solucionar una mala inicialización.",
+      "correction": "Revisar overlap inicial, centro de rotación, escalas y capture range."
+    },
+    {
+      "error": "Omitir la semilla con sampling aleatorio.",
+      "correction": "Fijar y registrar seed o cuantificar variación entre ejecuciones."
+    },
+    {
+      "error": "Remuestrear después de cada etapa del pipeline.",
+      "correction": "Componer transforms y limitar remuestreos para reducir degradación."
+    },
+    {
+      "error": "Interpolar etiquetas con un interpolador continuo.",
+      "correction": "Usar un método compatible con datos discretos y validar efectos de rejilla."
+    },
+    {
+      "error": "Interpretar una imagen fusionada como evidencia suficiente.",
+      "correction": "Separar visualización de validación cuantitativa independiente."
+    },
+    {
+      "error": "Usar Dice como sinónimo de exactitud de registro.",
+      "correction": "Combinar overlap con TRE/distancias y considerar tamaño y error de segmentación."
+    },
+    {
+      "error": "Usar FRE de los fiduciales de ajuste como TRE.",
+      "correction": "Evaluar targets independientes y declarar geometría de fiduciales."
+    },
+    {
+      "error": "Aceptar un campo deformable porque se ve suave.",
+      "correction": "Examinar desplazamientos, Jacobianos, regularización y errores locales."
+    },
+    {
+      "error": "Asumir que Jacobiano positivo demuestra registro correcto.",
+      "correction": "Tratarlo como control de plausibilidad o invertibilidad, no como exactitud anatómica."
+    },
+    {
+      "error": "Confundir consistencia inversa con ground truth.",
+      "correction": "Usarla como control adicional y mantener referencias independientes."
+    },
+    {
+      "error": "Asumir que mismo Frame of Reference UID garantiza alineación.",
+      "correction": "Auditar instancias, geometría y transformación; el UID aporta contexto, no exactitud."
+    },
+    {
+      "error": "Propagar un contorno sin validar el uso específico.",
+      "correction": "Separar exactitud del registro, error de segmentación y tolerancia del caso."
+    },
+    {
+      "error": "Generalizar un registro sintético a uso clínico.",
+      "correction": "Limitar la conclusión al dataset, transformación, métricas y condiciones evaluadas."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar integración anatómica y funcional?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué diferencia fundamental existe entre voxel index y coordenada física?",
+      "answer": "El índice identifica una muestra discreta; la coordenada física ubica esa muestra usando spacing, origin y orientación.",
+      "reasoning": "El registro opera sobre relaciones espaciales físicas aunque las imágenes se almacenen como matrices.",
+      "common_error": "Comparar índices directamente entre imágenes con geometrías distintas."
     },
     {
-      "question": "¿Cómo se relacionan transformaciones y métricas de similitud?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; multimodalidad puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Por qué debe declararse la dirección del transform?",
+      "answer": "Porque el remuestreador necesita saber qué dominio se mapea a cuál y T no es intercambiable con T^{-1}.",
+      "reasoning": "Un mismo conjunto de parámetros puede interpretarse de forma errónea si se omite la convención.",
+      "common_error": "Decir simplemente que se mueve la móvil a la fija."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre multimodalidad?",
-      "answer": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Cuándo es razonable una transformación rígida?",
+      "answer": "Cuando el objeto puede modelarse como rotación y traslación sin deformación relevante para el uso.",
+      "reasoning": "El modelo debe ser tan flexible como el fenómeno, no más por defecto.",
+      "common_error": "Elegir affine o deformable solo porque mejora el costo."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Qué ventaja ofrece mutual information en multimodalidad?",
+      "answer": "No requiere igualdad directa de intensidades y explota dependencia estadística entre distribuciones.",
+      "reasoning": "La relación CT–MR o PET–CT puede no ser lineal voxel a voxel.",
+      "common_error": "Interpretar MI como error anatómico en milímetros."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Por qué la inicialización importa?",
+      "answer": "Porque la optimización no lineal puede converger a óptimos distintos según el punto inicial y el overlap.",
+      "reasoning": "Capture range y centro de rotación condicionan el paisaje de optimización.",
+      "common_error": "Aumentar iteraciones sin revisar geometría."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Qué interpolador es apropiado para una máscara de clases?",
+      "answer": "Nearest-neighbor suele preservar códigos discretos mejor que interpolación lineal.",
+      "reasoning": "Los códigos de clase no son una variable continua.",
+      "common_error": "Usar linear y redondear después sin evaluar sesgo."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre integración anatómica y funcional?",
-      "answer": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Qué diferencia hay entre registro y remuestreo?",
+      "answer": "Registro estima una transformación; remuestreo usa esa transformación para evaluar una imagen en otra rejilla.",
+      "reasoning": "Separarlos permite componer transforms y evitar degradación innecesaria.",
+      "common_error": "Guardar una imagen nueva después de cada etapa como si fuera obligatorio."
     },
     {
-      "question": "¿Qué demuestra dominio de Registro y fusión?",
-      "answer": "Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué indica un Jacobiano no positivo?",
+      "answer": "Puede indicar folding o pérdida local de orientación en un mapeo que pretendía ser invertible.",
+      "reasoning": "Es un control geométrico del campo, no una medida completa de exactitud.",
+      "common_error": "Concluir que todo Jacobiano positivo implica registro correcto."
+    },
+    {
+      "question": "¿Por qué FRE no sustituye TRE?",
+      "answer": "FRE mide residual en fiduciales usados para ajustar; TRE evalúa error en targets de interés y puede ser mayor.",
+      "reasoning": "Ajuste y generalización espacial son problemas diferentes.",
+      "common_error": "Reportar FRE pequeño como exactitud global."
+    },
+    {
+      "question": "¿Por qué Dice alto puede coexistir con error local?",
+      "answer": "Porque overlap depende del tamaño y forma de la región y puede ocultar desplazamientos focales.",
+      "reasoning": "Una métrica regional integra información y pierde localización.",
+      "common_error": "Usar Dice único para validar cualquier registro."
+    },
+    {
+      "question": "¿Qué aporta DICOM Spatial Registration?",
+      "answer": "Una representación estandarizada de relaciones entre Frames of Reference y referencias a objetos.",
+      "reasoning": "Facilita intercambio y procedencia, pero no garantiza exactitud de la transformación.",
+      "common_error": "Confundir conformidad de formato con validación geométrica."
+    },
+    {
+      "question": "¿Qué demuestra una fusión visualmente convincente?",
+      "answer": "Solo que la superposición parece plausible bajo esa visualización; no demuestra exactitud local ni utilidad clínica.",
+      "reasoning": "Contraste, transparencia y resolución pueden ocultar errores.",
+      "common_error": "Aprobar el registro solo mirando un overlay."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Integración anatómica y funcional."
+      "topic": "PET/CT cuantitativo",
+      "connection": "El registro entre emisión y anatomía condiciona localización, corrección de atenuación y análisis regional; U5 enseña a auditar esa geometría sin interpretar estudios clínicos."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa."
+      "topic": "MRI multimodal",
+      "connection": "Registrar T1, T2, FLAIR, difusión o perfusión requiere respetar geometría, contraste e interpolación antes de combinar mapas."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "topic": "Radioterapia",
+      "connection": "TG132 ilustra por qué registro y fusión necesitan QA dependiente del uso; la unidad no planifica ni acumula dosis."
     },
     {
-      "topic": "Límite",
-      "connection": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+      "topic": "Cirugía guiada por imagen",
+      "connection": "TRE y distribución de fiduciales muestran por qué el error relevante puede estar en el target y no en los puntos de ajuste."
+    },
+    {
+      "topic": "Seguimiento longitudinal",
+      "connection": "Registro intra-sujeto permite comparar tiempos, pero cambios anatómicos, adquisición e interpolación deben separarse de cambio biológico."
+    },
+    {
+      "topic": "IA e imagen médica",
+      "connection": "Un registro puede entrar como preprocesamiento o generar etiquetas propagadas; errores de registro pueden convertirse en sesgo de entrenamiento si no se auditan."
     }
   ],
   "sources": [
     {
-      "title": "The Cancer Imaging Archive",
-      "organization": "National Cancer Institute",
-      "url": "https://www.cancerimagingarchive.net/",
-      "type": "datos abiertos",
-      "description": "Colecciones de imagen con metadatos de investigación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "MONAI documentation",
-      "organization": "MONAI Consortium",
-      "url": "https://docs.monai.io/",
-      "type": "documentación",
-      "description": "Flujos reproducibles de aprendizaje profundo en imagen médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "QIBA",
-      "organization": "Radiological Society of North America",
-      "url": "https://www.rsna.org/research/quantitative-imaging-biomarkers-alliance",
-      "type": "iniciativa de calidad",
-      "description": "Perfiles y metrología para biomarcadores cuantitativos de imagen.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "ImageJ documentation",
-      "organization": "National Institutes of Health",
-      "url": "https://imagej.net/",
-      "type": "software abierto",
-      "description": "Procesamiento, medición y automatización de imágenes científicas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "DICOM Standard",
+      "title": "DICOM PS3.3 2026c — Spatial Registration IODs",
       "organization": "DICOM Standards Committee",
-      "url": "https://www.dicomstandard.org/current",
+      "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_A.39.html",
       "type": "estándar",
-      "description": "Adquisición, representación e intercambio de imagen médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "description": "Define los IOD de Spatial Registration y su relación entre Frames of Reference.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "DICOM PS3.3 2026c — Deformable Spatial Registration IOD",
+      "organization": "DICOM Standards Committee",
+      "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_A.39.2.html",
+      "type": "estándar",
+      "description": "Describe registro deformable mediante deformation grids y matrices entre marcos espaciales.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "DICOM PS3.3 2026c — Deformable Spatial Registration Module",
+      "organization": "DICOM Standards Committee",
+      "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.20.3.html",
+      "type": "estándar",
+      "description": "Define atributos de Source Frame of Reference y rejillas de deformación.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "SimpleITK Registration Overview",
+      "organization": "SimpleITK",
+      "url": "https://simpleitk.readthedocs.io/en/v2.3.0/registrationOverview.html",
+      "type": "documentación",
+      "description": "Describe transformación, métrica, optimizador, interpolador, multirresolución y sampling.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "SimpleITK Fundamental Concepts",
+      "organization": "SimpleITK",
+      "url": "https://simpleitk.readthedocs.io/en/main/fundamentalConcepts.html",
+      "type": "documentación",
+      "description": "Documenta transformaciones globales/deformables y remuestreo en coordenadas físicas.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "ITK Image Similarity Metrics",
+      "organization": "Insight Software Consortium",
+      "url": "https://docs.itk.org/projects/doxygen/en/latest/ImageSimilarityMetricsPage.html",
+      "type": "documentación",
+      "description": "Resume mean squares, normalized correlation y mutual information en registro.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "ITK Mutual Information example v6.0",
+      "organization": "Insight Software Consortium",
+      "url": "https://examples.itk.org/src/registration/common/mutualinformation/documentation",
+      "type": "documentación",
+      "description": "Ejemplo actualizado de mutual information y componentes del registro.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "A survey of medical image registration",
+      "organization": "Maintz & Viergever",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/10638851/",
+      "type": "revisión",
+      "description": "Clasificación fundacional de métodos y problemas de registro médico.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Mutual-information-based registration of medical images: a survey",
+      "organization": "Pluim, Maintz & Viergever",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/12906253/",
+      "type": "revisión",
+      "description": "Revisión de registro basado en información mutua.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Predicting error in rigid-body point-based registration",
+      "organization": "Fitzpatrick, West & Maurer",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/9874293/",
+      "type": "artículo",
+      "description": "Distingue geometría de fiduciales y error esperado en targets.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Estimating medical image registration error and confidence: A taxonomy and scoping review",
+      "organization": "Bierbrier, Gueziri & Collins",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/35858506/",
+      "type": "revisión",
+      "description": "Taxonomía contemporánea de estimación espacial de error y confianza.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "AAPM TG-132 — Use of image registration and fusion algorithms and techniques in radiotherapy",
+      "organization": "American Association of Physicists in Medicine",
+      "url": "https://www.aapm.org/pubs/reports/detail.asp?docid=164",
+      "type": "guía profesional",
+      "description": "Enfatiza QA, incertidumbre y uso específico de registro y fusión.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Use of image registration and fusion algorithms and techniques in radiotherapy: TG132",
+      "organization": "Brock et al.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/28376237/",
+      "type": "guía revisada por pares",
+      "description": "Publicación del informe TG132 sobre QA de registro rígido y deformable.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "A survey of medical image registration — under review",
+      "organization": "Viergever et al.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/27427472/",
+      "type": "revisión",
+      "description": "Revisión retrospectiva que destaca validación y transición clínica como problemas persistentes.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "MIRSIG position paper: image registration and fusion in radiotherapy",
+      "organization": "Medical Image Registration Special Interest Group",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/35522369/",
+      "type": "posición profesional",
+      "description": "Discute uso, validación y QA de registro y fusión.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "elastix: a toolbox for intensity-based medical image registration",
+      "organization": "Klein et al.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19923044/",
+      "type": "artículo/software",
+      "description": "Describe un framework modular y reproducible de registro basado en intensidad.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Registration, segmentation, and visualization of multimodal brain images",
+      "organization": "Viergever et al.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/11137791/",
+      "type": "revisión",
+      "description": "Contextualiza registro y visualización multimodal.",
+      "verification_status": "verified_directly"
+    },
+    {
+      "title": "Improving patient specific quality assurance for image registration",
+      "organization": "Lindsay et al.",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/40366562/",
+      "type": "artículo",
+      "description": "Ejemplo reciente de QA dependiente del uso y revisión independiente en registro clínico.",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo para registro y fusión con datos sintéticos o abiertos no identificables. No interpreta estudios clínicos, no aprueba transformaciones para planificación, navegación o radioterapia, no propaga dosis con fines asistenciales, no diagnostica y no certifica conformidad DICOM ni desempeño clínico. U6 queda reservada a control de calidad cuantitativo, reproducibilidad e incertidumbre."
 }
