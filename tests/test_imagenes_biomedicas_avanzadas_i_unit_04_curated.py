@@ -28,7 +28,7 @@ class ImagenesBiomedicasAvanzadasIUnit04CuratedTests(unittest.TestCase):
 
     def test_objectives_cover_quantitative_nuclear_chain(self) -> None:
         objectives = " ".join(self.unit["learning_objectives"]).casefold()
-        for phrase in ("pet/spect", "atenuación", "randoms", "tiempo muerto", "osem", "actividad-concentración", "suv", "patlak", "input function"):
+        for phrase in ("pet/spect", "atenuación", "randoms", "tiempo muerto", "osem", "actividad-concentración", "suv", "patlak", "funciones de entrada"):
             self.assertIn(phrase, objectives)
 
     def test_five_substantive_theory_sections(self) -> None:
