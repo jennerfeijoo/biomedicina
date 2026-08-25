@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data/course_redevelopment/informatica-biomedica/units/unit-04.json"
 MIRROR = ROOT / "data/generated_units/informatica-biomedica/unit-04.json"
+DESCRIPTOR = ROOT / "data/subjects/ingenieria-biomedica/informatica-biomedica.json"
 
 
 def load_json(path: Path) -> dict:
@@ -19,10 +20,15 @@ class TestInformaticaBiomedicaUnit04Curated(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.unit = load_json(SOURCE)
         cls.mirror = load_json(MIRROR)
+        cls.descriptor = load_json(DESCRIPTOR)
         cls.text = json.dumps(cls.unit, ensure_ascii=False).lower()
 
     def test_source_and_generated_mirror_are_identical(self) -> None:
         self.assertEqual(self.unit, self.mirror)
+
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
+        published = next(item for item in self.descriptor["detailed_units"] if item["unit"] == 4)
+        self.assertEqual(published["description"], self.unit["purpose"])
 
     def test_identity_and_depth(self) -> None:
         self.assertEqual(self.unit["subject_id"], "informatica-biomedica")
