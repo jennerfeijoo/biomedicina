@@ -11,6 +11,7 @@ TEMP_REPAIR_WORKFLOWS = [
     ROOT / '.github/workflows/patch-idb-u5-final-boundary.yml',
     ROOT / '.github/workflows/patch-idb-u5-privacy-word.yml',
     ROOT / '.github/workflows/diagnose-idb-u5-test.yml',
+    ROOT / '.github/workflows/patch-idb-u5-common-error.yml',
 ]
 
 
