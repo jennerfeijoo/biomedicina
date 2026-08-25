@@ -93,7 +93,8 @@ class IngenieriaDatosBiomedicosUnit01CuratedTests(unittest.TestCase):
             "dicom 2026c",
             "patient–study–series–instance",
             "study instance uid",
-            "pixel data",
+            "píxel",
+            "metadata",
             "study/bioproject",
             "sample/biosample",
             "experiment",
@@ -140,7 +141,7 @@ class IngenieriaDatosBiomedicosUnit01CuratedTests(unittest.TestCase):
         self.assertGreaterEqual(len(activity["checking_criteria"]), 25)
         joined = " ".join(activity["instructions"] + activity["problems"] + activity["checking_criteria"]).casefold()
         for phrase in (
-            "effective/occurrence", "ingest time", "n/f_s", "r_raw",
+            "effective/occurrence", "ingest time", "duración nominal", "n y f_s", "r_raw",
             "patient–study–series–instance", "bioproject/biosample–experiment–run",
             "quarantine", "reintento", "u2", "u3", "u4", "u5", "u6",
         ):
