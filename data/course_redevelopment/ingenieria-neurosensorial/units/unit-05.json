@@ -6,386 +6,363 @@
   "slug": "interfaces-y-decodificacion",
   "title": "Interfaces y decodificación",
   "status": "review",
-  "purpose": "Integrar características, clasificación, adaptación para resolver un caso de control mediante señales neurales con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Construir, evaluar y auditar decodificadores de señales neurales sobre datos sintéticos o abiertos no identificables, conectando representación de características, partición sin fuga, clasificación o regresión, decisión online, estado idle/rechazo y adaptación a no estacionariedad. La unidad distingue rendimiento within-session, cross-session y cross-subject; obliga a ajustar todo preprocesamiento y selección únicamente con entrenamiento; separa exactitud offline de utilidad de control y evalúa latencia, falsos comandos, matrices de confusión, incertidumbre y deriva. U5 reutiliza la adquisición reproducible de U2 y las cadenas de interacción de U4, pero no controla dispositivos médicos ni estimulación real; U6 queda reservada a validación centrada en la persona, autonomía, privacidad y gobernanza.",
   "learning_objectives": [
-    "Definir características, clasificación y adaptación mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte características con clasificación y delimite el papel de adaptación.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre control mediante señales neurales con incertidumbre y límites.",
-    "Transferir el método de Interfaces y decodificación a un escenario nuevo y justificar qué debe revalidarse."
+    "Construir una cadena reproducible señal → ventana/época → representación → modelo → decisión → comando simulado, distinguiendo dato observado, característica derivada, predicción y acción.",
+    "Seleccionar representaciones adecuadas para paradigmas EEG como imaginación motora, P300 o SSVEP —potencia por bandas, CSP, covarianzas y geometría riemanniana— sin interpretar una característica discriminativa como mecanismo neuronal causal.",
+    "Diseñar particiones de entrenamiento, validación y prueba que respeten sujeto, sesión, tiempo y ventanas solapadas; colocar filtrado aprendido, normalización, selección de características y ajuste de hiperparámetros dentro del flujo de entrenamiento para evitar fuga de información.",
+    "Comparar clasificadores y regresores mediante métricas acordes con clases, coste de error y tarea, incluyendo matriz de confusión, balanced accuracy, sensibilidad/especificidad cuando proceda, error continuo y calibración de probabilidades.",
+    "Transformar predicciones en control online simulado mediante umbrales, estado idle, rechazo, suavizado, dwell time y presupuesto de latencia, cuantificando falsos comandos y rendimiento de tarea además de exactitud offline.",
+    "Diagnosticar no estacionariedad entre bloques, sesiones o sujetos y comparar recalibración, alineamiento o adaptación con un baseline congelado y evaluación independiente, evitando adaptar y evaluar sobre los mismos datos."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Interfaces y decodificación",
+      "heading": "1. De señal neural a representación decodificable",
       "paragraphs": [
-        "La unidad «Interfaces y decodificación» sitúa características, clasificación y adaptación dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Ingeniería Neurosensorial, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Interfaces y decodificación» en Ingeniería Neurosensorial, «características», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Interfaces y decodificación», «clasificación», aporta otra dimensión al problema de Ingeniería Neurosensorial: Asignación de observaciones a categorías mediante reglas o modelos evaluados contra referencias pertinentes. Su relación con características debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Interfaces y decodificación» en Ingeniería Neurosensorial, «adaptación», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Un decodificador BCI transforma una señal registrada en una variable útil para una tarea. La cadena debe escribirse de forma explícita: registro → segmentación → preprocesamiento → representación → modelo → probabilidad o valor continuo → regla de decisión → comando. Esta separación impide tratar la salida de un clasificador como si fuese una intención observada directamente.",
+        "La representación depende del paradigma. En imaginación motora pueden ser útiles potencia por bandas sensorimotoras, filtros espaciales CSP o matrices de covarianza; en P300 interesan patrones temporales evocadas respecto de eventos; en SSVEP pueden utilizarse relaciones espectrales o correlaciones con referencias. Ninguna familia de características es universalmente superior y el pipeline debe justificarse por señal, tarea y evaluación.",
+        "CSP construye filtros espaciales que maximizan diferencias de varianza entre clases bajo supuestos concretos. Sus componentes son transformaciones discriminativas, no mapas anatómicos directos. Además, implementaciones y preprocesamientos que alteran rango o covarianza pueden cambiar el comportamiento del método, por lo que el pipeline y sus controles deben documentarse.",
+        "Las matrices de covarianza permiten representar relaciones espaciales multicanal y han impulsado métodos de geometría riemanniana. En este enfoque las matrices definidas positivas viven en un espacio geométrico distinto del euclídeo; distancias y medias apropiadas pueden ofrecer representaciones robustas. Que un método sea robusto a cierta variabilidad no elimina la necesidad de evaluar deriva y generalización.",
+        "Una característica se considera útil si mejora una tarea bajo una evaluación que no haya visto esos datos durante su construcción. Seleccionar frecuencias, canales, ventanas o componentes mirando el conjunto de prueba introduce optimismo. Incluso una decisión aparentemente descriptiva, como elegir la mejor banda después de observar todos los sujetos, puede convertir la prueba en parte del entrenamiento.",
+        "U5 utiliza features predefinidas o aprendidas dentro de pipelines reproducibles. Se conserva la señal o representación de entrada, las etiquetas, los grupos sujeto/sesión, versiones y semillas. La interpretabilidad se limita al nivel soportado: una feature predictiva puede ayudar a decodificar sin demostrar causalidad neural, intención consciente ni estado clínico."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Interfaces y decodificación.",
-        "Relacionar características, clasificación y adaptación mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "La predicción del decoder es una inferencia y no una intención observada directamente.",
+        "La representación debe corresponder al paradigma y a la tarea de generalización.",
+        "CSP produce filtros discriminativos y no mapas anatómicos causales por sí mismo.",
+        "Covarianzas y geometría riemanniana ofrecen una representación multicanal con supuestos propios.",
+        "Selección de bandas, canales o features debe ocurrir dentro del entrenamiento.",
+        "Una característica útil para clasificación no demuestra un mecanismo neurofisiológico causal."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Partición, generalización y prevención de fuga de información",
       "paragraphs": [
-        "Para «Interfaces y decodificación» dentro de Ingeniería Neurosensorial, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Ingeniería Neurosensorial, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre características o clasificación debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Interfaces y decodificación», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Ingeniería Neurosensorial, la incertidumbre de «Interfaces y decodificación» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "La pregunta de generalización define la partición. Within-session pregunta si un modelo generaliza a ensayos no usados de la misma sesión; cross-session pregunta por otra sesión del mismo sujeto; cross-subject pregunta por sujetos no vistos. Estos tres escenarios no son intercambiables y normalmente presentan dificultades crecientes por cambios temporales e interindividuales.",
+        "El EEG tiene estructura jerárquica: múltiples ventanas pueden provenir del mismo ensayo, múltiples ensayos de una sesión y múltiples sesiones de una persona. Si ventanas solapadas o segmentos del mismo sujeto aparecen simultáneamente en entrenamiento y prueba, un modelo puede explotar rasgos compartidos que no estarán disponibles al desplegarlo sobre un sujeto nuevo. El rendimiento resultante responde a una pregunta más fácil que la declarada.",
+        "La fuga también ocurre en transformaciones. Normalizar con media/desviación calculadas sobre todos los datos, ajustar filtros espaciales, seleccionar canales o features y después dividir permite que información de prueba influya en el modelo. Cada transformación que aprende parámetros de los datos debe ajustarse únicamente con el conjunto de entrenamiento de cada fold.",
+        "Los hiperparámetros requieren una capa de validación separada. Si se prueban muchas configuraciones y se elige la mejor mirando el test final, ese test deja de ser una estimación independiente. La validación cruzada anidada o una separación train/validation/test explícita permite seleccionar internamente y reservar una evaluación final intacta.",
+        "Las ventanas solapadas exigen especial cuidado. Dos ventanas vecinas pueden compartir gran parte de sus muestras; asignarlas aleatoriamente a folds distintos produce casi duplicados a ambos lados de la frontera. Agrupar por ensayo, bloque, sesión o sujeto según la pregunta evita esta forma de dependencia oculta.",
+        "MOABB formaliza evaluaciones within-session, cross-session y cross-subject y facilita comparar pipelines bajo procedimientos consistentes. U5 puede reproducir una versión pequeña de esa lógica: el mismo pipeline se evalúa con tres particiones y se reporta cómo cambia el resultado. La diferencia entre scores es parte del hallazgo, no un inconveniente que deba ocultarse."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "La estrategia de partición debe corresponder al escenario real de generalización declarado.",
+        "Segmentos del mismo sujeto pueden producir fuga cuando se afirma generalización entre sujetos.",
+        "Toda transformación aprendida debe ajustarse exclusivamente dentro del conjunto de entrenamiento.",
+        "El test final no puede utilizarse repetidamente para seleccionar hiperparámetros o features.",
+        "Ventanas solapadas deben agruparse para evitar casi duplicados entre train y test.",
+        "Within-session, cross-session y cross-subject responden preguntas distintas y deben etiquetarse."
       ]
     },
     {
-      "heading": "Aplicación razonada: control mediante señales neurales",
+      "heading": "3. Modelos, métricas y evidencia de desempeño",
       "paragraphs": [
-        "En la unidad «Interfaces y decodificación» de Ingeniería Neurosensorial, el caso conductor es control mediante señales neurales. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Interfaces y decodificación» conecta características con clasificación y utiliza adaptación como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «control mediante señales neurales» en Ingeniería Neurosensorial, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Interfaces y decodificación» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de control mediante señales neurales y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Una vez fijada la representación, U5 compara modelos simples antes de aumentar complejidad. LDA o regresión logística pueden proporcionar baselines fuertes y auditables; métodos sobre covarianzas o modelos más complejos se justifican por una mejora reproducible bajo la misma partición. Más parámetros no constituyen evidencia de mayor capacidad de generalización.",
+        "La exactitud es intuitiva pero puede ocultar problemas cuando las clases están desequilibradas o los errores tienen costes diferentes. Balanced accuracy promedia recalls por clase y una matriz de confusión muestra qué comandos se confunden. En binario, sensibilidad y especificidad responden preguntas distintas. Para salida continua pueden usarse MAE, RMSE, correlación o error de trayectoria según el objetivo.",
+        "Las probabilidades de un clasificador no siempre están calibradas. Un 0.9 de score no significa necesariamente 90 % de probabilidad de acierto. Cuando la regla online usa umbrales, conviene evaluar calibración o al menos estabilidad del score; el umbral se selecciona con entrenamiento/validación y no optimizando sobre test.",
+        "El information transfer rate de Wolpaw combina número de opciones, exactitud y tiempo por selección, pero deriva de supuestos fuertes: canal estable y sin memoria, opciones equiprobables, misma exactitud por símbolo y errores uniformes entre alternativas. Muchos sistemas reales violan esos supuestos. Por ello, ITR puede acompañar otras métricas, no reemplazarlas ni convertirse en objetivo único de optimización.",
+        "La incertidumbre debe acompañar el score. Repetir folds, sesiones o sujetos permite mostrar distribución, intervalos o variabilidad entre personas. Un promedio sin dispersión puede ocultar que un pipeline funciona muy bien en algunos sujetos y cerca del azar en otros, una limitación crucial para interfaces personales.",
+        "La comparación justa mantiene dataset, partición, preprocessing, presupuesto de tuning y métrica principal. Si dos pipelines usan splits diferentes o uno recibe información adicional del test, la diferencia de score no mide únicamente el algoritmo. La tabla de resultados debe registrar también tiempo de entrenamiento/inferencia y número de parámetros cuando afecten despliegue."
+      ],
+      "key_points": [
+        "Un baseline simple y bien evaluado precede a modelos de mayor complejidad.",
+        "Accuracy aislada puede ocultar desequilibrio de clases y patrones de error importantes.",
+        "Probabilidades de modelo requieren calibración antes de interpretarse como confianza cuantitativa.",
+        "ITR tiene supuestos fuertes y no debe usarse como única medida de utilidad BCI.",
+        "La variabilidad entre sesiones y sujetos forma parte del resultado y debe reportarse.",
+        "Comparar algoritmos exige mantener iguales datos, particiones, tuning y métricas principales."
       ],
       "equations": [
         {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
-          "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
-          }
+          "latex": "\\mathrm{BAcc}=\\frac{1}{K}\\sum_{k=1}^{K}\\frac{TP_k}{TP_k+FN_k}",
+          "meaning": "Balanced accuracy multiclase como promedio del recall por clase; evita que una clase dominante determine por sí sola el score.",
+          "variables": {"K":"número de clases","TP_k":"aciertos de la clase k","FN_k":"ejemplos de k clasificados como otra clase"}
+        },
+        {
+          "latex": "B=\\log_2N+P\\log_2P+(1-P)\\log_2\\left(\\frac{1-P}{N-1}\\right)",
+          "meaning": "ITR de Wolpaw en bits por selección bajo supuestos de canal discreto estable, opciones equiprobables y errores simétricos. No debe optimizarse ni compararse acríticamente cuando esos supuestos no se cumplen.",
+          "variables": {"N":"número de opciones","P":"probabilidad media de selección correcta","B":"bits por selección bajo el modelo"}
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de control mediante señales neurales antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "4. De predicción offline a control online simulado",
       "paragraphs": [
-        "La reproducibilidad de «Interfaces y decodificación» en Ingeniería Neurosensorial requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Interfaces y decodificación» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Ingeniería Neurosensorial separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Interfaces y decodificación» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de características, clasificación y adaptación debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Ingeniería Neurosensorial.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre control mediante señales neurales. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Ingeniería Neurosensorial como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un sistema online añade decisiones temporales que no aparecen en un score por épocas. El decoder produce scores continuamente o por ventanas; una capa de decisión debe decidir cuándo emitir comando, cuándo mantener estado idle y cuándo rechazar una predicción incierta. Obligar al modelo a elegir siempre entre comandos puede convertir ruido o descanso en acciones falsas.",
+        "El estado idle o no-control debe considerarse explícitamente cuando la aplicación lo requiere. Puede modelarse como clase, detector jerárquico o regla de rechazo. La métrica crítica deja de ser solo aciertos entre comandos y pasa a incluir falsos comandos por minuto, tiempo sin control, tasa de rechazo y éxito de la tarea.",
+        "El suavizado temporal y dwell time pueden reducir activaciones espurias a costa de latencia. Este trade-off debe cuantificarse con un simulador de cursor o selector: aumentar la ventana puede mejorar exactitud offline pero retrasar la respuesta; disminuirla puede ganar velocidad y aumentar errores. El punto adecuado depende de la tarea y no de una métrica universal.",
+        "La latencia end-to-end incluye adquisición o ventana, procesamiento, inferencia, decisión y actualización del efector. Medir solo el tiempo de inferencia del clasificador subestima la demora percibida por el sistema. U5 construye un presupuesto temporal por etapa y perturba cada componente para localizar cuellos de botella.",
+        "Offline, pseudo-online y online son niveles diferentes. Offline clasifica ejemplos previamente segmentados; pseudo-online reproduce una secuencia temporal grabada con decisiones causales; online interactúa con un usuario y un entorno que responden a las salidas. U5 se detiene en pseudo-online/simulado para enseñar causalidad temporal sin operar hardware clínico.",
+        "El desempeño funcional se evalúa con tareas. Para un cursor virtual pueden medirse tiempo hasta objetivo, porcentaje de objetivos alcanzados, distancia o errores; para un selector, selecciones correctas, falsos comandos y tiempo por selección. Una mejora de balanced accuracy que empeora latencia o falsas activaciones puede producir un controlador peor."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Un decoder online necesita reglas de decisión además del modelo estadístico entrenado.",
+        "Idle y rechazo previenen que toda ventana se convierta obligatoriamente en un comando.",
+        "Suavizado puede reducir errores pero introduce un coste temporal que debe cuantificarse.",
+        "Latencia end-to-end incluye toda la cadena y no solo inferencia del clasificador.",
+        "Pseudo-online conserva causalidad temporal sin requerir interacción real con un usuario.",
+        "Utilidad de control requiere métricas de tarea, falsos comandos y tiempo además de accuracy."
+      ]
+    },
+    {
+      "heading": "5. No estacionariedad, recalibración y adaptación responsable",
+      "paragraphs": [
+        "Las distribuciones EEG cambian entre bloques, sesiones y personas por múltiples causas: posición o impedancia de sensores, estado fisiológico, fatiga, estrategia cognitiva, entorno y cambios instrumentales. Este fenómeno de no estacionariedad significa que un modelo entrenado bajo una distribución puede degradarse aunque su algoritmo no haya cambiado.",
+        "La deriva puede diagnosticarse comparando distribución de features, matrices de covarianza, scores, tasa de rechazo y rendimiento por bloque. Un cambio estadístico no indica automáticamente una causa neurofisiológica; primero deben considerarse artefactos, adquisición y diferencias de tarea. El registro de metadatos de U2 ayuda a distinguir fuentes plausibles.",
+        "Una estrategia simple es recalibrar con datos recientes etiquetados. Otras opciones incluyen normalización/alineamiento entre dominios, transferencia de parámetros o adaptación online. Métodos como alineamiento euclídeo o transformaciones riemannianas buscan reducir discrepancias de distribución, pero su beneficio debe demostrarse en datos independientes y puede existir transferencia negativa.",
+        "Adaptar y evaluar sobre las mismas observaciones produce una estimación circular. El protocolo debe reservar bloques futuros, sesiones o sujetos no usados por la actualización. Se reporta un baseline congelado junto al adaptado para saber si la adaptación realmente mejora generalización en vez de simplemente memorizar el nuevo bloque.",
+        "En co-adaptación cambian tanto usuario como algoritmo. Una mejora a lo largo de sesiones no puede atribuirse automáticamente al decoder, porque el usuario puede aprender una estrategia. Diseños comparativos, fases congeladas y métricas de aprendizaje ayudan a separar parcialmente ambas contribuciones.",
+        "La adaptación requiere límites y rollback. Si una actualización reduce confianza, aumenta falsos comandos o desplaza una clase de forma inesperada, el sistema simulado debe poder volver al modelo congelado. U5 documenta condición de activación, datos usados, versión resultante y criterio de reversión; U6 discutirá cómo estas decisiones se relacionan con autonomía, privacidad y validación centrada en la persona."
+      ],
+      "key_points": [
+        "EEG cambia entre sesiones y sujetos; la no estacionariedad debe medirse explícitamente.",
+        "Deriva estadística no demuestra por sí sola una causa neural o conductual específica.",
+        "Recalibración y adaptación deben compararse contra un baseline congelado independiente.",
+        "Datos usados para adaptar no deben reutilizarse como única evidencia de mejora.",
+        "Co-adaptación mezcla aprendizaje del usuario y actualización del algoritmo decodificador.",
+        "Toda adaptación necesita trazabilidad, criterio de activación y mecanismo de rollback."
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "características",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "clasificación",
-      "definition": "Asignación de observaciones a categorías mediante reglas o modelos evaluados contra referencias pertinentes."
-    },
-    {
-      "term": "adaptación",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Interfaces y decodificación",
-      "definition": "Dominio de estudio que integra características, clasificación, adaptación para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de control mediante señales neurales usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"Decoder","definition":"Modelo y regla de decisión que transforman una representación neural en una predicción o comando."},
+    {"term":"Feature","definition":"Variable derivada de la señal usada como entrada de un modelo; puede ser predictiva sin ser causal."},
+    {"term":"Época","definition":"Segmento temporal asociado a un evento o intervalo definido para análisis."},
+    {"term":"Ventana deslizante","definition":"Segmento temporal repetido a lo largo de una señal; ventanas vecinas pueden compartir muestras."},
+    {"term":"Bandpower","definition":"Potencia estimada en una banda de frecuencia bajo método y ventana especificados."},
+    {"term":"CSP","definition":"Common Spatial Patterns, método de filtros espaciales que maximiza diferencias de varianza entre clases."},
+    {"term":"Covarianza","definition":"Matriz que resume variación conjunta entre canales y puede utilizarse como representación multicanal."},
+    {"term":"Geometría riemanniana","definition":"Tratamiento geométrico de matrices definidas positivas mediante distancias y medias apropiadas a su espacio."},
+    {"term":"P300","definition":"Potencial relacionado con eventos usado en ciertos paradigmas BCI; su presencia depende de tarea y procesamiento."},
+    {"term":"SSVEP","definition":"Respuesta evocada visual de estado estable relacionada con estimulación periódica y utilizada en BCIs visuales."},
+    {"term":"Imaginación motora","definition":"Paradigma en que el usuario imagina movimientos sin ejecutarlos para modular actividad sensorimotora."},
+    {"term":"Etiqueta","definition":"Objetivo de entrenamiento asociado a una observación; puede representar clase, valor o evento."},
+    {"term":"Pipeline","definition":"Secuencia reproducible de transformaciones y modelo ajustada respetando fronteras train/test."},
+    {"term":"Data leakage","definition":"Uso directo o indirecto de información del conjunto de evaluación durante ajuste, selección o preprocesamiento."},
+    {"term":"Train set","definition":"Datos usados para estimar parámetros del pipeline."},
+    {"term":"Validation set","definition":"Datos reservados para selección de modelo o hiperparámetros sin tocar el test final."},
+    {"term":"Test set","definition":"Datos independientes usados para estimar rendimiento final bajo una pregunta de generalización."},
+    {"term":"Fold","definition":"Partición de datos utilizada como entrenamiento o validación en validación cruzada."},
+    {"term":"Group split","definition":"Partición que mantiene juntos ejemplos pertenecientes a un mismo grupo, como sujeto, sesión o ensayo."},
+    {"term":"Within-session","definition":"Evaluación entre ensayos de una misma sesión y sujeto."},
+    {"term":"Cross-session","definition":"Evaluación en una sesión no usada para entrenar del mismo sujeto."},
+    {"term":"Cross-subject","definition":"Evaluación sobre sujetos no usados para entrenar el modelo."},
+    {"term":"Nested cross-validation","definition":"Evaluación con un bucle interno de selección y un bucle externo independiente para estimar generalización."},
+    {"term":"Hiperparámetro","definition":"Configuración seleccionada externamente al ajuste principal del modelo."},
+    {"term":"LDA","definition":"Linear Discriminant Analysis, baseline lineal frecuente en clasificación BCI."},
+    {"term":"Regresión logística","definition":"Modelo lineal probabilístico para clasificación que puede actuar como baseline interpretable."},
+    {"term":"Matriz de confusión","definition":"Tabla de clases verdaderas frente a predichas que muestra estructura de aciertos y errores."},
+    {"term":"Accuracy","definition":"Fracción total de predicciones correctas; puede ser engañosa con clases desequilibradas."},
+    {"term":"Balanced accuracy","definition":"Promedio del recall de cada clase, reduciendo la dominancia de clases frecuentes."},
+    {"term":"Sensibilidad","definition":"Proporción de positivos verdaderos identificados bajo una definición binaria concreta."},
+    {"term":"Especificidad","definition":"Proporción de negativos verdaderos identificados bajo una definición binaria concreta."},
+    {"term":"Calibración probabilística","definition":"Correspondencia entre probabilidades predichas y frecuencias observadas bajo datos independientes."},
+    {"term":"ITR","definition":"Information Transfer Rate; aproximación de información por selección o tiempo bajo supuestos restrictivos."},
+    {"term":"Idle state","definition":"Estado sin comando intencional que evita forzar una acción en cada ventana."},
+    {"term":"Rechazo","definition":"Regla que abstiene al sistema de emitir un comando cuando la evidencia es insuficiente."},
+    {"term":"Dwell time","definition":"Tiempo mínimo de evidencia consistente requerido antes de confirmar un comando."},
+    {"term":"Falso comando","definition":"Acción emitida cuando no correspondía al objetivo o durante estado idle."},
+    {"term":"Latencia end-to-end","definition":"Demora total desde disponibilidad de señal hasta actualización efectiva del sistema controlado."},
+    {"term":"Offline","definition":"Evaluación sobre ejemplos ya segmentados sin flujo temporal interactivo."},
+    {"term":"Pseudo-online","definition":"Reproducción causal de datos grabados respetando orden temporal para simular decisiones en flujo."},
+    {"term":"Online","definition":"Operación en tiempo real con usuario y entorno que pueden cambiar como consecuencia de las salidas."},
+    {"term":"No estacionariedad","definition":"Cambio de la distribución estadística de señales o features a través de tiempo, sesiones o sujetos."},
+    {"term":"Drift","definition":"Desplazamiento temporal de datos, scores o rendimiento respecto de una referencia previa."},
+    {"term":"Recalibración","definition":"Reajuste del modelo con nuevos datos, normalmente etiquetados, bajo un protocolo definido."},
+    {"term":"Domain adaptation","definition":"Transformación o ajuste destinado a reducir diferencias entre distribuciones fuente y objetivo."},
+    {"term":"Transfer learning","definition":"Uso de conocimiento de sujetos, sesiones o dominios fuente para mejorar aprendizaje en un dominio objetivo."},
+    {"term":"Negative transfer","definition":"Empeoramiento debido a transferir información no compatible con el dominio objetivo."},
+    {"term":"Baseline congelado","definition":"Modelo que permanece sin actualizar y sirve como referencia para medir valor de adaptación."},
+    {"term":"Co-adaptación","definition":"Cambio simultáneo del usuario y del algoritmo durante interacción repetida."},
+    {"term":"Rollback","definition":"Retorno documentado a una versión previa cuando una actualización incumple criterios de aceptación."},
+    {"term":"MOABB","definition":"Marco abierto para benchmark reproducible de pipelines EEG-BCI en múltiples datasets y estrategias de evaluación."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Interfaces y decodificación",
-      "scenario": "Un equipo propone estudiar control mediante señales neurales, pero su pregunta mezcla características, clasificación y adaptación sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de características, clasificación y adaptación.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-      ]
+      "title":"El split aleatorio que parece excelente",
+      "scenario":"Un dataset sintético contiene 20 sujetos, cada uno dividido en muchas ventanas. Un split aleatorio por ventana produce 94 % de accuracy; al reservar sujetos completos cae a 68 %.",
+      "reasoning_steps":["Identificar la unidad de independencia real.","Marcar qué sujeto origina cada ventana.","Comparar segment-based y subject-based holdout.","Reajustar scaler y selector dentro de cada fold.","Interpretar la diferencia como cambio de pregunta de generalización."],
+      "interpretation":"El score alto del split por ventanas no demuestra generalización a sujetos nuevos y puede reflejar identidad o estructura compartida.",
+      "limitations":"El ejemplo es sintético y no cuantifica cuánto leakage existe en un dataset real concreto."
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre características y clasificación en el caso de control mediante señales neurales; una condición vinculada con adaptación podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar adaptación como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "title":"CSP antes o después de dividir",
+      "scenario":"Dos pipelines usan el mismo clasificador, pero uno ajusta CSP con todos los ensayos antes de cross-validation.",
+      "reasoning_steps":["Identificar que CSP aprende parámetros de covarianza.","Mover CSP dentro del pipeline entrenable.","Ejecutar la misma partición.","Comparar scores y variabilidad.","Documentar por qué el primer procedimiento contaminaba validación."],
+      "interpretation":"Una transformación supervisada o ajustada con todos los datos puede inflar rendimiento aunque el clasificador final no vea etiquetas de test directamente.",
+      "limitations":"La magnitud del optimismo depende del dataset y del número de decisiones de selección."
+    },
+    {
+      "title":"Accuracy alta, controlador incómodo",
+      "scenario":"Un decoder alcanza 88 % offline, pero obliga una decisión cada 250 ms y genera falsos comandos durante reposo.",
+      "reasoning_steps":["Añadir estado idle.","Definir umbral de rechazo con validation.","Simular dwell time.","Medir falsos comandos por minuto y latencia.","Comparar éxito de tarea antes y después."],
+      "interpretation":"Un score por épocas no basta para evaluar control; una política de decisión puede mejorar función aunque reduzca número de comandos emitidos.",
+      "limitations":"El cursor virtual no reproduce interacción de una persona real."
+    },
+    {
+      "title":"ITR contradice utilidad de tarea",
+      "scenario":"Dos configuraciones difieren en velocidad y exactitud; la de mayor ITR produce más errores costosos en una tarea simulada.",
+      "reasoning_steps":["Calcular ITR bajo sus supuestos.","Revisar si clases y errores son uniformes.","Medir tiempo por selección y falsos comandos.","Evaluar resultado funcional de la tarea.","Reportar ITR como métrica secundaria con sus violaciones."],
+      "interpretation":"ITR puede resumir throughput bajo un modelo, pero no reemplaza resultados orientados a la tarea ni costes de error.",
+      "limitations":"La utilidad simulada depende del coste definido para cada error."
+    },
+    {
+      "title":"Adaptación que gana en el mismo bloque",
+      "scenario":"Un modelo se actualiza con un bloque de sesión 2 y luego se evalúa sobre esas mismas observaciones, mostrando gran mejora.",
+      "reasoning_steps":["Separar bloque de adaptación y bloque futuro.","Mantener baseline congelado.","Evaluar ambos en datos posteriores.","Medir drift de features y errores.","Activar rollback si el adaptado empeora criterios predefinidos."],
+      "interpretation":"Mejorar sobre datos usados para adaptar no demuestra generalización; la evaluación debe ocurrir después y contra una referencia congelada.",
+      "limitations":"No atribuye la deriva a una causa fisiológica específica."
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
-      "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+      "title":"Laboratorio reproducible: del benchmark offline al controlador BCI pseudo-online",
+      "estimated_time_minutes":480,
+      "instructions":[
+        "Trabajar con EEG abierto no identificable o datos sintéticos; no adquirir señales de personas ni conectar el decoder a dispositivos médicos, prótesis reales o estimuladores.",
+        "Elegir una pregunta explícita de generalización y conservar metadatos de sujeto, sesión, ensayo y tiempo.",
+        "Construir al menos un baseline simple y un pipeline alternativo con todas las transformaciones aprendidas dentro de entrenamiento.",
+        "Comparar particiones within-session, cross-session y cross-subject cuando el dataset lo permita, sin mezclar ventanas dependientes entre folds.",
+        "Registrar preprocessing, features, modelo, hiperparámetros, semillas, versiones y tiempo de cómputo.",
+        "Evaluar confusion matrix, balanced accuracy y variabilidad por sujeto/sesión; usar accuracy solo acompañada del contexto de clases.",
+        "Construir un replay pseudo-online que procese ventanas en orden temporal sin utilizar información futura.",
+        "Añadir estado idle/rechazo y al menos una regla temporal como dwell time o suavizado, seleccionada con validation.",
+        "Medir latencia end-to-end, falsos comandos por minuto y una métrica de tarea simulada además del score offline.",
+        "Introducir drift sintético o una sesión diferente y comparar baseline congelado frente a una estrategia de recalibración/adaptación evaluada en datos posteriores."
       ],
-      "problems": [
-        "Define características mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo clasificación modifica o complementa a características.",
-        "Propón una prueba que distinga el papel de adaptación de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+      "problems":[
+        "Dibujar la cadena completa desde señal hasta comando simulado y etiquetar qué bloques aprenden parámetros.",
+        "Definir la unidad de independencia para trials, ventanas, sesiones y sujetos del dataset elegido.",
+        "Crear un split aleatorio por ventanas y explicar por qué puede ser inválido si existen ventanas solapadas.",
+        "Crear una partición grouped por ensayo o bloque y comparar el cambio de score.",
+        "Implementar un split within-session con preprocessing ajustado únicamente en training.",
+        "Implementar una evaluación cross-session del mismo sujeto cuando haya más de una sesión.",
+        "Implementar una evaluación con sujeto retenido o simularla manteniendo todos sus datos fuera de entrenamiento.",
+        "Demostrar con un ejemplo controlado la fuga producida por normalizar antes del split.",
+        "Construir un baseline de features simples más LDA o regresión logística.",
+        "Construir un pipeline de CSP o covarianzas/riemanniano y justificar sus supuestos.",
+        "Comparar balanced accuracy y accuracy sobre una versión artificialmente desbalanceada.",
+        "Construir una matriz de confusión e identificar el par de comandos más problemático.",
+        "Seleccionar un umbral de decisión usando validation y comprobar que no se optimizó con test.",
+        "Añadir estado idle a un flujo de decisiones sintético y medir falsos comandos antes/después.",
+        "Evaluar dos dwell times y mostrar el trade-off entre falsas activaciones y latencia.",
+        "Construir un presupuesto de latencia con ventana, preprocessing, inferencia, decisión y actualización.",
+        "Reproducir el stream causalmente y comprobar que ninguna feature usa muestras futuras.",
+        "Calcular ITR para una configuración discreta y enumerar qué supuestos del modelo se cumplen o violan.",
+        "Comparar ITR con tiempo de tarea y falsos comandos para evitar elegir sistema por una sola métrica.",
+        "Introducir una deriva de covarianza o amplitud y medir degradación del baseline congelado.",
+        "Aplicar una recalibración o alineamiento simple usando solo datos permitidos y evaluar en un bloque futuro.",
+        "Simular transferencia negativa y definir una condición de rollback.",
+        "Comparar resultados por sujeto y detectar si el promedio oculta participantes cerca del azar.",
+        "Redactar una conclusión que separe desempeño offline, pseudo-online, generalización y evidencia aún necesaria antes de uso con personas."
       ],
-      "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+      "deliverables":[
+        "Diagrama de pipeline con fronteras train/validation/test.",
+        "Tabla de metadatos de sujeto, sesión, ensayo, ventana y grupo de partición.",
+        "Notebook reproducible con baseline y modelo alternativo.",
+        "Comparación within-session, cross-session y cross-subject o justificación de los niveles disponibles.",
+        "Demostración documentada de al menos un caso de data leakage y su corrección.",
+        "Matrices de confusión, balanced accuracy y distribución de score por sujeto/sesión.",
+        "Replay pseudo-online con estado idle/rechazo.",
+        "Análisis de falsos comandos, latencia y desempeño de tarea simulada.",
+        "Cálculo comentado de ITR con lista de supuestos cumplidos/incumplidos.",
+        "Experimento de drift y adaptación contra baseline congelado.",
+        "Registro de versiones, semillas, hiperparámetros y decisiones de tuning.",
+        "Informe final de límites de transferencia y revisión por pares antes-después."
       ],
-      "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: control mediante señales neurales",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para características, clasificación y adaptación.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de control mediante señales neurales y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte características, clasificación y adaptación.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+      "checking_criteria":[
+        "La pregunta de generalización se declara antes de elegir el split.",
+        "Sujeto, sesión, ensayo y ventana están identificados como niveles distintos.",
+        "Ventanas solapadas no cruzan folds cuando comparten muestras del mismo ensayo.",
+        "Scalers, CSP, selectores y transformaciones aprendidas se ajustan solo con training.",
+        "El test final no participa en selección de features, hiperparámetros o umbrales.",
+        "Existe al menos un baseline simple con el que comparar modelos más complejos.",
+        "Las evaluaciones within-session, cross-session y cross-subject no se etiquetan como equivalentes.",
+        "La matriz de confusión acompaña la métrica agregada principal.",
+        "Balanced accuracy se utiliza o justifica cuando hay desequilibrio de clases.",
+        "Se reporta variabilidad entre sujetos o sesiones y no solo un promedio global.",
+        "Las probabilidades/scores no se llaman confianza calibrada sin evidencia de calibración.",
+        "El pseudo-online procesa el stream en orden causal y sin acceso a muestras futuras.",
+        "Existe estado idle o una justificación explícita de por qué la tarea no lo requiere.",
+        "Umbrales y dwell time se seleccionan sin usar test final.",
+        "Se reportan falsos comandos además de comandos correctos.",
+        "La latencia end-to-end incluye ventana, procesamiento, inferencia y decisión.",
+        "El desempeño funcional de la tarea se reporta además del score offline.",
+        "ITR se acompaña de sus supuestos y no es la única métrica de comparación.",
+        "La deriva se cuantifica antes de atribuirla a una causa neural específica.",
+        "La adaptación se evalúa en datos posteriores no usados para actualizar el modelo.",
+        "Existe un baseline congelado para medir el valor incremental de adaptación.",
+        "Se define una condición reproducible de rollback ante adaptación perjudicial.",
+        "No se controla hardware médico, prótesis reales ni estimuladores.",
+        "No se usa el decoder para diagnóstico, selección terapéutica o inferencia clínica individual.",
+        "U6 queda reservada a validación centrada en la persona, autonomía, privacidad y gobernanza."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar características como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar características en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre características y clasificación demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir adaptación después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Interfaces y decodificación al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+    {"error":"Dividir ventanas aleatoriamente cuando pertenecen al mismo sujeto o ensayo","correction":"Agrupar según la unidad de generalización y mantener dependencias dentro del mismo fold."},
+    {"error":"Normalizar antes de separar train y test","correction":"Ajustar scaler dentro del pipeline con training de cada fold."},
+    {"error":"Ajustar CSP con todos los datos antes de cross-validation","correction":"Tratar CSP como transformación aprendida y ajustarla solo con training."},
+    {"error":"Elegir canales o bandas mirando el test","correction":"Realizar selección únicamente en train/validation y reservar test final intacto."},
+    {"error":"Llamar cross-subject a un split con ventanas del mismo sujeto en train y test","correction":"Retener sujetos completos cuando la afirmación exige generalización a sujetos nuevos."},
+    {"error":"Comparar modelos con particiones diferentes","correction":"Mantener datasets, folds, preprocessing y tuning equivalentes."},
+    {"error":"Usar accuracy como única métrica con clases desbalanceadas","correction":"Añadir balanced accuracy, confusion matrix y métricas por clase."},
+    {"error":"Interpretar score probabilístico como confianza calibrada","correction":"Evaluar calibración o describirlo como score del modelo."},
+    {"error":"Optimizar repetidamente sobre el test final","correction":"Usar validación interna/nested CV y evaluar una sola vez al final."},
+    {"error":"Asumir que deep learning supera automáticamente a un baseline lineal","correction":"Comparar bajo idéntica evaluación y justificar complejidad por ganancia reproducible."},
+    {"error":"Inferir mecanismo cerebral desde una feature predictiva","correction":"Limitar la conclusión a utilidad de decodificación salvo evidencia causal independiente."},
+    {"error":"Equiparar accuracy offline con control online útil","correction":"Medir latencia, falsos comandos, idle/rechazo y resultado de tarea."},
+    {"error":"Forzar un comando en cada ventana","correction":"Modelar estado idle/rechazo cuando la aplicación contiene periodos sin intención de control."},
+    {"error":"Reducir errores con suavizado sin reportar demora","correction":"Cuantificar el trade-off entre estabilidad y latencia end-to-end."},
+    {"error":"Presentar ITR como métrica universal","correction":"Declarar sus supuestos y acompañarla de métricas de tarea y estructura de errores."},
+    {"error":"Adaptar y evaluar sobre el mismo bloque","correction":"Reservar datos posteriores y comparar contra baseline congelado."},
+    {"error":"Atribuir toda deriva a plasticidad o fatiga","correction":"Considerar primero adquisición, artefactos, sesión, tarea y cambios de distribución observables."},
+    {"error":"Actualizar un modelo sin rollback ni versionado","correction":"Registrar datos de adaptación, versión resultante, criterios de aceptación y reversión."
     }
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar control mediante señales neurales?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan características y clasificación?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; adaptación puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre adaptación?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre control mediante señales neurales?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Interfaces y decodificación?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+    {"question":"¿Por qué un split por ventanas puede sobreestimar generalización?","answer":"Porque ventanas del mismo ensayo, sesión o sujeto pueden compartir muestras y patrones específicos entre train y test."},
+    {"question":"¿Dónde debe ajustarse un scaler o CSP?","answer":"Dentro del pipeline y únicamente con el training de cada fold o partición."},
+    {"question":"¿Qué diferencia within-session de cross-subject?","answer":"Within-session generaliza a ensayos nuevos de una misma sesión/sujeto; cross-subject evalúa sujetos completamente no vistos."},
+    {"question":"¿Por qué balanced accuracy puede ser preferible a accuracy?","answer":"Porque promedia desempeño por clase y reduce el dominio de una clase mayoritaria."},
+    {"question":"¿Una feature CSP demuestra la fuente anatómica de la intención?","answer":"No. Es una transformación discriminativa dependiente de datos y supuestos, no evidencia causal o anatómica suficiente."},
+    {"question":"¿Qué limita la interpretación de ITR?","answer":"Supone un canal discreto estable, opciones equiprobables, accuracies similares y errores distribuidos uniformemente, condiciones a menudo violadas."},
+    {"question":"¿Por qué un BCI puede necesitar estado idle?","answer":"Porque durante ausencia de intención de control no debe convertir ruido en un comando forzado."},
+    {"question":"¿Qué incluye latencia end-to-end?","answer":"Ventana/adquisición, procesamiento, inferencia, regla de decisión y actualización del sistema simulado."},
+    {"question":"¿Qué diferencia offline y pseudo-online?","answer":"Pseudo-online respeta el orden causal de un stream grabado y decisiones temporales; offline evalúa ejemplos ya segmentados sin dinámica de control."},
+    {"question":"¿Cómo se demuestra que una adaptación ayuda?","answer":"Comparándola con un baseline congelado en datos futuros o independientes no usados para adaptar."},
+    {"question":"¿Por qué una mejora durante sesiones no prueba que el algoritmo aprendió mejor?","answer":"Porque usuario y decoder pueden co-adaptarse; hacen falta controles que separen parcialmente ambas contribuciones."},
+    {"question":"¿Qué conclusión permite una alta cross-subject accuracy?","answer":"Apoya generalización bajo sujetos, dataset y protocolo evaluados; no implica utilidad clínica, control seguro ni universalidad."
     }
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Control mediante señales neurales."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+    {"domain":"BCI de imaginación motora","connection":"Permite comparar bandpower, CSP y covarianzas para decodificar estados sensorimotores con distintas estrategias de generalización.","boundary":"No se interpreta la salida como diagnóstico neurológico ni se controla una prótesis real."},
+    {"domain":"P300 spellers","connection":"Ilustran epochs ligadas a eventos, clasificación discreta, tiempo por selección e ITR con supuestos explícitos.","boundary":"La actividad usa datos abiertos/sintéticos y no evalúa capacidad comunicativa clínica de una persona."},
+    {"domain":"SSVEP BCI","connection":"Permite estudiar representación espectral y trade-offs velocidad-exactitud en selección discreta.","boundary":"No se diseña estimulación visual para usuarios ni se prescribe exposición."},
+    {"domain":"Neuroprótesis y cursores BCI","connection":"Un replay pseudo-online muestra cómo predicciones, idle, rechazo y latencia se convierten en control de un efector virtual.","boundary":"No se conecta el decoder a hardware médico, robots físicos o actuadores terapéuticos."},
+    {"domain":"Personalización y transferencia entre sesiones","connection":"No estacionariedad, alineamiento y recalibración representan problemas centrales al reutilizar un decoder.","boundary":"La adaptación se estudia metodológicamente y no constituye actualización automática de un sistema clínico."},
+    {"domain":"Evaluación traslacional de neurotecnología","connection":"Separar offline, pseudo-online, cross-session y cross-subject prepara la validación centrada en personas de U6.","boundary":"U5 no establece beneficio clínico, aceptación, autonomía, privacidad ni gobernanza final."
     }
   ],
   "sources": [
-    {
-      "title": "SciPy Signal",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
-      "type": "documentación",
-      "description": "Procesamiento digital, filtrado y análisis espectral.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "CDRH Learn",
-      "organization": "U.S. FDA",
-      "url": "https://www.fda.gov/training-and-continuing-education/cdrh-learn",
-      "type": "formación regulatoria",
-      "description": "Módulos oficiales sobre dispositivos y evidencia.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "GNU Radio documentation",
-      "organization": "GNU Radio project",
-      "url": "https://wiki.gnuradio.org/index.php/Main_Page",
-      "type": "documentación abierta",
-      "description": "Simulación y procesamiento de señales por bloques.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "University Physics Volume 2",
-      "organization": "OpenStax",
-      "url": "https://openstax.org/details/books/university-physics-volume-2",
-      "type": "libro abierto",
-      "description": "Electricidad, magnetismo, circuitos y ondas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"MOABB - Mother of all BCI Benchmarks","organization":"MOABB / NeuroTechX","url":"https://moabb.neurotechx.com/docs/index.html","type":"documentación técnica abierta","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"MOABB benchmark API","organization":"MOABB / NeuroTechX","url":"https://moabb.neurotechx.com/docs/generated/moabb.benchmark.html","type":"documentación de benchmark","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"CrossSessionEvaluation","organization":"MOABB / NeuroTechX","url":"https://moabb.neurotechx.com/docs/generated/moabb.evaluations.CrossSessionEvaluation.html","type":"documentación metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"CrossSubjectEvaluation","organization":"MOABB / NeuroTechX","url":"https://moabb.neurotechx.com/docs/generated/moabb.evaluations.CrossSubjectEvaluation.html","type":"documentación metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Tutorial: Within-Session Splitting on Real MI Dataset","organization":"MOABB / NeuroTechX","url":"https://moabb.neurotechx.com/docs/auto_examples/how_to_benchmark/plot_within_session_splitter.html","type":"tutorial reproducible","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Data leakage in deep learning studies of translational EEG","organization":"Frontiers in Neuroscience / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/38765672/","type":"investigación metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Review of brain encoding and decoding mechanisms for EEG-based brain-computer interface","organization":"Cognitive Neurodynamics / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/34367361/","type":"revisión","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Riemannian Approaches in Brain-Computer Interfaces: A Review","organization":"IEEE TNSRE / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/27845666/","type":"revisión metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Potential pitfalls of widely used implementations of common spatial patterns","organization":"IEEE EMBC / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/33017963/","type":"revisión metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Learning Common Time-Frequency-Spatial Patterns for Motor Imagery Classification","organization":"IEEE TNSRE / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/33819158/","type":"investigación","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Performance Measurement for Brain-Computer or Brain-Machine Interfaces: A Tutorial","organization":"Journal of Neural Engineering / PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC4185283/","type":"tutorial de consenso","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"A study of the existing problems of estimating the information transfer rate in online brain-computer interfaces","organization":"Journal of Neural Engineering / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/23448963/","type":"investigación metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Performance assessment in brain-computer interface-based augmentative and alternative communication","organization":"Journal of Neural Engineering / PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC3662584/","type":"revisión metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Application of Transfer Learning in EEG Decoding Based on Brain-Computer Interfaces: A Review","organization":"Sensors / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/33167561/","type":"revisión","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Revisiting Euclidean alignment for transfer learning in EEG-based brain-computer interfaces","organization":"Journal of Neural Engineering / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/40425023/","type":"revisión metodológica","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Transfer learning with data alignment and optimal transport for EEG based motor imagery classification","organization":"Journal of Neural Engineering / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/38232381/","type":"investigación","accessed":"2026-08-26","verification_status":"verified_directly"},
+    {"title":"Combining detrended cross-correlation analysis with Riemannian geometry-based classification for improved brain-computer interface performance","organization":"Frontiers in Neuroscience / PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/38550567/","type":"investigación offline/online","accessed":"2026-08-26","verification_status":"verified_directly"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "professional_scope": "Unidad académica de decodificación y evaluación de BCI. Utiliza únicamente datos abiertos no identificables, datos sintéticos y efectores virtuales. No acredita competencia para adquirir señales clínicas, diagnosticar, clasificar pacientes, controlar dispositivos médicos o prótesis reales, emitir órdenes terapéuticas, aplicar estimulación ni desplegar adaptación automática sobre personas.",
+  "editorial_notice": "El desempeño de un decoder depende de la pregunta de generalización y del protocolo de evaluación. Un score within-session no equivale a cross-session o cross-subject; una feature predictiva no demuestra mecanismo causal; accuracy offline no equivale a control online útil; ITR no es una medida universal y requiere declarar sus supuestos; adaptación evaluada sobre los mismos datos usados para actualizar es circular. Toda práctica se limita a streams sintéticos o datasets abiertos y a cursores/selectores virtuales. U5 reutiliza U2 y U4 y reserva validación centrada en la persona, autonomía, privacidad y gobernanza para U6."
 }
