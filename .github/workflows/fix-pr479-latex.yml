@@ -1,0 +1,44 @@
+name: Fix PR479 MathJax escaping
+
+on:
+  push:
+    branches:
+      - codex/historias-clinicas-u6-implementacion-validacion
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/historias-clinicas-u6-implementacion-validacion
+      - name: Correct MathJax equation escaping
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = Path('data/course_redevelopment/historias-clinicas-terminologias-estandares/units/unit-06.json')
+          mirror = Path('data/generated_units/historias-clinicas-terminologias-estandares/unit-06.json')
+          data = json.loads(source.read_text(encoding='utf-8'))
+          equations = data['theory_sections'][0]['equations']
+          target = next(eq for eq in equations if 'Cobertura' in eq.get('latex', ''))
+          target['latex'] = r'\mathrm{Cobertura}_{req}=\frac{N_{req\,con\,prueba\,ejecutada}}{N_{req\,verificables}}'
+          rendered = json.dumps(data, ensure_ascii=False, indent=2) + '\n'
+          source.write_text(rendered, encoding='utf-8')
+          mirror.write_text(rendered, encoding='utf-8')
+          assert source.read_bytes() == mirror.read_bytes()
+          assert target['latex'].startswith('\\mathrm') and not target['latex'].startswith('\\\\mathrm')
+          PY
+      - name: Remove temporary workflow
+        run: git rm .github/workflows/fix-pr479-latex.yml
+      - name: Commit correction
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Corrige MathJax de cobertura en Historias Clínicas U6'
+          git push origin HEAD:codex/historias-clinicas-u6-implementacion-validacion
