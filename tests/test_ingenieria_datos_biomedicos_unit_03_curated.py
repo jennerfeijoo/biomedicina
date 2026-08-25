@@ -138,13 +138,10 @@ class IngenieriaDatosBiomedicosUnit03Curated(unittest.TestCase):
             self.assertIn(term, notice)
         self.assertIn("revalidar versiones", notice)
 
-    def test_public_descriptor_matches_after_promotion(self) -> None:
-        if not SUBJECT.exists():
-            self.skipTest("El descriptor curricular aún no existe")
+    def test_public_descriptor_matches_canonical_purpose(self) -> None:
+        self.assertTrue(SUBJECT.exists(), "Debe existir el descriptor curricular publicado de la asignatura")
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         unit = next(item for item in subject["detailed_units"] if item["unit"] == 3)
-        if unit["description"] != self.data["purpose"]:
-            self.skipTest("El publicador todavía no ha promovido U3 en este head")
         self.assertEqual(unit["description"], self.data["purpose"])
 
 
