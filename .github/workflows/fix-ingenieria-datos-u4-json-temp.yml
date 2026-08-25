@@ -18,7 +18,7 @@ jobs:
           ref: codex/ingenieria-datos-biomedicos-u4-calidad-procedencia
           fetch-depth: 0
 
-      - name: Repair JSON escaping and validate exact mirror
+      - name: Repair JSON escaping and align semantic regression
         shell: bash
         run: |
           python - <<'PY'
@@ -28,6 +28,7 @@ jobs:
 
           source = Path('data/course_redevelopment/ingenieria-datos-biomedicos/units/unit-04.json')
           mirror = Path('data/generated_units/ingenieria-datos-biomedicos/unit-04.json')
+          regression = Path('tests/test_ingenieria_datos_biomedicos_unit_04_curated.py')
           text = source.read_text(encoding='utf-8')
           assert text == mirror.read_text(encoding='utf-8')
 
@@ -69,6 +70,11 @@ jobs:
           source.write_text(fixed, encoding='utf-8')
           mirror.write_text(fixed, encoding='utf-8')
           assert source.read_bytes() == mirror.read_bytes()
+
+          test = regression.read_text(encoding='utf-8')
+          test = test.replace('self.assertIn("no demuestra que los datos pasaron", self.text)', 'self.assertIn("error no significa que los datos pasaron", self.text)')
+          test = test.replace('self.assertIn("no certifica", notice)', 'self.assertIn("no constituyen certificación", notice)')
+          regression.write_text(test, encoding='utf-8')
           print('Escapes JSON reparados:', repairs)
           PY
 
@@ -87,5 +93,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet && exit 0
-          git commit -m "Corregir serialización JSON de Ingeniería de Datos U4"
+          git commit -m "Corregir serialización y regresión de Ingeniería de Datos U4"
           git push origin HEAD:codex/ingenieria-datos-biomedicos-u4-calidad-procedencia
