@@ -145,7 +145,7 @@ class TestInformaticaBiomedicaUnit04Curated(unittest.TestCase):
             "no diagnostica",
             "ni recomienda tratamientos",
             "no sustituye validación clínica",
-            "no clasificar un producto concreto",
+            "no para clasificar un producto concreto",
         ]:
             self.assertIn(phrase, notice)
 
