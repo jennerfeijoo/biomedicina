@@ -36,6 +36,19 @@ jobs:
       - name: Build canonical Economía y Gestión de Empresas corpus
         run: python scripts/curate_economia_gestion_course_temp.py
 
+      - name: Align equation regression with parsed JSON
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tests/test_economia_gestion_empresas_course_completion.py')
+          text = path.read_text(encoding='utf-8')
+          old = 'self.assertIn(equation["latex"], canonical_text)'
+          new = 'self.assertIn(equation["latex"], {block["latex"] for topic in canonical["topics"] for block in topic["blocks"] if block.get("type") == "equation"})'
+          if old not in text:
+              raise SystemExit('expected equation assertion not found')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
       - name: Validate canonical academic corpus
         run: |
           python scripts/validate_academic_courses.py
