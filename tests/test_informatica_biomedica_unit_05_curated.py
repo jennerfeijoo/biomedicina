@@ -26,10 +26,8 @@ class TestInformaticaBiomedicaUnit05Curated(unittest.TestCase):
     def test_source_and_generated_mirror_are_identical(self) -> None:
         self.assertEqual(self.unit, self.mirror)
 
-    def test_published_descriptor_matches_when_promoted(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         published = next(item for item in self.descriptor["detailed_units"] if item["unit"] == 5)
-        if published["description"] != self.unit["purpose"]:
-            self.skipTest("El publicador todavía no ha promovido la descripción canónica de U5")
         self.assertEqual(published["description"], self.unit["purpose"])
 
     def test_identity_and_depth(self) -> None:
