@@ -1,0 +1,55 @@
+name: Materialize Interfaces HMI U3
+
+on:
+  push:
+    branches:
+      - codex/interfaces-hombre-maquina-u3-diseno-interaccion
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/interfaces-hombre-maquina-u3-diseno-interaccion
+          fetch-depth: 0
+      - name: Decode verified payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/u3_payload/part01 .tmp/u3_payload/part02 .tmp/u3_payload/part03 .tmp/u3_payload/part04 > /tmp/u3_payload.b64
+          test "$(wc -c < /tmp/u3_payload.b64)" -eq 25788
+          base64 -d /tmp/u3_payload.b64 > /tmp/u3_payload.tar.gz
+          tar -xzf /tmp/u3_payload.tar.gz -C .
+          cp data/course_redevelopment/interfaces-hombre-maquina/units/unit-03.json data/generated_units/interfaces-hombre-maquina/unit-03.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          src = Path('data/course_redevelopment/interfaces-hombre-maquina/units/unit-03.json')
+          mir = Path('data/generated_units/interfaces-hombre-maquina/unit-03.json')
+          data = json.loads(src.read_text(encoding='utf-8'))
+          assert data['unit'] == 3 and data['slug'] == 'diseno-de-interaccion'
+          assert src.read_bytes() == mir.read_bytes()
+          assert 'Concepto de la unidad que debe definirse mediante entidades observables' not in src.read_text(encoding='utf-8')
+          assert '\\mathrm{SNR}_{dB}' not in src.read_text(encoding='utf-8')
+          print('U3 JSON válido; fuente y espejo idénticos.')
+          PY
+      - name: Remove transfer artifacts
+        shell: bash
+        run: |
+          rm -rf .tmp/u3_payload
+          rm -f .github/workflows/materialize-interfaces-u3.yml
+      - name: Commit curated unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --exit-code && exit 0
+          git commit -m "Curación académica de Interfaces Hombre-Máquina U3"
+          git push origin HEAD:codex/interfaces-hombre-maquina-u3-diseno-interaccion
