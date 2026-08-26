@@ -6,386 +6,452 @@
   "slug": "calidad-de-imagen",
   "title": "Calidad de imagen",
   "status": "review",
-  "purpose": "Integrar contraste, resolución, ruido y fantomas para resolver un caso de comparación objetiva de protocolos con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar y ejecutar una evaluación reproducible de calidad de imagen sobre fantomas sintéticos o datos públicos autorizados, separando contraste, ruido, resolución espacial, muestreo, uniformidad y artefactos según una tarea de imagen previamente definida. La unidad enseña a medir CNR con límites explícitos, estimar perfiles de ruido y NPS, derivar ESF/LSF/MTF y frecuencia de Nyquist, comparar protocolos con repeticiones y regiones predefinidas, y distinguir desempeño técnico de detectabilidad, utilidad clínica, optimización de exposición o conformidad de un equipo. U2 recibe de U1 series auditadas y entrega a U3 una caracterización cuantitativa que permite saber qué propiedades no deben alterarse silenciosamente durante el preprocesamiento.",
   "learning_objectives": [
-    "Definir contraste, resolución y ruido y fantomas mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte contraste con resolución y delimite el papel de ruido y fantomas.",
-    "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-    "Resolver y comunicar un caso sobre comparación objetiva de protocolos con incertidumbre y límites.",
-    "Transferir el método de Calidad de imagen a un escenario nuevo y justificar qué debe revalidarse."
+    "Definir calidad de imagen como una propiedad dependiente de la tarea y distinguir señal, contraste, ruido, resolución espacial, uniformidad, artefacto y detectabilidad sin reducir toda la evaluación a una única métrica.",
+    "Calcular contraste, SNR y CNR en regiones predefinidas, justificando estimadores, repetición y supuestos, y explicar por qué la desviación estándar de una ROI no caracteriza por sí sola la textura o correlación espacial del ruido.",
+    "Estimar un perfil de ruido y una representación de densidad espectral de ruido (NPS), interpretando frecuencia espacial, normalización, estacionariedad aproximada y dependencia respecto del protocolo o reconstrucción.",
+    "Derivar ESF, LSF y MTF a partir de un borde o respuesta equivalente de fantoma, reportar frecuencias como MTF50/MTF10 cuando proceda y relacionarlas con Pixel Spacing y frecuencia de Nyquist sin confundir tamaño de píxel con resolución efectiva.",
+    "Diseñar una comparación reproducible de dos protocolos sintéticos mediante fantoma, repeticiones, ROIs y perfiles fijados antes del análisis, métricas con incertidumbre y controles de uniformidad y artefactos.",
+    "Comunicar resultados técnicos con límites explícitos: una mejora en CNR, MTF o NPS no demuestra por sí sola superioridad diagnóstica, reducción segura de exposición, conformidad regulatoria ni rendimiento clínico."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Calidad de imagen",
+      "heading": "1. Calidad de imagen dependiente de tarea: señal, contraste y detectabilidad",
       "paragraphs": [
-        "La unidad «Calidad de imagen» sitúa contraste, resolución y ruido y fantomas dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Imágenes Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Calidad de imagen» en Laboratorio de Imágenes Biomédicas, «contraste», se entiende así: Diferencia de señal entre regiones o estados que permite distinguirlos en una medición o imagen. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Calidad de imagen», «resolución», aporta otra dimensión al problema de Laboratorio de Imágenes Biomédicas: Capacidad de distinguir cambios o elementos próximos como resultados separados de una medición. Su relación con contraste debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Calidad de imagen» en Laboratorio de Imágenes Biomédicas, «ruido y fantomas», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "La calidad de imagen no es una propiedad escalar universal. Una imagen puede ser adecuada para localizar una estructura grande y, al mismo tiempo, insuficiente para detectar un objeto pequeño de bajo contraste. Por ello U2 comienza definiendo una tarea: detectar, discriminar, localizar o medir un objeto o diferencia conocidos en un fantoma. Las métricas se eligen después de la tarea, no al revés.",
+        "La señal es el valor o conjunto de valores que representan una propiedad del objeto después de adquisición, reconstrucción y transformación cuantitativa apropiadas. El contraste expresa una diferencia entre objetos o regiones respecto de una referencia; puede definirse de varias formas y su fórmula debe declararse. La misma diferencia absoluta puede ser fácil o difícil de detectar según ruido, resolución, tamaño del objeto y procesamiento.",
+        "SNR y CNR son cocientes descriptivos útiles cuando la señal y el estimador de ruido están bien definidos. En un caso simple con dos ROIs y ruido aproximadamente homogéneo, CNR puede usar la diferencia de medias dividida por una desviación de ruido preespecificada. Cambiar ROI, estimador o filtrado puede cambiar CNR sin que cambie el objeto; por eso el protocolo debe fijar esos elementos antes de comparar.",
+        "La detectabilidad no se deduce automáticamente de CNR. En sistemas con reconstrucción no lineal, la resolución y el ruido pueden depender del contraste, tamaño del objeto, exposición, kernel o algoritmo. AAPM TG233 destaca que métricas tradicionales como CNR pueden ser insuficientes como sustitutos del rendimiento clínico, aunque sigan siendo útiles para caracterización técnica.",
+        "El laboratorio trabaja con una tarea educativa y un fantoma conocido. Antes de medir se registra qué objeto debe verse o cuantificarse, su tamaño, contraste nominal y región de fondo. El resultado se formula como desempeño técnico para esa tarea y esas condiciones; no se transforma en una afirmación sobre pacientes ni en una recomendación de protocolo clínico."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Calidad de imagen.",
-        "Relacionar contraste, resolución y ruido y fantomas mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Calidad de imagen» dentro de Laboratorio de Imágenes Biomédicas, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Laboratorio de Imágenes Biomédicas, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre contraste o resolución debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Calidad de imagen», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Laboratorio de Imágenes Biomédicas, la incertidumbre de «Calidad de imagen» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: comparación objetiva de protocolos",
-      "paragraphs": [
-        "En la unidad «Calidad de imagen» de Laboratorio de Imágenes Biomédicas, el caso conductor es comparación objetiva de protocolos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Calidad de imagen» conecta contraste con resolución y utiliza ruido y fantomas como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «comparación objetiva de protocolos» en Laboratorio de Imágenes Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Calidad de imagen» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de comparación objetiva de protocolos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "La tarea se define antes de elegir métricas.",
+        "Contraste y detectabilidad son conceptos relacionados pero distintos.",
+        "CNR depende de ROIs y estimador de ruido.",
+        "Una métrica única no resume toda la calidad.",
+        "Reconstrucciones no lineales pueden alterar ruido y resolución.",
+        "La conclusión queda limitada al fantoma y condiciones evaluadas."
       ],
       "equations": [
         {
           "latex": "CNR=\\frac{|\\mu_1-\\mu_2|}{\\sigma_n}",
-          "meaning": "Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.",
+          "meaning": "Relación contraste-ruido simple entre dos regiones cuando la definición de regiones y del estimador de ruido se fija previamente.",
           "variables": {
-            "\\mu": "media regional",
-            "\\sigma_n": "desviación del ruido"
+            "\\mu_1": "media de la región 1",
+            "\\mu_2": "media de la región 2",
+            "\\sigma_n": "estimador declarado de desviación del ruido"
+          }
+        },
+        {
+          "latex": "SNR=\\frac{|\\mu_s|}{\\sigma_n}",
+          "meaning": "Relación señal-ruido simple para una región de señal cuando media y ruido se estiman bajo supuestos compatibles.",
+          "variables": {
+            "\\mu_s": "media de la región de señal",
+            "\\sigma_n": "estimador declarado de desviación del ruido"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de comparación objetiva de protocolos antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Ruido: variabilidad, correlación espacial y NPS",
       "paragraphs": [
-        "La reproducibilidad de «Calidad de imagen» en Laboratorio de Imágenes Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Calidad de imagen» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Laboratorio de Imágenes Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Calidad de imagen» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de contraste, resolución y ruido y fantomas debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Laboratorio de Imágenes Biomédicas.",
-        "El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre comparación objetiva de protocolos. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Laboratorio de Imágenes Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "El ruido de imagen es variación que no representa la estructura determinista del fantoma bajo el modelo definido. Medir solo la desviación estándar de una ROI resume amplitud, pero no informa cómo se distribuye esa variación entre frecuencias espaciales. Dos imágenes pueden tener desviaciones similares y texturas de ruido muy distintas.",
+        "La Noise Power Spectrum (NPS) describe cómo se distribuye la potencia de las fluctuaciones en frecuencia espacial. Su estimación requiere retirar o modelar la señal de fondo, trabajar con regiones aproximadamente estacionarias, aplicar convenciones de normalización explícitas y promediar múltiples ROIs o realizaciones cuando sea posible. El eje debe expresarse en unidades físicas de frecuencia, no solo en bins de FFT.",
+        "La frecuencia espacial se interpreta junto con Pixel Spacing. Fluctuaciones dominantes a bajas frecuencias producen variaciones de textura amplia; componentes altas producen textura fina. La forma de la NPS puede cambiar con filtros, reconstrucción iterativa o postprocesamiento incluso cuando la desviación estándar global cambia poco.",
+        "La sustracción de dos adquisiciones repetidas de un fantoma uniforme puede ayudar a reducir estructura fija y aislar componentes de ruido, pero introduce un factor de varianza que debe tratarse en la normalización. U2 no presenta una receta universal: obliga a documentar exactamente cómo se obtuvo el residual, qué ROI y ventana se utilizaron y cómo se escaló la NPS.",
+        "La comparación de protocolos debe conservar geometría y tarea y repetir mediciones. Se informan media y variabilidad de métricas y sensibilidad a ubicación de ROI. Si el ruido es claramente no estacionario u objeto-dependiente, se reporta esa limitación en lugar de ocultarla con un único número."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido."
+        "Desviación estándar resume amplitud pero no textura del ruido.",
+        "NPS distribuye potencia según frecuencia espacial.",
+        "Las frecuencias deben expresarse en unidades físicas.",
+        "Reconstrucción y filtrado pueden cambiar la forma de NPS.",
+        "La estimación de NPS exige normalización documentada.",
+        "Ruido no estacionario limita comparaciones simplificadas."
+      ],
+      "equations": [
+        {
+          "latex": "NPS(f_x,f_y)\\propto |\\mathcal{F}\\{n(x,y)\\}|^2",
+          "meaning": "Representación conceptual de la potencia del residual de ruido en frecuencia espacial; la normalización exacta depende del método, Pixel Spacing, tamaño de ROI y convenciones declaradas.",
+          "variables": {
+            "n(x,y)": "residual de ruido después de retirar la señal modelada",
+            "\\mathcal{F}": "transformada de Fourier",
+            "f_x,f_y": "frecuencias espaciales"
+          }
+        }
       ]
+    },
+    {
+      "heading": "3. Resolución espacial: PSF, ESF, LSF, MTF y muestreo",
+      "paragraphs": [
+        "La resolución espacial describe la capacidad del sistema y del protocolo para transferir variaciones espaciales del objeto a la imagen. No equivale al tamaño de píxel: una matriz con píxeles pequeños puede contener una respuesta muy borrosa, mientras una cadena con buena respuesta del sistema puede estar limitada por muestreo. Deben separarse resolución efectiva y espaciado de muestreo.",
+        "Una Point Spread Function (PSF) describe la respuesta a un objeto puntual idealizado; una Line Spread Function (LSF), la respuesta a una línea; y una Edge Spread Function (ESF), la transición observada a través de un borde. En una aproximación lineal e invariante por traslación, derivar la ESF produce una LSF y la magnitud de su transformada de Fourier normalizada produce la MTF.",
+        "La MTF expresa qué fracción relativa de modulación se transfiere según frecuencia espacial. MTF50 y MTF10 son descriptores operativos de la curva, no umbrales universales de visibilidad. Deben reportarse junto con método, orientación del borde, oversampling, interpolación, ventana, unidades y frecuencia máxima evaluable.",
+        "La frecuencia de Nyquist del muestreo regular es 1/(2Δx). Es un límite de representación del grid, no una promesa de resolución física. Una MTF aparente cerca o por encima de Nyquist puede indicar problemas de método, aliasing o una definición de frecuencia incoherente; U2 exige comprobar unidades antes de interpretar curvas.",
+        "En sistemas no lineales u objeto-dependientes, una MTF tradicional puede variar con contraste, tamaño o contexto. AAPM TG233 utiliza métricas dependientes de tarea como TTF en CT para reflejar esa dependencia. El laboratorio introduce esta limitación conceptualmente y reserva la caracterización clínica especializada para física médica supervisada."
+      ],
+      "key_points": [
+        "Pixel Spacing no equivale a resolución efectiva.",
+        "ESF puede derivarse para obtener LSF.",
+        "MTF describe transferencia relativa por frecuencia espacial.",
+        "MTF50 y MTF10 requieren método y unidades explícitos.",
+        "Nyquist limita muestreo, no garantiza detalle observable.",
+        "Sistemas no lineales pueden requerir métricas dependientes de tarea."
+      ],
+      "equations": [
+        {
+          "latex": "LSF(x)=\\frac{d}{dx}ESF(x)",
+          "meaning": "Relación idealizada entre respuesta de borde y respuesta de línea en un modelo apropiado.",
+          "variables": {
+            "ESF(x)": "edge spread function",
+            "LSF(x)": "line spread function",
+            "x": "coordenada espacial"
+          }
+        },
+        {
+          "latex": "MTF(f)=\\frac{|\\mathcal{F}\\{LSF(x)\\}|}{|\\mathcal{F}\\{LSF(x)\\}|_{f=0}}",
+          "meaning": "MTF normalizada derivada de la transformada de Fourier de la LSF bajo los supuestos del método.",
+          "variables": {
+            "f": "frecuencia espacial",
+            "LSF(x)": "line spread function"
+          }
+        },
+        {
+          "latex": "f_N=\\frac{1}{2\\Delta x}",
+          "meaning": "Frecuencia de Nyquist para muestreo espacial regular con paso Δx.",
+          "variables": {
+            "f_N": "frecuencia de Nyquist",
+            "\\Delta x": "Pixel Spacing o paso de muestreo en la dirección analizada"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "4. Fantomas, uniformidad y artefactos: diseño del experimento",
+      "paragraphs": [
+        "Un fantoma es un objeto de prueba con geometría o propiedades conocidas y reproducibles. En U2 se utilizan fantomas digitales sintéticos o datasets públicos de QA, nunca pacientes. Un fantoma puede contener regiones uniformes, bordes, objetos de distinto contraste y tamaño y patrones geométricos que permitan aislar preguntas específicas de calidad.",
+        "Uniformidad evalúa si una región que debería ser homogénea presenta respuesta espacial consistente. La métrica concreta depende de modalidad y protocolo; pueden compararse medias de ROIs, mapas de residual o perfiles. Un gradiente real del fantoma, corrección de sensibilidad o sombreado del sistema no debe confundirse con ruido aleatorio.",
+        "Los artefactos son estructuras de imagen atribuibles a adquisición, reconstrucción, calibración, movimiento simulado, truncación, aliasing u otros mecanismos de la cadena, no al objeto que se desea representar. U2 enseña a describir morfología, localización y dependencia de condiciones; no asigna etiología clínica a partir de apariencia.",
+        "Una comparación válida de protocolos requiere controlar el fantoma, posición, reconstrucción, resolución de salida, display cuantitativo y ROIs. Si cambian simultáneamente muchas variables, el laboratorio etiqueta la comparación como factorial o exploratoria. El objetivo es atribuir cambios de métricas a diferencias documentadas, no a archivos elegidos a posteriori.",
+        "Los criterios de aceptación del laboratorio son educativos y predefinidos para el experimento sintético. No se reutilizan como límites de aceptación de un escáner clínico. Los informes de AAPM e IAEA muestran que QA profesional depende de modalidad, equipo, pruebas, tolerancias y responsabilidades específicas; U2 solo entrena principios de metrología reproducible."
+      ],
+      "key_points": [
+        "Fantomas aíslan propiedades conocidas de la cadena de imagen.",
+        "Uniformidad debe separarse de ruido aleatorio.",
+        "Artefacto describe señal espuria respecto del objeto conocido.",
+        "Comparar protocolos exige controlar variables de análisis.",
+        "ROIs y criterios se fijan antes de ver resultados.",
+        "Umbrales educativos no son tolerancias clínicas."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "5. Laboratorio reproducible y decisión técnica proporcional",
+      "paragraphs": [
+        "El flujo de U2 recibe de U1 una serie o imagen cuya identidad, geometría, Pixel Spacing, transformación de modalidad y procedencia ya fueron auditadas. Se congela una versión de entrada y se registra el protocolo A/B. Antes de calcular, se define la tarea, las ROIs o perfiles, el número de repeticiones y las métricas primarias y secundarias.",
+        "Cada métrica produce un objeto auditable: tabla de CNR/SNR con ROIs, NPS con unidades y normalización, ESF/LSF/MTF con trazado del borde y frecuencia, mapa de uniformidad y registro de artefactos. Las figuras nunca son la única evidencia; deben poder regenerarse desde parámetros y datos registrados.",
+        "La incertidumbre se aborda con repeticiones, variación entre ROIs, bootstrap simple o sensibilidad a decisiones de análisis cuando corresponda. U2 no exige inferencia estadística compleja, pero sí prohíbe presentar diferencias de una sola realización como si fueran propiedades estables del protocolo.",
+        "La conclusión compara protocolos por métricas vinculadas a la tarea. Si uno mejora resolución y empeora ruido, el resultado es un trade-off documentado, no una puntuación moral ni un ganador universal. No se ponderan métricas con pesos arbitrarios para fabricar un índice único sin justificación.",
+        "U3 recibirá estas curvas, mapas y métricas como baseline para estudiar normalización, filtrado y corrección de artefactos. Cualquier preprocesamiento deberá demostrar qué propiedad cambia respecto de U2. U4 tratará segmentación, U5 registro y mediciones y U6 el pipeline completo; U2 no valida eficacia clínica, dosis, diagnóstico ni conformidad de equipos."
+      ],
+      "key_points": [
+        "U2 parte de datos auditados por U1.",
+        "Cada métrica conserva ROIs, parámetros y unidades.",
+        "Repeticiones y sensibilidad acompañan la comparación.",
+        "Trade-offs no se reducen a un ganador universal.",
+        "U3 debe comparar cambios contra este baseline.",
+        "Calidad técnica no equivale a utilidad clínica."
+      ],
+      "equations": []
     }
   ],
   "glossary": [
-    {
-      "term": "contraste",
-      "definition": "Diferencia de señal entre regiones o estados que permite distinguirlos en una medición o imagen."
-    },
-    {
-      "term": "resolución",
-      "definition": "Capacidad de distinguir cambios o elementos próximos como resultados separados de una medición."
-    },
-    {
-      "term": "ruido y fantomas",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Calidad de imagen",
-      "definition": "Dominio de estudio que integra contraste, resolución, ruido y fantomas para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de comparación objetiva de protocolos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term": "calidad de imagen", "definition": "Adecuación de una imagen para una tarea definida, evaluada mediante propiedades técnicas y condiciones explícitas; no es una puntuación universal."},
+    {"term": "tarea de imagen", "definition": "Objetivo concreto de detectar, discriminar, localizar o medir una característica conocida."},
+    {"term": "señal", "definition": "Respuesta de imagen asociada al objeto o región de interés bajo una cadena de adquisición y procesamiento definida."},
+    {"term": "contraste", "definition": "Diferencia de señal entre objetos o regiones según una definición matemática declarada."},
+    {"term": "ruido", "definition": "Variación que no corresponde a la estructura determinista del objeto bajo el modelo de medición empleado."},
+    {"term": "SNR", "definition": "Relación señal-ruido; requiere definir señal y estimador de ruido antes de interpretar el cociente."},
+    {"term": "CNR", "definition": "Relación contraste-ruido entre regiones definidas; es una métrica técnica y no un sustituto universal de detectabilidad clínica."},
+    {"term": "ROI", "definition": "Región de interés predefinida sobre la que se estiman estadísticas o perfiles."},
+    {"term": "desviación estándar", "definition": "Medida de dispersión que puede resumir amplitud de ruido en una ROI pero no su distribución espectral."},
+    {"term": "NPS", "definition": "Noise Power Spectrum; distribución de potencia de las fluctuaciones según frecuencia espacial."},
+    {"term": "frecuencia espacial", "definition": "Número de ciclos de variación por unidad de distancia, por ejemplo ciclos por milímetro."},
+    {"term": "estacionariedad", "definition": "Supuesto aproximado de que propiedades estadísticas del ruido no cambian de forma relevante con la posición dentro de la región analizada."},
+    {"term": "FFT", "definition": "Algoritmo eficiente para calcular una transformada discreta de Fourier y analizar contenido en frecuencia."},
+    {"term": "resolución espacial", "definition": "Capacidad efectiva de transferir variaciones espaciales del objeto a la imagen bajo condiciones definidas."},
+    {"term": "PSF", "definition": "Point Spread Function; respuesta espacial del sistema a un objeto puntual idealizado."},
+    {"term": "ESF", "definition": "Edge Spread Function; perfil de transición observado al atravesar un borde."},
+    {"term": "LSF", "definition": "Line Spread Function; respuesta a una línea o derivada idealizada de una ESF apropiada."},
+    {"term": "MTF", "definition": "Modulation Transfer Function; respuesta relativa del sistema frente a frecuencia espacial."},
+    {"term": "MTF50", "definition": "Frecuencia donde la MTF cae al 50 % del valor normalizado, usada como descriptor operativo y no como umbral universal."},
+    {"term": "MTF10", "definition": "Frecuencia donde la MTF cae al 10 % del valor normalizado, dependiente del método y contexto."},
+    {"term": "TTF", "definition": "Task Transfer Function; descriptor dependiente de tarea usado en contextos donde la resolución varía con objeto o contraste."},
+    {"term": "Pixel Spacing", "definition": "Separación física entre centros de píxeles; determina muestreo pero no por sí sola resolución efectiva."},
+    {"term": "frecuencia de Nyquist", "definition": "Mitad de la frecuencia de muestreo de un grid regular; límite de representación sin aliasing ideal."},
+    {"term": "aliasing", "definition": "Representación incorrecta de componentes por encima de la capacidad de muestreo como frecuencias aparentes más bajas."},
+    {"term": "oversampling", "definition": "Muestreo efectivo más denso empleado en ciertos métodos de borde para estimar con mayor detalle una ESF."},
+    {"term": "fantoma", "definition": "Objeto físico o digital con propiedades conocidas usado para caracterizar un sistema o protocolo de imagen."},
+    {"term": "fantoma digital", "definition": "Objeto sintético computacional con geometría e intensidades conocidas para experimentar sin datos de pacientes."},
+    {"term": "uniformidad", "definition": "Consistencia espacial de respuesta en una región que debería ser homogénea según el fantoma."},
+    {"term": "artefacto", "definition": "Estructura de imagen que no representa la característica objetivo del objeto y surge de la cadena de imagen o procesamiento."},
+    {"term": "residual", "definition": "Diferencia entre una observación y una señal o modelo de referencia usada para estudiar variabilidad o error."},
+    {"term": "repetición", "definition": "Nueva realización bajo condiciones nominalmente equivalentes usada para estimar variabilidad."},
+    {"term": "repetibilidad", "definition": "Proximidad de resultados bajo condiciones de medición repetidas definidas."},
+    {"term": "reproducibilidad", "definition": "Capacidad de reconstruir el análisis con datos, parámetros, código, versiones y criterios suficientes."},
+    {"term": "incertidumbre", "definition": "Cuantificación o descripción de cuánto pueden variar una medida o conclusión por muestreo, ruido y decisiones analíticas."},
+    {"term": "bootstrap", "definition": "Remuestreo computacional usado para explorar variabilidad de un estimador bajo supuestos declarados."},
+    {"term": "sensibilidad analítica", "definition": "Cambio del resultado cuando se perturban razonablemente ROIs, parámetros o decisiones de análisis."},
+    {"term": "dependencia de objeto", "definition": "Cambio de la respuesta o métrica según tamaño, contraste o contexto del objeto evaluado."},
+    {"term": "reconstrucción no lineal", "definition": "Proceso cuya respuesta no conserva necesariamente proporcionalidad y superposición, lo que puede hacer que ruido y resolución dependan del objeto."},
+    {"term": "detectabilidad", "definition": "Capacidad de distinguir una señal relevante en una tarea definida; no se reduce automáticamente a una métrica simple."},
+    {"term": "trade-off", "definition": "Compromiso donde mejorar una propiedad puede empeorar otra, por ejemplo resolución frente a ruido."},
+    {"term": "baseline", "definition": "Caracterización de referencia contra la que se comparan cambios de procesamiento o protocolo."},
+    {"term": "QA", "definition": "Quality Assurance; marco organizado para asegurar calidad mediante responsabilidades, procedimientos y revisión."},
+    {"term": "QC", "definition": "Quality Control; pruebas y acciones técnicas dentro de un programa de aseguramiento de calidad."},
+    {"term": "GSDF", "definition": "Grayscale Standard Display Function de DICOM PS3.14 para estandarizar la relación de presentación en escala de grises."},
+    {"term": "JND", "definition": "Just-Noticeable Difference; concepto perceptual usado por DICOM PS3.14 en la estandarización de presentación."},
+    {"term": "protocolo", "definition": "Conjunto documentado de condiciones de adquisición, reconstrucción y análisis que define una comparación."},
+    {"term": "criterio predefinido", "definition": "Regla fijada antes de inspeccionar el resultado para reducir decisiones oportunistas."},
+    {"term": "metrología de imagen", "definition": "Medición reproducible de propiedades de imagen mediante objetos, métodos, unidades y controles definidos."}
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Calidad de imagen",
-      "scenario": "Un equipo propone estudiar comparación objetiva de protocolos, pero su pregunta mezcla contraste, resolución y ruido y fantomas sin definir unidades, referencias ni resultado admisible.",
+      "title": "Dos protocolos con CNR distinto pero la misma tarea",
+      "scenario": "Un fantoma digital contiene un disco de bajo contraste sobre fondo uniforme. El protocolo A produce menor desviación en fondo; el B conserva mejor el borde, pero tiene mayor ruido.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de contraste, resolución y ruido y fantomas.",
-        "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.",
-        "Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Definir antes del análisis la ROI del disco, la ROI de fondo y la regla de exclusión del borde.",
+        "Calcular medias, desviación y CNR en tres repeticiones por protocolo.",
+        "Comparar también MTF o un descriptor de borde para no convertir CNR en la única métrica.",
+        "Reportar la variabilidad entre repeticiones y la sensibilidad a mover ligeramente las ROIs.",
+        "Concluir como trade-off técnico sin nombrar un ganador clínico universal."
       ],
-      "interpretation": "El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "A puede presentar mejor CNR y B mejor transferencia de detalle; la elección depende de la tarea definida y ninguna métrica aislada demuestra superioridad clínica.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+        "Fantoma sintético sin anatomía ni observadores clínicos.",
+        "No evalúa exposición ni riesgo del paciente.",
+        "CNR no resume textura de ruido ni resolución."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre contraste y resolución en el caso de comparación objetiva de protocolos; una condición vinculada con ruido y fantomas podría producir el mismo patrón.",
+      "title": "Misma desviación estándar, distinta textura de ruido",
+      "scenario": "Dos imágenes uniformes sintéticas tienen desviaciones estándar similares, pero una presenta fluctuación fina y otra variación de baja frecuencia.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar ruido y fantomas como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Verificar que las regiones sean comparables y retirar la media local.",
+        "Calcular desviación estándar para confirmar amplitud similar.",
+        "Estimar NPS con igual Pixel Spacing, tamaño de ROI y normalización.",
+        "Comparar frecuencia del máximo y forma espectral sin reducirla a una sola cifra.",
+        "Explicar por qué textura distinta puede afectar una tarea aunque la desviación sea parecida."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "La desviación estándar no caracteriza por sí sola la estructura espacial del ruido; NPS aporta información complementaria.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "El residual es sintético y aproximadamente estacionario.",
+        "No se extrapola a una modalidad concreta sin validar método.",
+        "No se infiere detectabilidad clínica."
+      ]
+    },
+    {
+      "title": "Píxeles pequeños no garantizan mayor resolución",
+      "scenario": "El protocolo A tiene Pixel Spacing de 0.5 mm y un borde suavizado; B tiene 0.7 mm pero una respuesta de borde más abrupta dentro de su banda útil.",
+      "reasoning_steps": [
+        "Extraer ESF con el mismo método de borde y unidades físicas.",
+        "Derivar LSF y calcular MTF normalizada.",
+        "Calcular Nyquist de cada grid y recortar la comparación a frecuencias válidas.",
+        "Reportar MTF50/MTF10 junto con Pixel Spacing y método.",
+        "Separar muestreo geométrico de resolución efectiva."
+      ],
+      "interpretation": "Un grid más fino aumenta la frecuencia de Nyquist, pero no garantiza una MTF superior del sistema completo.",
+      "limitations": [
+        "Modelo educativo aproximadamente lineal.",
+        "No evalúa anisotropía fuera de la dirección del borde.",
+        "No establece un límite clínico de resolución."
+      ]
+    },
+    {
+      "title": "Uniformidad aparente alterada por un gradiente",
+      "scenario": "Un fantoma uniforme sintético recibe un sombreado lento de izquierda a derecha además de ruido aleatorio.",
+      "reasoning_steps": [
+        "Visualizar mapa residual y perfil espacial antes de calcular una única desviación.",
+        "Comparar ROIs centrales y periféricas predefinidas.",
+        "Separar gradiente determinista de fluctuación aleatoria en el modelo.",
+        "Recalcular NPS solo tras documentar cómo se trató la tendencia.",
+        "Registrar el sombreado como artefacto o no uniformidad del caso sintético, no como ruido blanco."
+      ],
+      "interpretation": "La no uniformidad de baja frecuencia puede inflar o deformar métricas de ruido si se trata como fluctuación aleatoria.",
+      "limitations": [
+        "No identifica la causa física de un equipo real.",
+        "La corrección del gradiente es parte del análisis, no una reparación clínica.",
+        "No define tolerancias de QA profesional."
+      ]
+    },
+    {
+      "title": "Una mejora visual después de suavizar no equivale a mejor calidad global",
+      "scenario": "Un filtro fuerte reduce el ruido visible de un fantoma sintético y eleva CNR, pero ensancha el borde y reduce MTF en frecuencias medias-altas.",
+      "reasoning_steps": [
+        "Conservar el baseline sin filtrar y registrar el filtro como derivación.",
+        "Recalcular CNR, NPS y MTF con exactamente las mismas ROIs y método.",
+        "Cuantificar qué componente de NPS disminuye y qué frecuencia MTF se pierde.",
+        "Vincular el trade-off a la tarea predefinida.",
+        "Entregar el resultado a U3 como ejemplo de por qué preprocesar exige validar propiedades afectadas."
+      ],
+      "interpretation": "Reducir ruido visual puede sacrificar detalle; el cambio debe describirse mediante varias métricas y no solo por apariencia.",
+      "limitations": [
+        "Filtro sintético sin recomendación clínica.",
+        "No evalúa observadores humanos.",
+        "No demuestra que un algoritmo sea adecuado para diagnóstico."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Laboratorio integrador: comparación task-based de dos protocolos de fantoma",
+      "estimated_time_minutes": 420,
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Usa exclusivamente fantomas sintéticos o datasets públicos de QA autorizados; no uses estudios de pacientes ni imágenes asistenciales.",
+        "Recibe desde U1 una entrada con procedencia, geometría y Pixel Spacing auditados y conserva una copia inmutable del baseline.",
+        "Define antes de calcular una tarea de imagen concreta, las métricas primarias y secundarias, las ROIs/perfiles y el número de repeticiones.",
+        "Compara exactamente dos protocolos o dos reconstrucciones documentadas y registra todas las diferencias conocidas entre ellos.",
+        "Implementa CNR/SNR como métricas descriptivas y NPS/MTF como métricas espaciales complementarias.",
+        "Expresa toda frecuencia espacial en unidades físicas y comprueba Nyquist antes de graficar o comparar curvas.",
+        "Incluye controles de uniformidad y un registro estructurado de artefactos conocidos del fantoma.",
+        "Ejecuta análisis de sensibilidad a una decisión de ROI y a una decisión de procesamiento sin cambiar la tarea después de ver resultados.",
+        "Repite las mediciones o utiliza realizaciones independientes para estimar variabilidad y no sobreinterpretar una sola imagen.",
+        "Redacta una conclusión de trade-off técnico y una lista explícita de lo que no puede afirmarse sobre clínica, exposición o conformidad."
       ],
       "problems": [
-        "Define contraste mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo resolución modifica o complementa a contraste.",
-        "Propón una prueba que distinga el papel de ruido y fantomas de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Define una tarea de detección o medición sobre un fantoma y especifica objeto, fondo y variable de interés.",
+        "Construye una tabla de metadatos del protocolo A y B con Pixel Spacing, matriz y parámetros de reconstrucción disponibles.",
+        "Dibuja las ROIs de señal y fondo antes de calcular cualquier métrica y guarda sus coordenadas.",
+        "Calcula media, desviación estándar, SNR y CNR en tres repeticiones por protocolo.",
+        "Mueve cada ROI una distancia pequeña predefinida y cuantifica sensibilidad de CNR a la colocación.",
+        "Explica con un contraejemplo por qué CNR mayor no implica necesariamente mayor resolución.",
+        "Genera un residual de ruido documentado para una región aproximadamente uniforme.",
+        "Estima una NPS 2D o radial con unidades físicas y normalización declarada.",
+        "Compara forma de NPS entre protocolos y distingue cambio de amplitud de cambio de textura.",
+        "Extrae una ESF de un borde inclinado o fantoma equivalente con geometría conocida.",
+        "Deriva LSF y MTF y documenta tratamiento de suavizado, ventana e interpolación si los utilizas.",
+        "Calcula MTF50 y MTF10 por interpolación explícita cuando la curva lo permita.",
+        "Calcula frecuencia de Nyquist desde Pixel Spacing y comprueba el dominio de la curva MTF.",
+        "Explica por qué Pixel Spacing de menor tamaño no garantiza automáticamente mejor resolución efectiva.",
+        "Construye un mapa o perfil de uniformidad sobre una región homogénea del fantoma.",
+        "Distingue un gradiente de baja frecuencia de ruido aleatorio y documenta cómo afecta NPS.",
+        "Registra al menos dos artefactos sintéticos o controles negativos y describe su morfología sin diagnosticar causas clínicas.",
+        "Compara una imagen baseline con una versión suavizada y cuantifica conjuntamente CNR, NPS y MTF.",
+        "Identifica un trade-off real entre protocolos y explica por qué no procede fabricar un índice global con pesos arbitrarios.",
+        "Calcula un intervalo por bootstrap o variabilidad entre repeticiones para una métrica seleccionada.",
+        "Crea una figura de cuatro paneles regenerable: ROIs, NPS, MTF y uniformidad, con unidades y leyendas completas.",
+        "Redacta un resultado técnico en menos de 120 palabras separando observación, interpretación y limitación.",
+        "Enumera tres afirmaciones clínicas o regulatorias que los datos de U2 no sostienen.",
+        "Entrega a U3 el baseline, las métricas y una lista de propiedades que cualquier preprocesamiento deberá volver a comprobar."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Manifiesto de procedencia y versión de los datos de fantoma.",
+        "Definición preespecificada de la tarea de imagen.",
+        "Tabla comparativa de protocolos y variables controladas.",
+        "Archivo reproducible de ROIs y perfiles.",
+        "Tabla de SNR/CNR con repeticiones e incertidumbre.",
+        "Curva o mapa NPS con normalización y unidades.",
+        "ESF, LSF y MTF con MTF50/MTF10 cuando proceda.",
+        "Cálculo explícito de Nyquist a partir de Pixel Spacing.",
+        "Mapa o perfil de uniformidad.",
+        "Registro estructurado de artefactos y controles negativos.",
+        "Informe de trade-offs con límites de inferencia.",
+        "Paquete baseline para U3 con código, parámetros y pruebas de regresión."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: comparación objetiva de protocolos",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para contraste, resolución y ruido y fantomas.",
-        "Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Pipeline de imagen reproducible con informe cuantitativo.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de comparación objetiva de protocolos y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte contraste, resolución y ruido y fantomas.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Los datos son sintéticos o públicos autorizados y no contienen información de pacientes aportada por el estudiante.",
+        "La entrada conserva la procedencia y geometría auditadas en U1.",
+        "La tarea de imagen se define antes de elegir el ganador.",
+        "Las métricas primarias y secundarias están predefinidas.",
+        "Las ROIs y perfiles tienen coordenadas reproducibles.",
+        "SNR y CNR usan fórmulas y estimadores declarados.",
+        "CNR no se presenta como sustituto universal de detectabilidad clínica.",
+        "La variabilidad entre repeticiones está cuantificada.",
+        "La sensibilidad a la colocación de ROI está documentada.",
+        "NPS tiene unidades físicas de frecuencia espacial.",
+        "La normalización de NPS queda descrita.",
+        "No se confunde desviación estándar con textura de ruido.",
+        "ESF, LSF y MTF mantienen una cadena trazable.",
+        "MTF50 y MTF10 se reportan solo cuando la curva permite estimarlos.",
+        "Nyquist se calcula desde el muestreo y no se interpreta como resolución garantizada.",
+        "Pixel Spacing no se usa como sinónimo de resolución efectiva.",
+        "Uniformidad se evalúa separadamente de ruido aleatorio.",
+        "Los artefactos se describen respecto del fantoma conocido.",
+        "Las figuras pueden regenerarse desde datos y parámetros.",
+        "El análisis no cambia ROIs o métricas a posteriori para favorecer un protocolo.",
+        "El trade-off se comunica sin puntuación global arbitraria.",
+        "Se distingue desempeño técnico de utilidad clínica.",
+        "No se recomiendan parámetros de exposición ni dosis para pacientes.",
+        "No se afirma conformidad, aceptación o certificación de equipos.",
+        "La salida deja un baseline cuantitativo explícito para U3."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar contraste como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar contraste en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre contraste y resolución demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir ruido y fantomas después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Calidad de imagen al uso clínico o real.",
-      "correction": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-    }
+    {"error": "Llamar calidad de imagen a una impresión visual general.", "correction": "Definir primero una tarea y después seleccionar métricas pertinentes y reproducibles."},
+    {"error": "Usar CNR como única medida de calidad.", "correction": "Complementar contraste/ruido con resolución, textura de ruido, uniformidad, artefactos y contexto de tarea."},
+    {"error": "Confundir desviación estándar con NPS.", "correction": "La desviación resume amplitud; NPS describe distribución espectral de la variabilidad."},
+    {"error": "Comparar NPS en bins sin Pixel Spacing.", "correction": "Convertir el eje a frecuencia espacial física y declarar normalización."},
+    {"error": "Calcular NPS sobre una tendencia fuerte sin modelarla.", "correction": "Separar señal determinista o no uniformidad del residual antes de interpretar potencia de ruido."},
+    {"error": "Confundir Pixel Spacing con resolución.", "correction": "Reportar muestreo y una medida de respuesta espacial como MTF por separado."},
+    {"error": "Interpretar Nyquist como detalle garantizado.", "correction": "Nyquist es un límite de muestreo; la respuesta real depende de la cadena de imagen."},
+    {"error": "Reportar MTF50 sin explicar cómo se obtuvo la MTF.", "correction": "Documentar fantoma, ESF/LSF, orientación, oversampling, ventana, interpolación y unidades."},
+    {"error": "Presentar MTF10 como umbral de visibilidad universal.", "correction": "Tratarlo como descriptor de una curva, no como criterio perceptual o clínico absoluto."},
+    {"error": "Cambiar la ROI después de ver qué protocolo gana.", "correction": "Predefinir ROIs o registrar cualquier análisis posterior como exploratorio."},
+    {"error": "Comparar una sola realización por protocolo.", "correction": "Usar repeticiones o realizaciones independientes para estimar variabilidad."},
+    {"error": "Interpretar sombreado como ruido aleatorio.", "correction": "Examinar perfiles/mapas de uniformidad y separar componentes deterministas y aleatorios."},
+    {"error": "Borrar un artefacto con filtro y concluir que el protocolo mejoró.", "correction": "Comparar contra baseline y cuantificar también cualquier pérdida de detalle o cambio de ruido."},
+    {"error": "Elegir un protocolo porque la imagen se ve más suave.", "correction": "Vincular la decisión a tarea y métricas predefinidas, no a estética."},
+    {"error": "Crear un índice único sumando métricas con pesos arbitrarios.", "correction": "Comunicar trade-offs por dimensión salvo que exista una función de utilidad justificada externamente."},
+    {"error": "Aplicar tolerancias clínicas a un fantoma educativo.", "correction": "Mantener los criterios como reglas del experimento y consultar guías profesionales para QA real."},
+    {"error": "Asumir que PS3.14 define rendimiento diagnóstico del monitor.", "correction": "DICOM PS3.14 estandariza una función de presentación en grises y explícitamente no es un estándar global de desempeño de imagen."},
+    {"error": "Inferir dosis segura desde mejor CNR.", "correction": "No usar U2 para recomendar exposición o dosis; esa optimización requiere física médica, modalidad y contexto clínico."},
+    {"error": "Generalizar resultados de CT a MR o US sin revalidar.", "correction": "La física de señal, ruido y QA cambia entre modalidades; conservar principios pero revalidar método y unidades."},
+    {"error": "Entregar solo figuras sin datos ni parámetros.", "correction": "Conservar tablas, código, ROIs, normalización, versiones y criterios para regenerar cada figura."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar comparación objetiva de protocolos?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan contraste y resolución?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; ruido y fantomas puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre ruido y fantomas?",
-      "answer": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre comparación objetiva de protocolos?",
-      "answer": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Calidad de imagen?",
-      "answer": "Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question": "¿Por qué la calidad de imagen depende de la tarea?", "answer": "Porque una propiedad que favorece detectar un objeto puede no ser la misma que favorece medir otro; las métricas deben responder al uso definido.", "reasoning": "La calidad se interpreta respecto de un objetivo observable y no como belleza visual global.", "error_prevented": "Buscar una métrica universal."},
+    {"question": "¿Qué limita el uso de CNR?", "answer": "Depende de ROIs, estimador de ruido, tamaño/contraste del objeto y procesamiento; en sistemas no lineales no representa toda la detectabilidad.", "reasoning": "AAPM TG233 separa métricas técnicas simples de evaluación task-based más completa.", "error_prevented": "CNR igual a rendimiento clínico."},
+    {"question": "¿Dos imágenes con igual desviación estándar pueden tener ruido diferente?", "answer": "Sí; pueden distribuir la potencia en frecuencias espaciales distintas y por tanto mostrar texturas diferentes.", "reasoning": "NPS aporta estructura espectral que la desviación estándar pierde.", "error_prevented": "Desviación igual a ruido idéntico."},
+    {"question": "¿Qué debe acompañar una NPS?", "answer": "Método de residual, ROI, normalización, Pixel Spacing, unidades de frecuencia y número de realizaciones o regiones.", "reasoning": "Sin esas decisiones una curva no es reproducible ni comparable.", "error_prevented": "Curvas NPS sin unidades."},
+    {"question": "¿Pixel Spacing de 0.5 mm implica resolución de 0.5 mm?", "answer": "No; define el paso de muestreo, no la respuesta espacial efectiva del sistema completo.", "reasoning": "Blur físico y reconstrucción pueden limitar la MTF antes del límite de muestreo.", "error_prevented": "Muestreo igual a resolución."},
+    {"question": "¿Qué expresa MTF?", "answer": "La transferencia relativa de modulación frente a frecuencia espacial bajo un método y supuestos definidos.", "reasoning": "Permite describir respuesta espacial, no diagnosticar visibilidad por sí sola.", "error_prevented": "MTF como probabilidad clínica."},
+    {"question": "¿Qué significa la frecuencia de Nyquist?", "answer": "Es la mitad de la frecuencia de muestreo de un grid regular y marca el límite ideal de representación sin aliasing.", "reasoning": "No garantiza que el sistema conserve contraste hasta esa frecuencia.", "error_prevented": "Nyquist como resolución real."},
+    {"question": "¿Por qué usar un fantoma?", "answer": "Porque proporciona objetos o regiones con propiedades conocidas que permiten aislar y repetir mediciones técnicas.", "reasoning": "Una referencia conocida facilita distinguir señal esperada de artefacto o error.", "error_prevented": "Medir calidad sin referencia."},
+    {"question": "¿Cómo se distingue uniformidad de ruido?", "answer": "La uniformidad examina variación espacial sistemática de una región homogénea; el ruido se analiza como fluctuación alrededor de una señal modelada.", "reasoning": "Un gradiente lento no debe tratarse automáticamente como ruido aleatorio.", "error_prevented": "Sombreado igual a ruido."},
+    {"question": "¿Una imagen más suave es necesariamente mejor?", "answer": "No; un filtro puede reducir ruido y al mismo tiempo degradar resolución o alterar textura.", "reasoning": "Debe compararse el conjunto de métricas vinculado a la tarea.", "error_prevented": "Estética igual a calidad."},
+    {"question": "¿Qué debe recibir U3 de esta unidad?", "answer": "Un baseline reproducible con CNR/SNR, NPS, MTF, uniformidad, artefactos, ROIs, parámetros e incertidumbre.", "reasoning": "Así el preprocesamiento puede demostrar qué propiedad modifica.", "error_prevented": "Filtrar sin baseline."},
+    {"question": "¿Qué no demuestra U2?", "answer": "No demuestra eficacia diagnóstica, seguridad de exposición, conformidad de un escáner, aceptación clínica ni aprobación regulatoria.", "reasoning": "El laboratorio caracteriza fantomas y datos educativos, no pacientes ni dispositivos regulados.", "error_prevented": "Extrapolación clínica indebida."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Comparación objetiva de protocolos."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-    }
+    {"area": "Física médica diagnóstica", "connection": "CNR, NPS, MTF, uniformidad y fantomas forman parte del lenguaje técnico usado para caracterizar cadenas de imagen.", "boundary": "U2 no sustituye pruebas de aceptación, QC profesional ni juicio de un físico médico cualificado."},
+    {"area": "Radiología computacional", "connection": "Las métricas permiten documentar cómo reconstrucción y procesamiento cambian detalle y ruido antes de análisis posteriores.", "boundary": "No se interpreta una imagen de paciente ni se concluye rendimiento diagnóstico."},
+    {"area": "IA en imagen médica", "connection": "Cambios de resolución, ruido y artefactos pueden producir domain shift y afectar algoritmos que reciben las imágenes.", "boundary": "U2 no entrena ni valida modelos de IA y no infiere generalización clínica."},
+    {"area": "Ingeniería clínica", "connection": "El diseño reproducible de pruebas y fantomas ayuda a comprender QA/QC e interoperabilidad de métricas.", "boundary": "No certifica equipos ni define tolerancias de servicio."},
+    {"area": "Imágenes multimodales", "connection": "CT, MRI y ultrasound comparten conceptos de señal, ruido y resolución, aunque sus mecanismos físicos y métricas específicas difieren.", "boundary": "Una fórmula o umbral no se transfiere entre modalidades sin revalidación."},
+    {"area": "Procesamiento digital de imágenes", "connection": "U2 establece el baseline contra el que U3 medirá efectos de normalización, filtrado y corrección de artefactos.", "boundary": "Mejorar una métrica tras procesar no garantiza preservar información relevante para todas las tareas."}
   ],
   "sources": [
-    {
-      "title": "3D Slicer documentation",
-      "organization": "3D Slicer community",
-      "url": "https://slicer.readthedocs.io/",
-      "type": "documentación",
-      "description": "Visualización, segmentación y flujos reproducibles.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "ITK documentation",
-      "organization": "Insight Toolkit community",
-      "url": "https://docs.itk.org/",
-      "type": "documentación",
-      "description": "Registro, filtrado y segmentación de imágenes.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "NIBIB Science Topics",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics",
-      "type": "recurso oficial",
-      "description": "Principios de modalidades y tecnologías de imagen.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "The Cancer Imaging Archive",
-      "organization": "National Cancer Institute",
-      "url": "https://www.cancerimagingarchive.net/",
-      "type": "datos abiertos",
-      "description": "Colecciones de imagen con metadatos de investigación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "MONAI documentation",
-      "organization": "MONAI Consortium",
-      "url": "https://docs.monai.io/",
-      "type": "documentación",
-      "description": "Flujos reproducibles de aprendizaje profundo en imagen médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title": "AAPM TG233 — Performance Evaluation of Computed Tomography Systems", "citation": "AAPM Task Group 233. Performance Evaluation of Computed Tomography Systems, 2019.", "type": "informe profesional", "url": "https://www.aapm.org/pubs/reports/detail.asp?docid=186", "verification_status": "verificada directamente"},
+    {"title": "AAPM TG233 — Full Report", "citation": "Samei E, et al. AAPM TG233 full report on CT performance evaluation.", "type": "informe profesional", "url": "https://www.aapm.org/pubs/reports/RPT_233.pdf", "verification_status": "verificada directamente"},
+    {"title": "AAPM TG233 — Medical Physics summary", "citation": "Samei E, et al. Performance evaluation of computed tomography systems. Medical Physics.", "type": "artículo revisado por pares", "url": "https://doi.org/10.1002/mp.13763", "verification_status": "verificada directamente"},
+    {"title": "AAPM TG162 — Software for Planar Image Quality Metrology", "citation": "AAPM Task Group 162. Software for Planar Image Quality Metrology, 2017.", "type": "informe profesional", "url": "https://www.aapm.org/pubs/reports/detail.asp?docid=169", "verification_status": "verificada directamente"},
+    {"title": "AAPM TG162 — Medical Physics", "citation": "Samei E, et al. Software for planar image quality metrology. Medical Physics.", "type": "artículo revisado por pares", "url": "https://doi.org/10.1002/mp.12718", "verification_status": "verificada directamente"},
+    {"title": "IAEA Diagnostic Radiology Physics", "citation": "IAEA. Diagnostic Radiology Physics: A Handbook for Teachers and Students.", "type": "manual académico oficial", "url": "https://www-pub.iaea.org/MTCD/Publications/PDF/Pub1564webNew-74666420.pdf", "verification_status": "verificada directamente"},
+    {"title": "IAEA Handbook of Basic Quality Control Tests for Diagnostic Radiology", "citation": "IAEA Human Health Series No. 47. Handbook of Basic Quality Control Tests for Diagnostic Radiology.", "type": "manual oficial de QA/QC", "url": "https://www-pub.iaea.org/MTCD/publications/PDF/PUB2021_web.pdf", "verification_status": "verificada directamente"},
+    {"title": "DICOM Standard — Current Edition", "citation": "DICOM Standards Committee. Current DICOM Standard, accessed 2026-08.", "type": "estándar oficial", "url": "https://www.dicomstandard.org/current", "verification_status": "verificada directamente"},
+    {"title": "DICOM PS3.14 — Grayscale Standard Display Function", "citation": "DICOM PS3.14, current edition. Grayscale Standard Display Function.", "type": "estándar oficial", "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part14/ps3.14.html", "verification_status": "verificada directamente"},
+    {"title": "DICOM PS3.14 — Scope and Field of Application", "citation": "DICOM PS3.14 Chapter 1. Scope and limitations of the Grayscale Standard Display Function.", "type": "estándar oficial", "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part14/chapter_1.html", "verification_status": "verificada directamente"},
+    {"title": "AAPM Report 270 — Display Quality Assurance", "citation": "AAPM Task Group 270. Display Quality Assurance, 2019.", "type": "informe profesional", "url": "https://www.aapm.org/pubs/reports/detail.asp?docid=183", "verification_status": "verificada directamente"},
+    {"title": "AAPM Report 270.A — Practical Display QA", "citation": "AAPM Task Group 270. Practical application of AAPM Report 270 in display quality assurance, 2020.", "type": "informe profesional", "url": "https://www.aapm.org/pubs/reports/detail.asp?docid=203", "verification_status": "verificada directamente"},
+    {"title": "AAPM Report 270 — Full Report", "citation": "AAPM TG270. Display Quality Assurance full report.", "type": "informe profesional", "url": "https://www.aapm.org/pubs/reports/RPT_270.pdf", "verification_status": "verificada directamente"},
+    {"title": "AAPM TG299 — Quality Control in Multi-energy CT", "citation": "AAPM Task Group 299. Quality control in multi-energy computed tomography, 2024.", "type": "informe profesional", "url": "https://www.aapm.org/pubs/MPPG/detail.asp?docid=288", "verification_status": "verificada directamente"},
+    {"title": "NIBIB — Computed Tomography", "citation": "National Institute of Biomedical Imaging and Bioengineering. Computed Tomography science topic.", "type": "recurso oficial", "url": "https://www.nibib.nih.gov/science-education/science-topics/computed-tomography-ct", "verification_status": "verificada directamente"},
+    {"title": "NIBIB — Magnetic Resonance Imaging", "citation": "National Institute of Biomedical Imaging and Bioengineering. Magnetic Resonance Imaging science topic.", "type": "recurso oficial", "url": "https://www.nibib.nih.gov/science-education/science-topics/magnetic-resonance-imaging-mri", "verification_status": "verificada directamente"},
+    {"title": "NIBIB — Ultrasound", "citation": "National Institute of Biomedical Imaging and Bioengineering. Ultrasound science topic.", "type": "recurso oficial", "url": "https://www.nibib.nih.gov/science-education/science-topics/ultrasound", "verification_status": "verificada directamente"},
+    {"title": "DICOM PS3.3 — Image Plane Module", "citation": "DICOM PS3.3 C.7.6.2. Pixel Spacing and image geometry used to express spatial-frequency units.", "type": "estándar oficial", "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.2.html", "verification_status": "verificada directamente"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "professional_scope": "Unidad educativa de metrología de imagen con fantomas sintéticos o datos públicos autorizados. No usa pacientes, no propone parámetros de adquisición para personas, no optimiza dosis o exposición clínica, no sustituye aceptación/commissioning/QC de equipos por personal cualificado y no valida visores, reconstrucciones o algoritmos para uso diagnóstico.",
+  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado. Las métricas CNR, NPS, MTF, uniformidad y artefactos se enseñan como herramientas de caracterización bajo condiciones explícitas; no constituyen evidencia suficiente de utilidad clínica, seguridad, conformidad regulatoria ni superioridad diagnóstica."
 }
