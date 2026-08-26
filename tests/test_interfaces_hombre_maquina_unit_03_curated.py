@@ -127,13 +127,10 @@ def test_unit_03_has_no_instrumentation_carryover():
     assert all(not section.get("equations") for section in data["theory_sections"])
 
 
-def test_published_descriptor_and_html_match_when_promoted():
+def test_published_descriptor_and_html_match_canonical_unit():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 3)
-    if detail["description"] != source["purpose"]:
-        import pytest
-        pytest.skip("El publicador todavía no ha promovido U3 al descriptor")
     assert PUBLIC.exists()
     assert detail["title"] == source["title"]
     assert detail["description"] == source["purpose"]
