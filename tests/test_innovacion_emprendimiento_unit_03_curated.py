@@ -92,7 +92,7 @@ class InnovacionEmprendimientoUnit03CuratedTests(unittest.TestCase):
         self.assertIn("seguro, eficaz", purpose)
         self.assertIn("investigación con personas", purpose)
         self.assertIn("no autoriza saltarse gestión de riesgos", self.text)
-        self.assertIn("no es un producto para uso humano", self.text)
+        self.assertIn("no un producto para uso humano", self.text)
         self.assertIn("no demuestra desempeño en pacientes", self.text)
 
     def test_learning_scaffolds_are_substantial(self) -> None:
