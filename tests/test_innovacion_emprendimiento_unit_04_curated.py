@@ -63,7 +63,7 @@ class InnovacionEmprendimientoUnit04CuratedTests(unittest.TestCase):
             with self.subTest(concept=concept):
                 self.assertIn(concept, self.text)
         self.assertIn("decisiones diferentes", self.text)
-        self.assertIn("no equivale por sí sola a compra inmediata", self.text)
+        self.assertIn("tampoco equivale por sí sola a compra inmediata", self.text)
 
     def test_economics_are_specific_and_bounded(self) -> None:
         equations = " ".join(item["latex"] for section in self.unit["theory_sections"] for item in section.get("equations", []))
@@ -84,7 +84,7 @@ class InnovacionEmprendimientoUnit04CuratedTests(unittest.TestCase):
             "salvaguarda de acceso",
             "desagrega",
         ):
-            with self.subTest(concept=concept):
+            with self.subTest(phrase=concept):
                 self.assertIn(concept, self.text)
         self.assertIn("no se construye un único «índice de equidad»", self.text)
         self.assertIn("menor precio no garantiza mayor equidad", self.text)
