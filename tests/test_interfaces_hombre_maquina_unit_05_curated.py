@@ -109,17 +109,16 @@ def test_unit_05_uses_metrics_with_denominators_not_snr():
     assert "denominador" in text.lower()
 
 
-def test_published_descriptor_matches_when_promoted():
-    if not DESCRIPTOR.exists() or not PUBLIC.exists():
-        return
+def test_published_descriptor_and_html_match_canonical_unit():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 5)
-    if detail["description"] != source["purpose"]:
-        return
+    assert PUBLIC.exists()
+    assert detail["title"] == source["title"]
+    assert detail["description"] == source["purpose"]
     public_text = PUBLIC.read_text(encoding="utf-8").lower()
     assert source["purpose"].lower() in public_text
-    for marker in ["evaluación formativa", "error de uso", "close call", "sus", "representatividad"]:
+    for marker in ["evaluación formativa", "error de uso", "close call", "sus", "representatividad", "human factors validation"]:
         assert marker in public_text
     for carryover in ["snr", "función de transferencia", "cortocircuito", "concepto de la unidad que debe definirse"]:
         assert carryover not in public_text
