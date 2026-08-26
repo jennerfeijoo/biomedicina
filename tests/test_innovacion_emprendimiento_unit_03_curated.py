@@ -37,10 +37,17 @@ class InnovacionEmprendimientoUnit03CuratedTests(unittest.TestCase):
 
     def test_learning_objectives_use_experiment_language(self) -> None:
         objectives = norm(" ".join(self.unit["learning_objectives"]))
-        for phrase in ("mvp", "prototipo", "métricas", "umbrales", "criterios de análisis", "contradictoria"):
+        for phrase in (
+            "mvp",
+            "prototipo",
+            "métrica y umbral",
+            "criterio de refutación",
+            "resultados favorables, nulos y discrepantes",
+            "documentar un ciclo",
+        ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, objectives)
-        self.assertIn("criterios de decisión", self.text)
+        self.assertIn("decisiones de aprendizaje", self.text)
         self.assertIn("evidencia discrepante", self.text)
 
     def test_theory_has_real_prototyping_and_experiment_content(self) -> None:
@@ -126,11 +133,10 @@ class InnovacionEmprendimientoUnit03CuratedTests(unittest.TestCase):
             with self.subTest(boundary=boundary):
                 self.assertIn(boundary, notice)
 
-    def test_published_descriptor_matches_when_materialized(self) -> None:
+    def test_published_descriptor_matches_canonical_unit(self) -> None:
         published = next(item for item in self.subject["detailed_units"] if item["unit"] == 3)
         self.assertEqual(published["title"], self.unit["title"])
-        if published["description"] != self.unit["purpose"]:
-            self.skipTest("Descriptor U3 pendiente del workflow de publicación")
+        self.assertEqual(published["description"], self.unit["purpose"])
         self.assertIn("fidelidad mínima necesaria", norm(published["description"]))
         self.assertIn("mvp educativo", norm(published["description"]))
 
