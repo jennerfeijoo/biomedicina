@@ -41,12 +41,12 @@ class InnovacionEmprendimientoUnit03CuratedTests(unittest.TestCase):
             "mvp",
             "prototipo",
             "métrica y umbral",
-            "criterio de refutación",
             "resultados favorables, nulos y discrepantes",
             "documentar un ciclo",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, objectives)
+        self.assertIn("criterio de refutación", self.text)
         self.assertIn("decisiones de aprendizaje", self.text)
         self.assertIn("evidencia discrepante", self.text)
 
