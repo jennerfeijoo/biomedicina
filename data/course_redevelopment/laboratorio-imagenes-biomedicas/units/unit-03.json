@@ -6,386 +6,333 @@
   "slug": "preprocesamiento",
   "title": "Preprocesamiento",
   "status": "review",
-  "purpose": "Integrar normalización, filtrado, corrección de artefactos para resolver un caso de preparación sin introducir sesgos con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar, ejecutar y auditar un pipeline de preprocesamiento que transforme una entrada validada por U1 y caracterizada cuantitativamente por U2 sin alterar silenciosamente geometría, significado de intensidad, ruido, resolución o artefactos. La unidad compara normalización, filtrado y corrección de inhomogeneidad mediante datos sintéticos o públicos autorizados, cuantifica cada transformación contra el baseline de U2 y entrega a U4 una derivación versionada con parámetros, métricas y límites explícitos.",
   "learning_objectives": [
-    "Definir normalización, filtrado y corrección de artefactos mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte normalización con filtrado y delimite el papel de corrección de artefactos.",
-    "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-    "Resolver y comunicar un caso sobre preparación sin introducir sesgos con incertidumbre y límites.",
-    "Transferir el método de Preprocesamiento a un escenario nuevo y justificar qué debe revalidarse."
+    "Definir un contrato de preprocesamiento con entrada, tarea posterior, propiedades a preservar, transformación, parámetros, controles y criterios antes de modificar una imagen.",
+    "Distinguir normalización de intensidad, estandarización y calibración física y seleccionar una estrategia compatible con modalidad, unidades, máscara y uso previsto.",
+    "Implementar y comparar filtrado lineal y no lineal en unidades físicas, explicando cómo kernel, sigma, anisotropía de vóxel y condiciones de borde modifican ruido y resolución.",
+    "Evaluar correcciones de inhomogeneidad o artefactos mediante perturbaciones sintéticas y referencias conocidas sin asumir que un algoritmo sirve para toda modalidad.",
+    "Revalidar tras cada transformación CNR/SNR, NPS, MTF, uniformidad y artefactos cuando proceda y comunicar trade-offs en vez de una mejora global.",
+    "Construir un pipeline reproducible sin fuga de información y entregar a U4 una imagen derivada versionada, parámetros y evidencia de propiedades preservadas o modificadas."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Preprocesamiento",
+      "heading": "1. Contrato de preprocesamiento y baseline",
       "paragraphs": [
-        "La unidad «Preprocesamiento» sitúa normalización, filtrado y corrección de artefactos dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Imágenes Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Preprocesamiento» en Laboratorio de Imágenes Biomédicas, «normalización», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Preprocesamiento», «filtrado», aporta otra dimensión al problema de Laboratorio de Imágenes Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con normalización debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Preprocesamiento» en Laboratorio de Imágenes Biomédicas, «corrección de artefactos», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Preprocesar significa transformar una imagen antes de una tarea posterior, no mejorarla de manera universal. U3 recibe de U1 identidad, geometría, Pixel Spacing, orientación y representación de intensidad auditadas, y de U2 un baseline de contraste, ruido, resolución, uniformidad y artefactos.",
+        "Antes de ejecutar una transformación se define qué problema intenta resolver, qué propiedad puede cambiar y qué propiedades deben preservarse. Una normalización aceptable para intensidades relativas puede ser inadmisible si la tarea requiere una escala físicamente interpretable.",
+        "El archivo original se mantiene inmutable. Cada salida es una derivación con identificador, parámetros, versión del software, máscara, orden de operaciones y relación explícita con su entrada.",
+        "El orden de operaciones importa: normalizar antes o después de clipping, filtrar antes de estimar una referencia o cambiar la máscara de una corrección produce resultados distintos. El pipeline se trata como un grafo reproducible y no como una secuencia informal de botones.",
+        "Una imagen más suave o homogénea no queda validada por apariencia. U2 ya mostró que reducir ruido puede reducir también MTF; por ello U3 cuantifica antes y después las propiedades vinculadas a la tarea.",
+        "La salida de U3 no es una imagen limpia sin contexto. U4 recibe una derivación versionada junto con baseline, parámetros, mapas diferencia, métricas y propiedades no evaluadas."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Preprocesamiento.",
-        "Relacionar normalización, filtrado y corrección de artefactos mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
+        "El baseline original permanece inmutable y trazable.",
+        "Toda transformación responde a una tarea posterior explícita.",
+        "El orden del pipeline modifica resultados y debe versionarse.",
+        "Una apariencia más limpia no demuestra mejor desempeño.",
+        "Cada salida conserva parámetros, máscara, versión y procedencia.",
+        "U4 recibe una derivación documentada y auditable."
+      ],
+      "equations": []
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Normalización de intensidad, referencias y fuga",
       "paragraphs": [
-        "Para «Preprocesamiento» dentro de Laboratorio de Imágenes Biomédicas, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Laboratorio de Imágenes Biomédicas, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre normalización o filtrado debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Preprocesamiento», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Laboratorio de Imágenes Biomédicas, la incertidumbre de «Preprocesamiento» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Normalización agrupa operaciones distintas. Un z-score centra y escala; un min–max reescala un intervalo; una estrategia robusta puede usar percentiles; y una estandarización de histograma intenta reducir diferencias entre imágenes. La elección depende del significado de intensidad y de la tarea.",
+        "Una representación cuantitativa no debe tratarse como una escala arbitraria sin justificarlo. En MRI convencional la intensidad puede variar con adquisición y reconstrucción, y la literatura describe múltiples estrategias de estandarización sin un método universalmente óptimo.",
+        "El z-score z=(x−μ)/σ exige declarar de qué voxeles proceden μ y σ. Toda la imagen, una máscara de objeto o una región de referencia producen transformaciones diferentes; el fondo no debe dominar estadísticas por accidente.",
+        "Los percentiles reducen sensibilidad a outliers, pero clipping modifica datos. Deben registrarse percentiles, máscara y fracción de voxeles saturados, especialmente si esa fracción cambia entre imágenes o grupos.",
+        "Cuando una normalización aprende estadísticas de una colección, esos parámetros se estiman solo con entrenamiento en una evaluación predictiva. Incorporar validación o prueba al ajuste introduce fuga de información aunque no se usen etiquetas.",
+        "U3 compara estrategias mediante histogramas y métricas heredadas de U2. La elección se justifica por tarea y preservación del significado de intensidad, no porque una distribución tenga una forma visualmente más conveniente."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: preparación sin introducir sesgos",
-      "paragraphs": [
-        "En la unidad «Preprocesamiento» de Laboratorio de Imágenes Biomédicas, el caso conductor es preparación sin introducir sesgos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Preprocesamiento» conecta normalización con filtrado y utiliza corrección de artefactos como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «preparación sin introducir sesgos» en Laboratorio de Imágenes Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Preprocesamiento» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de preparación sin introducir sesgos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Normalizar no equivale a calibrar una magnitud física.",
+        "Z-score depende de la población de voxeles usada.",
+        "Clipping modifica datos y debe cuantificarse explícitamente.",
+        "Las estadísticas aprendidas se ajustan solo con entrenamiento.",
+        "Modalidad y significado de intensidad condicionan la estrategia.",
+        "No existe una normalización universalmente superior para todas las tareas."
       ],
       "equations": [
-        {
-          "latex": "CNR=\\frac{|\\mu_1-\\mu_2|}{\\sigma_n}",
-          "meaning": "Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.",
-          "variables": {
-            "\\mu": "media regional",
-            "\\sigma_n": "desviación del ruido"
-          }
-        }
-      ],
-      "key_points": [
-        "Delimitar el caso de preparación sin introducir sesgos antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        {"latex": "z=\\frac{x-\\mu_{ref}}{\\sigma_{ref}}", "meaning": "Estandarización respecto de una referencia explícita; máscara o población forman parte del método.", "variables": {"x": "intensidad", "\\mu_{ref}": "media de referencia", "\\sigma_{ref}": "desviación de referencia"}},
+        {"latex": "x'=\\frac{x-p_{low}}{p_{high}-p_{low}}", "meaning": "Reescala por percentiles con política de clipping o extrapolación declarada.", "variables": {"x": "intensidad original", "p_{low}": "percentil inferior", "p_{high}": "percentil superior", "x'": "intensidad reescalada"}}
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "3. Filtrado y escala física",
       "paragraphs": [
-        "La reproducibilidad de «Preprocesamiento» en Laboratorio de Imágenes Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Preprocesamiento» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Laboratorio de Imágenes Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Preprocesamiento» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de normalización, filtrado y corrección de artefactos debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Laboratorio de Imágenes Biomédicas.",
-        "El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre preparación sin introducir sesgos. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Laboratorio de Imágenes Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "El filtrado lineal puede expresarse como convolución entre imagen y kernel. Un suavizado gaussiano atenúa componentes de alta frecuencia espacial, por lo que puede reducir variabilidad visible y al mismo tiempo degradar bordes o detalle.",
+        "Sigma representa una escala. En volúmenes con voxeles anisótropos, aplicar el mismo sigma en píxeles a todos los ejes produce escalas físicas distintas. Los parámetros deben convertirse a milímetros cuando la geometría lo permita.",
+        "El filtro mediana puede ser útil frente a ruido impulsivo sintético, pero un vecindario grande también elimina detalles cuyo tamaño es comparable al footprint. Preservar algunos bordes no significa preservar toda la información.",
+        "Filtros como bilateral o difusión anisotrópica añaden dependencia de similitud o gradiente. Sus parámetros y supuestos deben documentarse; edge-preserving no significa MTF, textura o cuantificación invariantes.",
+        "Las condiciones de borde pueden generar diferencias cerca de límites. U3 registra padding y evalúa una banda periférica en lugar de recortarla silenciosamente.",
+        "Los filtros se comparan en una rejilla predefinida mediante reducción de ruido, cambio de NPS, cambio de MTF y error respecto de referencia sintética. Mejorar una dimensión y empeorar otra se reporta como trade-off."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido."
+        "Suavizar atenúa frecuencias y puede degradar resolución espacial.",
+        "Los parámetros de kernel deben expresarse en escala física.",
+        "Un filtro mediana también puede eliminar detalles pequeños.",
+        "Preservar bordes no garantiza preservar cuantificación ni MTF.",
+        "Las condiciones de borde forman parte del procedimiento reproducible.",
+        "Los filtros se comparan por trade-offs predefinidos."
+      ],
+      "equations": [
+        {"latex": "y(\\mathbf{r})=(h*x)(\\mathbf{r})", "meaning": "Convolución espacial bajo condiciones de borde declaradas.", "variables": {"x": "imagen de entrada", "h": "kernel", "y": "imagen filtrada", "\\mathbf{r}": "posición"}},
+        {"latex": "G_\\sigma(r)=\\frac{1}{\\sqrt{2\\pi}\\sigma}\\exp(-\\frac{r^2}{2\\sigma^2})", "meaning": "Perfil gaussiano que ilustra cómo sigma fija una escala de suavizado.", "variables": {"r": "distancia", "\\sigma": "escala gaussiana"}}
+      ]
+    },
+    {
+      "heading": "4. Corrección de inhomogeneidad y artefactos",
+      "paragraphs": [
+        "Corregir un artefacto exige proponer primero un modelo de aquello que no pertenece al objeto. Un sombreado multiplicativo lento, ruido impulsivo y aliasing no comparten mecanismo ni corrección.",
+        "En MRI, la inhomogeneidad o bias field suele modelarse como una variación espacial suave de ganancia. N4ITK es un método ampliamente usado para estimar y corregir ese campo bajo supuestos específicos; no convierte toda variación lenta en artefacto.",
+        "La estimación depende de la región utilizada. Herramientas como SimpleITK permiten una máscara que debe compartir el espacio físico de la imagen; U3 registra máscara, reglas de construcción y parámetros.",
+        "Para evaluar una corrección se introduce una perturbación sintética de magnitud conocida sobre una referencia. Después se cuantifican residual, uniformidad y preservación de bordes, evitando juzgar la corrección solo por homogeneidad visual.",
+        "Los artefactos dependientes de modalidad se tratan como casos delimitados. Si no existe modelo y referencia suficientes, se conserva la incertidumbre en vez de borrar estructura con un filtro exploratorio.",
+        "Tras corregir se repiten métricas de U2 y se conservan campo de corrección e imagen diferencia. Una mejora de uniformidad puede coexistir con distorsión de histograma o contraste."
+      ],
+      "key_points": [
+        "Cada corrección requiere un modelo explícito del artefacto.",
+        "N4 corrige inhomogeneidad bajo supuestos específicos.",
+        "La máscara de estimación forma parte del método reproducible.",
+        "Perturbaciones sintéticas permiten medir error de recuperación.",
+        "No corregir es preferible a borrar estructura sin evidencia.",
+        "La corrección se revalida con métricas antes y después."
+      ],
+      "equations": [
+        {"latex": "I_{obs}(\\mathbf{r})=b(\\mathbf{r})I_{true}(\\mathbf{r})+\\epsilon(\\mathbf{r})", "meaning": "Modelo educativo simplificado de inhomogeneidad multiplicativa suave más residual.", "variables": {"I_{obs}": "intensidad observada", "b": "campo suave", "I_{true}": "referencia idealizada", "\\epsilon": "residual"}}
+      ]
+    },
+    {
+      "heading": "5. Validación del pipeline y transferencia a U4",
+      "paragraphs": [
+        "Un pipeline separa parámetros fijos de parámetros estimados con datos. En evaluación predictiva, los parámetros aprendidos se ajustan en entrenamiento y se congelan para validación y prueba.",
+        "Validar no significa solo ejecutar sin errores. Cada etapa dispone de pruebas para geometría, rango, NaN/Inf, fracción de clipping, estadísticas, NPS, MTF y diferencias espaciales según el riesgo de la operación.",
+        "Una métrica global pequeña puede ocultar un cambio importante en la estructura objetivo. Por eso se combinan métricas globales, ROIs y objetos conocidos definidos por el contrato de preservación.",
+        "El pipeline conserva software, versiones, semillas cuando proceda, parámetros e identificador de la entrada. La salida se guarda como derivación y no se afirma conformidad de interoperabilidad por el mero hecho de exportar un formato.",
+        "El handoff a U4 incluye baseline U2, imagen preprocesada, mapa diferencia, máscara, parámetros, métricas antes/después y propiedades no evaluadas. Así U4 puede distinguir un efecto de segmentación de una alteración introducida por U3.",
+        "El alcance es educativo y técnico. Mejorar métricas de fantoma o desempeño sintético no demuestra utilidad clínica, generalización a pacientes, optimización de dosis ni seguridad."
+      ],
+      "key_points": [
+        "Los parámetros aprendidos no usan validación o prueba para ajustarse.",
+        "Cada etapa tiene controles de regresión vinculados a su riesgo.",
+        "Las métricas globales se complementan con regiones conocidas.",
+        "La salida conserva software, versiones, parámetros y procedencia.",
+        "U4 recibe imagen, diferencias, métricas y límites documentados.",
+        "Mejor desempeño técnico no equivale a utilidad clínica."
+      ],
+      "equations": [
+        {"latex": "\\Delta m=\\frac{m_{post}-m_{pre}}{|m_{pre}|+\\varepsilon}", "meaning": "Cambio relativo educativo de una métrica antes y después; no sirve para mezclar métricas heterogéneas en un índice global.", "variables": {"m_{pre}": "métrica baseline", "m_{post}": "métrica posterior", "\\varepsilon": "constante numérica pequeña"}}
       ]
     }
   ],
   "glossary": [
-    {
-      "term": "normalización",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "filtrado",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "corrección de artefactos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
-    },
-    {
-      "term": "Preprocesamiento",
-      "definition": "Dominio de estudio que integra normalización, filtrado, corrección de artefactos para resolver un problema delimitado y verificable."
-    },
-    {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de preparación sin introducir sesgos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
-    },
-    {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
-    },
-    {
-      "term": "Evidencia",
-      "definition": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, seleccionada de acuerdo con la afirmación que se pretende sostener."
-    },
-    {
-      "term": "Control",
-      "definition": "Fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
-    },
-    {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
-    },
-    {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
-    },
-    {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
-    },
-    {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
-    }
+    {"term":"preprocesamiento","definition":"Transformaciones versionadas antes de una tarea posterior con parámetros y controles explícitos."},
+    {"term":"baseline","definition":"Representación y métricas de referencia contra las que se cuantifica una transformación."},
+    {"term":"normalización de intensidad","definition":"Transformación de escala o distribución respecto de una referencia declarada."},
+    {"term":"estandarización","definition":"Reducción de variaciones de representación bajo un criterio definido; no implica calibración física."},
+    {"term":"calibración","definition":"Relación trazable con una referencia física o metrológica; no es sinónimo de normalización."},
+    {"term":"z-score","definition":"Transformación que centra y escala usando media y desviación de una referencia explícita."},
+    {"term":"min–max","definition":"Reescala lineal entre límites definidos, sensible a extremos si estos provienen de los datos."},
+    {"term":"percentil","definition":"Valor por debajo del cual cae una proporción especificada de observaciones."},
+    {"term":"clipping","definition":"Truncamiento de valores fuera de un intervalo que modifica datos y debe cuantificarse."},
+    {"term":"histograma","definition":"Distribución discretizada de intensidades dependiente de máscara, binning y modalidad."},
+    {"term":"máscara","definition":"Conjunto de voxeles incluido en una estimación o evaluación."},
+    {"term":"fuga de información","definition":"Uso durante el ajuste de información perteneciente al conjunto de evaluación independiente."},
+    {"term":"convolución","definition":"Operación que combina imagen y kernel desplazado para producir una salida local."},
+    {"term":"kernel","definition":"Pesos o regla local que define vecindad y respuesta de un filtro."},
+    {"term":"filtro gaussiano","definition":"Suavizado lineal cuya sigma determina escala y atenúa altas frecuencias."},
+    {"term":"sigma","definition":"Parámetro de escala del Gaussiano que debe relacionarse con spacing."},
+    {"term":"filtro mediana","definition":"Filtro no lineal de mediana local que también puede eliminar detalles pequeños."},
+    {"term":"filtro bilateral","definition":"Filtro dependiente de proximidad espacial y similitud de intensidad."},
+    {"term":"difusión anisotrópica","definition":"Suavizado iterativo cuya difusión depende de gradientes o estructura local."},
+    {"term":"condición de borde","definition":"Regla usada cuando un filtro necesita vecinos fuera del dominio."},
+    {"term":"voxel anisótropo","definition":"Voxel con dimensiones físicas distintas entre ejes."},
+    {"term":"frecuencia espacial","definition":"Frecuencia de variación de señal por unidad de distancia física."},
+    {"term":"NPS","definition":"Distribución de potencia de fluctuaciones por frecuencia espacial heredada de U2."},
+    {"term":"MTF","definition":"Respuesta relativa en frecuencia espacial heredada de U2 para evaluar detalle."},
+    {"term":"imagen diferencia","definition":"Mapa entre salida y referencia que localiza el efecto de una transformación."},
+    {"term":"residual","definition":"Diferencia entre observación y señal o referencia modelada."},
+    {"term":"artefacto","definition":"Estructura atribuible a la cadena de imagen y no al objeto representado."},
+    {"term":"inhomogeneidad de intensidad","definition":"Variación espacial sistemática de intensidad que requiere un modelo específico."},
+    {"term":"bias field","definition":"Campo suave usado en modelos multiplicativos de inhomogeneidad, especialmente MRI."},
+    {"term":"N4ITK","definition":"Algoritmo de corrección de bias field derivado de N3 bajo supuestos explícitos."},
+    {"term":"campo de corrección","definition":"Mapa estimado que representa la modificación espacial aplicada."},
+    {"term":"perturbación sintética","definition":"Alteración conocida introducida para medir recuperación de una referencia."},
+    {"term":"ground truth sintético","definition":"Referencia conocida por construcción y limitada al modelo generador."},
+    {"term":"trade-off","definition":"Mejora de una propiedad acompañada de deterioro de otra."},
+    {"term":"prueba de regresión","definition":"Control automatizado contra cambios no autorizados en datos o resultados."},
+    {"term":"procedencia","definition":"Registro de origen, transformaciones, parámetros y versiones."},
+    {"term":"derivación","definition":"Salida generada desde una entrada preservada mediante transformaciones auditables."},
+    {"term":"reproducibilidad","definition":"Capacidad de regenerar una salida con entradas, software y parámetros documentados."},
+    {"term":"repetibilidad","definition":"Consistencia bajo condiciones esencialmente iguales."},
+    {"term":"training set","definition":"Conjunto usado para ajustar parámetros aprendidos."},
+    {"term":"validation set","definition":"Conjunto separado para selección o evaluación intermedia."},
+    {"term":"test set","definition":"Conjunto reservado para evaluación final que no informa el ajuste."},
+    {"term":"fit/transform","definition":"Separación entre estimar parámetros y aplicar luego esos parámetros congelados."},
+    {"term":"data leakage","definition":"Fuga de información que contamina una evaluación independiente."},
+    {"term":"preservación","definition":"Criterio que declara qué propiedad debe mantenerse tras una transformación."},
+    {"term":"invariancia","definition":"Propiedad esperada de permanecer estable ante una transformación definida."},
+    {"term":"auditoría antes/después","definition":"Comparación estructurada de baseline y salida con métricas preespecificadas."},
+    {"term":"handoff","definition":"Paquete transferido a la unidad siguiente con datos, métricas, parámetros y límites."}
   ],
   "worked_examples": [
-    {
-      "title": "Del problema amplio a una evidencia verificable en Preprocesamiento",
-      "scenario": "Un equipo propone estudiar preparación sin introducir sesgos, pero su pregunta mezcla normalización, filtrado y corrección de artefactos sin definir unidades, referencias ni resultado admisible.",
-      "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de normalización, filtrado y corrección de artefactos.",
-        "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.",
-        "Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
-      ],
-      "interpretation": "El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-      ]
-    },
-    {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre normalización y filtrado en el caso de preparación sin introducir sesgos; una condición vinculada con corrección de artefactos podría producir el mismo patrón.",
-      "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar corrección de artefactos como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
-      ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
-    }
+    {"title":"Normalización sin destruir una escala cuantitativa","scenario":"Un volumen sintético cuantitativo se propone reescalar a [0,1] antes de una tarea que necesita valores físicos.","reasoning_steps":["Confirmar la representación en U1.","Definir si la tarea necesita unidades absolutas.","Comparar original y reescala sin sobrescribir baseline.","Mostrar que el mismo valor reescalado puede corresponder a valores físicos distintos.","Conservar la versión cuantitativa y documentar la derivación."],"interpretation":"Normalización y calibración no son equivalentes; una transformación reproducible puede destruir significado necesario.","limitations":["Caso educativo.","No define umbrales diagnósticos.","La escala depende de modalidad y cadena auditada."]},
+    {"title":"Filtro gaussiano: menos ruido y menos detalle","scenario":"Un fantoma digital recibe Gaussianos de 0.5, 1.0 y 2.0 mm.","reasoning_steps":["Fijar sigma en milímetros.","Aplicar sin sobrescribir baseline.","Recalcular NPS y MTF.","Medir error de objetos pequeños.","Reportar el trade-off por tarea."],"interpretation":"El suavizado puede reducir ruido y resolución simultáneamente.","limitations":["Ruido sintético simplificado.","No representa toda reconstrucción no lineal.","No demuestra beneficio clínico."]},
+    {"title":"Kernel en voxeles anisótropos","scenario":"Un volumen de 0.7×0.7×4.0 mm recibe sigma de 2 voxeles en cada eje.","reasoning_steps":["Convertir a distancia física.","Mostrar 1.4 mm frente a 8 mm.","Definir una escala física objetivo.","Comparar perfiles.","Documentar cualquier decisión axial."],"interpretation":"Parámetros en índices pueden imponer escalas físicas muy diferentes.","limitations":["No prescribe interpolación.","Spacing no equivale a resolución.","No reemplaza evaluación 3D específica."]},
+    {"title":"N4 sobre un bias conocido","scenario":"Una imagen sintética se multiplica por un campo suave y se corrige con N4 usando dos máscaras.","reasoning_steps":["Guardar referencia y perturbación.","Aplicar N4 con máscara A.","Repetir con máscara B.","Comparar residual y uniformidad.","Examinar regiones excluidas."],"interpretation":"La máscara y los parámetros condicionan la estimación; la perturbación conocida permite medir recuperación.","limitations":["Modelo multiplicativo simplificado.","No toda variación es bias field.","No valida N4 clínicamente."]},
+    {"title":"Fuga al normalizar antes de dividir","scenario":"Un conjunto sintético calcula media global usando también casos de prueba.","reasoning_steps":["Identificar dependencia de test.","Separar train/validation/test.","Ajustar estadísticas solo con training.","Aplicar parámetros congelados.","Comparar con el pipeline contaminado."],"interpretation":"Las estadísticas del test pueden contaminar el preprocesamiento aun sin etiquetas.","limitations":["Ejemplo metodológico.","No sustituye un plan estadístico completo.","U4 mantiene la misma separación."]}
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Laboratorio integrador: pipeline de preprocesamiento con auditoría antes/después",
+      "estimated_time_minutes": 420,
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Usa solo fantomas digitales, imágenes sintéticas o datasets públicos autorizados; no cargues estudios asistenciales.",
+        "Recibe de U1 geometría/procedencia y de U2 el baseline de CNR/SNR, NPS, MTF, uniformidad y artefactos.",
+        "Congela una copia inmutable y define una tarea posterior de segmentación educativa para U4.",
+        "Especifica qué propiedades deben preservarse y qué cambio intenta cada etapa.",
+        "Implementa dos normalizaciones y dos filtros con parámetros también en unidades físicas.",
+        "Introduce una perturbación sintética conocida para evaluar una corrección de inhomogeneidad.",
+        "Ajusta parámetros aprendidos solo con entrenamiento cuando uses particiones.",
+        "Recalcula métricas de U2 y conserva mapas diferencia, histogramas y parámetros.",
+        "Documenta un caso donde una transformación mejora una métrica y empeora otra.",
+        "Entrega a U4 derivación, baseline, manifiesto, límites y pruebas de regresión."
       ],
       "problems": [
-        "Define normalización mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo filtrado modifica o complementa a normalización.",
-        "Propón una prueba que distinga el papel de corrección de artefactos de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Define la tarea posterior de U4 y tres propiedades que U3 debe preservar.",
+        "Construye un manifiesto con identificador, spacing, orientación, intensidad y baseline U2.",
+        "Explica por qué una imagen más suave no constituye criterio suficiente de calidad.",
+        "Implementa z-score con máscara y documenta media y desviación.",
+        "Implementa normalización por percentiles y cuantifica voxeles recortados.",
+        "Compara histogramas y explica qué significado se conserva o pierde.",
+        "Demuestra por qué una escala cuantitativa no debe normalizarse ciegamente.",
+        "Divide un dataset sintético en train/validation/test antes de estimar estadísticas.",
+        "Construye un ejemplo contaminado que use test y explica la fuga.",
+        "Aplica Gaussianos en tres sigmas definidos en milímetros.",
+        "Recalcula NPS y MTF para baseline y filtros.",
+        "Aplica un filtro mediana a ruido impulsivo y evalúa pérdida de objetos pequeños.",
+        "Compara un parámetro en voxeles y milímetros para un volumen anisótropo.",
+        "Evalúa dos condiciones de borde y localiza diferencias periféricas.",
+        "Genera una inhomogeneidad multiplicativa suave conocida.",
+        "Aplica una corrección documentada como N4 cuando el caso sea compatible.",
+        "Compara dos máscaras de estimación y cuantifica sensibilidad.",
+        "Calcula mapa residual frente al ground truth sintético.",
+        "Comprueba que spacing, orientación y dimensiones no cambien sin autorización.",
+        "Construye una tabla por etapa con objetivo, parámetros, métricas y fallo potencial.",
+        "Define pruebas para NaN/Inf, rango, clipping y geometría.",
+        "Define una regresión para ruido/NPS y otra para borde/MTF.",
+        "Selecciona una derivación para U4 sin fabricar una puntuación global.",
+        "Redacta una conclusión que distinga mejora técnica, incertidumbre y límites."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Manifiesto de entrada y baseline U2.",
+        "Contrato de preservación para U4.",
+        "Dos normalizaciones reproducibles.",
+        "Tabla de estadísticas y clipping.",
+        "Comparación de filtros en unidades físicas.",
+        "NPS/MTF antes y después.",
+        "Perturbación y campo de corrección.",
+        "Mapa diferencia y sensibilidad.",
+        "Demostración de fuga y corrección fit/transform.",
+        "Suite de pruebas de regresión.",
+        "Manifiesto de software y parámetros.",
+        "Paquete de handoff a U4."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: preparación sin introducir sesgos",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para normalización, filtrado y corrección de artefactos.",
-        "Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Pipeline de imagen reproducible con informe cuantitativo.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de preparación sin introducir sesgos y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte normalización, filtrado y corrección de artefactos.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "La entrada original permanece inmutable y versionada.",
+        "Geometría e intensidad se auditan antes del preprocesamiento.",
+        "La tarea posterior se define antes de elegir parámetros.",
+        "Cada etapa declara objetivo y propiedades a preservar.",
+        "Normalización no se presenta como calibración física.",
+        "Z-score declara su población de referencia.",
+        "Clipping reporta percentiles y fracción afectada.",
+        "Los parámetros aprendidos no usan validación o prueba para ajustarse.",
+        "Los filtros conservan parámetros y condiciones de borde.",
+        "Los kernels se interpretan también en unidades físicas.",
+        "Se cuantifica ruido sin asumir que menor ruido equivale a mejor resolución.",
+        "NPS se reevalúa cuando cambia textura de ruido.",
+        "MTF o una métrica de borde se reevalúa tras suavizado.",
+        "Pixel Spacing no se confunde con resolución efectiva.",
+        "La perturbación sintética tiene ground truth conocido.",
+        "Una corrección conserva máscara y parámetros.",
+        "N4 no se presenta como corrector universal de artefactos.",
+        "El mapa diferencia localiza el efecto de la transformación.",
+        "Se examina sensibilidad a al menos un parámetro o máscara.",
+        "Se documenta al menos un trade-off real.",
+        "No se construye un índice global con pesos arbitrarios.",
+        "Las pruebas detectan NaN/Inf, rango o geometría no autorizada.",
+        "El paquete de U4 incluye baseline, derivación y parámetros.",
+        "No se usan pacientes ni estudios asistenciales aportados por el estudiante.",
+        "No se infiere utilidad clínica, seguridad, dosis, diagnóstico ni conformidad regulatoria."
       ]
     }
   ],
   "common_errors": [
-    {
-      "error": "Tratar normalización como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar normalización en una explicación."
-    },
-    {
-      "error": "Afirmar que una relación entre normalización y filtrado demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
-    },
-    {
-      "error": "Añadir corrección de artefactos después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
-    },
-    {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento."
-    },
-    {
-      "error": "Generalizar la conclusión de Preprocesamiento al uso clínico o real.",
-      "correction": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-    }
+    {"error":"Normalizar todas las modalidades con el mismo método.","correction":"Definir significado de intensidad, modalidad, máscara y tarea y revalidar."},
+    {"error":"Llamar calibración a un z-score.","correction":"Distinguir referencia física de transformación estadística."},
+    {"error":"Calcular z-score incluyendo fondo dominante.","correction":"Definir y justificar la población de referencia."},
+    {"error":"Aplicar min–max con outliers sin examinarlos.","correction":"Auditar percentiles y clipping."},
+    {"error":"Usar test para estimar normalización.","correction":"Ajustar parámetros aprendidos solo con training."},
+    {"error":"Sobrescribir el original después de filtrar.","correction":"Guardar cada salida como derivación trazable."},
+    {"error":"Elegir filtro porque se ve más limpio.","correction":"Comparar contra baseline con ruido, resolución y tarea."},
+    {"error":"Usar mismo sigma en voxeles anisótropos.","correction":"Convertir escala a unidades físicas."},
+    {"error":"Asumir que Gaussian solo elimina ruido.","correction":"Cuantificar atenuación de altas frecuencias y MTF."},
+    {"error":"Asumir que mediana preserva todo detalle.","correction":"Relacionar footprint con tamaño de estructuras."},
+    {"error":"Ignorar condiciones de borde.","correction":"Registrar padding y evaluar periferia."},
+    {"error":"Llamar artefacto a toda variación lenta.","correction":"Formular modelo y referencia antes de corregir."},
+    {"error":"Aplicar N4 a cualquier variación.","correction":"Usarlo solo para un caso compatible y documentar máscara y límites."},
+    {"error":"Evaluar corrección sin referencia.","correction":"Usar perturbación conocida o control discriminante."},
+    {"error":"Ocultar campo de corrección.","correction":"Conservar campo, diferencia y residual."},
+    {"error":"Afirmar que menor NPS es mejor globalmente.","correction":"Reevaluar MTF, contraste y tarea."},
+    {"error":"Confundir Pixel Spacing con resolución.","correction":"Separar muestreo de respuesta espacial efectiva."},
+    {"error":"Cambiar parámetros después de mirar test.","correction":"Predefinir selección y reservar test."},
+    {"error":"Entregar a U4 solo imagen final.","correction":"Transferir baseline, parámetros, máscaras y métricas."},
+    {"error":"Inferir utilidad clínica de una mejora sintética.","correction":"Limitar la conclusión a datos y tarea evaluados."}
   ],
   "self_assessment": [
-    {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar preparación sin introducir sesgos?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
-    },
-    {
-      "question": "¿Cómo se relacionan normalización y filtrado?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; corrección de artefactos puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
-    },
-    {
-      "question": "¿Qué dato apoya una afirmación sobre corrección de artefactos?",
-      "answer": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
-    },
-    {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
-    },
-    {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
-    },
-    {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
-    },
-    {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre preparación sin introducir sesgos?",
-      "answer": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
-    },
-    {
-      "question": "¿Qué demuestra dominio de Preprocesamiento?",
-      "answer": "Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
-    }
+    {"question":"¿Por qué preprocesar no significa mejorar universalmente?","answer":"Porque una transformación puede favorecer una propiedad y perjudicar otra.","reasoning":"El valor depende de la tarea y del contrato de preservación.","error_prevented":"Mejora visual igual a calidad."},
+    {"question":"¿Normalización y calibración son equivalentes?","answer":"No; una cambia representación estadística y la otra vincula una medida con referencia física.","reasoning":"Confundirlas puede destruir unidades necesarias.","error_prevented":"Z-score igual a calibración."},
+    {"question":"¿Qué debe especificarse en z-score?","answer":"La población o máscara usada para estimar media y desviación.","reasoning":"Las estadísticas dependen de la región.","error_prevented":"Z-score sin referencia."},
+    {"question":"¿Por qué clipping debe reportarse?","answer":"Porque satura valores y modifica la distribución.","reasoning":"No es una operación neutra.","error_prevented":"Recorte invisible."},
+    {"question":"¿Puede haber fuga sin etiquetas?","answer":"Sí; usar casos de test para estimar estadísticas de normalización informa el pipeline.","reasoning":"Test debe permanecer independiente.","error_prevented":"Leakage solo por etiquetas."},
+    {"question":"¿Qué hace un Gaussiano en frecuencia?","answer":"Atenúa componentes altas según su escala.","reasoning":"Puede reducir ruido y detalle.","error_prevented":"Suavizado sin coste."},
+    {"question":"¿Por qué sigma se relaciona con spacing?","answer":"Porque voxeles equivalen a distancias físicas distintas.","reasoning":"La escala física debe ser explícita.","error_prevented":"Kernel inconsistente."},
+    {"question":"¿Bilateral garantiza MTF intacta?","answer":"No; preservar bordes no implica preservar toda respuesta espacial.","reasoning":"Debe revalidarse con métricas.","error_prevented":"Edge-preserving igual a invariante."},
+    {"question":"¿Qué es un bias field aquí?","answer":"Una variación suave de ganancia en un modelo específico.","reasoning":"No etiqueta cualquier no uniformidad.","error_prevented":"Toda variación igual a bias."},
+    {"question":"¿Por qué usar perturbación sintética?","answer":"Porque ofrece magnitud y referencia conocidas para medir recuperación.","reasoning":"La apariencia sola no valida corrección.","error_prevented":"Corrección por estética."},
+    {"question":"¿Qué recibe U4 además de imagen?","answer":"Baseline, parámetros, máscaras, diferencias, métricas y límites.","reasoning":"Así U3 no es una caja negra.","error_prevented":"Handoff sin procedencia."},
+    {"question":"¿Mejora técnica demuestra utilidad clínica?","answer":"No; solo sostiene la tarea y condiciones evaluadas.","reasoning":"Generalización clínica requiere evidencia distinta.","error_prevented":"Extrapolación clínica."}
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Preparación sin introducir sesgos."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-    }
+    {"area":"Radiología computacional","connection":"Normalización y filtrado condicionan aspecto y cuantificación posteriores.","boundary":"U3 no selecciona protocolos clínicos ni interpreta pacientes."},
+    {"area":"MRI cuantitativa y estructural","connection":"La inhomogeneidad puede afectar análisis y N4 es una herramienta conocida para bias-field correction.","boundary":"No toda variación es bias y U3 no valida N4 clínicamente."},
+    {"area":"CT cuantitativa","connection":"Preservar escalas significativas evita destruir unidades con normalización arbitraria.","boundary":"No define umbrales, reconstrucciones ni exposición."},
+    {"area":"Segmentación biomédica","connection":"U4 depende de conocer contraste, ruido y bordes modificados en U3.","boundary":"U3 no optimiza con resultados finales del test de U4."},
+    {"area":"IA en imagen médica","connection":"Fit/transform y separación train/test reducen fuga de información.","boundary":"No entrena ni valida un modelo clínico."},
+    {"area":"Metrología de imagen","connection":"NPS, MTF, uniformidad y diferencias auditan cambios respecto de U2.","boundary":"No sustituye QC, aceptación o commissioning profesional."}
   ],
   "sources": [
-    {
-      "title": "ITK documentation",
-      "organization": "Insight Toolkit community",
-      "url": "https://docs.itk.org/",
-      "type": "documentación",
-      "description": "Registro, filtrado y segmentación de imágenes.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "NIBIB Science Topics",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics",
-      "type": "recurso oficial",
-      "description": "Principios de modalidades y tecnologías de imagen.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "The Cancer Imaging Archive",
-      "organization": "National Cancer Institute",
-      "url": "https://www.cancerimagingarchive.net/",
-      "type": "datos abiertos",
-      "description": "Colecciones de imagen con metadatos de investigación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "MONAI documentation",
-      "organization": "MONAI Consortium",
-      "url": "https://docs.monai.io/",
-      "type": "documentación",
-      "description": "Flujos reproducibles de aprendizaje profundo en imagen médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "QIBA",
-      "organization": "Radiological Society of North America",
-      "url": "https://www.rsna.org/research/quantitative-imaging-biomarkers-alliance",
-      "type": "iniciativa de calidad",
-      "description": "Perfiles y metrología para biomarcadores cuantitativos de imagen.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    }
+    {"title":"ITK Software Guide — Filtering","citation":"Insight Software Consortium. ITK Software Guide, Book 2, filtering and smoothing.","type":"documentación técnica oficial","url":"https://itk.org/ITKSoftwareGuide/html/Book2/ITKSoftwareGuide-Book2ch2.html","verification_status":"verificada directamente"},
+    {"title":"ITK Documentation","citation":"Insight Toolkit. Current documentation.","type":"documentación técnica oficial","url":"https://docs.itk.org/en/latest/","verification_status":"verificada directamente"},
+    {"title":"SimpleITK — N4 Bias Field Correction","citation":"SimpleITK Documentation. N4 Bias Field Correction.","type":"documentación técnica oficial","url":"https://simpleitk.readthedocs.io/en/master/link_N4BiasFieldCorrection_docs.html","verification_status":"verificada directamente"},
+    {"title":"N4ITK: improved N3 bias correction","citation":"Tustison NJ, et al. IEEE Trans Med Imaging. 2010;29:1310-1320.","type":"artículo revisado por pares","url":"https://pubmed.ncbi.nlm.nih.gov/20378467/","verification_status":"verificada directamente"},
+    {"title":"Review of MRI intensity inhomogeneity correction","citation":"Vovk U, Pernus F, Likar B. IEEE Trans Med Imaging. 2007.","type":"revisión revisada por pares","url":"https://pubmed.ncbi.nlm.nih.gov/17354645/","verification_status":"verificada directamente"},
+    {"title":"MRI normalization strategies systematic review","citation":"Normalization Strategies in Multi-Center Radiomics Abdominal MRI. 2023.","type":"revisión sistemática","url":"https://pubmed.ncbi.nlm.nih.gov/37283773/","verification_status":"verificada directamente"},
+    {"title":"MRI intensity standardization systematic review","citation":"Intensity standardization of MRI prior to radiomic feature extraction. 2022.","type":"revisión sistemática","url":"https://pubmed.ncbi.nlm.nih.gov/35486171/","verification_status":"verificada directamente"},
+    {"title":"scikit-image filters API","citation":"scikit-image stable filters API.","type":"documentación técnica oficial","url":"https://scikit-image.org/docs/stable/api/skimage.filters.html","verification_status":"verificada directamente"},
+    {"title":"scikit-image filtering tutorial","citation":"scikit-image image filtering tutorial.","type":"documentación técnica oficial","url":"https://scikit-image.org/skimage-tutorials/lectures/1_image_filters.html","verification_status":"verificada directamente"},
+    {"title":"DICOM PS3.3 — Image Plane Module","citation":"DICOM PS3.3 C.7.6.2.","type":"estándar oficial","url":"https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.2.html","verification_status":"verificada directamente"},
+    {"title":"DICOM PS3.3 — Modality LUT","citation":"DICOM PS3.3 C.11.","type":"estándar oficial","url":"https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.11.html","verification_status":"verificada directamente"},
+    {"title":"AAPM TG233","citation":"AAPM TG233. Performance Evaluation of Computed Tomography Systems.","type":"informe profesional","url":"https://www.aapm.org/pubs/reports/detail.asp?docid=186","verification_status":"verificada directamente"},
+    {"title":"AAPM TG162","citation":"AAPM TG162. Software for Planar Image Quality Metrology.","type":"informe profesional","url":"https://www.aapm.org/pubs/reports/detail.asp?docid=169","verification_status":"verificada directamente"},
+    {"title":"IAEA Diagnostic Radiology Physics","citation":"IAEA. Diagnostic Radiology Physics: A Handbook for Teachers and Students.","type":"manual académico oficial","url":"https://www-pub.iaea.org/MTCD/Publications/PDF/Pub1564webNew-74666420.pdf","verification_status":"verificada directamente"},
+    {"title":"DICOM Standard — Current Edition","citation":"DICOM Standards Committee. Current DICOM Standard.","type":"estándar oficial","url":"https://www.dicomstandard.org/current","verification_status":"verificada directamente"},
+    {"title":"Harmonization in magnetic resonance imaging","citation":"Yang Q, et al. Med Image Anal. 2026.","type":"revisión revisada por pares","url":"https://pubmed.ncbi.nlm.nih.gov/41936201/","verification_status":"verificada directamente"},
+    {"title":"NIBIB — Magnetic Resonance Imaging","citation":"National Institute of Biomedical Imaging and Bioengineering. MRI science topic.","type":"recurso oficial","url":"https://www.nibib.nih.gov/science-education/science-topics/magnetic-resonance-imaging-mri","verification_status":"verificada directamente"},
+    {"title":"ITK Software Guide — Data Processing Pipeline","citation":"Insight Software Consortium. ITK Software Guide, Book 1.","type":"documentación técnica oficial","url":"https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1.html","verification_status":"verificada directamente"}
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "professional_scope": "Unidad educativa de procesamiento reproducible con datos sintéticos, fantomas o datasets públicos autorizados. No usa pacientes ni PACS asistenciales, no recomienda adquisición, exposición o dosis, no diagnostica, no sustituye QC/commissioning ni valida software para uso clínico. Los parámetros aprendidos se mantienen separados del conjunto de prueba y toda transferencia requiere revalidación.",
+  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa. Normalización, filtrado y corrección se enseñan como transformaciones con efectos medibles y supuestos explícitos; una imagen más homogénea, suave o favorable para una tarea sintética no demuestra utilidad clínica, seguridad, conformidad regulatoria ni superioridad diagnóstica."
 }
