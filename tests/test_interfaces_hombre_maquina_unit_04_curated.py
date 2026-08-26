@@ -71,6 +71,8 @@ def test_unit_04_is_formative_not_certification_or_user_research():
     assert "no constituye" in text and "evaluación sumativa de usabilidad" in text
     assert "no constituye" in text and "validación clínica" in text
     assert "demostración de conformidad con wcag, fda, iec o iso" in text
+    assert "no sustituye pruebas con usuarios" in text
+    assert "las herramientas automáticas son evidencia parcial" in text
 
 
 def test_unit_04_has_sufficient_academic_and_pedagogical_depth():
@@ -129,9 +131,10 @@ def test_published_descriptor_and_html_match_canonical_unit():
     assert detail["title"] == source["title"]
     assert detail["description"] == source["purpose"]
     public_text = PUBLIC.read_text(encoding="utf-8").lower()
+    assert source["purpose"].lower() in public_text
     for marker in ["wcag 2.2", "lector de pantalla", "foco de teclado", "accesibilidad cognitiva", "prueba automatizada"]:
         assert marker in public_text
-    for carryover in ["snr", "función de transferencia", "cortocircuito"]:
+    for carryover in ["snr", "función de transferencia", "cortocircuito", "concepto de la unidad que debe definirse"]:
         assert carryover not in public_text
 
 
