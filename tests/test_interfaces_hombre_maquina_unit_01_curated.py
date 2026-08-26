@@ -121,18 +121,20 @@ def test_unit_01_uses_current_authoritative_sources():
     assert required.issubset(urls)
 
 
-def test_publication_matches_canonical_when_promoted():
+def test_published_descriptor_and_html_match_canonical_unit():
+    assert DESCRIPTOR.exists()
+    assert PUBLIC.exists()
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 1)
-    # During the first source-only commit the publisher has not promoted the new purpose yet.
-    if detail["description"] == source["purpose"]:
-        public_text = PUBLIC.read_text(encoding="utf-8").lower()
-        for marker in [
-            "sistema sociotécnico", "memoria prospectiva", "nasa-tlx",
-            "error de modo", "iec 62366-1"
-        ]:
-            assert marker in public_text
+    assert detail["title"] == source["title"]
+    assert detail["description"] == source["purpose"]
+    public_text = PUBLIC.read_text(encoding="utf-8").lower()
+    for marker in [
+        "sistema sociotécnico", "memoria prospectiva", "nasa-tlx",
+        "error de modo", "iec 62366-1"
+    ]:
+        assert marker in public_text
 
 
 if __name__ == "__main__":
