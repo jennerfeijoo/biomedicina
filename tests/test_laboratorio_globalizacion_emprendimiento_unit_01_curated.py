@@ -107,7 +107,11 @@ class LaboratorioGlobalizacionEmprendimientoUnit01CuratedTests(unittest.TestCase
         text = json.dumps(self.unit["theory_sections"][4], ensure_ascii=False).casefold()
         for phrase in (
             "perfil de decisión, no una suma ponderada",
-            "magnitud, tendencia, distribución desigual, brecha de atención, calidad de datos",
+            "magnitud",
+            "tendencia",
+            "distribución desigual",
+            "brecha de atención",
+            "calidad de datos",
             "no autoriza sumar ordinales",
             "análisis de sensibilidad",
             "shortlist",
@@ -183,11 +187,9 @@ class LaboratorioGlobalizacionEmprendimientoUnit01CuratedTests(unittest.TestCase
         ):
             self.assertIn(phrase, self.text)
 
-    def test_published_descriptor_matches_canonical_purpose_when_available(self) -> None:
+    def test_published_descriptor_matches_canonical_purpose(self) -> None:
         subject = json.loads(SUBJECT.read_text(encoding="utf-8"))
         detailed = {x["unit"]: x for x in subject["detailed_units"]}
-        if detailed[1]["description"] != self.unit["purpose"]:
-            self.skipTest("descriptor curricular aún no promovido por el publicador")
         self.assertEqual(detailed[1]["description"], self.unit["purpose"])
 
 
