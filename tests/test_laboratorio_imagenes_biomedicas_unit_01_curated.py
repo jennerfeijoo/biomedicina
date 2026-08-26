@@ -15,11 +15,14 @@ GENERIC_MARKERS = [
     "pipeline de imagen reproducible con informe cuantitativo sobre manejo seguro",
 ]
 
+
 def load(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
+
 def test_source_and_generated_mirror_match_exactly():
     assert SOURCE.read_bytes() == MIRROR.read_bytes()
+
 
 def test_unit_01_is_disciplinary_and_template_free():
     data = load(SOURCE)
@@ -39,6 +42,7 @@ def test_unit_01_is_disciplinary_and_template_free():
     ]:
         assert concept in text
 
+
 def test_unit_01_blocks_common_dicom_misinterpretations():
     text = json.dumps(load(SOURCE), ensure_ascii=False).lower()
     assert "no se usa como sustituto universal del orden espacial" in text
@@ -50,6 +54,7 @@ def test_unit_01_blocks_common_dicom_misinterpretations():
     assert "una png vistosa" in text
     assert "no usa cnr, snr" in text
 
+
 def test_unit_01_keeps_course_boundaries_explicit():
     text = json.dumps(load(SOURCE), ensure_ascii=False).lower()
     assert "u2 recibirá esta salida para estudiar contraste, ruido, resolución y fantomas" in text
@@ -58,6 +63,7 @@ def test_unit_01_keeps_course_boundaries_explicit():
     assert "u5 registro/mediciones" in text
     assert "u6 la integración del pipeline completo" in text
     assert "no realiza diagnóstico clínico" in text
+
 
 def test_unit_01_has_sufficient_depth():
     data = load(SOURCE)
@@ -80,6 +86,7 @@ def test_unit_01_has_sufficient_depth():
     assert len(data["biomedical_connections"]) >= 6
     assert len(data["sources"]) >= 16
 
+
 def test_unit_01_uses_authoritative_dicom_sources():
     urls = {s["url"] for s in load(SOURCE)["sources"]}
     required = {
@@ -92,6 +99,7 @@ def test_unit_01_uses_authoritative_dicom_sources():
     }
     assert required.issubset(urls)
 
+
 def test_unit_01_uses_geometry_and_display_equations_not_generic_cnr():
     data = load(SOURCE)
     text = json.dumps(data, ensure_ascii=False)
@@ -102,23 +110,25 @@ def test_unit_01_uses_geometry_and_display_equations_not_generic_cnr():
     assert any("\\mathbf{IPP}" in eq for eq in equations)
     assert any("v_{mod}" in eq for eq in equations)
 
-def test_published_descriptor_and_html_match_when_promoted():
+
+def test_published_descriptor_and_html_match_canonical_source():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 1)
-    if detail["description"] == source["purpose"]:
-        assert detail["title"] == source["title"]
-        assert PUBLIC.exists()
-        public_text = PUBLIC.read_text(encoding="utf-8").lower()
-        assert source["purpose"].lower() in public_text
-        for marker in [
-            "image position (patient)", "image orientation (patient)",
-            "window center", "basic application level confidentiality profile",
-            "burned-in annotation"
-        ]:
-            assert marker in public_text
-        for carryover in ["concepto de la unidad que debe definirse", "cnr="]:
-            assert carryover not in public_text
+    assert detail["description"] == source["purpose"]
+    assert detail["title"] == source["title"]
+    assert PUBLIC.exists()
+    public_text = PUBLIC.read_text(encoding="utf-8").lower()
+    assert source["purpose"].lower() in public_text
+    for marker in [
+        "image position (patient)", "image orientation (patient)",
+        "window center", "basic application level confidentiality profile",
+        "burned-in annotation",
+    ]:
+        assert marker in public_text
+    for carryover in ["concepto de la unidad que debe definirse", "cnr="]:
+        assert carryover not in public_text
+
 
 if __name__ == "__main__":
     import pytest
