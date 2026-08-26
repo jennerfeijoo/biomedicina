@@ -94,7 +94,7 @@ class LaboratorioGlobalizacionEmprendimientoUnit01CuratedTests(unittest.TestCase
             "prestación de servicios",
             "fuerza laboral",
             "sistemas de información",
-            "medicamentos o tecnologías",
+            "medicamentos y tecnologías",
             "financiación",
             "gobernanza",
             "acceso, cobertura y calidad deben separarse",
