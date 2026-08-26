@@ -1,0 +1,46 @@
+name: Materialize Innovacion U4
+
+on:
+  push:
+    branches:
+      - codex/innovacion-emprendimiento-u4-modelo-negocio-acceso
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/innovacion-emprendimiento-u4-modelo-negocio-acceso
+          fetch-depth: 0
+
+      - name: Reconstruct and validate academic payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(wc -c < .tmp/u4_payload/part01)" -eq 9500
+          test "$(wc -c < .tmp/u4_payload/part02)" -eq 9500
+          test "$(wc -c < .tmp/u4_payload/part03)" -eq 9500
+          test "$(wc -c < .tmp/u4_payload/part04)" -eq 9340
+          cat .tmp/u4_payload/part01 .tmp/u4_payload/part02 .tmp/u4_payload/part03 .tmp/u4_payload/part04 > /tmp/u4.b64
+          base64 -d /tmp/u4.b64 > /tmp/u4.tar.gz
+          tar -xzf /tmp/u4.tar.gz -C .
+          python -m json.tool data/course_redevelopment/innovacion-emprendimiento/units/unit-04.json >/dev/null
+          cmp data/course_redevelopment/innovacion-emprendimiento/units/unit-04.json data/generated_units/innovacion-emprendimiento/unit-04.json
+          python -m pytest -q tests/test_innovacion_emprendimiento_unit_04_curated.py
+
+      - name: Remove transfer scaffolding and commit canonical files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp/u4_payload
+          rm -f .github/workflows/materialize-innovacion-u4.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Curar Innovación y Emprendimiento U4"
+          git push origin HEAD:codex/innovacion-emprendimiento-u4-modelo-negocio-acceso
