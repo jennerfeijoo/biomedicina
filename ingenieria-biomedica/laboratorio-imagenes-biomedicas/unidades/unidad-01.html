@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unidad 1. Datos DICOM y visualización | Laboratorio de Imágenes Biomédicas | CitoNauta</title>
-  <meta name="description" content="Integrar metadatos, orientación, ventanas y anonimización para resolver un caso de manejo seguro de estudios médicos con evidencia, controles, incertidumbre y comunicación proporcional." />
+  <meta name="description" content="Construir un flujo reproducible y seguro para inspeccionar, organizar y visualizar estudios DICOM no identificables o sintéticos, interpretando la jerarquía Patient–Study–Series–Instance, geometría espacial, metadatos de píxel, transformaciones de modalidad y VOI, y perfiles de desidentificación. La unidad enseña a preservar procedencia y datos originales, detectar inconsistencias de orientación o series, derivar orden y coordenadas desde la geometría en lugar de nombres de archivo, y documentar límites de privacidad y visualización sin realizar diagnóstico clínico ni modificar estudios asistenciales." />
   <link rel="stylesheet" href="../../../assets/css/style.css" />
   <link rel="stylesheet" href="../../../assets/css/editorial.css" />
   <script>
@@ -52,7 +52,7 @@
       </div>
       <p class="eyebrow">Unidad 1 de 6</p>
       <h1>Datos DICOM y visualización</h1>
-      <p>Integrar metadatos, orientación, ventanas y anonimización para resolver un caso de manejo seguro de estudios médicos con evidencia, controles, incertidumbre y comunicación proporcional.</p>
+      <p>Construir un flujo reproducible y seguro para inspeccionar, organizar y visualizar estudios DICOM no identificables o sintéticos, interpretando la jerarquía Patient–Study–Series–Instance, geometría espacial, metadatos de píxel, transformaciones de modalidad y VOI, y perfiles de desidentificación. La unidad enseña a preservar procedencia y datos originales, detectar inconsistencias de orientación o series, derivar orden y coordenadas desde la geometría en lugar de nombres de archivo, y documentar límites de privacidad y visualización sin realizar diagnóstico clínico ni modificar estudios asistenciales.</p>
       <dl class="course-meta">
         <div><dt>Asignatura</dt><dd>Laboratorio de Imágenes Biomédicas</dd></div>
         <div><dt>Estado</dt><dd data-status="generated">Lección desarrollada · revisión experta pendiente</dd></div>
@@ -80,19 +80,20 @@
     <section id="resultados" class="section">
       <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
             <ul>
-        <li>Definir metadatos, orientación y ventanas y anonimización mediante entidades, relaciones y condiciones.</li>
-        <li>Construir un modelo que conecte metadatos con orientación y delimite el papel de ventanas y anonimización.</li>
-        <li>Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.</li>
-        <li>Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.</li>
-        <li>Resolver y comunicar un caso sobre manejo seguro de estudios médicos con incertidumbre y límites.</li>
-        <li>Transferir el método de Datos DICOM y visualización a un escenario nuevo y justificar qué debe revalidarse.</li>
+        <li>Explicar la jerarquía DICOM Patient–Study–Series–Instance y distinguir identificadores, UIDs, atributos, Pixel Data, SOP Class y Transfer Syntax sin tratar un archivo aislado como si representara por sí solo un estudio completo.</li>
+        <li>Reconstruir la geometría de una serie a partir de Image Position (Patient), Image Orientation (Patient), Pixel Spacing y el sistema de coordenadas del paciente, evitando ordenar cortes únicamente por Instance Number o nombre de archivo.</li>
+        <li>Distinguir valores almacenados, transformación de modalidad o rescale, VOI LUT/window center-window width y Presentation LUT, explicando qué operaciones cambian la visualización y cuáles cambian la interpretación numérica de los píxeles.</li>
+        <li>Auditar una serie DICOM sintética para detectar mezcla de Series Instance UID, dimensiones incompatibles, orientación inconsistente, espaciado irregular, fotometría inesperada o metadatos insuficientes antes de cualquier análisis posterior.</li>
+        <li>Aplicar un razonamiento de desidentificación basado en perfiles, reconociendo que retirar Patient Name no elimina por sí solo identificadores presentes en fechas, UIDs, atributos privados, texto estructurado, overlays o anotaciones quemadas en píxel.</li>
+        <li>Producir un expediente reproducible de ingestión y visualización que preserve copia original, registre transformaciones, parámetros y versiones, y delimite explícitamente lo que U1 no valida: calidad de imagen, diagnóstico, seguridad clínica, anonimización absoluta ni conformidad regulatoria.</li>
       </ul>
       <h3>Mapa de contenidos</h3>
             <ul>
-        <li>Modelo conceptual de Datos DICOM y visualización</li>
-        <li>Método, evidencia y controles</li>
-        <li>Aplicación razonada: manejo seguro de estudios médicos</li>
-        <li>Calidad, transferencia y comunicación</li>
+        <li>1. DICOM como modelo de información, no como extensión de archivo</li>
+        <li>2. Geometría espacial: orientación, posición, espaciado y orden de cortes</li>
+        <li>3. Del valor almacenado a la presentación: rescale, VOI y fotometría</li>
+        <li>4. Desidentificación DICOM: perfiles, información residual y riesgo</li>
+        <li>5. Pipeline reproducible de ingestión, auditoría y visualización segura</li>
       </ul>
     </section>
 
@@ -104,72 +105,134 @@
             <!-- advanced-unit-renderer:v1 -->
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 1</p>
-        <h3>Modelo conceptual de Datos DICOM y visualización</h3>
-        <p>La unidad «Datos DICOM y visualización» sitúa metadatos, orientación y ventanas y anonimización dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Imágenes Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.</p>
-        <p>El primer núcleo de «Datos DICOM y visualización» en Laboratorio de Imágenes Biomédicas, «metadatos», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.</p>
-        <p>El segundo núcleo de «Datos DICOM y visualización», «orientación», aporta otra dimensión al problema de Laboratorio de Imágenes Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con metadatos debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.</p>
-        <p>El tercer núcleo de «Datos DICOM y visualización» en Laboratorio de Imágenes Biomédicas, «ventanas y anonimización», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada.</p>
+        <h3>1. DICOM como modelo de información, no como extensión de archivo</h3>
+        <p>DICOM combina un modelo de información, definiciones de objetos, codificación y servicios de intercambio. Para trabajar con un estudio no basta con reconocer la extensión .dcm: un objeto compuesto contiene atributos que describen paciente o sujeto, estudio, serie, instancia, equipo, adquisición y representación de píxel. La unidad separa desde el inicio tres preguntas: qué entidad describe un atributo, qué parte del objeto afecta a la imagen y qué información puede ser identificadora o sensible.</p>
+        <p>El modelo de consulta Patient Root organiza Patient → Study → Series → Composite Object Instance. Study Instance UID identifica globalmente un estudio y Series Instance UID una serie dentro del estudio; SOP Instance UID identifica una instancia. Patient ID, Study ID, Series Number e Instance Number pueden ser útiles para visualización o flujo local, pero no deben sustituir a los UIDs cuando se necesita identidad técnica del objeto.</p>
+        <p>SOP Class UID describe el tipo de objeto y las reglas de su IOD; SOP Instance UID identifica una instancia concreta de esa clase. Transfer Syntax especifica cómo se codifica el conjunto de datos, incluyendo representación de valores, endianness y, cuando corresponde, encapsulado/compresión de Pixel Data. Por ello un lector debe inspeccionar el dataset y su sintaxis, no asumir que todos los DICOM contienen una matriz monocroma sin compresión.</p>
+        <p>Pixel Data es solo una parte del objeto. Rows, Columns, Samples per Pixel, Photometric Interpretation, Bits Allocated, Bits Stored, High Bit y Pixel Representation condicionan cómo interpretar los bytes. Un array que puede decodificarse no es todavía una imagen correctamente orientada ni una magnitud física; necesita contexto de geometría y, según la modalidad, transformaciones adicionales.</p>
+        <p>El primer control de laboratorio es un inventario de series. Para cada instancia se conservan procedencia, Study Instance UID, Series Instance UID, SOP Class UID, SOP Instance UID, Modality, dimensiones, fotometría y presencia de píxel. Se bloquean duplicados de SOP Instance UID y mezclas de series antes de ordenar cortes o calcular volúmenes. Esta auditoría reduce errores silenciosos que después parecen problemas de segmentación o registro.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Distinguir observación, cálculo e inferencia en Datos DICOM y visualización.</li>
-        <li>Relacionar metadatos, orientación y ventanas y anonimización mediante condiciones explícitas.</li>
-        <li>Declarar escala, unidad de observación y uso previsto antes del método.</li>
-        <li>Tratar supuestos y límites como parte del resultado, no como una nota final.</li>
+        <li>DICOM representa objetos e información, no solo archivos de imagen.</li>
+        <li>UID técnico y número visible cumplen funciones diferentes.</li>
+        <li>SOP Class define tipo; SOP Instance identifica objeto.</li>
+        <li>Transfer Syntax condiciona la decodificación del dataset.</li>
+        <li>Pixel Data necesita metadatos para adquirir significado.</li>
+        <li>La ingestión comienza con inventario y controles de consistencia.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
-        <h3>Método, evidencia y controles</h3>
-        <p>Para «Datos DICOM y visualización» dentro de Laboratorio de Imágenes Biomédicas, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.</p>
-        <p>En esta unidad de Laboratorio de Imágenes Biomédicas, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre metadatos o orientación debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.</p>
-        <p>Para evaluar «Datos DICOM y visualización», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.</p>
-        <p>En Laboratorio de Imágenes Biomédicas, la incertidumbre de «Datos DICOM y visualización» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece.</p>
-        <h4>Puntos de integración</h4>
-      <ul>
-        <li>Elegir evidencia de acuerdo con el tipo de afirmación.</li>
-        <li>Predefinir controles y resultados esperados antes de inspeccionar la salida.</li>
-        <li>Conservar procedencia, parámetros y decisiones intermedias.</li>
-        <li>Propagar incertidumbre hasta la conclusión y la recomendación.</li>
-      </ul>
-      </article>
-      <article class="lesson-topic advanced-theory-section">
-        <p class="eyebrow">Desarrollo 3</p>
-        <h3>Aplicación razonada: manejo seguro de estudios médicos</h3>
-        <p>En la unidad «Datos DICOM y visualización» de Laboratorio de Imágenes Biomédicas, el caso conductor es manejo seguro de estudios médicos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.</p>
-        <p>La resolución específica de «Datos DICOM y visualización» conecta metadatos con orientación y utiliza ventanas y anonimización como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.</p>
-        <p>Para el caso «manejo seguro de estudios médicos» en Laboratorio de Imágenes Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.</p>
-        <p>El cierre de «Datos DICOM y visualización» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de manejo seguro de estudios médicos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados.</p>
+        <h3>2. Geometría espacial: orientación, posición, espaciado y orden de cortes</h3>
+        <p>La geometría de una imagen se expresa respecto del sistema de coordenadas del paciente. Image Position (Patient) contiene las coordenadas del centro del primer vóxel transmitido y Image Orientation (Patient) proporciona los cosenos directores de la primera fila y primera columna. Estos atributos forman un par: permiten situar el plano de imagen en el espacio del paciente en vez de inferir orientación a partir de cómo un visor la dibuja en pantalla.</p>
+        <p>Pixel Spacing contiene el espaciado físico entre centros de píxel en las direcciones de fila y columna. Rows y Columns describen tamaño de matriz, mientras Slice Thickness es un espesor nominal de adquisición y no debe confundirse automáticamente con distancia entre posiciones de planos. Spacing Between Slices puede aportar información cuando existe, pero para reconstruir una serie se comprueba la geometría de cada instancia.</p>
+        <p>Con vectores unitarios de fila r y columna c, la normal del plano puede obtenerse como n=r×c. Para ordenar cortes de una serie aproximadamente paralela, se proyecta cada Image Position (Patient) sobre n. Esta regla utiliza geometría física; Instance Number se conserva como metadato pero no se usa como sustituto universal del orden espacial porque puede faltar, repetirse o no codificar posición.</p>
+        <p>La coordenada aproximada de un centro de píxel puede construirse desde la posición del primer vóxel, los cosenos directores y los espaciados. El ejercicio obliga a respetar el orden fila/columna de Pixel Spacing y a declarar índices. El resultado se usa para verificar coherencia espacial, no para diseñar procedimientos clínicos ni para reemplazar una biblioteca DICOM validada.</p>
+        <p>Una serie se considera sospechosa para análisis cuando mezcla Frame of Reference UID sin justificación, muestra normales discordantes, espaciados inesperadamente variables, posiciones duplicadas o dimensiones/fotometría incompatibles. U1 no corrige automáticamente esas anomalías: las registra, separa instancias y exige una decisión trazable antes de enviar datos a U2–U5.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[CNR=\frac{|\mu_1-\mu_2|}{\sigma_n}\]</div>
-            <figcaption>Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.</figcaption>
+            <div class="math-display">\[\\mathbf{n}=\\mathbf{r}\\times\\mathbf{c}\]</div>
+            <figcaption>Normal del plano de imagen obtenida a partir de los vectores unitarios de fila y columna de Image Orientation (Patient).</figcaption>
             <ul class="equation-variables">
-              <li><code>\mu</code>: media regional</li>
-              <li><code>\sigma_n</code>: desviación del ruido</li>
+              <li><code>\\mathbf{r}</code>: coseno director de la primera fila</li>
+              <li><code>\\mathbf{c}</code>: coseno director de la primera columna</li>
+              <li><code>\\mathbf{n}</code>: normal del plano</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[s_k=\\mathbf{n}\\cdot\\mathbf{IPP}_k\]</div>
+            <figcaption>Coordenada escalar útil para ordenar planos aproximadamente paralelos de una misma serie según su geometría.</figcaption>
+            <ul class="equation-variables">
+              <li><code>s_k</code>: posición proyectada de la instancia k</li>
+              <li><code>\\mathbf{n}</code>: normal común del plano</li>
+              <li><code>\\mathbf{IPP}_k</code>: Image Position (Patient) de la instancia k</li>
+            </ul>
+          </figure>
+          <figure class="lesson-equation">
+            <div class="math-display">\[\\mathbf{P}(i,j)=\\mathbf{S}+i\\,\\Delta_r\\mathbf{r}+j\\,\\Delta_c\\mathbf{c}\]</div>
+            <figcaption>Modelo educativo de coordenada física de un píxel a partir del origen del plano, espaciados y cosenos directores; los convenios de índices deben declararse.</figcaption>
+            <ul class="equation-variables">
+              <li><code>\\mathbf{S}</code>: Image Position (Patient)</li>
+              <li><code>i,j</code>: índices declarados de fila y columna</li>
+              <li><code>\\Delta_r,\\Delta_c</code>: espaciados de píxel</li>
+              <li><code>\\mathbf{r},\\mathbf{c}</code>: direcciones del plano</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Delimitar el caso de manejo seguro de estudios médicos antes de calcular o clasificar.</li>
-        <li>Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.</li>
-        <li>Comprobar unidades, rango, supuestos y casos límite de cada ecuación.</li>
-        <li>Comparar al menos una explicación alternativa y una prueba discriminante.</li>
+        <li>Posición y orientación sitúan la imagen en coordenadas del paciente.</li>
+        <li>Pixel Spacing no equivale a espesor de corte.</li>
+        <li>La normal del plano deriva de los cosenos directores.</li>
+        <li>El orden espacial no debe depender de Instance Number.</li>
+        <li>Geometría inconsistente se detecta antes del procesamiento posterior.</li>
+        <li>Toda decisión de exclusión conserva procedencia y motivo.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 3</p>
+        <h3>3. Del valor almacenado a la presentación: rescale, VOI y fotometría</h3>
+        <p>El valor almacenado en Pixel Data puede no ser la magnitud que debe utilizarse para análisis o visualización. Cuando el objeto define Modality LUT o Rescale Slope/Rescale Intercept, esa transformación se aplica antes de VOI. La relación lineal v=m·SV+b es válida solo cuando esos atributos definen tal rescale; U1 no presupone que todas las modalidades produzcan unidades físicas comparables.</p>
+        <p>En CT, determinados objetos utilizan la transformación correspondiente para relacionar valores almacenados con valores de modalidad; aun así, el estudiante debe comprobar SOP Class, atributos y unidades antes de llamar HU a un array. Copiar una regla de CT a MR, US o imágenes secundarias es un error de semántica, aunque el resultado numérico parezca plausible.</p>
+        <p>VOI LUT y Window Center/Window Width seleccionan cómo un rango de valores de entrada se mapea para presentación. Window Center y Window Width son atributos de visualización y pueden existir varios pares como vistas alternativas. Cambiar la ventana puede revelar estructuras distintas al observador, pero no reescribe por sí mismo la adquisición original ni crea contraste físico nuevo.</p>
+        <p>Photometric Interpretation modifica la interpretación de la salida. En MONOCHROME1 el sentido de mínimo/máximo mostrado difiere de MONOCHROME2; por ello normalizar un array a 0–255 sin respetar fotometría, modality transform y VOI puede invertir o deformar la presentación. U1 enseña a conservar una cadena explícita stored values → modality values → VOI/presentation.</p>
+        <p>La práctica usa copias derivadas para visualizar y mantiene Pixel Data/original intacto. Cada captura o exportación registra si se aplicó rescale, ventana/VOI, inversión fotométrica y cualquier conversión de tipo. Este registro previene que una PNG vistosa sea confundida posteriormente con los datos cuantitativos originales.</p>
+        <div class="equation-set">
+          <figure class="lesson-equation">
+            <div class="math-display">\[v_{mod}=m\\,v_{stored}+b\]</div>
+            <figcaption>Transformación lineal de valores almacenados cuando Rescale Slope e Intercept son los atributos aplicables.</figcaption>
+            <ul class="equation-variables">
+              <li><code>v_{stored}</code>: valor almacenado</li>
+              <li><code>m</code>: Rescale Slope</li>
+              <li><code>b</code>: Rescale Intercept</li>
+              <li><code>v_{mod}</code>: valor tras transformación de modalidad</li>
+            </ul>
+          </figure>
+        </div>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>Stored values y valores de modalidad pueden diferir.</li>
+        <li>La transformación de modalidad precede al windowing cuando corresponde.</li>
+        <li>Windowing modifica presentación, no adquisición original.</li>
+        <li>HU no debe asumirse fuera del contexto DICOM apropiado.</li>
+        <li>MONOCHROME1 y MONOCHROME2 requieren interpretación fotométrica correcta.</li>
+        <li>Las derivaciones visuales nunca sustituyen al objeto original.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 4</p>
-        <h3>Calidad, transferencia y comunicación</h3>
-        <p>La reproducibilidad de «Datos DICOM y visualización» en Laboratorio de Imágenes Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.</p>
-        <p>La principal cautela disciplinar al transferir «Datos DICOM y visualización» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Laboratorio de Imágenes Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.</p>
-        <p>La comunicación divulgativa de «Datos DICOM y visualización» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de metadatos, orientación y ventanas y anonimización debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Laboratorio de Imágenes Biomédicas.</p>
-        <p>El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre manejo seguro de estudios médicos. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Laboratorio de Imágenes Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso.</p>
+        <h3>4. Desidentificación DICOM: perfiles, información residual y riesgo</h3>
+        <p>Desidentificar un dataset DICOM no consiste en borrar Patient Name. El Basic Application Level Confidentiality Profile de PS3.15 define acciones sobre numerosos atributos y opciones adicionales. Fechas, UIDs, instituciones, personal, descriptores, atributos privados y referencias pueden contribuir a la identificabilidad. La estrategia depende del propósito del conjunto y de qué relaciones longitudinales o técnicas necesiten preservarse.</p>
+        <p>La integridad referencial importa: si los UIDs se reemplazan, referencias internas entre instancias relacionadas deben mantenerse coherentes dentro del alcance definido. Sustituir cada UID al azar sin mapa estable puede romper relaciones; conservar todos los UIDs originales puede retener capacidad de enlace. U1 trata esta tensión con un mapa sintético de reemplazo, nunca con identificadores de pacientes reales.</p>
+        <p>La información identificadora puede existir fuera de atributos demográficos comunes. PS3.15 distingue opciones para limpiar Pixel Data, texto estructurado, gráficos y otros contenidos. Una anotación quemada en píxeles no desaparece al limpiar el header. Del mismo modo, Structured Reports o secuencias de contexto pueden portar información que requiere tratamiento específico.</p>
+        <p>Desidentificación y anonimización absoluta no son sinónimos. El riesgo residual depende del conjunto, de los atributos retenidos y de información auxiliar disponible. El estudiante documenta perfil/opciones, campos eliminados/reemplazados/conservados, justificación y comprobaciones posteriores; no declara «anónimo» basándose en una lista corta de tags.</p>
+        <p>El laboratorio utiliza exclusivamente datasets sintéticos o colecciones públicas ya preparadas para educación/investigación bajo sus condiciones de uso. No se importan estudios asistenciales ni se enseña a extraerlos de PACS. Las comprobaciones de privacidad son ejercicios de ingeniería de datos y no sustituyen revisión institucional, asesoría legal, acuerdos de uso de datos ni un proceso de desidentificación validado.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Diferenciar repetibilidad, reproducibilidad, validez y utilidad.</li>
-        <li>Separar desempeño técnico de afirmaciones clínicas o regulatorias.</li>
-        <li>Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.</li>
-        <li>Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido.</li>
+        <li>Eliminar Patient Name no completa la desidentificación DICOM.</li>
+        <li>Perfiles y opciones definen acciones sobre múltiples atributos.</li>
+        <li>Reemplazar UIDs debe preservar referencias que deban sobrevivir.</li>
+        <li>Pixel, texto estructurado y overlays pueden contener identificadores.</li>
+        <li>Desidentificación no garantiza anonimización absoluta ni riesgo cero.</li>
+        <li>El laboratorio usa únicamente datos sintéticos o públicos autorizados.</li>
+      </ul>
+      </article>
+      <article class="lesson-topic advanced-theory-section">
+        <p class="eyebrow">Desarrollo 5</p>
+        <h3>5. Pipeline reproducible de ingestión, auditoría y visualización segura</h3>
+        <p>El pipeline de U1 empieza con una copia de solo lectura o un hash del recurso educativo y un manifiesto de procedencia. Después lee metadatos sin modificar el original, agrupa por Study/Series, detecta duplicados, valida campos mínimos para la tarea y separa objetos que no cumplen los supuestos. La ingestión produce un informe antes de construir cualquier volumen.</p>
+        <p>La fase geométrica calcula orientación, normal y posiciones proyectadas, comprueba paralelismo aproximado y espaciado, y documenta qué instancias quedaron fuera. Si la serie es multiframe o utiliza objetos con geometría diferente al caso simple, el estudiante no fuerza el modelo de pila 2D: identifica la limitación y consulta la IOD correspondiente.</p>
+        <p>La fase de píxel decodifica solo cuando la sintaxis es compatible, conserva dtype y metadatos relevantes, aplica transformaciones de modalidad cuando proceden y crea vistas VOI explícitamente etiquetadas. U2 recibirá esta salida para estudiar contraste, ruido, resolución y fantomas; U1 no usa CNR, SNR ni apariencia visual como certificación de calidad de adquisición.</p>
+        <p>La fase de privacidad ejecuta una auditoría sobre metadatos sintéticos y un checklist de contenido potencialmente identificador. Una copia desidentificada se mantiene separada del original educativo, y el informe deja constancia de qué perfil o reglas se simularon y qué elementos no fueron evaluados. El objetivo es enseñar trazabilidad, no prometer que un script corto convierte cualquier estudio en dataset publicable.</p>
+        <p>El producto final es un expediente reproducible con inventario de objetos, jerarquía DICOM, controles geométricos, vistas documentadas, registro de transformaciones y auditoría de privacidad. Se considera correcto si otra persona puede reconstruir las decisiones y detectar los mismos casos problemáticos. U3 tratará preprocesamiento, U4 segmentación, U5 registro/mediciones y U6 la integración del pipeline completo.</p>
+        <h4>Puntos de integración</h4>
+      <ul>
+        <li>El original educativo permanece inmutable y con procedencia registrada.</li>
+        <li>La auditoría de metadatos precede a la construcción del volumen.</li>
+        <li>Multiframe exige respetar su IOD y no forzar pilas simples.</li>
+        <li>Visualización y calidad de imagen son problemas curriculares distintos.</li>
+        <li>La privacidad se documenta con reglas, opciones y evidencia.</li>
+        <li>U1 entrega datos auditados para las unidades posteriores.</li>
       </ul>
       </article>
     </section>
@@ -177,41 +240,98 @@
     <section id="caso" class="section">
       <div class="section-header"><h2>Ejemplos y casos resueltos</h2></div>
             <article class="worked-example advanced-worked-example">
-        <h3>Del problema amplio a una evidencia verificable en Datos DICOM y visualización</h3>
-        <p><strong>Situación.</strong> Un equipo propone estudiar manejo seguro de estudios médicos, pero su pregunta mezcla metadatos, orientación y ventanas y anonimización sin definir unidades, referencias ni resultado admisible.</p>
+        <h3>Una serie aparentemente ordenada por nombre está invertida</h3>
+        <p><strong>Situación.</strong> Doce instancias sintéticas tienen nombres IMG001–IMG012 e Instance Number creciente, pero Image Position (Patient) progresa en la dirección opuesta.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Separar necesidad, pregunta científica, decisión y producto esperado.</li>
-        <li>Definir la unidad de observación y el papel específico de metadatos, orientación y ventanas y anonimización.</li>
-        <li>Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.</li>
-        <li>Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.</li>
-        <li>Redactar una conclusión limitada y el dato que permitiría revisarla.</li>
+        <li>Agrupar primero por Study Instance UID y Series Instance UID.</li>
+        <li>Leer Image Orientation (Patient) y calcular la normal del plano.</li>
+        <li>Proyectar cada Image Position (Patient) sobre la normal.</li>
+        <li>Ordenar por la coordenada proyectada y comparar con Instance Number solo como diagnóstico.</li>
+        <li>Registrar que el orden de archivos no define el orden físico.</li>
       </ol>
-        <p><strong>Interpretación.</strong> El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.</p>
+        <p><strong>Interpretación.</strong> La pila espacial se reconstruye con geometría DICOM. El número visible puede ser útil para inspección, pero no es una coordenada física.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>El caso simulado no demuestra desempeño en un entorno real.</li>
-        <li>La conclusión depende de las definiciones y controles declarados.</li>
-        <li>Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.</li>
+        <li>Caso sintético de planos aproximadamente paralelos.</li>
+        <li>No cubre geometría multiframe compleja.</li>
+        <li>No valida orientación de un estudio clínico real.</li>
       </ul>
       </article>
       <article class="worked-example advanced-worked-example">
-        <h3>Análisis de sensibilidad y explicación alternativa</h3>
-        <p><strong>Situación.</strong> El análisis inicial parece apoyar una relación entre metadatos y orientación en el caso de manejo seguro de estudios médicos; una condición vinculada con ventanas y anonimización podría producir el mismo patrón.</p>
+        <h3>Ventana pulmonar y mediastínica no son dos adquisiciones</h3>
+        <p><strong>Situación.</strong> Un mismo corte CT sintético se muestra con dos pares de Window Center/Window Width y produce apariencias muy diferentes.</p>
         <h4>Razonamiento paso a paso</h4>
       <ol class="case-steps">
-        <li>Escribir por separado el resultado observado y la explicación propuesta.</li>
-        <li>Representar ventanas y anonimización como condición, covariable, perturbación o fuente de sesgo según el diseño.</li>
-        <li>Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.</li>
-        <li>Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.</li>
-        <li>Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión.</li>
+        <li>Conservar el mismo array tras la transformación de modalidad.</li>
+        <li>Aplicar cada par de windowing como vista alternativa.</li>
+        <li>Comparar histogramas del valor de modalidad antes y después de la presentación.</li>
+        <li>Documentar qué parámetros corresponden a cada captura.</li>
+        <li>Separar cambio de visualización de cambio de adquisición.</li>
       </ol>
-        <p><strong>Interpretación.</strong> Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.</p>
+        <p><strong>Interpretación.</strong> Windowing selecciona una representación visual del rango de entrada; no crea nuevos datos de adquisición.</p>
         <h4>Limitaciones</h4>
       <ul>
-        <li>El análisis de sensibilidad solo cubre las perturbaciones evaluadas.</li>
-        <li>Una alternativa no descartada reduce la fuerza de la inferencia.</li>
-        <li>La transferibilidad necesita evaluación independiente.</li>
+        <li>No se prescribe una ventana diagnóstica.</li>
+        <li>Los valores son sintéticos.</li>
+        <li>No se evalúa rendimiento de un monitor médico.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Array legible, semántica incorrecta</h3>
+        <p><strong>Situación.</strong> Un script abre una imagen sintética y usa directamente el array almacenado para comparar intensidades, ignorando Rescale Slope=2 e Intercept=-1024.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Distinguir stored values de modality values.</li>
+        <li>Comprobar si la transformación de modalidad es aplicable al objeto.</li>
+        <li>Calcular v_mod=m·v_stored+b.</li>
+        <li>Comparar el resultado con el análisis incorrecto sin rescale.</li>
+        <li>Registrar unidades y atributos usados.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> Decodificar Pixel Data no garantiza que el array tenga ya la semántica cuantitativa pretendida.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>La transformación lineal no describe todos los objetos DICOM.</li>
+        <li>No se generaliza la semántica de CT a otras modalidades.</li>
+        <li>No se interpreta tejido ni enfermedad.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Borrar Patient Name deja identificadores residuales</h3>
+        <p><strong>Situación.</strong> Un dataset sintético tiene Patient Name vacío, pero conserva fechas, Institution Name, varios UIDs originales, un private tag y una anotación identificadora simulada en píxeles.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Comparar el dataset con un perfil de confidencialidad explícito.</li>
+        <li>Clasificar atributos a eliminar, reemplazar, conservar o revisar.</li>
+        <li>Detectar que el contenido de píxel necesita una opción/proceso diferente al header.</li>
+        <li>Planificar reemplazo coherente de UIDs cuando las referencias deban preservarse.</li>
+        <li>Documentar riesgo residual y elementos no evaluados.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La desidentificación es un proceso perfilado y verificable; una lista corta de tags no basta.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No se trabaja con PHI real.</li>
+        <li>No se afirma anonimización.</li>
+        <li>No sustituye validación institucional de privacidad.</li>
+      </ul>
+      </article>
+      <article class="worked-example advanced-worked-example">
+        <h3>Mezcla accidental de dos series</h3>
+        <p><strong>Situación.</strong> Una carpeta sintética contiene 40 instancias: 32 comparten un Series Instance UID y orientación, mientras 8 pertenecen a otra serie con diferente matriz y Frame of Reference UID.</p>
+        <h4>Razonamiento paso a paso</h4>
+      <ol class="case-steps">
+        <li>Construir inventario por UID antes de ordenar.</li>
+        <li>Separar series y comparar SOP Class, dimensiones y geometría.</li>
+        <li>Impedir que el constructor de volumen mezcle ambas.</li>
+        <li>Emitir un hallazgo trazable con lista de instancias afectadas.</li>
+        <li>Entregar solo la serie coherente a la siguiente etapa.</li>
+      </ol>
+        <p><strong>Interpretación.</strong> La estructura de carpetas no sustituye la jerarquía DICOM; agrupar por metadatos evita volúmenes híbridos silenciosos.</p>
+        <h4>Limitaciones</h4>
+      <ul>
+        <li>No decide cuál serie sería clínicamente preferible.</li>
+        <li>No evalúa calidad de imagen.</li>
+        <li>No corrige adquisiciones.</li>
       </ul>
       </article>
     </section>
@@ -219,95 +339,89 @@
     <section id="practica" class="section">
       <div class="section-header"><h2>Actividad aplicada</h2></div>
             <article class="guided-activity advanced-guided-activity">
-        <h3>Pausa de recuperación y explicación</h3>
+        <h3>Laboratorio integrador: auditoría DICOM, geometría, visualización y privacidad</h3>
         <h4>Procedimiento</h4>
       <ol class="activity-steps">
-        <li>Responde sin consultar el texto y después corrige con un color distinto.</li>
-        <li>Dibuja las relaciones antes de escribir una definición extensa.</li>
-        <li>Marca cada elemento como observado, calculado, inferido o pendiente.</li>
-        <li>Explica la unidad a una audiencia no especialista en menos de 150 palabras.</li>
+        <li>Usa exclusivamente un conjunto DICOM sintético o una colección pública autorizada para educación; no descargues estudios asistenciales ni introduzcas datos identificables.</li>
+        <li>Preserva una copia original inmutable o registra hash/procedencia antes de cualquier transformación.</li>
+        <li>Construye un inventario a nivel Study–Series–Instance y conserva UIDs técnicos solo dentro del dataset educativo.</li>
+        <li>Implementa controles que detengan el pipeline ante SOP Instance UID duplicado, mezcla de Series Instance UID o geometría incompatible.</li>
+        <li>Reconstruye el orden espacial a partir de Image Orientation (Patient) e Image Position (Patient), no del nombre de archivo.</li>
+        <li>Separa stored values, modality transform, VOI/windowing y presentación en pasos registrables.</li>
+        <li>Simula una auditoría de desidentificación con un perfil y opciones explícitos; no declares anonimización absoluta.</li>
+        <li>Conserva cada derivación en una ruta separada y registra parámetros, software y versión.</li>
+        <li>Revisa los hallazgos con una segunda ejecución reproducible antes de redactar conclusiones.</li>
+        <li>Entrega explícitamente a U2 una serie auditada y una lista de aspectos de calidad de imagen todavía no evaluados.</li>
       </ol>
         <h4>Problemas y tareas</h4>
       <ul>
-        <li>Define metadatos mediante entidad, relación, condición y ejemplo.</li>
-        <li>Explica cómo orientación modifica o complementa a metadatos.</li>
-        <li>Propón una prueba que distinga el papel de ventanas y anonimización de una explicación alternativa.</li>
-        <li>Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible.</li>
+        <li>Enumera Patient, Study, Series e Instance en un conjunto sintético y explica qué UID identifica cada nivel técnico relevante.</li>
+        <li>Distingue Patient ID, Study ID, Series Number, Instance Number y sus UIDs correspondientes sin tratarlos como equivalentes.</li>
+        <li>Detecta dos SOP Instance UID duplicados y define una regla que bloquee el análisis posterior.</li>
+        <li>Clasifica diez tags en identidad, jerarquía, adquisición, geometría, píxel o presentación.</li>
+        <li>Explica qué aporta SOP Class UID y por qué no equivale a Modality.</li>
+        <li>Compara dos Transfer Syntax y documenta qué cambia para la decodificación sin alterar la semántica clínica del objeto.</li>
+        <li>Verifica Rows, Columns, Bits Stored, Pixel Representation y Photometric Interpretation antes de leer intensidades.</li>
+        <li>Calcula la normal de plano a partir de seis valores sintéticos de Image Orientation (Patient).</li>
+        <li>Ordena ocho cortes por la proyección de Image Position (Patient) y demuestra un caso donde Instance Number produce un orden diferente.</li>
+        <li>Calcula coordenadas físicas de cuatro centros de píxel usando Pixel Spacing y los vectores de orientación.</li>
+        <li>Detecta una serie con un plano no paralelo y decide detener, separar o escalar la revisión en lugar de interpolarlo silenciosamente.</li>
+        <li>Compara Slice Thickness con distancias entre Image Position (Patient) consecutivas y explica por qué no son sinónimos.</li>
+        <li>Aplica una transformación sintética Rescale Slope/Intercept y conserva valores almacenados y transformados en objetos separados.</li>
+        <li>Interpreta tres pares de Window Center/Window Width como vistas alternativas sin afirmar que cambian la adquisición.</li>
+        <li>Simula MONOCHROME1 y MONOCHROME2 y explica por qué una inversión ingenua puede producir una vista equivocada.</li>
+        <li>Identifica cuándo un VOI LUT y windowing son alternativas de presentación y registra cuál se aplicó.</li>
+        <li>Construye un manifiesto de transformaciones desde objeto original hasta PNG educativa y marca qué pasos son reversibles.</li>
+        <li>Audita un header sintético donde Patient Name fue eliminado pero permanecieron fechas, institución, UID y private tags.</li>
+        <li>Diseña un mapa consistente de reemplazo de UIDs para cuatro objetos con referencias cruzadas sintéticas.</li>
+        <li>Detecta una anotación quemada en una imagen sintética y explica por qué limpiar el header no la elimina.</li>
+        <li>Compara la finalidad de Basic Application Level Confidentiality Profile con Clean Pixel Data y Clean Structured Content.</li>
+        <li>Redacta una tabla de atributos eliminar/reemplazar/conservar/revisar con justificación y perfil aplicado.</li>
+        <li>Construye un test de regresión que falle si una serie vuelve a ordenarse por Instance Number en lugar de geometría.</li>
+        <li>Entrega una lista de cinco cuestiones que U1 no puede resolver y que pertenecen a U2–U6.</li>
       </ul>
         <h4>Entregables</h4>
       <ul>
-        <li>Mapa conceptual corregido.</li>
-        <li>Explicación breve con una limitación explícita.</li>
+        <li>Manifiesto de procedencia e integridad del dataset educativo.</li>
+        <li>Tabla Patient–Study–Series–Instance con identificadores técnicos.</li>
+        <li>Auditoría de tags y consistencia de series.</li>
+        <li>Notebook o script reproducible de geometría y orden espacial.</li>
+        <li>Tabla de espaciado, orientación y casos anómalos.</li>
+        <li>Pipeline stored → modality → VOI/presentation con parámetros explícitos.</li>
+        <li>Comparación documentada MONOCHROME1/MONOCHROME2.</li>
+        <li>Auditoría sintética de desidentificación basada en perfil.</li>
+        <li>Mapa sintético de sustitución de UIDs y comprobación de referencias.</li>
+        <li>Registro de derivaciones y versiones de software.</li>
+        <li>Informe de hallazgos con evidencia, decisión y limitación.</li>
+        <li>Paquete de entrega a U2 con serie auditada y preguntas de calidad pendientes.</li>
       </ul>
         <h4>Criterios de comprobación</h4>
       <ul>
-        <li>Las relaciones tienen dirección.</li>
-        <li>No se confunde evidencia con interpretación.</li>
-        <li>La explicación conserva el mecanismo central.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Taller de evidencia: manejo seguro de estudios médicos</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.</li>
-        <li>Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.</li>
-        <li>Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.</li>
-        <li>Conserva cálculos, decisiones, resultados negativos y cambios de versión.</li>
-        <li>Compara el resultado con un baseline o una explicación alternativa.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Construye una tabla de trazabilidad para metadatos, orientación y ventanas y anonimización.</li>
-        <li>Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.</li>
-        <li>Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.</li>
-        <li>Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.</li>
-        <li>Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.</li>
-        <li>Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Pipeline de imagen reproducible con informe cuantitativo.</li>
-        <li>Datos o premisas y procedimiento reproducible.</li>
-        <li>Registro de controles y discrepancias.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>Trazabilidad completa.</li>
-        <li>Controles discriminantes.</li>
-        <li>Procedimiento reproducible.</li>
-        <li>Conclusión proporcional a la evidencia.</li>
-      </ul>
-      </article>
-      <article class="guided-activity advanced-guided-activity">
-        <h3>Reto de transferencia y revisión por pares</h3>
-        <h4>Procedimiento</h4>
-      <ol class="activity-steps">
-        <li>Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.</li>
-        <li>Intercambia el producto con otra persona o utiliza una lista de revisión independiente.</li>
-        <li>Registra hallazgos por severidad: crítico, importante o editorial.</li>
-        <li>Corrige el producto y conserva una tabla antes-después con justificación.</li>
-      </ol>
-        <h4>Problemas y tareas</h4>
-      <ul>
-        <li>Transfiere el método a un caso distinto de manejo seguro de estudios médicos y enumera supuestos que deben revalidarse.</li>
-        <li>Construye una explicación alternativa que también conecte metadatos, orientación y ventanas y anonimización.</li>
-        <li>Identifica una afirmación que exceda la evidencia y reescríbela.</li>
-        <li>Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.</li>
-        <li>Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles.</li>
-      </ul>
-        <h4>Entregables</h4>
-      <ul>
-        <li>Producto revisado.</li>
-        <li>Registro antes-después.</li>
-        <li>Rúbrica de transferencia.</li>
-      </ul>
-        <h4>Criterios de comprobación</h4>
-      <ul>
-        <li>La revisión produce cambios verificables.</li>
-        <li>Las limitaciones son específicas.</li>
-        <li>La figura conserva unidades y procedencia.</li>
-        <li>La nueva pregunta no se responde por memorización.</li>
+        <li>El dataset es sintético o público autorizado y no contiene datos clínicos aportados por el estudiante.</li>
+        <li>Existe copia original inmutable o verificación de integridad equivalente.</li>
+        <li>La jerarquía Patient–Study–Series–Instance está explícita.</li>
+        <li>Study, Series y SOP Instance UID no se confunden con números visibles.</li>
+        <li>Se detectan SOP Instance UID duplicados.</li>
+        <li>La serie se agrupa por metadatos y no por carpeta.</li>
+        <li>Transfer Syntax y SOP Class se registran.</li>
+        <li>Rows, Columns, fotometría y representación de píxel se validan.</li>
+        <li>Image Position e Image Orientation se usan como par geométrico.</li>
+        <li>La normal de plano se calcula y verifica.</li>
+        <li>El orden de cortes usa posición proyectada y no Instance Number como regla principal.</li>
+        <li>Pixel Spacing mantiene el orden de fila y columna declarado.</li>
+        <li>Slice Thickness no se usa como sustituto automático de separación entre planos.</li>
+        <li>Los casos de geometría inconsistente quedan bloqueados o separados.</li>
+        <li>Stored values permanecen distinguibles de modality values.</li>
+        <li>Rescale solo se aplica cuando los atributos y el objeto lo justifican.</li>
+        <li>VOI/windowing se etiqueta como etapa de presentación.</li>
+        <li>MONOCHROME1/MONOCHROME2 se manejan explícitamente.</li>
+        <li>No se usa HU como etiqueta universal de intensidades DICOM.</li>
+        <li>La desidentificación cita perfil y opciones.</li>
+        <li>Patient Name vacío no se acepta como prueba suficiente de desidentificación.</li>
+        <li>UIDs sustituidos conservan integridad referencial dentro del caso sintético.</li>
+        <li>Se revisan private tags y contenido de píxel/estructurado relevante.</li>
+        <li>No se afirma anonimización absoluta ni conformidad regulatoria.</li>
+        <li>La salida enumera claramente las preguntas reservadas para U2–U6.</li>
       </ul>
       </article>
     </section>
@@ -317,61 +431,88 @@
             <section class="common-errors">
         <h3>Errores frecuentes y corrección</h3>
         <ul class="rich-list">
-        <li><strong>Tratar metadatos como una etiqueta autosuficiente.</strong><p>Definir entidades, escala, relaciones, observables y condiciones antes de usar metadatos en una explicación.</p></li>
-        <li><strong>Afirmar que una relación entre metadatos y orientación demuestra mecanismo o causalidad.</strong><p>Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones.</p></li>
-        <li><strong>Añadir ventanas y anonimización después de ver el resultado.</strong><p>Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio.</p></li>
-        <li><strong>Presentar solo el resultado favorable y omitir controles o discrepancias.</strong><p>Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento.</p></li>
-        <li><strong>Generalizar la conclusión de Datos DICOM y visualización al uso clínico o real.</strong><p>Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.</p></li>
+        <li><strong>Ordenar cortes por nombre de archivo.</strong><p>Agrupar por serie y ordenar por geometría derivada de Image Position/Orientation cuando el modelo simple sea aplicable.</p></li>
+        <li><strong>Usar Instance Number como coordenada física.</strong><p>Tratarlo como metadato auxiliar y usar posición proyectada en el sistema del paciente.</p></li>
+        <li><strong>Confundir Slice Thickness con spacing.</strong><p>Comparar posiciones de planos y atributos de espaciado; el espesor nominal no define automáticamente distancia centro a centro.</p></li>
+        <li><strong>Tratar Pixel Data como imagen autocontenida.</strong><p>Interpretar bytes junto con dimensiones, representación, fotometría, sintaxis, geometría y transformaciones.</p></li>
+        <li><strong>Llamar HU a cualquier array CT o DICOM.</strong><p>Verificar objeto, transformación de modalidad y unidades antes de asignar semántica física.</p></li>
+        <li><strong>Aplicar windowing antes de la transformación de modalidad.</strong><p>Respetar la cadena definida por DICOM/pydicom: modality transform cuando corresponda y luego VOI.</p></li>
+        <li><strong>Guardar la imagen windowed y desechar el original.</strong><p>Mantener el objeto original y tratar las vistas como derivaciones documentadas.</p></li>
+        <li><strong>Ignorar Photometric Interpretation.</strong><p>Interpretar explícitamente MONOCHROME1/MONOCHROME2 y otras fotometrías aplicables.</p></li>
+        <li><strong>Mezclar Series Instance UID dentro de un volumen.</strong><p>Auditar y separar series antes de reconstruir.</p></li>
+        <li><strong>Ignorar Frame of Reference UID.</strong><p>Usarlo como control de coherencia espacial y documentar cualquier mezcla intencional.</p></li>
+        <li><strong>Forzar un objeto multiframe como carpeta de slices clásicos.</strong><p>Reconocer la IOD y atributos funcionales por frame antes de reconstruir geometría.</p></li>
+        <li><strong>Eliminar Patient Name y declarar el estudio anónimo.</strong><p>Aplicar un perfil de confidencialidad y revisar múltiples fuentes de identificabilidad.</p></li>
+        <li><strong>Regenerar UIDs sin preservar referencias.</strong><p>Usar sustitución consistente dentro del alcance cuando las relaciones deban mantenerse.</p></li>
+        <li><strong>Conservar private tags sin inspección.</strong><p>Evaluarlos según perfil y finalidad; su semántica puede incluir información sensible.</p></li>
+        <li><strong>Olvidar burned-in annotations.</strong><p>Auditar contenido de píxel y aplicar las opciones/procesos correspondientes.</p></li>
+        <li><strong>Confundir desidentificación con riesgo cero.</strong><p>Documentar riesgo residual, contexto y limitaciones; no prometer anonimización absoluta.</p></li>
+        <li><strong>Usar una PNG como entrada cuantitativa equivalente al DICOM.</strong><p>Conservar valores originales/metadatos y etiquetar las exportaciones como presentación.</p></li>
+        <li><strong>Interpretar una imagen visualmente correcta como validación.</strong><p>Separar decodificación/visualización de calidad de imagen, exactitud clínica y desempeño regulado.</p></li>
+        <li><strong>Modificar el dataset original durante el laboratorio.</strong><p>Trabajar con derivaciones y preservar una referencia inmutable con procedencia.</p></li>
+        <li><strong>Enviar U1 directamente a segmentación sin auditoría.</strong><p>Entregar primero series coherentes y documentadas; U2/U3 tratan calidad y preprocesamiento.</p></li>
         </ul>
       </section>
 <div class="assessment-panels">
       <details class="answer-panel">
-        <summary>1. ¿Cuál es la unidad de observación adecuada para estudiar manejo seguro de estudios médicos?</summary>
-        <p><strong>Respuesta:</strong> Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes.</p>
+        <summary>1. ¿Por qué Series Number no sustituye a Series Instance UID?</summary>
+        <p><strong>Respuesta:</strong> Porque Series Number es un número de presentación/organización local, mientras Series Instance UID identifica técnicamente una serie.</p>
+        <p><strong>Razonamiento:</strong> DICOM separa identificadores globales de números visibles.</p>
       </details>
       <details class="answer-panel">
-        <summary>2. ¿Cómo se relacionan metadatos y orientación?</summary>
-        <p><strong>Respuesta:</strong> Mediante una relación con dirección, condición y evidencia verificable; ventanas y anonimización puede modificar o contextualizar esa relación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Responder con una lista de definiciones sin explicar la relación.</p>
+        <summary>2. ¿Por qué no debe ordenarse universalmente por Instance Number?</summary>
+        <p><strong>Respuesta:</strong> Porque no es una coordenada física; el orden espacial se deriva de orientación y posición cuando el modelo geométrico lo permite.</p>
+        <p><strong>Razonamiento:</strong> Los números pueden faltar, repetirse o codificar otro orden.</p>
       </details>
       <details class="answer-panel">
-        <summary>3. ¿Qué dato apoya una afirmación sobre ventanas y anonimización?</summary>
-        <p><strong>Respuesta:</strong> Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente.</p>
+        <summary>3. ¿Image Position (Patient) e Image Orientation (Patient) se interpretan por separado?</summary>
+        <p><strong>Respuesta:</strong> Para describir el plano deben tratarse conjuntamente: posición fija origen y orientación fija direcciones.</p>
+        <p><strong>Razonamiento:</strong> La posición sin ejes no determina cómo crecen filas/columnas.</p>
       </details>
       <details class="answer-panel">
-        <summary>4. ¿Qué hace que un control sea discriminante?</summary>
-        <p><strong>Respuesta:</strong> Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Añadir un control que no puede cambiar la interpretación.</p>
+        <summary>4. ¿Slice Thickness es igual a separación entre slices?</summary>
+        <p><strong>Respuesta:</strong> No necesariamente; es espesor nominal y la separación geométrica debe comprobarse mediante posiciones/atributos aplicables.</p>
+        <p><strong>Razonamiento:</strong> Espesor de adquisición y distancia entre centros son conceptos distintos.</p>
       </details>
       <details class="answer-panel">
-        <summary>5. ¿Qué debe contener un resultado reproducible?</summary>
-        <p><strong>Respuesta:</strong> Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Entregar únicamente una figura final o un archivo ejecutado.</p>
+        <summary>5. ¿Decodificar Pixel Data produce automáticamente HU?</summary>
+        <p><strong>Respuesta:</strong> No; deben verificarse modalidad, SOP Class, transformaciones y unidades.</p>
+        <p><strong>Razonamiento:</strong> DICOM contiene múltiples modalidades y representaciones.</p>
       </details>
       <details class="answer-panel">
-        <summary>6. ¿Cómo se informa una conclusión sensible a un supuesto?</summary>
-        <p><strong>Respuesta:</strong> Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Elegir el escenario que confirma la conclusión y ocultar los demás.</p>
+        <summary>6. ¿Qué orden conceptual sigue modality transform y VOI?</summary>
+        <p><strong>Respuesta:</strong> Cuando la transformation de modalidad es requerida, se aplica antes de VOI/windowing.</p>
+        <p><strong>Razonamiento:</strong> VOI opera sobre los valores de entrada tras la etapa de modalidad correspondiente.</p>
       </details>
       <details class="answer-panel">
-        <summary>7. ¿Qué afirmación no puede sostener esta unidad sobre manejo seguro de estudios médicos?</summary>
-        <p><strong>Respuesta:</strong> Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Confundir una actividad educativa o un caso simulado con validación real.</p>
+        <summary>7. ¿Windowing modifica la adquisición?</summary>
+        <p><strong>Respuesta:</strong> No; es una transformación de presentación de un rango de valores.</p>
+        <p><strong>Razonamiento:</strong> Puede cambiar mucho la apariencia sin crear nueva señal adquirida.</p>
       </details>
       <details class="answer-panel">
-        <summary>8. ¿Qué demuestra dominio de Datos DICOM y visualización?</summary>
-        <p><strong>Respuesta:</strong> Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.</p>
-        <p><strong>Razonamiento:</strong> La respuesta debe conectar definición, evidencia, método y límite.</p>
-        <p><strong>Error que evita:</strong> Equiparar dominio con reconocer términos o repetir una solución.</p>
+        <summary>8. ¿Por qué importa MONOCHROME1 frente a MONOCHROME2?</summary>
+        <p><strong>Respuesta:</strong> Porque cambia la relación entre valores de presentación mínimos/máximos y blanco/negro.</p>
+        <p><strong>Razonamiento:</strong> Ignorar fotometría puede invertir la vista.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>9. ¿Borrar Patient Name basta para desidentificar?</summary>
+        <p><strong>Respuesta:</strong> No; múltiples atributos y contenidos, incluidas fechas, UIDs, privados, texto y píxeles, pueden ser identificadores.</p>
+        <p><strong>Razonamiento:</strong> PS3.15 usa perfiles y opciones amplias.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>10. ¿Por qué debe preservarse integridad referencial al sustituir UIDs?</summary>
+        <p><strong>Respuesta:</strong> Porque objetos relacionados pueden referenciarse entre sí y reemplazos inconsistentes rompen esas relaciones.</p>
+        <p><strong>Razonamiento:</strong> Privacidad y coherencia técnica deben resolverse conjuntamente.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>11. ¿Qué demuestra una imagen DICOM que se ve bien?</summary>
+        <p><strong>Respuesta:</strong> Solo que un camino de decodificación/presentación produjo una vista plausible; no prueba calidad, orientación, exactitud diagnóstica ni seguridad.</p>
+        <p><strong>Razonamiento:</strong> La apariencia no valida metadatos ni uso clínico.</p>
+      </details>
+      <details class="answer-panel">
+        <summary>12. ¿Qué debe recibir U2 desde U1?</summary>
+        <p><strong>Respuesta:</strong> Una serie educativa auditada con geometría, transformaciones, procedencia y limitaciones documentadas, más preguntas de calidad aún abiertas.</p>
+        <p><strong>Razonamiento:</strong> Calidad de imagen se evalúa después de establecer identidad y semántica de los datos.</p>
       </details>
       </div>
     </section>
@@ -379,18 +520,63 @@
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
-        <li><strong>metadatos</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>orientación</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>ventanas y anonimización</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>Datos DICOM y visualización</strong><p>Dominio de estudio que integra metadatos, orientación, ventanas y anonimización para resolver un problema delimitado y verificable.</p></li>
-        <li><strong>Caso de aplicación</strong><p>Escenario de manejo seguro de estudios médicos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas.</p></li>
-        <li><strong>Unidad de observación</strong><p>Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse.</p></li>
-        <li><strong>Evidencia</strong><p>Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, seleccionada de acuerdo con la afirmación que se pretende sostener.</p></li>
-        <li><strong>Control</strong><p>Fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, utilizado para distinguir explicaciones o detectar fallos del procedimiento.</p></li>
-        <li><strong>Incertidumbre</strong><p>Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse.</p></li>
-        <li><strong>Validez</strong><p>Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas.</p></li>
-        <li><strong>Reproducibilidad</strong><p>Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes.</p></li>
-        <li><strong>Transferencia</strong><p>Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian.</p></li>
+        <li><strong>DICOM</strong><p>Estándar y ecosistema para representar, almacenar e intercambiar información de imagen médica y objetos relacionados.</p></li>
+        <li><strong>IOD</strong><p>Information Object Definition; especificación de atributos y módulos que describen un tipo de objeto DICOM.</p></li>
+        <li><strong>SOP Class</strong><p>Combinación estandarizada de objeto y servicio identificada por un SOP Class UID.</p></li>
+        <li><strong>SOP Instance</strong><p>Instancia concreta de una SOP Class, identificada por un SOP Instance UID.</p></li>
+        <li><strong>UID</strong><p>Unique Identifier DICOM utilizado para identificar de forma global objetos y relaciones técnicas.</p></li>
+        <li><strong>Patient ID</strong><p>Identificador de paciente dentro de un dominio emisor; no debe confundirse con un UID global ni asumirse anónimo.</p></li>
+        <li><strong>Study Instance UID</strong><p>UID que identifica un estudio DICOM.</p></li>
+        <li><strong>Series Instance UID</strong><p>UID que identifica una serie DICOM dentro de un estudio.</p></li>
+        <li><strong>SOP Instance UID</strong><p>UID que identifica una instancia DICOM concreta.</p></li>
+        <li><strong>Study</strong><p>Nivel de organización que agrupa series relacionadas con un episodio o adquisición bajo un Study Instance UID.</p></li>
+        <li><strong>Series</strong><p>Conjunto de instancias relacionadas que comparten un Series Instance UID y características de adquisición.</p></li>
+        <li><strong>Instance</strong><p>Objeto DICOM individual; en una serie clásica puede corresponder a una imagen, pero DICOM también define otros objetos.</p></li>
+        <li><strong>Transfer Syntax</strong><p>Reglas de codificación del dataset y Pixel Data, incluidas representación de valores, endianness y posibles esquemas de compresión.</p></li>
+        <li><strong>Data Element</strong><p>Unidad DICOM formada por tag, representación de valor, longitud y valor según la sintaxis aplicable.</p></li>
+        <li><strong>Tag</strong><p>Par grupo-elemento que identifica un atributo DICOM, por ejemplo (0020,0037).</p></li>
+        <li><strong>VR</strong><p>Value Representation; tipo de dato semántico/sintáctico de un elemento DICOM.</p></li>
+        <li><strong>Pixel Data</strong><p>Elemento que contiene muestras de píxel codificadas; requiere metadatos para interpretarse correctamente.</p></li>
+        <li><strong>Rows</strong><p>Número de filas de la matriz de imagen.</p></li>
+        <li><strong>Columns</strong><p>Número de columnas de la matriz de imagen.</p></li>
+        <li><strong>Photometric Interpretation</strong><p>Atributo que describe cómo interpretar valores de píxel para presentación, por ejemplo MONOCHROME1 o MONOCHROME2.</p></li>
+        <li><strong>MONOCHROME1</strong><p>Interpretación fotométrica monocroma en la que el valor mínimo de salida se presenta como blanco tras la cadena de presentación aplicable.</p></li>
+        <li><strong>MONOCHROME2</strong><p>Interpretación fotométrica monocroma en la que el valor mínimo de salida se presenta como negro tras la cadena de presentación aplicable.</p></li>
+        <li><strong>Bits Allocated</strong><p>Número de bits asignados para cada muestra almacenada.</p></li>
+        <li><strong>Bits Stored</strong><p>Número de bits significativos usados para representar cada muestra.</p></li>
+        <li><strong>Pixel Representation</strong><p>Atributo que distingue representación de píxel entera sin signo o con signo.</p></li>
+        <li><strong>Image Position (Patient)</strong><p>Coordenadas del centro del primer vóxel transmitido respecto del sistema de coordenadas del paciente.</p></li>
+        <li><strong>Image Orientation (Patient)</strong><p>Seis cosenos directores que describen las direcciones de la primera fila y primera columna respecto del paciente.</p></li>
+        <li><strong>Pixel Spacing</strong><p>Distancia física entre centros de píxeles adyacentes en las direcciones de fila y columna, expresada habitualmente en mm.</p></li>
+        <li><strong>Slice Thickness</strong><p>Espesor nominal de corte; no debe asumirse idéntico a la separación geométrica entre planos.</p></li>
+        <li><strong>Spacing Between Slices</strong><p>Separación centro a centro entre cortes adyacentes cuando el atributo está presente y es aplicable.</p></li>
+        <li><strong>Frame of Reference UID</strong><p>UID que identifica un sistema de coordenadas de referencia común entre objetos relacionados.</p></li>
+        <li><strong>Instance Number</strong><p>Número destinado a ordenar o identificar visualmente instancias dentro de una serie; no sustituye a la geometría física.</p></li>
+        <li><strong>direction cosine</strong><p>Componente de un vector unitario que expresa una dirección respecto de los ejes del sistema del paciente.</p></li>
+        <li><strong>normal de plano</strong><p>Vector perpendicular al plano de imagen, derivado en el caso simple del producto cruz de direcciones de fila y columna.</p></li>
+        <li><strong>Rescale Slope</strong><p>Pendiente de una transformación lineal de valores almacenados cuando el objeto DICOM la define.</p></li>
+        <li><strong>Rescale Intercept</strong><p>Intercepto de una transformación lineal de valores almacenados cuando el objeto DICOM la define.</p></li>
+        <li><strong>Modality LUT</strong><p>Transformación que convierte valores almacenados a valores significativos para la modalidad antes de la etapa VOI cuando corresponde.</p></li>
+        <li><strong>VOI</strong><p>Value of Interest; etapa de transformación orientada a seleccionar un rango de valores para presentación.</p></li>
+        <li><strong>VOI LUT</strong><p>Lookup table de valor de interés que define una transformación de presentación alternativa al window center/window width.</p></li>
+        <li><strong>Window Center</strong><p>Centro del intervalo usado por una transformación de windowing para presentación.</p></li>
+        <li><strong>Window Width</strong><p>Anchura del intervalo usado por una transformación de windowing para presentación.</p></li>
+        <li><strong>Presentation LUT</strong><p>Transformación posterior de presentación que relaciona valores de presentación con el dispositivo o salida.</p></li>
+        <li><strong>valor almacenado</strong><p>Número codificado en Pixel Data antes de transformaciones de modalidad.</p></li>
+        <li><strong>valor de modalidad</strong><p>Valor resultante después de aplicar la transformación de modalidad definida por el objeto cuando corresponde.</p></li>
+        <li><strong>HU</strong><p>Unidad Hounsfield usada en CT bajo condiciones y atributos apropiados; no es una unidad universal de cualquier array DICOM.</p></li>
+        <li><strong>multiframe</strong><p>Objeto DICOM que contiene múltiples frames dentro de una instancia y puede requerir atributos funcionales por frame.</p></li>
+        <li><strong>desidentificación</strong><p>Proceso que reduce o transforma información identificadora según reglas y contexto definidos, sin implicar riesgo cero de reidentificación.</p></li>
+        <li><strong>Basic Application Level Confidentiality Profile</strong><p>Perfil de PS3.15 que especifica acciones conservadoras de confidencialidad a nivel de aplicación sobre atributos DICOM.</p></li>
+        <li><strong>Clean Pixel Data Option</strong><p>Opción de confidencialidad destinada a tratar información identificadora presente en Pixel Data.</p></li>
+        <li><strong>burned-in annotation</strong><p>Texto o gráfico incorporado en los propios píxeles, que puede persistir aunque se limpien metadatos.</p></li>
+        <li><strong>private attribute</strong><p>Elemento DICOM definido por un creador privado y cuyo contenido debe evaluarse explícitamente durante desidentificación.</p></li>
+        <li><strong>referential integrity</strong><p>Conservación coherente de referencias entre objetos cuando identificadores como UIDs son sustituidos.</p></li>
+        <li><strong>procedencia</strong><p>Registro del origen de datos, versión, transformaciones y decisiones necesarias para reconstruir un flujo.</p></li>
+        <li><strong>dataset original</strong><p>Copia de referencia no modificada del recurso educativo usada para verificar derivaciones.</p></li>
+        <li><strong>derivación</strong><p>Objeto, array o visualización producido mediante una transformación documentada del original.</p></li>
+        <li><strong>auditoría de serie</strong><p>Comprobación sistemática de identidad, geometría, dimensiones, fotometría y consistencia antes del análisis.</p></li>
+        <li><strong>deidentification profile</strong><p>Conjunto explícito de reglas y opciones que especifica cómo tratar atributos y contenidos potencialmente identificadores.</p></li>
       </ul>
     </section>
 
@@ -400,17 +586,30 @@
         <p>Comprueba fecha, versión, alcance y condiciones de uso antes de aplicar un método o estándar.</p>
       </div>
       <ol class="rich-list advanced-sources">
-        <li><strong><a class="resource-link" href="https://www.dicomstandard.org/current" rel="noopener noreferrer">DICOM Standard</a></strong><span class="course-tag">DICOM Standards Committee · estándar</span></li>
-        <li><strong><a class="resource-link" href="https://slicer.readthedocs.io/" rel="noopener noreferrer">3D Slicer documentation</a></strong><span class="course-tag">3D Slicer community · documentación</span></li>
-        <li><strong><a class="resource-link" href="https://docs.itk.org/" rel="noopener noreferrer">ITK documentation</a></strong><span class="course-tag">Insight Toolkit community · documentación</span></li>
-        <li><strong><a class="resource-link" href="https://www.nibib.nih.gov/science-education/science-topics" rel="noopener noreferrer">NIBIB Science Topics</a></strong><span class="course-tag">NIBIB · recurso oficial</span></li>
-        <li><strong><a class="resource-link" href="https://www.cancerimagingarchive.net/" rel="noopener noreferrer">The Cancer Imaging Archive</a></strong><span class="course-tag">National Cancer Institute · datos abiertos</span></li>
+        <li><strong><a class="resource-link" href="https://www.dicomstandard.org/current" rel="noopener noreferrer">DICOM Standard — Current Edition</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part04/sect_C.3.html" rel="noopener noreferrer">PS3.4 — Standard Query/Retrieve Information Models</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.2.html" rel="noopener noreferrer">PS3.3 — Image Plane Module</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.11.2.html" rel="noopener noreferrer">PS3.3 — VOI LUT Module</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.11.html" rel="noopener noreferrer">PS3.3 — Modality LUT Module</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/html/part05.html" rel="noopener noreferrer">PS3.5 — Data Structures and Encoding</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/html/part06.html" rel="noopener noreferrer">PS3.6 — Data Dictionary</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/html/part10.html" rel="noopener noreferrer">PS3.10 — Media Storage and File Format</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/html/part15.html" rel="noopener noreferrer">PS3.15 — Security and System Management Profiles</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part15/chapter_E.html" rel="noopener noreferrer">PS3.15 Annex E — Attribute Confidentiality Profiles</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.1.html" rel="noopener noreferrer">PS3.3 — General Image Module</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.3.html" rel="noopener noreferrer">PS3.3 — Image Pixel Module</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://pydicom.github.io/pydicom/stable/reference/pixels.html" rel="noopener noreferrer">pydicom — Pixel Data processing</a></strong><span class="course-tag">documentación técnica</span></li>
+        <li><strong><a class="resource-link" href="https://pydicom.github.io/pydicom/stable/guides/user/working_with_pixel_data.html" rel="noopener noreferrer">pydicom — Working with Pixel Data</a></strong><span class="course-tag">documentación técnica</span></li>
+        <li><strong><a class="resource-link" href="https://www.cancerimagingarchive.net/" rel="noopener noreferrer">The Cancer Imaging Archive</a></strong><span class="course-tag">repositorio oficial</span></li>
+        <li><strong><a class="resource-link" href="https://wiki.cancerimagingarchive.net/display/Public/TCIA+De-identification+and+Curation" rel="noopener noreferrer">TCIA De-identification and Curation</a></strong><span class="course-tag">guía técnica</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/html/part18.html" rel="noopener noreferrer">DICOMweb</a></strong><span class="course-tag">estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part06/chapter_A.html" rel="noopener noreferrer">DICOM UID Registry</a></strong><span class="course-tag">estándar oficial</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Integrar metadatos, orientación, ventanas y anonimización para resolver un caso de manejo seguro de estudios médicos con evidencia, controles, incertidumbre y comunicación proporcional. Conecta especialmente con Aplicación principal: Manejo seguro de estudios médicos, Evidencia: Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, Calidad: Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias, Límite: Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria.</p>
+      <p>Construir un flujo reproducible y seguro para inspeccionar, organizar y visualizar estudios DICOM no identificables o sintéticos, interpretando la jerarquía Patient–Study–Series–Instance, geometría espacial, metadatos de píxel, transformaciones de modalidad y VOI, y perfiles de desidentificación. La unidad enseña a preservar procedencia y datos originales, detectar inconsistencias de orientación o series, derivar orden y coordenadas desde la geometría en lugar de nombres de archivo, y documentar límites de privacidad y visualización sin realizar diagnóstico clínico ni modificar estudios asistenciales. Conecta especialmente con La jerarquía DICOM, geometría y VOI permiten preparar estudios para visualización y análisis computacional reproducible, La separación correcta de series, orientación y valores de modalidad evita errores de entrada antes de entrenamiento o inferencia, Image Position, Image Orientation y Pixel Spacing son esenciales para reconstruir coordenadas antes de segmentar o medir, Procedencia, UIDs, consistencia de series y desidentificación condicionan la construcción reproducible de datasets de imagen. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado. Las operaciones DICOM, de visualización y desidentificación se enseñan para reproducibilidad técnica; no constituyen certificación DICOM, validación regulatoria, garantía de anonimización, diagnóstico, planificación clínica ni autorización para compartir estudios reales.</p>
       <div class="page-actions"><a class="btn-link" href="unidad-02.html">Unidad 2: Calidad de imagen →</a></div>
     </section>
     </article>
