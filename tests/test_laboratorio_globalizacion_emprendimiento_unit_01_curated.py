@@ -154,7 +154,7 @@ class LaboratorioGlobalizacionEmprendimientoUnit01CuratedTests(unittest.TestCase
         joined = " ".join(activity["instructions"] + activity["checking_criteria"]).casefold()
         for phrase in (
             "datos agregados abiertos o",
-            "fecha de publicación y versión",
+            "toda cifra principal tiene fuente, periodo y versión",
             "no construyas una suma ponderada",
             "brecha absoluta y relativa",
             "no existe una suma ponderada, score total o ranking automático de países",
