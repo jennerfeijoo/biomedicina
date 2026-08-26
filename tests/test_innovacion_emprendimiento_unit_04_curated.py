@@ -111,9 +111,12 @@ class InnovacionEmprendimientoUnit04CuratedTests(unittest.TestCase):
         self.assertGreaterEqual(len(sources), 15)
         self.assertTrue(all(item.get("verification_status") == "verified_directly" for item in sources))
         urls = " ".join(item["url"].casefold() for item in sources)
-        for domain in ("biodesign.stanford.edu", "who.int", "oecd.org"):
+        for domain in ("biodesign.stanford.edu", "who.int"):
             with self.subTest(domain=domain):
                 self.assertIn(domain, urls)
+        source_titles = " ".join(item["title"].casefold() for item in sources)
+        self.assertIn("health technology assessment of medical devices", source_titles)
+        self.assertIn("program curriculum", source_titles)
         for boundary in (
             "datos sintéticos", "asesoría comercial", "reembolso", "regulatoria", "inversión",
         ):
