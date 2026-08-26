@@ -1,0 +1,41 @@
+name: Materialize Innovacion U4
+
+on:
+  push:
+    paths:
+      - '.tmp/innovacion_u4/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Skip cleanup-triggered rerun
+        id: guard
+        run: |
+          if [ -f .tmp/innovacion_u4/READY ]; then echo "run=yes" >> "$GITHUB_OUTPUT"; else echo "run=no" >> "$GITHUB_OUTPUT"; fi
+      - name: Materialize canonical files
+        if: steps.guard.outputs.run == 'yes'
+        run: |
+          cat .tmp/innovacion_u4/part*.txt | base64 -d > /tmp/innov_u4.tar.gz
+          tar -xzf /tmp/innov_u4.tar.gz -C .
+          mkdir -p data/generated_units/innovacion-emprendimiento
+          cp data/course_redevelopment/innovacion-emprendimiento/units/unit-04.json data/generated_units/innovacion-emprendimiento/unit-04.json
+          python -m json.tool data/course_redevelopment/innovacion-emprendimiento/units/unit-04.json >/dev/null
+          cmp data/course_redevelopment/innovacion-emprendimiento/units/unit-04.json data/generated_units/innovacion-emprendimiento/unit-04.json
+          python -m unittest tests.test_innovacion_emprendimiento_unit_04_curated
+      - name: Commit canonical U4 and clean transfer artifacts
+        if: steps.guard.outputs.run == 'yes'
+        run: |
+          rm -rf .tmp/innovacion_u4
+          rm -f .github/workflows/materialize-innovacion-u4.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Curar Innovación y Emprendimiento U4" || exit 0
+          git push
