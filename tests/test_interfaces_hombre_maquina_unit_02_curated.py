@@ -121,13 +121,14 @@ def test_unit_02_has_no_instrumentation_equation_carryover():
     assert all(not section.get("equations") for section in data["theory_sections"])
 
 
-def test_publication_matches_when_promoted():
+def test_published_descriptor_and_html_match_canonical_unit():
+    assert DESCRIPTOR.exists()
+    assert PUBLIC.exists()
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 2)
-    if detail["description"] != source["purpose"]:
-        return
-    assert PUBLIC.exists()
+    assert detail["title"] == source["title"]
+    assert detail["description"] == source["purpose"]
     public_text = PUBLIC.read_text(encoding="utf-8").lower()
     for marker in [
         "contexto de uso", "contextual inquiry", "trabajo prescrito",
