@@ -140,6 +140,8 @@ def test_published_descriptor_and_html_match_canonical_unit():
         "error de contexto", "evaluación formativa"
     ]:
         assert marker in public_text
+    for carryover in ["snr", "función de transferencia", "cortocircuito"]:
+        assert carryover not in public_text
 
 
 if __name__ == "__main__":
