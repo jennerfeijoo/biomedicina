@@ -1,8 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data/course_redevelopment/laboratorio-imagenes-biomedicas/units/unit-02.json"
 MIRROR = ROOT / "data/generated_units/laboratorio-imagenes-biomedicas/unit-02.json"
@@ -60,7 +58,7 @@ def test_unit_02_purpose_preserves_task_dependency_and_handoff():
 
 def test_unit_02_blocks_common_quality_misinterpretations():
     text = json.dumps(load(SOURCE), ensure_ascii=False).lower()
-    assert "cnr no se presenta como sustituto universal de detectabilidad clínica" in text
+    assert "la detectabilidad no se deduce automáticamente de cnr" in text
     assert "pixel spacing no equivale a resolución efectiva" in text
     assert "nyquist limita muestreo, no garantiza detalle observable" in text
     assert "desviación estándar resume amplitud pero no textura del ruido" in text
@@ -130,12 +128,11 @@ def test_unit_02_uses_quality_equations_with_explicit_limits():
     assert any("f_N" in eq for eq in equations)
 
 
-def test_published_descriptor_and_html_match_when_promoted():
+def test_published_descriptor_and_html_match_strictly():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 2)
-    if detail["description"] != source["purpose"]:
-        pytest.skip("U2 todavía no ha sido promovida por el workflow de publicación")
+    assert detail["description"] == source["purpose"]
     assert detail["title"] == source["title"]
     assert PUBLIC.exists()
     public_text = PUBLIC.read_text(encoding="utf-8").lower()
@@ -156,4 +153,4 @@ def test_published_descriptor_and_html_match_when_promoted():
 
 
 if __name__ == "__main__":
-    raise SystemExit(pytest.main([__file__]))
+    raise SystemExit(__import__("pytest").main([__file__]))
