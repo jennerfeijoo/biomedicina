@@ -121,13 +121,13 @@ def test_unit_04_has_no_instrumentation_carryover():
     assert all(not section.get("equations") for section in load(SOURCE)["theory_sections"])
 
 
-def test_publication_matches_canonical_when_materialized():
+def test_published_descriptor_and_html_match_canonical_unit():
     source = load(SOURCE)
-    if not PUBLIC.exists():
-        return
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 4)
+    assert PUBLIC.exists()
     assert detail["title"] == source["title"]
+    assert detail["description"] == source["purpose"]
     public_text = PUBLIC.read_text(encoding="utf-8").lower()
     for marker in ["wcag 2.2", "lector de pantalla", "foco de teclado", "accesibilidad cognitiva", "prueba automatizada"]:
         assert marker in public_text
