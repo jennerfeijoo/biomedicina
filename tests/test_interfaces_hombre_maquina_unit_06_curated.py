@@ -112,24 +112,23 @@ def test_unit_06_uses_modality_metrics_not_snr():
     assert any("e_{reg}" in eq for eq in equations)
 
 
-def test_published_state_when_promoted():
-    if not DESCRIPTOR.exists() or not PUBLIC.exists():
-        return
+def test_published_descriptor_html_and_catalog_match_canonical_unit():
     source = load(SOURCE)
     descriptor = load(DESCRIPTOR)
     detail = next(u for u in descriptor["detailed_units"] if u["unit"] == 6)
-    if detail["description"] != source["purpose"]:
-        return
+    assert PUBLIC.exists()
+    assert detail["title"] == source["title"]
+    assert detail["description"] == source["purpose"]
     public_text = PUBLIC.read_text(encoding="utf-8").lower()
     assert source["purpose"].lower() in public_text
     for marker in ["multimodalidad", "fallback", "webxr", "registro espacial", "háptica"]:
         assert marker in public_text
     for carryover in ["snr", "función de transferencia", "cortocircuito", "concepto de la unidad que debe definirse"]:
         assert carryover not in public_text
-    if CATALOG.exists():
-        catalog = load(CATALOG)
-        templates = catalog["dimensions"]["specificity"]["template_detected"]
-        assert "interfaces-hombre-maquina" not in templates
+    catalog = load(CATALOG)
+    specificity = catalog["dimensions"]["specificity"]
+    assert "interfaces-hombre-maquina" not in specificity["template_detected"]
+    assert "interfaces-hombre-maquina" in specificity["screened_no_known_template_marker"]
 
 
 if __name__ == "__main__":
