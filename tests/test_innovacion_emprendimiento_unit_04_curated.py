@@ -124,8 +124,6 @@ class InnovacionEmprendimientoUnit04CuratedTests(unittest.TestCase):
         published = next(
             item for item in self.subject["detailed_units"] if item["unit"] == 4
         )
-        if published["description"] != self.unit["purpose"]:
-            self.skipTest("descriptor curricular pendiente de promoción por el publicador")
         self.assertEqual(published["description"], self.unit["purpose"])
 
     def test_public_page_exposes_curated_content(self) -> None:
