@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Unidad 3. Preprocesamiento | Laboratorio de Imágenes Biomédicas | CitoNauta</title>
-  <meta name="description" content="Integrar normalización, filtrado, corrección de artefactos para resolver un caso de preparación sin introducir sesgos con evidencia, controles, incertidumbre y comunicación proporcional." />
+  <title>Unidad 3. Preprocesamiento reproducible sin fuga de información | Laboratorio de Imágenes Biomédicas | CitoNauta</title>
+  <meta name="description" content="Diseñar, ejecutar y auditar un preprocesamiento de imagen médica que preserve geometría e intensidades relevantes para la tarea, controle ruido y no uniformidad, evite fuga de información y documente cada transformación sin presentar una mejora visual como evidencia clínica." />
   <link rel="stylesheet" href="../../../assets/css/style.css" />
   <link rel="stylesheet" href="../../../assets/css/editorial.css" />
   <script>
@@ -51,8 +51,8 @@
         <span>Unidad 3</span>
       </div>
       <p class="eyebrow">Unidad 3 de 6</p>
-      <h1>Preprocesamiento</h1>
-      <p>Integrar normalización, filtrado, corrección de artefactos para resolver un caso de preparación sin introducir sesgos con evidencia, controles, incertidumbre y comunicación proporcional.</p>
+      <h1>Preprocesamiento reproducible sin fuga de información</h1>
+      <p>Diseñar, ejecutar y auditar un preprocesamiento de imagen médica que preserve geometría e intensidades relevantes para la tarea, controle ruido y no uniformidad, evite fuga de información y documente cada transformación sin presentar una mejora visual como evidencia clínica.</p>
       <dl class="course-meta">
         <div><dt>Asignatura</dt><dd>Laboratorio de Imágenes Biomédicas</dd></div>
         <div><dt>Estado</dt><dd data-status="generated">Lección desarrollada · revisión experta pendiente</dd></div>
@@ -80,18 +80,19 @@
     <section id="resultados" class="section">
       <div class="section-header"><h2>Objetivos y resultados esperados</h2></div>
             <ul>
-        <li>Definir normalización, filtrado y corrección de artefactos mediante entidades, relaciones y condiciones.</li>
-        <li>Construir un modelo que conecte normalización con filtrado y delimite el papel de corrección de artefactos.</li>
-        <li>Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.</li>
-        <li>Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.</li>
-        <li>Resolver y comunicar un caso sobre preparación sin introducir sesgos con incertidumbre y límites.</li>
-        <li>Transferir el método de Preprocesamiento a un escenario nuevo y justificar qué debe revalidarse.</li>
+        <li>Distinguir calibración física, reescalado, estandarización estadística, normalización por referencia y armonización entre dominios.</li>
+        <li>Seleccionar filtros lineales y no lineales a partir de la tarea, el espectro del ruido y el compromiso entre reducción de ruido y preservación de bordes.</li>
+        <li>Aplicar correcciones reproducibles de no uniformidad y artefactos solo cuando el mecanismo y los controles justifican la transformación.</li>
+        <li>Construir una tubería con orden explícito, parámetros versionados, máscaras definidas y conservación de metadatos geométricos.</li>
+        <li>Prevenir fuga de información estimando cualquier parámetro aprendido exclusivamente dentro del conjunto de entrenamiento de cada partición.</li>
+        <li>Comparar datos crudos y procesados mediante métricas, inspección estratificada y pruebas de invariancia pertinentes para la tarea.</li>
+        <li>Comunicar qué cambió, qué se preservó, qué falló y qué no puede inferirse sobre utilidad clínica.</li>
       </ul>
       <h3>Mapa de contenidos</h3>
             <ul>
-        <li>Modelo conceptual de Preprocesamiento</li>
-        <li>Método, evidencia y controles</li>
-        <li>Aplicación razonada: preparación sin introducir sesgos</li>
+        <li>1. Contrato de preprocesamiento: tarea, invariantes y procedencia</li>
+        <li>2. Intensidad, ruido y no uniformidad</li>
+        <li>3. Particiones, fuga de información y evaluación pareada</li>
         <li>Calidad, transferencia y comunicación</li>
       </ul>
     </section>
@@ -104,57 +105,61 @@
             <!-- advanced-unit-renderer:v1 -->
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 1</p>
-        <h3>Modelo conceptual de Preprocesamiento</h3>
-        <p>La unidad «Preprocesamiento» sitúa normalización, filtrado y corrección de artefactos dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Imágenes Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.</p>
-        <p>El primer núcleo de «Preprocesamiento» en Laboratorio de Imágenes Biomédicas, «normalización», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.</p>
-        <p>El segundo núcleo de «Preprocesamiento», «filtrado», aporta otra dimensión al problema de Laboratorio de Imágenes Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con normalización debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.</p>
-        <p>El tercer núcleo de «Preprocesamiento» en Laboratorio de Imágenes Biomédicas, «corrección de artefactos», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada.</p>
+        <h3>1. Contrato de preprocesamiento: tarea, invariantes y procedencia</h3>
+        <p>U3 recibe de U1 una serie DICOM cuya identidad, geometría, unidades y procedencia ya fueron auditadas, y de U2 una línea base cuantitativa de ruido, uniformidad, contraste y resolución. Su salida no es una imagen simplemente más agradable: es un conjunto derivado cuya transformación puede reconstruirse y cuyo efecto sobre una tarea definida puede medirse. U4 usará esta salida para segmentación; por ello, cualquier cambio de intensidades, bordes o geometría debe quedar explícito.</p>
+        <p>Antes de ejecutar código se redacta un contrato de preprocesamiento: modalidad y unidades, tarea posterior, región anatómica o fantoma, transformaciones permitidas, invariantes que deben preservarse y criterios de fallo. En CT, por ejemplo, convertir valores almacenados mediante Rescale Slope e Intercept no es intercambiable con forzar cada volumen a media cero. La primera operación recupera una escala definida por el objeto DICOM; la segunda crea una representación dependiente de la muestra.</p>
+        <p>La tubería se representa como una composición ordenada y no como una bolsa de filtros. Recortar antes de estimar un campo de bias, interpolar repetidamente o normalizar antes de excluir fondo puede cambiar el resultado. Cada etapa registra entrada, salida, versión del software, parámetros, máscara, tipo de interpolador y motivo. La imagen original permanece inmutable y se conserva un enlace verificable entre los identificadores de entrada y salida.</p>
+        <p>Preservar geometría significa mantener o transformar de forma coherente tamaño, espaciado, origen y dirección. Alterar el array sin actualizar estos metadatos desplaza la imagen en el espacio físico aunque visualmente parezca correcta. Preservar información no significa conservar cada píxel: significa no destruir, inventar o filtrar inadvertidamente la señal necesaria para la tarea declarada.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Distinguir observación, cálculo e inferencia en Preprocesamiento.</li>
-        <li>Relacionar normalización, filtrado y corrección de artefactos mediante condiciones explícitas.</li>
-        <li>Declarar escala, unidad de observación y uso previsto antes del método.</li>
-        <li>Tratar supuestos y límites como parte del resultado, no como una nota final.</li>
+        <li>Definir la tarea y los invariantes antes de elegir una transformación.</li>
+        <li>Mantener el original inmutable y la procedencia de cada derivado.</li>
+        <li>Diferenciar recuperación de unidades físicas de normalización estadística.</li>
+        <li>Auditar tamaño, espaciado, origen y dirección después de cada operación geométrica.</li>
+        <li>Entregar a U4 una salida reproducible, no una imagen seleccionada por apariencia.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 2</p>
-        <h3>Método, evidencia y controles</h3>
-        <p>Para «Preprocesamiento» dentro de Laboratorio de Imágenes Biomédicas, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.</p>
-        <p>En esta unidad de Laboratorio de Imágenes Biomédicas, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre normalización o filtrado debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.</p>
-        <p>Para evaluar «Preprocesamiento», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.</p>
-        <p>En Laboratorio de Imágenes Biomédicas, la incertidumbre de «Preprocesamiento» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece.</p>
+        <h3>2. Intensidad, ruido y no uniformidad</h3>
+        <p>Las intensidades no tienen el mismo significado entre modalidades. CT dispone de una relación definida hacia unidades Hounsfield cuando los atributos necesarios son válidos; MRI convencional suele carecer de una escala absoluta comparable entre adquisiciones. Por ello, min–max, z-score, percentiles y normalización basada en tejidos responden a contratos diferentes. El método debe definir la máscara, el tratamiento de valores extremos y si los parámetros se calculan por imagen, por sujeto o sobre un conjunto de entrenamiento.</p>
+        <p>El suavizado reduce variación de alta frecuencia, pero también puede reducir contraste local, desplazar bordes y ocultar lesiones pequeñas. Un filtro gaussiano queda definido por sigma en unidades físicas o de píxel; un filtro mediano responde de otra manera al ruido impulsivo; difusión anisotrópica intenta suavizar dentro de regiones preservando transiciones bajo supuestos específicos. El filtro se selecciona mediante una tarea y una métrica, no mediante preferencia visual.</p>
+        <p>En MRI, un campo de bias es una variación espacial suave que modula la intensidad y puede confundir segmentación o cuantificación. N4ITK estima y corrige ese campo bajo supuestos sobre suavidad, máscara y contenido. No es una reparación universal: una máscara incorrecta, parámetros inadecuados o una patología extensa pueden producir sobrecorrección. Deben conservarse el campo estimado y comparaciones antes–después dentro y fuera de la máscara.</p>
+        <p>Los controles incluyen fantomas digitales con verdad conocida, inyección de ruido reproducible, mapas de diferencia, perfiles a través de bordes, métricas de U2 y evaluación estratificada por escáner o protocolo. Una disminución de desviación estándar no basta: se verifica que la resolución o detectabilidad relevante no se degrade y que el método no homogeneice artificialmente diferencias biológicas.</p>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Elegir evidencia de acuerdo con el tipo de afirmación.</li>
-        <li>Predefinir controles y resultados esperados antes de inspeccionar la salida.</li>
-        <li>Conservar procedencia, parámetros y decisiones intermedias.</li>
-        <li>Propagar incertidumbre hasta la conclusión y la recomendación.</li>
+        <li>No tratar todas las intensidades médicas como unidades intercambiables.</li>
+        <li>Definir máscara, población de referencia y alcance de los parámetros.</li>
+        <li>Medir simultáneamente reducción de ruido y preservación de señal.</li>
+        <li>Inspeccionar el campo N4 y los mapas de diferencia, no solo la salida corregida.</li>
+        <li>Expresar los tamaños de kernel y sigma en relación con el espaciado físico.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
         <p class="eyebrow">Desarrollo 3</p>
-        <h3>Aplicación razonada: preparación sin introducir sesgos</h3>
-        <p>En la unidad «Preprocesamiento» de Laboratorio de Imágenes Biomédicas, el caso conductor es preparación sin introducir sesgos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.</p>
-        <p>La resolución específica de «Preprocesamiento» conecta normalización con filtrado y utiliza corrección de artefactos como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.</p>
-        <p>Para el caso «preparación sin introducir sesgos» en Laboratorio de Imágenes Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.</p>
-        <p>El cierre de «Preprocesamiento» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de preparación sin introducir sesgos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados.</p>
+        <h3>3. Particiones, fuga de información y evaluación pareada</h3>
+        <p>La fuga de información aparece cuando una decisión usa información que no estaría disponible al aplicar la tubería a un caso nuevo. Calcular media, desviación, percentiles, referencia histográfica o parámetros de armonización con todas las imágenes antes de separar entrenamiento y prueba contamina la evaluación. La partición se realiza por sujeto —y, cuando corresponda, por centro o tiempo— antes de ajustar cualquier transformación aprendida.</p>
+        <p>En validación cruzada, cada pliegue contiene su propio ajuste: los parámetros se estiman con el subconjunto de entrenamiento y se aplican sin reajuste a validación. Las transformaciones deterministas por imagen también se documentan, pues pueden codificar tamaño, protocolo o máscara de forma asociada con el desenlace. Las múltiples series de una misma persona nunca se reparten entre entrenamiento y prueba como observaciones independientes.</p>
+        <p>La comparación antes–después es pareada porque cada imagen actúa como su propio control. Se informan distribuciones de cambios y no solo promedios agregados. Para una región predefinida, el z-score se calcula como z=(x−mu_ref)/sigma_ref; mu_ref y sigma_ref proceden únicamente de la referencia autorizada. Si sigma_ref es casi cero o la población de referencia cambia, la transformación deja de ser estable y debe marcarse como fallo.</p>
+        <p>El criterio de éxito combina fidelidad del proceso y desempeño de tarea. Puede requerir menor no uniformidad, estabilidad de intensidades, conservación de bordes y ausencia de deterioro en una métrica posterior preespecificada. Elegir retrospectivamente el pipeline que maximiza el resultado de prueba convierte la prueba en validación y vuelve optimista la conclusión.</p>
         <div class="equation-set">
           <figure class="lesson-equation">
-            <div class="math-display">\[CNR=\frac{|\mu_1-\mu_2|}{\sigma_n}\]</div>
-            <figcaption>Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.</figcaption>
+            <div class="math-display">\[z=\frac{x-\mu_{ref}}{\sigma_{ref}}\]</div>
+            <figcaption>Estandarización respecto de una población de referencia autorizada; sus parámetros no se estiman con validación o prueba.</figcaption>
             <ul class="equation-variables">
-              <li><code>\mu</code>: media regional</li>
-              <li><code>\sigma_n</code>: desviación del ruido</li>
+              <li><code>x</code>: intensidad dentro de la máscara definida</li>
+              <li><code>\mu_{ref}</code>: media estimada en entrenamiento o referencia</li>
+              <li><code>\sigma_{ref}</code>: desviación estándar de la misma referencia</li>
             </ul>
           </figure>
         </div>
         <h4>Puntos de integración</h4>
       <ul>
-        <li>Delimitar el caso de preparación sin introducir sesgos antes de calcular o clasificar.</li>
-        <li>Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.</li>
-        <li>Comprobar unidades, rango, supuestos y casos límite de cada ecuación.</li>
-        <li>Comparar al menos una explicación alternativa y una prueba discriminante.</li>
+        <li>Dividir por sujeto antes de ajustar transformaciones aprendidas.</li>
+        <li>Reajustar la tubería dentro de cada pliegue de validación cruzada.</li>
+        <li>Mantener intacto el conjunto de prueba hasta cerrar parámetros y criterios.</li>
+        <li>Comparar imágenes pareadas con métricas y mapas de diferencia.</li>
+        <li>No seleccionar el pipeline por su desempeño final en prueba.</li>
       </ul>
       </article>
       <article class="lesson-topic advanced-theory-section">
@@ -322,6 +327,10 @@
         <li><strong>Añadir corrección de artefactos después de ver el resultado.</strong><p>Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio.</p></li>
         <li><strong>Presentar solo el resultado favorable y omitir controles o discrepancias.</strong><p>Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento.</p></li>
         <li><strong>Generalizar la conclusión de Preprocesamiento al uso clínico o real.</strong><p>Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.</p></li>
+        <li><strong>Calcular z-score o percentiles con el conjunto completo antes de dividir los datos.</strong><p>Separar por sujeto primero y estimar cualquier parámetro exclusivamente con entrenamiento dentro de cada pliegue.</p></li>
+        <li><strong>Suavizar hasta que la imagen parezca limpia y reportar solo la reducción de ruido.</strong><p>Preespecificar sigma o kernel y medir simultáneamente ruido, bordes, resolución y desempeño de la tarea.</p></li>
+        <li><strong>Reorientar o remuestrear el array sin verificar origen, dirección y espaciado.</strong><p>Auditar geometría en coordenadas físicas y usar interpolación apropiada para imágenes continuas o etiquetas discretas.</p></li>
+        <li><strong>Aplicar N4 como mejora automática a cualquier imagen MRI.</strong><p>Justificar el mecanismo, conservar máscara y campo estimado, y comprobar sobrecorrección con mapas antes-después.</p></li>
         </ul>
       </section>
 <div class="assessment-panels">
@@ -379,9 +388,9 @@
     <section id="glosario" class="section">
       <div class="section-header"><h2>Glosario disciplinar</h2></div>
       <ul class="rich-list advanced-glossary">
-        <li><strong>normalización</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>filtrado</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
-        <li><strong>corrección de artefactos</strong><p>Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas.</p></li>
+        <li><strong>normalización</strong><p>Transformación definida de intensidades respecto de una escala, distribución o referencia; debe declarar máscara, alcance y procedencia de los parámetros.</p></li>
+        <li><strong>filtrado</strong><p>Operación que modifica componentes espaciales o frecuenciales de una imagen bajo un kernel o modelo explícito, con posible efecto simultáneo sobre ruido y señal.</p></li>
+        <li><strong>corrección de artefactos</strong><p>Transformación dirigida a reducir un patrón no deseado cuyo mecanismo, alcance y riesgo de sobrecorrección se evalúan explícitamente.</p></li>
         <li><strong>Preprocesamiento</strong><p>Dominio de estudio que integra normalización, filtrado, corrección de artefactos para resolver un problema delimitado y verificable.</p></li>
         <li><strong>Caso de aplicación</strong><p>Escenario de preparación sin introducir sesgos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas.</p></li>
         <li><strong>Unidad de observación</strong><p>Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse.</p></li>
@@ -391,6 +400,14 @@
         <li><strong>Validez</strong><p>Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas.</p></li>
         <li><strong>Reproducibilidad</strong><p>Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes.</p></li>
         <li><strong>Transferencia</strong><p>Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian.</p></li>
+        <li><strong>fuga de información</strong><p>Uso durante el ajuste de información procedente de validación, prueba o del futuro, que produce una estimación optimista del desempeño.</p></li>
+        <li><strong>campo de bias</strong><p>Variación espacial suave de la intensidad, frecuente en MRI, que puede modelarse como un campo multiplicativo bajo supuestos específicos.</p></li>
+        <li><strong>N4ITK</strong><p>Método de corrección de no uniformidad de intensidad que estima un campo suave; requiere máscara y parámetros auditables.</p></li>
+        <li><strong>interpolación</strong><p>Estimación de valores en una nueva rejilla; no recupera información ausente y su kernel puede modificar bordes y etiquetas.</p></li>
+        <li><strong>mapa de diferencia</strong><p>Imagen de la diferencia voxel a voxel entre dos representaciones alineadas, útil para localizar la magnitud y distribución de los cambios.</p></li>
+        <li><strong>transformación ajustada</strong><p>Operación cuyos parámetros se aprenden de datos y que debe ajustarse solo con entrenamiento dentro de cada partición.</p></li>
+        <li><strong>invariante</strong><p>Propiedad que el contrato exige conservar dentro de una tolerancia definida, como geometría, orden de sujetos o una señal de interés.</p></li>
+        <li><strong>kernel</strong><p>Conjunto de pesos y vecindad usados por una operación local; su tamaño físico depende tanto de sus elementos como del espaciado de píxel.</p></li>
       </ul>
     </section>
 
@@ -405,12 +422,19 @@
         <li><strong><a class="resource-link" href="https://www.cancerimagingarchive.net/" rel="noopener noreferrer">The Cancer Imaging Archive</a></strong><span class="course-tag">National Cancer Institute · datos abiertos</span></li>
         <li><strong><a class="resource-link" href="https://docs.monai.io/" rel="noopener noreferrer">MONAI documentation</a></strong><span class="course-tag">MONAI Consortium · documentación</span></li>
         <li><strong><a class="resource-link" href="https://www.rsna.org/research/quantitative-imaging-biomarkers-alliance" rel="noopener noreferrer">QIBA</a></strong><span class="course-tag">Radiological Society of North America · iniciativa de calidad</span></li>
+        <li><strong><a class="resource-link" href="https://dicom.nema.org/medical/dicom/current/output/chtml/part03/PS3.3.html" rel="noopener noreferrer">DICOM PS3.3: Information Object Definitions</a></strong><span class="course-tag">DICOM Standards Committee · estándar oficial</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1109/TMI.2010.2046908" rel="noopener noreferrer">N4ITK: Improved N3 Bias Correction</a></strong><span class="course-tag">IEEE Transactions on Medical Imaging · artículo metodológico</span></li>
+        <li><strong><a class="resource-link" href="https://simpleitk.readthedocs.io/en/master/fundamentalConcepts.html" rel="noopener noreferrer">SimpleITK Fundamental Concepts</a></strong><span class="course-tag">SimpleITK project · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://scikit-learn.org/stable/common_pitfalls.html" rel="noopener noreferrer">scikit-learn: Common pitfalls and recommended practices</a></strong><span class="course-tag">scikit-learn developers · documentación oficial</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1148/ryai.2020200029" rel="noopener noreferrer">Guidelines for the Content and Structure of Machine Learning Clinical Studies</a></strong><span class="course-tag">Radiology: Artificial Intelligence · guía de reporte</span></li>
+        <li><strong><a class="resource-link" href="https://doi.org/10.1038/s41467-022-30695-9" rel="noopener noreferrer">The Medical Segmentation Decathlon</a></strong><span class="course-tag">Nature Communications · artículo y datos abiertos</span></li>
+        <li><strong><a class="resource-link" href="https://mipav.cit.nih.gov/" rel="noopener noreferrer">Medical Image Processing, Analysis and Visualization (MIPAV)</a></strong><span class="course-tag">National Institutes of Health · software científico oficial</span></li>
       </ol>
     </section>
 
     <section class="section unit-close">
       <div class="section-header"><h2>Cierre de la unidad</h2></div>
-      <p>Integrar normalización, filtrado, corrección de artefactos para resolver un caso de preparación sin introducir sesgos con evidencia, controles, incertidumbre y comunicación proporcional. Conecta especialmente con Aplicación principal: Preparación sin introducir sesgos, Evidencia: Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, Calidad: Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias, Límite: Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria.</p>
+      <p>Diseñar, ejecutar y auditar un preprocesamiento de imagen médica que preserve geometría e intensidades relevantes para la tarea, controle ruido y no uniformidad, evite fuga de información y documente cada transformación sin presentar una mejora visual como evidencia clínica. Conecta especialmente con Aplicación principal: Preparación sin introducir sesgos, Evidencia: Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, Calidad: Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias, Límite: Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria.</p>
       <div class="page-actions"><a class="btn-link secondary" href="unidad-02.html">← Unidad 2: Calidad de imagen</a><a class="btn-link" href="unidad-04.html">Unidad 4: Segmentación →</a></div>
     </section>
     </article>
