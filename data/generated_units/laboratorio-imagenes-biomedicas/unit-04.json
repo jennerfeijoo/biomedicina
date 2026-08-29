@@ -4,105 +4,118 @@
   "area_id": "ingenieria-biomedica",
   "unit": 4,
   "slug": "segmentacion",
-  "title": "Segmentación",
+  "title": "Segmentación reproducible y evaluación de máscaras",
   "status": "review",
-  "purpose": "Integrar umbral, regiones, métodos semiautomáticos para resolver un caso de cuantificación de anatomía o lesión con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar, ejecutar y evaluar una segmentación reproducible sobre imágenes sintéticas o abiertas no identificables, desde la definición operacional de la región hasta la cuantificación de solapamiento, superficie, volumen y variabilidad de anotación, sin confundir una referencia humana con verdad biológica ni extrapolar desempeño técnico a utilidad clínica.",
   "learning_objectives": [
-    "Definir umbral, regiones y métodos semiautomáticos mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte umbral con regiones y delimite el papel de métodos semiautomáticos.",
-    "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-    "Resolver y comunicar un caso sobre cuantificación de anatomía o lesión con incertidumbre y límites.",
-    "Transferir el método de Segmentación a un escenario nuevo y justificar qué debe revalidarse."
+    "Redactar una definición operacional de región objetivo, inclusiones, exclusiones, plano, conectividad y convención de borde antes de crear máscaras.",
+    "Implementar baselines de umbral global o adaptativo, crecimiento de regiones y operaciones morfológicas con parámetros en unidades físicas cuando corresponda.",
+    "Distinguir segmentación manual, semiautomática y automática, documentando semillas, correcciones y tiempo de interacción.",
+    "Calcular e interpretar Dice, Jaccard, sensibilidad, valor predictivo positivo, distancia de superficie y Hausdorff percentil 95 sin reducir calidad a una métrica única.",
+    "Cuantificar volumen mediante conteo de vóxeles y geometría física, y analizar error por resolución, volumen parcial y posprocesamiento.",
+    "Estimar variabilidad intraobservador e interobservador y tratar la referencia como una construcción dependiente del protocolo.",
+    "Entregar máscaras y métricas con procedencia completa, control visual localizado, análisis de fallos y límites no clínicos explícitos."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Segmentación",
+      "heading": "1. De la pregunta a una máscara operacional",
       "paragraphs": [
-        "La unidad «Segmentación» sitúa umbral, regiones y métodos semiautomáticos dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Imágenes Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Segmentación» en Laboratorio de Imágenes Biomédicas, «umbral», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Segmentación», «regiones», aporta otra dimensión al problema de Laboratorio de Imágenes Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con umbral debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Segmentación» en Laboratorio de Imágenes Biomédicas, «métodos semiautomáticos», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "U4 recibe de U3 imágenes derivadas con geometría y procedencia auditables. Antes de dibujar o calcular, se define qué objeto debe representar la máscara: estructura anatómica, lesión sintética, lumen, tejido completo o subregión. La definición incluye inclusiones, exclusiones, tratamiento de cavidades, objetos desconectados, cortes extremos y convención de borde. Sin este contrato, dos máscaras distintas pueden ser coherentes con reglas distintas y la discrepancia no equivale automáticamente a error.",
+        "Una máscara binaria asigna pertenencia según una regla operacional; no convierte un límite continuo o ambiguo en verdad biológica. En imágenes con volumen parcial, un vóxel puede mezclar tejidos. Obligar una etiqueta binaria simplifica esa incertidumbre. Las etiquetas multiclase y las representaciones probabilísticas conservan otra información, pero exigen convenciones adicionales. La salida debe identificar espacio físico, clase, valor de fondo y relación exacta con la imagen fuente.",
+        "La referencia puede proceder de un fantoma digital con geometría conocida, una anotación experta, un consenso o un protocolo de adjudicación. Cada opción responde a una pregunta distinta. Un fantoma permite conocer la construcción que generó la imagen, pero no reproduce toda ambigüedad clínica; una anotación humana refleja una interpretación bajo instrucciones y condiciones concretas, no una verdad absoluta. Por eso se informa quién anotó, con qué guía, qué imagen visualizó y cómo se resolvieron desacuerdos.",
+        "La unidad de análisis para las métricas suele ser la imagen o el sujeto, no cada vóxel como réplica independiente. Los resultados se resumen por caso y se estratifican por tamaño, contraste, artefacto o protocolo. U5 recibirá máscaras con geometría verificada para registro y mediciones longitudinales; U6 integrará el pipeline y su dossier reproducible."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Segmentación.",
-        "Relacionar umbral, regiones y métodos semiautomáticos mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Definir la región objetivo antes de observar resultados del método.",
+        "Tratar la máscara como una representación operacional, no como verdad biológica automática.",
+        "Conservar imagen fuente, espacio físico, convención de etiquetas y procedencia.",
+        "Resumir métricas por caso y no inflar el tamaño muestral contando vóxeles como sujetos.",
+        "Entregar a U5 máscaras cuya geometría pueda verificarse."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "2. Baselines y métodos semiautomáticos controlables",
       "paragraphs": [
-        "Para «Segmentación» dentro de Laboratorio de Imágenes Biomédicas, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Laboratorio de Imágenes Biomédicas, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre umbral o regiones debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Segmentación», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Laboratorio de Imágenes Biomédicas, la incertidumbre de «Segmentación» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Un umbral global clasifica intensidades respecto de un valor único y constituye un baseline interpretable cuando las clases tienen separación suficiente. Otsu selecciona un umbral que maximiza separación entre clases bajo su criterio; no reconoce anatomía ni garantiza una clase clínicamente correcta. Un umbral adaptativo responde a variación espacial mediante vecindades, pero puede convertir ruido o bias residual en regiones. El rango explorado se fija con entrenamiento o fantomas, nunca optimizando sobre prueba.",
+        "El crecimiento de regiones parte de una o más semillas y agrega vecinos que cumplen un criterio de similitud. Su resultado depende de la semilla, conectividad, orden, criterio de parada y preprocesamiento. Los contornos activos y herramientas de level set incorporan información de borde o región y parámetros de regularización. En un flujo semiautomático deben registrarse las acciones humanas: número de semillas, correcciones, tiempo y reglas de finalización.",
+        "Las operaciones morfológicas modifican la topología local. Apertura puede eliminar objetos pequeños; cierre puede llenar discontinuidades; erosión y dilatación desplazan bordes; el llenado de huecos y la selección del componente mayor incorporan supuestos anatómicos. El radio del elemento estructurante se interpreta en milímetros mediante el espaciado, no solo en píxeles. Cada posprocesamiento se evalúa también sin aplicar para demostrar qué cambio produjo.",
+        "El flujo reproducible conserva máscara cruda, máscara posprocesada y registro de parámetros. Incluye controles positivos con objetos detectables, controles negativos sin región objetivo y perturbaciones de contraste, ruido, tamaño y semilla. Si el método falla en un estrato, el fallo se informa; no se elimina el caso ni se corrige manualmente sin registrar la intervención."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "Usar un baseline interpretable antes de métodos más complejos.",
+        "Registrar semillas, conectividad, criterio de parada y acciones humanas.",
+        "Expresar la morfología en relación con la geometría física.",
+        "Comparar máscaras crudas y posprocesadas para aislar el efecto de cada etapa.",
+        "Conservar fallos y controles negativos como evidencia del alcance."
       ]
     },
     {
-      "heading": "Aplicación razonada: cuantificación de anatomía o lesión",
+      "heading": "3. Métricas complementarias y error de cuantificación",
       "paragraphs": [
-        "En la unidad «Segmentación» de Laboratorio de Imágenes Biomédicas, el caso conductor es cuantificación de anatomía o lesión. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Segmentación» conecta umbral con regiones y utiliza métodos semiautomáticos como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «cuantificación de anatomía o lesión» en Laboratorio de Imágenes Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Segmentación» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de cuantificación de anatomía o lesión y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Dice y Jaccard resumen solapamiento y dependen del tamaño de la región. Dice=1 indica igualdad de conjuntos y Dice=0 ausencia de intersección, pero un valor alto en un órgano grande puede coexistir con un error de borde localizado. Sensibilidad de máscara mide qué fracción de la referencia se recupera; valor predictivo positivo mide qué fracción de la predicción pertenece a la referencia. Ambas deben leerse juntas porque una máscara sobredimensionada puede tener sensibilidad alta y precisión baja.",
+        "Las distancias de superficie responden a otra pregunta. La distancia de Hausdorff máxima es muy sensible a un punto extremo; HD95 reduce ese dominio de un único outlier, pero no lo elimina conceptualmente. La distancia media simétrica puede ocultar un error focal relevante. Por eso se combinan solapamiento, métricas de superficie, inspección localizada y análisis por tamaño, sin declarar un umbral universal de aceptabilidad.",
+        "El volumen de una máscara se obtiene multiplicando el número de vóxeles etiquetados por el volumen físico de cada vóxel. El resultado hereda incertidumbre del espaciado, orientación, volumen parcial, convención de borde y segmentación. Se reportan error absoluto y relativo frente a una referencia adecuada. En objetos pequeños, una capa de vóxeles en el borde puede dominar el error relativo aunque Dice parezca razonable.",
+        "La evaluación se bloquea antes de abrir el conjunto de prueba: método, parámetros, posprocesamiento, métricas, estratos y criterios de fallo quedan versionados. Los intervalos se estiman sobre casos independientes, no sobre vóxeles. Si se comparan métodos, la diferencia se calcula por caso y se muestran distribuciones completas, incluidos fallos."
       ],
       "equations": [
         {
-          "latex": "CNR=\\frac{|\\mu_1-\\mu_2|}{\\sigma_n}",
-          "meaning": "Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.",
+          "latex": "Dice(A,B)=\\frac{2|A\\cap B|}{|A|+|B|}",
+          "meaning": "Solapamiento entre máscara candidata A y referencia operacional B; depende del tamaño y no localiza el error.",
           "variables": {
-            "\\mu": "media regional",
-            "\\sigma_n": "desviación del ruido"
+            "A": "conjunto de vóxeles de la máscara candidata",
+            "B": "conjunto de vóxeles de la referencia operacional"
+          }
+        },
+        {
+          "latex": "V=N_{vox}\\,s_xs_ys_z",
+          "meaning": "Volumen físico de una máscara en una rejilla ortogonal, condicionado por la validez del espaciado y la convención de borde.",
+          "variables": {
+            "N_{vox}": "número de vóxeles etiquetados",
+            "s_x,s_y,s_z": "espaciamientos físicos de la imagen"
           }
         }
       ],
       "key_points": [
-        "Delimitar el caso de cuantificación de anatomía o lesión antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Combinar solapamiento, superficie, volumen e inspección localizada.",
+        "Interpretar Dice y Jaccard en relación con el tamaño de la región.",
+        "Reportar sensibilidad y valor predictivo positivo como compromisos complementarios.",
+        "Calcular volumen en coordenadas físicas y propagar la incertidumbre del borde.",
+        "Estimar variación sobre casos independientes, no sobre vóxeles."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "4. Variabilidad de anotación, fallos y comunicación",
       "paragraphs": [
-        "La reproducibilidad de «Segmentación» en Laboratorio de Imágenes Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Segmentación» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Laboratorio de Imágenes Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Segmentación» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de umbral, regiones y métodos semiautomáticos debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Laboratorio de Imágenes Biomédicas.",
-        "El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre cuantificación de anatomía o lesión. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Laboratorio de Imágenes Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "La variabilidad intraobservador se estima repitiendo la anotación bajo condiciones predefinidas; la interobservador compara personas que aplican la misma guía. La discrepancia puede revelar ambigüedad de borde, instrucciones incompletas o diferencias de entrenamiento. No debe ocultarse mediante consenso sin conservar las máscaras originales. La adjudicación produce una referencia operacional nueva y debe documentar su procedimiento.",
+        "Un algoritmo puede aproximar una referencia de forma consistente y aun reproducir sesgos de esa referencia. También puede obtener una media favorable mientras falla en objetos pequeños, bajo contraste, dispositivos concretos o anatomía atípica. La tabla de fallos enlaza caso, estrato, imagen, referencia, predicción, métrica, patrón visual, causa posible y acción; una causa posible se etiqueta como hipótesis, no como diagnóstico del fallo.",
+        "El informe separa desempeño técnico de validez clínica. Una máscara visualmente plausible, Dice alto o error volumétrico pequeño no demuestra que la región represente enfermedad, cambie una decisión o sea segura para planificación. Esta unidad no establece umbrales clínicos, no valida software médico y no sustituye anotación experta supervisada.",
+        "El producto de dominio contiene definición operacional, conjunto y particiones, máscaras originales y derivadas, código o macro, versiones, parámetros, registro de interacción, métricas por caso, panel de fallos, análisis de variabilidad y declaración de límites. Otra persona debe poder reconstruir por qué existe cada vóxel etiquetado y qué evidencia sería necesaria para transferir el método."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido."
+        "Conservar anotaciones individuales antes de cualquier consenso.",
+        "Distinguir variabilidad del anotador, ambigüedad de tarea y error del método.",
+        "Estratificar fallos por tamaño, contraste, protocolo y artefacto.",
+        "No convertir una métrica técnica en validación clínica o conformidad regulatoria.",
+        "Entregar máscaras, parámetros, métricas por caso y panel de fallos auditables."
       ]
     }
   ],
   "glossary": [
     {
       "term": "umbral",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "definition": "Valor o regla que asigna una etiqueta según la intensidad; su significado depende de modalidad, escala, máscara y población donde se fijó."
     },
     {
       "term": "regiones",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "definition": "Conjuntos de píxeles o vóxeles conectados o relacionados por una definición operacional explícita."
     },
     {
       "term": "métodos semiautomáticos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "definition": "Procedimientos que combinan cálculo y decisiones humanas, como semillas, correcciones o aceptación final, que deben registrarse como parte del método."
     },
     {
       "term": "Segmentación",
-      "definition": "Dominio de estudio que integra umbral, regiones, métodos semiautomáticos para resolver un problema delimitado y verificable."
+      "definition": "Asignación de etiquetas o probabilidades espaciales a una imagen según una tarea y una definición operacional."
     },
     {
       "term": "Caso de aplicación",
@@ -135,214 +148,417 @@
     {
       "term": "Transferencia",
       "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+    },
+    {
+      "term": "máscara binaria",
+      "definition": "Imagen de etiquetas con dos estados, fondo y región objetivo, alineada con una geometría de referencia."
+    },
+    {
+      "term": "referencia operacional",
+      "definition": "Máscara o conjunto de reglas usado para comparar resultados; depende del protocolo y no equivale automáticamente a verdad biológica."
+    },
+    {
+      "term": "volumen parcial",
+      "definition": "Mezcla de señales de más de un material o tejido dentro de un mismo vóxel debido a resolución finita."
+    },
+    {
+      "term": "conectividad",
+      "definition": "Regla que define qué vecinos forman una región continua; en 3D son habituales vecindades de 6, 18 o 26."
+    },
+    {
+      "term": "crecimiento de regiones",
+      "definition": "Algoritmo que expande una región desde semillas incorporando vecinos que cumplen un criterio de similitud y parada."
+    },
+    {
+      "term": "semilla",
+      "definition": "Punto o conjunto inicial indicado al algoritmo; su ubicación puede cambiar el resultado y debe conservarse."
+    },
+    {
+      "term": "elemento estructurante",
+      "definition": "Vecindad geométrica usada por operaciones morfológicas; su tamaño efectivo debe relacionarse con el espaciado físico."
+    },
+    {
+      "term": "apertura morfológica",
+      "definition": "Erosión seguida de dilatación que puede eliminar objetos o salientes pequeños según el elemento estructurante."
+    },
+    {
+      "term": "cierre morfológico",
+      "definition": "Dilatación seguida de erosión que puede cerrar discontinuidades o huecos pequeños."
+    },
+    {
+      "term": "coeficiente Dice",
+      "definition": "Medida de solapamiento 2|A∩B|/(|A|+|B|), acotada entre cero y uno y dependiente del tamaño de la región."
+    },
+    {
+      "term": "índice Jaccard",
+      "definition": "Medida de solapamiento |A∩B|/|A∪B|; comparte limitaciones de tamaño y no localiza discrepancias."
+    },
+    {
+      "term": "sensibilidad de máscara",
+      "definition": "Fracción de los vóxeles de referencia recuperados por la máscara candidata."
+    },
+    {
+      "term": "valor predictivo positivo de máscara",
+      "definition": "Fracción de los vóxeles candidatos que también pertenecen a la referencia operacional."
+    },
+    {
+      "term": "distancia de superficie",
+      "definition": "Distancia física entre puntos de las superficies de dos máscaras bajo una convención direccional o simétrica."
+    },
+    {
+      "term": "HD95",
+      "definition": "Percentil 95 de distancias de Hausdorff dirigidas o simétricas; reduce la dominancia del máximo sin sustituir inspección localizada."
+    },
+    {
+      "term": "variabilidad intraobservador",
+      "definition": "Diferencias entre anotaciones repetidas por la misma persona bajo condiciones definidas."
+    },
+    {
+      "term": "variabilidad interobservador",
+      "definition": "Diferencias entre anotadores que aplican una guía común; puede reflejar ambigüedad o instrucciones insuficientes."
+    },
+    {
+      "term": "adjudicación",
+      "definition": "Procedimiento documentado para resolver discrepancias y producir una referencia operacional sin borrar las anotaciones originales."
+    },
+    {
+      "term": "error volumétrico relativo",
+      "definition": "Diferencia de volumen respecto de una referencia dividida por el volumen de referencia, con signo o valor absoluto según se declare."
+    },
+    {
+      "term": "análisis por caso",
+      "definition": "Evaluación donde cada imagen o sujeto independiente aporta una observación de desempeño, evitando tratar vóxeles como réplicas independientes."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Segmentación",
-      "scenario": "Un equipo propone estudiar cuantificación de anatomía o lesión, pero su pregunta mezcla umbral, regiones y métodos semiautomáticos sin definir unidades, referencias ni resultado admisible.",
+      "title": "Dice, sensibilidad y valor predictivo positivo no cuentan la misma historia",
+      "scenario": "En un fantoma 2D, la referencia contiene 100 píxeles. Una máscara candidata contiene 120: 90 son verdaderos positivos y 30 falsos positivos; quedan 10 falsos negativos.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de umbral, regiones y métodos semiautomáticos.",
-        "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.",
-        "Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Verificar la tabla: TP=90, FP=30 y FN=10.",
+        "Calcular Dice=2TP/(2TP+FP+FN)=180/220≈0,818.",
+        "Calcular sensibilidad=TP/(TP+FN)=90/100=0,90.",
+        "Calcular valor predictivo positivo=TP/(TP+FP)=90/120=0,75.",
+        "Relacionar la sensibilidad alta y el valor predictivo positivo menor con una máscara sobredimensionada.",
+        "Inspeccionar espacialmente dónde aparecen los 30 falsos positivos antes de atribuir una causa."
       ],
-      "interpretation": "El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "Dice resume el solapamiento, pero las métricas direccionales muestran que el principal patrón es sobresegmentación. Ninguna de las tres métricas localiza el borde problemático.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+        "Los píxeles no son casos independientes.",
+        "El ejemplo no incorpora distancia física ni variabilidad de anotación.",
+        "No existe un umbral clínico universal para aceptar Dice≈0,818."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre umbral y regiones en el caso de cuantificación de anatomía o lesión; una condición vinculada con métodos semiautomáticos podría producir el mismo patrón.",
+      "title": "La geometría convierte vóxeles en volumen",
+      "scenario": "Una máscara contiene 2400 vóxeles en una imagen con espaciado 0,8×0,8×3,0 mm. Una versión remuestreada isotrópica contiene más vóxeles, pero representa el mismo objeto físico.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar métodos semiautomáticos como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Calcular el volumen de un vóxel: 0,8×0,8×3,0=1,92 mm³.",
+        "Calcular el volumen de la máscara: 2400×1,92=4608 mm³.",
+        "Convertir a mililitros: 4608 mm³=4,608 mL.",
+        "Verificar que la máscara remuestreada use su nuevo espaciado y no el conteo original.",
+        "Comparar volumen físico y mapa de bordes para detectar cambios introducidos por interpolación."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "El conteo de vóxeles carece de significado volumétrico sin geometría. Un remuestreo puede cambiar el conteo sin cambiar intencionalmente el volumen físico, aunque la interpolación de etiquetas puede alterar bordes.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "La fórmula asume una rejilla ortogonal descrita correctamente.",
+        "La binarización del volumen parcial introduce error de borde.",
+        "El volumen similar no garantiza concordancia espacial."
+      ]
+    },
+    {
+      "title": "Mismo Dice, distinto riesgo geométrico",
+      "scenario": "Dos máscaras candidatas alcanzan Dice=0,90 frente a la misma referencia. La primera difiere uniformemente un vóxel en el borde; la segunda contiene un pequeño componente falso a 40 mm.",
+      "reasoning_steps": [
+        "Confirmar que Dice no codifica la localización de la discrepancia.",
+        "Calcular distancias de superficie y observar el efecto del componente distante.",
+        "Comparar Hausdorff máxima, HD95 y distancia media simétrica.",
+        "Repetir tras retirar el componente mediante una regla preespecificada y documentar el cambio.",
+        "Decidir qué patrón es relevante para la tarea sin inventar un umbral universal."
+      ],
+      "interpretation": "El solapamiento igual no implica error espacial igual. La combinación de métricas y la visualización localizada revela fallos que Dice colapsa.",
+      "limitations": [
+        "HD95 puede omitir un componente que afecta menos del cinco por ciento de los puntos.",
+        "Eliminar componentes pequeños puede borrar anatomía real si la regla no está justificada.",
+        "La relevancia del error depende de la tarea posterior."
+      ]
+    },
+    {
+      "title": "Desacuerdo entre anotadores como evidencia de ambigüedad",
+      "scenario": "Dos anotadores aplican la misma guía a diez fantomas con bordes difusos. El desacuerdo aumenta sistemáticamente en los objetos pequeños y de bajo contraste.",
+      "reasoning_steps": [
+        "Conservar ambas máscaras y calcular métricas por caso.",
+        "Estratificar por tamaño y contraste antes de resumir.",
+        "Revisar la guía en las zonas de desacuerdo sin asumir que un anotador es la verdad.",
+        "Repetir una muestra para separar variabilidad intraobservador e interobservador.",
+        "Documentar adjudicación y conservar las máscaras previas."
+      ],
+      "interpretation": "El patrón sugiere que la definición operacional o la información disponible no determina un borde único en esos estratos; el benchmark debe reflejar esa incertidumbre.",
+      "limitations": [
+        "Diez casos no caracterizan todos los escenarios.",
+        "El desacuerdo no identifica por sí solo la causa.",
+        "Un consenso posterior no elimina la ambigüedad original."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Recuperación: del objeto a la métrica",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Responde primero sin consultar y corrige después con evidencia de la unidad.",
+        "Dibuja el flujo imagen → definición operacional → máscara → referencia → métricas → límite.",
+        "Marca cada decisión como predefinida, ajustada con entrenamiento, interacción humana o evaluación.",
+        "Explica por qué una referencia humana no es automáticamente verdad biológica."
       ],
       "problems": [
-        "Define umbral mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo regiones modifica o complementa a umbral.",
-        "Propón una prueba que distinga el papel de métodos semiautomáticos de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Escribe inclusiones y exclusiones para una esfera sintética con una cavidad interna.",
+        "Explica cómo cambiar de conectividad 6 a 26 puede fusionar regiones en 3D.",
+        "Distingue el efecto de apertura, cierre y selección del componente mayor.",
+        "Describe un caso donde Dice alto y HD95 desfavorable coexistan.",
+        "Explica por qué el volumen no se obtiene correctamente solo con el conteo de vóxeles.",
+        "Propón un control negativo para detectar sobresegmentación."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Mapa conceptual antes y después de la corrección.",
+        "Definición operacional de una región sintética.",
+        "Tabla de seis decisiones y su procedencia."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "La definición resuelve cavidades, componentes y borde.",
+        "Las métricas se vinculan con preguntas distintas.",
+        "La geometría física aparece antes de cuantificar volumen.",
+        "La explicación conserva incertidumbre y límites."
       ]
     },
     {
-      "title": "Taller de evidencia: cuantificación de anatomía o lesión",
+      "title": "Práctica reproducible: benchmark sintético de segmentación",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Genera al menos doce imágenes 2D o volúmenes 3D sintéticos con círculos, elipses o esferas de tamaño y contraste conocidos.",
+        "Conserva las máscaras generadoras como referencia y separa casos para ajuste y prueba antes de elegir parámetros.",
+        "Añade ruido, blur, no uniformidad o un componente distractor mediante semillas registradas.",
+        "Implementa un umbral global como baseline y un segundo método entre Otsu, umbral adaptativo o crecimiento de regiones.",
+        "Guarda máscara cruda y máscara posprocesada por separado.",
+        "Calcula métricas por caso y conserva los fallos completos.",
+        "No uses datos de pacientes ni ajustes parámetros mirando la prueba."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para umbral, regiones y métodos semiautomáticos.",
-        "Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Define la tarea, las etiquetas y las reglas para objetos desconectados y cavidades.",
+        "Verifica que imagen y máscara compartan tamaño, espaciado, origen y dirección.",
+        "Preespecifica el rango de umbral y el criterio para elegirlo usando solo ajuste.",
+        "Registra conectividad, semillas y elemento estructurante.",
+        "Calcula Dice, Jaccard, sensibilidad y valor predictivo positivo.",
+        "Calcula una distancia media de superficie y HD95 en unidades físicas.",
+        "Calcula volumen, error volumétrico absoluto y relativo.",
+        "Compara resultados por tamaño, contraste y perturbación.",
+        "Construye mapas de falsos positivos y falsos negativos para los tres peores casos.",
+        "Compara máscara cruda y posprocesada para detectar mejoras aparentes con pérdida de objetos pequeños.",
+        "Repite la ejecución con la misma semilla y verifica identidad de resultados.",
+        "Redacta una conclusión técnica que no afirme utilidad clínica."
       ],
       "deliverables": [
-        "Pipeline de imagen reproducible con informe cuantitativo.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Generador sintético, configuración y semillas.",
+        "Código o macro de los dos métodos y del posprocesamiento.",
+        "Imágenes, referencias, máscaras crudas y máscaras finales.",
+        "Tabla tidy con una fila por caso y método.",
+        "Panel de fallos con overlays y mapas FP/FN.",
+        "Informe que separa resultado, interpretación, incertidumbre y límite."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
+        "La prueba permanece intacta durante el ajuste.",
+        "La referencia puede reconstruirse desde el generador.",
+        "Las máscaras conservan geometría e identidad de caso.",
+        "Los parámetros y semillas están versionados.",
+        "Las métricas se calculan por caso y en unidades correctas.",
+        "Solapamiento, superficie y volumen se interpretan por separado.",
+        "Los fallos no se excluyen del resumen.",
+        "El posprocesamiento se evalúa mediante ablación.",
+        "La conclusión no excede fantomas y condiciones estudiadas."
       ]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
+      "title": "Evaluación: anotación, revisión por pares y transferencia",
       "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
+        "Entrega a dos revisores una muestra sintética y una guía de anotación sin revelar la máscara generadora.",
+        "Conserva por separado ambas anotaciones y una repetición del primer revisor.",
+        "Compara discrepancias por caso antes de crear una adjudicación.",
+        "Transfiere el pipeline a una perturbación no usada durante el ajuste.",
+        "Clasifica hallazgos de revisión como críticos, importantes o editoriales."
       ],
       "tasks": [
-        "Transfiere el método a un caso distinto de cuantificación de anatomía o lesión y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte umbral, regiones y métodos semiautomáticos.",
+        "Calcula concordancia intraobservador e interobservador con métricas por caso.",
+        "Localiza tres tipos de desacuerdo y vincúlalos con reglas de la guía.",
+        "Propón una adjudicación que preserve las máscaras originales.",
+        "Evalúa el método automático frente a cada anotador y frente a la máscara generadora.",
+        "Explica por qué esos resultados responden a preguntas diferentes.",
+        "Prueba una reducción de contraste o aumento de blur no usado durante ajuste.",
         "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
+        "Formula una pregunta de transferencia y una rúbrica de tres niveles."
       ],
       "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
+        "Guía de anotación versionada y tres conjuntos de máscaras.",
+        "Matriz de concordancia y panel de discrepancias.",
+        "Registro de adjudicación sin sobrescribir originales.",
+        "Informe de transferencia y tabla antes-después.",
         "Rúbrica de transferencia."
       ],
       "checking_criteria": [
+        "Se separa discrepancia humana de error algorítmico.",
+        "La adjudicación es reproducible y conserva procedencia.",
+        "La transferencia usa una perturbación verdaderamente nueva.",
+        "Las figuras conservan unidades, identidad y leyenda accesible.",
         "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "La rúbrica exige razonamiento y no reconocimiento de términos."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar umbral como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar umbral en una explicación."
+      "error": "Definir la región después de ver qué máscara produce mejor métrica.",
+      "correction": "Versionar inclusiones, exclusiones, cavidades, componentes y convención de borde antes de ajustar el método."
     },
     {
-      "error": "Afirmar que una relación entre umbral y regiones demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Tratar una anotación humana como verdad biológica sin incertidumbre.",
+      "correction": "Denominarla referencia operacional y documentar guía, anotador, repetición y adjudicación."
     },
     {
-      "error": "Añadir métodos semiautomáticos después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Optimizar el umbral o el posprocesamiento sobre el conjunto de prueba.",
+      "correction": "Separar por caso antes del ajuste y bloquear parámetros usando solo entrenamiento o fantomas de desarrollo."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Aplicar apertura, cierre o componente mayor sin declarar el supuesto anatómico.",
+      "correction": "Evaluar cada etapa mediante ablación y comprobar que no elimina objetos válidos ni rellena cavidades relevantes."
     },
     {
-      "error": "Generalizar la conclusión de Segmentación al uso clínico o real.",
-      "correction": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+      "error": "Usar un elemento estructurante de tres píxeles como si tuviera el mismo tamaño en todas las imágenes.",
+      "correction": "Convertir el radio pretendido en milímetros a cada eje según el espaciado."
+    },
+    {
+      "error": "Remuestrear etiquetas con interpolación lineal y aceptar valores fraccionarios como clases.",
+      "correction": "Usar vecino más cercano para etiquetas discretas o justificar explícitamente una representación probabilística."
+    },
+    {
+      "error": "Reportar Dice como única prueba de calidad.",
+      "correction": "Combinar solapamiento, métricas de superficie, volumen, estratos e inspección localizada."
+    },
+    {
+      "error": "Calcular distancias en píxeles y compararlas entre protocolos con distinto espaciado.",
+      "correction": "Calcular distancias en coordenadas físicas y reportar milímetros."
+    },
+    {
+      "error": "Usar la Hausdorff máxima sin inspeccionar el outlier que la domina.",
+      "correction": "Presentar máxima, HD95 u otras métricas pertinentes junto con el punto o componente responsable."
+    },
+    {
+      "error": "Tratar cada vóxel como observación independiente para obtener intervalos muy estrechos.",
+      "correction": "Resumir por imagen o sujeto independiente y respetar la jerarquía del diseño."
+    },
+    {
+      "error": "Sobrescribir máscaras individuales al construir consenso.",
+      "correction": "Conservar cada anotación, la adjudicación y el registro de cambios como objetos distintos."
+    },
+    {
+      "error": "Generalizar una máscara visualmente convincente o Dice alto a validez clínica.",
+      "correction": "Limitar la conclusión a datos, tarea, referencia y condiciones evaluadas; no declarar diagnóstico, seguridad ni conformidad."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar cuantificación de anatomía o lesión?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué debe fijar una definición operacional antes de segmentar?",
+      "answer": "Región objetivo, inclusiones, exclusiones, cavidades, componentes, cortes extremos, conectividad y convención de borde.",
+      "reasoning": "Sin reglas previas, la discrepancia entre máscaras puede reflejar tareas diferentes y no error.",
+      "common_error": "Definir la región únicamente por su nombre anatómico."
     },
     {
-      "question": "¿Cómo se relacionan umbral y regiones?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; métodos semiautomáticos puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Por qué Otsu no reconoce automáticamente anatomía?",
+      "answer": "Optimiza un criterio sobre la distribución de intensidades; no incorpora por sí mismo identidad anatómica, conectividad ni relevancia de la tarea.",
+      "reasoning": "La separación estadística de clases no garantiza que las clases correspondan al objeto deseado.",
+      "common_error": "Llamar objetivo a cualquier clase producida por el umbral."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre métodos semiautomáticos?",
-      "answer": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Qué convierte un método en semiautomático?",
+      "answer": "La intervención humana forma parte del algoritmo efectivo mediante semillas, correcciones, selección o aceptación final.",
+      "reasoning": "Esas acciones pueden afectar resultado, tiempo y reproducibilidad y deben registrarse.",
+      "common_error": "Reportar solo el nombre del software."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Qué indica Dice alto y qué no indica?",
+      "answer": "Indica solapamiento alto respecto de una referencia bajo esa muestra; no localiza errores ni demuestra significado biológico o utilidad clínica.",
+      "reasoning": "Dice colapsa distribución espacial y depende del tamaño de la región.",
+      "common_error": "Interpretarlo como exactitud universal."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Por qué sensibilidad y valor predictivo positivo deben leerse juntos?",
+      "answer": "Una máscara sobredimensionada puede recuperar casi toda la referencia y a la vez incluir muchos falsos positivos.",
+      "reasoning": "Las métricas describen omisión y comisión desde denominadores diferentes.",
+      "common_error": "Optimizar sensibilidad sin considerar sobresegmentación."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Qué diferencia existe entre Hausdorff máxima y HD95?",
+      "answer": "La máxima queda determinada por la peor distancia; HD95 usa un percentil y reduce la dominancia de un conjunto extremo pequeño.",
+      "reasoning": "Ninguna reemplaza la inspección del lugar y la causa posible del error.",
+      "common_error": "Suponer que HD95 garantiza ausencia de outliers."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre cuantificación de anatomía o lesión?",
-      "answer": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Cómo se calcula el volumen físico de una máscara?",
+      "answer": "Se multiplica el número de vóxeles etiquetados por el volumen físico de cada vóxel, verificando geometría y unidades.",
+      "reasoning": "El conteo depende del muestreo y no es por sí solo una medida física comparable.",
+      "common_error": "Omitir espaciado o usarlo en centímetros mientras se reportan milímetros cúbicos."
     },
     {
-      "question": "¿Qué demuestra dominio de Segmentación?",
-      "answer": "Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Por qué no deben tratarse los vóxeles como sujetos independientes?",
+      "answer": "Comparten imagen, adquisición, anatomía y procesamiento; la independencia relevante suele estar en el nivel del caso o sujeto.",
+      "reasoning": "Ignorar la jerarquía subestima incertidumbre y produce intervalos artificialmente estrechos.",
+      "common_error": "Usar millones de vóxeles como tamaño muestral clínico."
+    },
+    {
+      "question": "¿Qué aporta una repetición intraobservador?",
+      "answer": "Estima cuánto cambia una anotación de la misma persona bajo condiciones definidas.",
+      "reasoning": "Permite separar parte de la variación temporal individual del desacuerdo entre personas.",
+      "common_error": "Usar consenso único y afirmar que no existe variabilidad."
+    },
+    {
+      "question": "¿Qué debe conservar una adjudicación?",
+      "answer": "Las máscaras originales, la guía, las discrepancias, la persona o procedimiento adjudicador y la referencia resultante como nueva versión.",
+      "reasoning": "El consenso no debe borrar la evidencia sobre ambigüedad.",
+      "common_error": "Sobrescribir las anotaciones previas."
+    },
+    {
+      "question": "¿Qué demuestra dominio de esta unidad?",
+      "answer": "Definir la tarea, producir máscaras reproducibles, evaluar métricas complementarias por caso, analizar variabilidad y fallos y limitar la conclusión.",
+      "reasoning": "El dominio integra método, cuantificación, procedencia y juicio sobre alcance.",
+      "common_error": "Equiparar dominio con obtener una máscara visualmente limpia."
+    },
+    {
+      "question": "¿Qué afirmación queda fuera de alcance aunque Dice sea alto?",
+      "answer": "Que la segmentación diagnostica, mejora decisiones, es segura, generaliza a hospitales o cumple requisitos regulatorios.",
+      "reasoning": "Esas afirmaciones requieren diseños y evidencia distintos de un benchmark educativo.",
+      "common_error": "Convertir validación técnica interna en validación clínica."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Cuantificación de anatomía o lesión."
+      "topic": "Radioterapia y planificación",
+      "connection": "La delineación geométrica puede alimentar mediciones o planificación, pero este laboratorio no autoriza uso clínico ni define tolerancias asistenciales."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa."
+      "topic": "Imagen oncológica cuantitativa",
+      "connection": "El volumen o cambio de una región depende de definición, adquisición, segmentación y repetibilidad; no es una propiedad biológica aislada."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "topic": "Neuroimagen",
+      "connection": "Estructuras pequeñas y bordes de bajo contraste muestran por qué tamaño, volumen parcial y distancia de superficie importan además de Dice."
     },
     {
-      "topic": "Límite",
-      "connection": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+      "topic": "Anotación para aprendizaje automático",
+      "connection": "La guía, variabilidad humana y adjudicación condicionan las etiquetas que un modelo aprende y el techo aparente de concordancia."
+    },
+    {
+      "topic": "Biomarcadores de imagen",
+      "connection": "Toda medición derivada de una máscara hereda incertidumbre de geometría, borde, posprocesamiento y referencia."
+    },
+    {
+      "topic": "Límite clínico y regulatorio",
+      "connection": "Un benchmark sintético o abierto evalúa desempeño técnico bajo condiciones declaradas; no demuestra diagnóstico, beneficio, seguridad o conformidad."
     }
   ],
   "sources": [
@@ -384,6 +600,102 @@
       "url": "https://imagej.net/",
       "type": "software abierto",
       "description": "Procesamiento, medición y automatización de imágenes científicas.",
+      "verification_status": "official_or_open_resource_checked_2026-08"
+    },
+    {
+      "title": "ITK Software Guide",
+      "organization": "Insight Software Consortium",
+      "url": "https://itk.org/ItkSoftwareGuide.pdf",
+      "type": "documentación oficial",
+      "description": "Representación de imágenes, region growing, level sets, morfología y evaluación reproducible.",
+      "verification_status": "official_or_open_resource_checked_2026-08"
+    },
+    {
+      "title": "SimpleITK Fundamental Concepts",
+      "organization": "SimpleITK project",
+      "url": "https://simpleitk.readthedocs.io/en/master/fundamentalConcepts.html",
+      "type": "documentación oficial",
+      "description": "Tamaño, espaciado, origen y dirección para preservar geometría física.",
+      "verification_status": "official_or_open_resource_checked_2026-08"
+    },
+    {
+      "title": "3D Slicer Segmentations documentation",
+      "organization": "3D Slicer community",
+      "url": "https://slicer.readthedocs.io/en/latest/user_guide/modules/segmentations.html",
+      "type": "documentación oficial",
+      "description": "Representaciones de segmentación, geometría de referencia, importación, exportación y edición.",
+      "verification_status": "official_or_open_resource_checked_2026-08"
+    },
+    {
+      "title": "scikit-image segmentation examples",
+      "organization": "scikit-image developers",
+      "url": "https://scikit-image.org/docs/stable/auto_examples/segmentation/index.html",
+      "type": "documentación oficial",
+      "description": "Baselines reproducibles de umbral, regiones, contornos y watershed sobre imágenes de ejemplo.",
+      "verification_status": "official_or_open_resource_checked_2026-08"
+    },
+    {
+      "title": "Metrics for evaluating 3D medical image segmentation: analysis, selection, and tool",
+      "organization": "BMC Medical Imaging",
+      "url": "https://doi.org/10.1186/s12880-015-0068-x",
+      "type": "artículo metodológico",
+      "description": "Taxonomía e interpretación comparada de métricas de segmentación médica.",
+      "verification_status": "verified_metadata_2026-08"
+    },
+    {
+      "title": "Metrics reloaded: recommendations for image analysis validation",
+      "organization": "Nature Methods",
+      "url": "https://doi.org/10.1038/s41592-023-02151-z",
+      "type": "consenso metodológico",
+      "description": "Selección de métricas condicionada por tarea, propiedades del problema y errores relevantes.",
+      "verification_status": "verified_metadata_2026-08"
+    },
+    {
+      "title": "Simultaneous truth and performance level estimation (STAPLE)",
+      "organization": "IEEE Transactions on Medical Imaging",
+      "url": "https://doi.org/10.1109/TMI.2004.828354",
+      "type": "artículo metodológico",
+      "description": "Modelo para combinar segmentaciones y estimar desempeño; se estudia como método condicionado, no como verdad automática.",
+      "verification_status": "verified_metadata_2026-08"
+    },
+    {
+      "title": "ITK-SNAP: An interactive tool for semi-automatic segmentation of multi-modality biomedical images",
+      "organization": "NeuroImage",
+      "url": "https://doi.org/10.1016/j.neuroimage.2006.01.015",
+      "type": "artículo de software",
+      "description": "Flujo interactivo y semiautomático con region competition y documentación de interacción.",
+      "verification_status": "verified_metadata_2026-08"
+    },
+    {
+      "title": "The Medical Segmentation Decathlon",
+      "organization": "Nature Communications",
+      "url": "https://doi.org/10.1038/s41467-022-30695-9",
+      "type": "artículo y datos abiertos",
+      "description": "Benchmark multiórgano para estudiar generalización, rankings y heterogeneidad de tareas.",
+      "verification_status": "verified_metadata_2026-08"
+    },
+    {
+      "title": "DICOM PS3.3 Segmentation Information Object Definition",
+      "organization": "DICOM Standards Committee",
+      "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_A.51.html",
+      "type": "estándar oficial",
+      "description": "Modelo de información para objetos DICOM Segmentation y relación con imágenes fuente.",
+      "verification_status": "official_or_open_resource_checked_2026-08"
+    },
+    {
+      "title": "MONAI metrics documentation",
+      "organization": "MONAI Consortium",
+      "url": "https://docs.monai.io/en/stable/metrics.html",
+      "type": "documentación oficial",
+      "description": "Implementaciones y convenciones para Dice, Hausdorff, surface distance y métricas relacionadas.",
+      "verification_status": "official_or_open_resource_checked_2026-08"
+    },
+    {
+      "title": "Quantitative Imaging Biomarkers Alliance",
+      "organization": "Radiological Society of North America",
+      "url": "https://qibawiki.rsna.org/",
+      "type": "recurso de metrología",
+      "description": "Perfiles, procedimientos y razonamiento sobre reproducibilidad de mediciones derivadas de imagen.",
       "verification_status": "official_or_open_resource_checked_2026-08"
     }
   ],
