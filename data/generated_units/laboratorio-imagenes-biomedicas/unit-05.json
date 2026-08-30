@@ -1,1 +1,376 @@
-{"schema_version":"2.0","subject_id":"laboratorio-imagenes-biomedicas","area_id":"ingenieria-biomedica","unit":5,"slug":"registro-y-mediciones","title":"Registro espacial y medición longitudinal reproducible","status":"review","purpose":"Diseñar y auditar un flujo longitudinal reproducible que preserve geometría física y procedencia, seleccione transformaciones y métricas según la tarea, evalúe error con evidencia independiente y cuantifique cambio con repetibilidad e incertidumbre sin convertir variación técnica en progresión clínica.","learning_objectives":["Declarar imagen fija, móvil, dominio y dirección de transformación en coordenadas físicas.","Elegir transformaciones rígidas, afines o deformables justificando grados de libertad.","Relacionar inicialización, métrica, optimizador, multirresolución e interpolación.","Remuestrear intensidades y etiquetas con interpolación adecuada y mínima.","Evaluar registro con landmarks reservados, TRE, inspección localizada.","Auditar deformaciones con campo de desplazamiento y determinante jacobiano.","Cuantificar volumen, cambio, acuerdo y repetibilidad en unidades físicas.","Entregar a U6 transformaciones, mediciones, incertidumbre, controles y fallos auditables."],"theory_sections":[{"heading":"1. Correspondencia en espacio físico","paragraphs":["U5 recibe de U4 imágenes y máscaras con geometría verificable. Registrar es estimar correspondencias físicas: tamaño, espaciado, origen y dirección se auditan antes de optimizar. Se declaran fija, móvil y sentido de T. Rigid preserva distancias; affine añade escala/cizalla; deformable introduce libertad local. El modelo debe ser el más simple que no borre el cambio que luego se medirá."],"key_points":["Milímetros antes que índices.","Dirección de T explícita.","Flexibilidad justificada."]},{"heading":"2. Métrica, optimización e interpolación","paragraphs":["El registro combina transformación, inicialización, métrica, optimizador, multirresolución e interpolador. Mean squares exige intensidades comparables; información mutua tolera relaciones multimodales. Shrink factors, sigmas, muestreo y tolerancias son parámetros científicos. Transformar no es remuestrear: intensidades usan interpolación continua; máscaras, nearest-neighbor como baseline; se componen transformaciones para evitar interpolaciones repetidas."],"key_points":["Métrica según modalidad/tarea.","Multirresolución respeta escala física.","Etiquetas no son intensidades."]},{"heading":"3. Evaluación independiente: TRE y FRE","paragraphs":["La métrica optimizada no basta para validar. TRE mide distancia física en objetivos reservados; FRE mide ajuste en fiduciales usados para estimar T y no garantiza TRE bajo. Se reportan errores por caso/landmark, localización, no convergencias y sensibilidad a inicialización, resolución y contraste."],"equations":[{"latex":"TRE_i=\\\\lVert x_i^{fixed}-T(x_i^{moving})\\\\rVert_2","meaning":"Error de registro del objetivo i en unidades físicas."}],"key_points":["Separar ajuste de evaluación.","Distinguir FRE/TRE.","Conservar fallos."]},{"heading":"4. Registro deformable","paragraphs":["Una deformación T(x)=x+u(x) se audita con su campo y J(x)=det(∇TY. Jacobianos negativos suelen señalar plegamientos en muchos modelos; suavidad no prueba correspondencia. El jacobiano describe geometría matemática y no se interpreta automáticamente como crecimiento o atrofia."],"equations":[{"latex":"J(x)=\\\\det(\\\\nabla T(x))","meaning":"Cambio volumétrico matemático local, no biomarcador automático."}],"key_points":["Inspeccionar campo y jacobiano.","No inferir biología desde deformación.","Comparar con evidencia independiente."]},{"heading":"5. Medición longitudinal y repetibilidad","paragraphs":["El cambio observado combina posible cambio biológico y error de adquisición, segmentación y registro. Volumen se calcula con espaciado físico; se informa ΔV y ΔV%. Bland–Altman evalúa acuerdo y un ICC requiere modelo explícito. Bajo supuestos gaussianos, RC≈2.77ⲷs_w contextualiza si una diferencia excede variación repetida del pipeline."],"equations":[{"latex":"V=N_{vox}s_xs_ys_z","meaning":"Volumen físico."},{"latex":"\\\\Delta V=V_2-V_1;\\\\quad RC\\\\approx2.77s_w","meaning":"Cambio absoluto y coeficiente de repetibilidad aproximado."}],"key_points":["Cambio observado ≠ cambio detectable.","Acuerdo ≠ correlación.","U5 no diagnostica progresión."]}],"glossary":[{"term":"imagen fija","definition":"referencia espacial"},{"term":"imagen móvil","definition":"imagen transformada"},{"term":"espacio físico","definition":"coordenadas físicas"},{"term":"origen","definition":"posición inicial"},{"term":"espaciado","definition":"distancia entre muestras"},{"term":"matriz de dirección","definition":"orientación de ejes"},{"term":"rigid","definition":"rotación+traslación"},{"term":"affine","definition":"rigid+escala/cizalla"},{"term":"deformable","definition":"correspondencia local"},{"term":"campo de desplazamiento","definition":"vectores locales"},{"term":"B-spline","definition":"base local suave"},{"term":"métrica de similitud","definition":"función objetivo"},{"term":"mean squares","definition":"diferencia cuadrática"},{"term":"información mutua","definition":"dependencia estadística"},{"term":"optimizador","definition":"ajusta parámetros"},{"term":"inicialización","definition":"punto de partida"},{"term":"multirresolución","definition":"grueso→fino"},{"term":"remuestreo","definition":"evaluación en rejilla de salida"},{"term":"nearest-neighbor","definition":"preserva clases"},{"term":"composición","definition":"cadena de transformaciones"},{"term":"landmark","definition":"punto correspondiente"},{"term":"FLE","definition":"error de localización"},{"term":"FRE","definition":"error en fiduciales de ajuste"},{"term":"TRE","definition":"error en objetivos"},{"term":"jacobiano","definition":"cambio volumétrico local"},{"term":"plegamiento","definition":"inversión local"},{"term":"repetibilidad","definition":"acuerdo en repeticiones"},{"term":"reproducibilidad","definition":"acuerdo al cambiar condiciones"},{"term":"Bland–Altman","definition":"acuerdo por diferencias"},{"term":"RC","definition":"repeatability coefficient"}],"worked_examples":[{"title":"Rigid con T conocida","scenario":"Fantoma 3D con rotación/traslación conocidas y landmarks reservados.","reasoning_steps":["Auditar geometría.","Registrar rigid.","Calcular TRE en landmarks no usados."],"interpretation":"Comprueba implementación y dirección de T.","limitations":["No valida anatomía real."]},{"title":"Multimodalidad","scenario":"Dos imágenes comparten geometría pero no intensidades comparables.","reasoning_steps":["Comparar mean squares e información mutua.","Mantener inicialización.","Evaluar TRE independiente."],"interpretation":"La métrica depende de la relación de intensidades.","limitations":["MI no garantiza registro correcto."]},{"title":"Volumen nativo vs remuestreado","scenario":"Dos máscaras tienen espaciados diferentes.","reasoning_steps":["Medir volumen nativo.","Registrar imágenes.","Remuestrear copia con nearest-neighbor y cuantificar diferencia."],"interpretation":"Registro puede apoyar correspondencia sin redefinir la medida primaria.","limitations":["Segmentación sigue aportando error."]},{"title":"Deformable y jacobiano","scenario":"Fantoma con campo suave y una región susceptible de plegamiento.","reasoning_steps":["Rigid antes de deformable.","Calcular jacobiano.","Comparar TRE y extremos de J."],"interpretation":"Mejor similitud puede coexistir con peor plausibilidad.","limitations":["J no prueba correspondencia."]}],"guided_activities":[{"title":"Recuperación: geometría y remuestreo","instructions":["Dibujar fija, móvil y salida.","Convertir índices a coordenadas físicas.","Explicar transformación vs remuestreo."],"problems":["Shape igual con origen distinto.","Rigid vs affine.","Interpolador para máscara.","Dirección de T."],"deliverables":["Diagrama.","Tabla índice→mm."],"checking_criteria":["Dirección explícita.","Unidades físicas.","Etiquetas preservadas."]},{"title":"Laboratorio longitudinal reproducible","instructions":["Usar datos sintéticos/abiertos no identificables.","Congelar originales.","Predefinir T, métrica, inicialización, optimizador e interpolador.","Reservar landmarks.","Ejecutar rigid baseline.","Guardar transformaciones.","Componer antes de remuestrear.","Conservar fallos."],"problems":["Auditar geometría.","Generar T conocida.","Comparar métricas.","Calcular TRE.","Perturbar inicialización.","Justificar affine.","Probar deformable opcional.","Calcular jacobiano.","Remuestrear intensidad/máscara.","Medir volumen físico.","Calcular ΔV.","Estimar repetibilidad."],"deliverables":["Manifest.","Configuración.","Transformaciones.","Tabla TRE.","Resumen jacobiano.","Tabla longitudinal.","Registro de fallos."],"checking_criteria":["Originales inmutables.","Baseline primero.","Evaluación independiente.","TRE en mm.","Máscaras categóricas.","Jacobian auditado.","Sin progresión clínica.","Pipeline reruneable."]},{"title":"Revisión y transferencia","instructions":["Revisión independiente.","Repetir una etapa a ciegas.","Registrar antes-después."],"tasks":["Detectar dirección ambigua.","Detectar validación circular.","Control contra overfitting deformable.","Corregir conclusión clínica exagerada."],"deliverables":["Checklist.","Tabla de correcciones."],"checking_criteria":["Cambios verificables.","Supuestos explícitos.","Conclusión proporcional."]}],"common_errors":[{"error":"Registrar por índices.","correction":"Auditar geometría física."},{"error":"No declarar dirección de T.","correction":"Declarar fija, móvil y salida."},{"error":"Empezar deformable.","correction":"Usar rigid baseline."},{"error":"Elegir métrica por costumbre.","correction":"Vincular a modalidad/tarea."},{"error":"Validar con métrica optimizada.","correction":"Usar landmarks reservados."},{"error":"Confundir FRE/TRE.","correction":"Separar ajuste/evaluación."},{"error":"Interpolar máscaras linealmente.","correction":"Usar etiquetas."},{"error":"Remuestrear repetidamente.","correction":"Componer T."},{"error":"Comparar voxels.","correction":"Usar volumen físico."},{"error":"Interpretar J como biología.","correction":"Tratar J como diagnóstico geométrico."},{"error":"Eliminar fallos.","correction":"Conservar no convergencias."},{"error":"Correlación=acuerdo.","correction":"Usar Bland–Altman."}],"self_assessment":[{"question":"¿Shape igual implica alineación?","answer":"No; geometría física puede diferir.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿Rigid antes que affine?","answer":"Sí cuando rotación/traslación bastan.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿MI en multimodalidad?","answer":"Tolera relaciones de intensidad no idénticas.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿Métrica final valida?","answer":"No; fue optimizada.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿FRE=TRE?","answer":"No; responden a puntos distintos.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿Interpolador de máscara?","answer":"Nearest-neighbor como baseline.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿J negativo?","answer":"Alerta de plegamiento en muchos modelos.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿Volumen nativo?","answer":"Reduce sesgo por remuestreo de etiquetas.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿Bland–Altman?","answer":"Evalúa diferencias y acuerdo.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿RC?","answer":"Contextualiza variación entre repeticiones.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿ΔV≠0 es cambio real?","answer":"No sin compararlo con error/repetibilidad.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."},{"question":"¿Qué recibe U6?","answer":"T, medidas, incertidumbre, controles y fallos.","reasoning":"Justificar con geometría, validación o metrología.","common_error":"Responder sin declarar supuestos."}],"biomedical_connections":[{"topic":"Oncología cuantitativa","connection":"Separar cambio volumétrico de variación técnica sin aplicar criterios clínicos de respuesta."},{"topic":"Neuroimagen longitudinal","connection":"Deformación registrada no equivale automáticamente a atrofia."},{"topic":"Radioterapia","connection":"TRE exige evaluar precisión en el objetivo, no solo en fiduciales."},{"topic":"Biomarcadores de imagen","connection":"QIBA exige caracterizar repetibilidad antes de interpretar cambio."}],"sources":[{"title":"SimpleITK ImageRegistrationMethod","url":"https://simpleitk.org/doxygen/latest/html/classitk_1_1simple_1_1ImageRegistrationMethod.html","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"SimpleITK Fundamental Concepts","url":"https://simpleitk.readthedocs.io/en/master/fundamentalConcepts.html","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"ITK Software Guide","url":"https://itk.org/ItkSoftwareGuide.pdf","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Klein et al. elastix","url":"https://doi.org/10.1109/TMI.2009.2035616","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Maintz & Viergever survey","url":"https://doi.org/10.1016/S1361-8415(01)80026-8","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"QIBA Metrology Standards","url":"https://doi.org/10.1148/radiol.2015142202","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Fitzpatrick et al. TRE","url":"https://doi.org/10.1109/42.736021","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Klein et al. nonlinear evaluation","url":"https://doi.org/10.1016/j.neuroimage.2009.12.037","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Avants et al. similarity metrics","url":"https://doi.org/10.1016/j.neuroimage.2010.09.025","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"3D Slicer Registration","url":"https://slicer.readthedocs.io/en/latest/user_guide/registration.html","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"RSNA QIBA","url":"https://www.rsna.org/research/quantitative-imaging-biomarkers-alliance","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Bland & Altman","url":"https://doi.org/10.1016/S0140-6736(86)90837-8","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Shrout & Fleiss ICC","url":"https://doi.org/10.1037/0033-2909.86.2.420","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Koo & Li ICC guideline","url":"https://doi.org/10.1016/j.jcm.2016.02.012","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"Obuchowski change in QIB","url":"https://doi.org/10.1016/j.acra.2017.09.023","type":"fuente académica u oficial","verification_status":"checked_2026-08"},{"title":"DICOM Standard","url":"https://www.dicomstandard.org/current","type":"fuente académica u oficial","verification_status":"checked_2026-08"}],"editorial_notice":"Material educativo en estado review; requiere revisión disciplinar externa y no sustituye diagnóstico, tratamiento, certificación ni conformidad regulatoria."}
+{
+  "schema_version": "2.0",
+  "subject_id": "laboratorio-imagenes-biomedicas",
+  "area_id": "ingenieria-biomedica",
+  "unit": 5,
+  "slug": "registro-y-mediciones",
+  "title": "Registro espacial y medición longitudinal reproducible",
+  "status": "review",
+  "purpose": "Diseñar y auditar un flujo longitudinal reproducible que preserve geometría física y procedencia, seleccione transformaciones y métricas según la tarea, evalúe error con evidencia independiente y cuantifique cambio con repetibilidad e incertidumbre, sin convertir variación técnica o deformación matemática en progresión clínica.",
+  "learning_objectives": [
+    "Declarar imagen fija, imagen móvil, dominio, codominio y dirección de la transformación en coordenadas físicas antes de registrar.",
+    "Elegir transformaciones rígidas, afines o deformables justificando sus grados de libertad y el cambio anatómico que podrían absorber.",
+    "Relacionar inicialización, métrica, optimizador, estrategia multirresolución, muestreo e interpolación como componentes distintos del registro.",
+    "Remuestrear intensidades y etiquetas con interpolación apropiada, evitando interpolaciones acumulativas y preservando originales.",
+    "Evaluar registro con landmarks reservados, target registration error, inspección localizada y análisis por caso, sin validar con la misma métrica optimizada.",
+    "Auditar transformaciones deformables mediante campo de desplazamiento, regularidad y determinante jacobiano, sin interpretar deformación como biología por defecto.",
+    "Cuantificar volumen, cambio longitudinal, acuerdo y repetibilidad en unidades físicas, separando cambio observado de cambio detectable.",
+    "Entregar a U6 transformaciones, mediciones, incertidumbre, controles, fallos y decisiones de procesamiento suficientemente documentados para reconstruir el pipeline."
+  ],
+  "theory_sections": [
+    {
+      "heading": "1. Correspondencia espacial: registrar no es superponer píxeles",
+      "paragraphs": [
+        "U5 recibe de U4 imágenes y máscaras cuya geometría debe ser verificable. Antes de estimar cualquier transformación se auditan tamaño, espaciado, origen y matriz de dirección. Dos matrices con el mismo número de vóxeles pueden representar regiones físicas diferentes; por eso las comparaciones longitudinales se expresan en milímetros y milímetros cúbicos, no solo en índices de matriz.",
+        "El problema se formula con una imagen fija, una imagen móvil y una transformación T cuya dirección se declara explícitamente. Una transformación rígida modela rotación y traslación y preserva distancias; una transformación afín añade escala y cizalla; una transformación deformable permite desplazamientos locales. Aumentar grados de libertad puede mejorar una función de similitud y, al mismo tiempo, absorber el cambio que se pretendía medir.",
+        "La selección del modelo depende de la tarea. En un fantoma con movimiento conocido, una transformación rígida puede ser suficiente; en anatomía sometida a cambios de pose o escala puede justificarse una afín; una deformable requiere una hipótesis adicional sobre qué deformaciones son plausibles. El baseline debe ser el modelo más simple compatible con el problema y se conserva para comparar el beneficio real de modelos más flexibles."
+      ],
+      "key_points": [
+        "Auditar geometría física antes de optimizar.",
+        "Declarar imagen fija, móvil y dirección de T.",
+        "Preferir el modelo más simple que no borre el cambio de interés.",
+        "Expresar distancias y volúmenes en unidades físicas."
+      ]
+    },
+    {
+      "heading": "2. Métrica, optimización, multirresolución e interpolación",
+      "paragraphs": [
+        "Un pipeline de registro combina componentes que no deben confundirse: inicialización, transformación, métrica de similitud, estrategia de muestreo, optimizador y criterios de parada. Mean squares es interpretable cuando las intensidades correspondientes son comparables; información mutua puede ser más apropiada cuando la relación entre intensidades cambia entre modalidades. Ninguna métrica reconoce por sí sola la anatomía correcta.",
+        "La multirresolución optimiza de escalas gruesas a finas mediante shrink factors y suavizado. Los sigmas deben interpretarse en relación con el espaciado físico. La inicialización también importa: un método puede converger de manera estable hacia una solución incorrecta si comienza fuera de su región de captura. Por ello se estudia sensibilidad a perturbaciones controladas de traslación, rotación y escala.",
+        "Transformar coordenadas y remuestrear datos son operaciones distintas. Una imagen de intensidades puede utilizar interpolación lineal o de orden superior según la tarea; una máscara categórica no debe tratarse como una intensidad continua. Nearest-neighbor constituye un baseline conservador para etiquetas discretas. Cuando existen varias transformaciones, se componen primero y se remuestrea una sola vez siempre que el flujo lo permita, porque cada interpolación puede modificar la señal o el borde.",
+        "Los parámetros del registro son parte del resultado científico: transform type, métrica, muestreo, niveles, shrink factors, sigmas, learning rate, tolerancias, semilla aleatoria y versión de biblioteca se conservan junto a la transformación estimada."
+      ],
+      "key_points": [
+        "Elegir la métrica de acuerdo con modalidad y tarea.",
+        "Tratar inicialización y multirresolución como decisiones experimentales.",
+        "No interpolar etiquetas como intensidades continuas.",
+        "Componer transformaciones antes de remuestrear cuando sea posible."
+      ]
+    },
+    {
+      "heading": "3. Evaluación independiente: landmarks, FLE, FRE y TRE",
+      "paragraphs": [
+        "El valor final de la métrica optimizada no basta para validar el registro porque el algoritmo fue construido precisamente para mejorar esa cantidad. La evaluación necesita evidencia que no haya sido utilizada para estimar los parámetros, por ejemplo landmarks reservados, contornos independientes, estructuras de control o transformaciones sintéticas conocidas.",
+        "El fiducial localization error (FLE) describe incertidumbre al localizar puntos. El fiducial registration error (FRE) cuantifica el ajuste en los fiduciales usados durante la estimación y puede ser pequeño aunque el error en una región de interés sea grande. El target registration error (TRE) evalúa la discrepancia en objetivos que no se usaron para ajustar T y se expresa en unidades físicas.",
+        "La evaluación se informa por caso y por región. Una media global puede ocultar errores localizados cerca del objetivo relevante. Se conservan no convergencias, casos extremos y sensibilidad a inicialización, resolución y contraste. Si se seleccionan hiperparámetros con un conjunto de casos, el conjunto reservado para evaluación final permanece intacto durante esa selección."
+      ],
+      "equations": [
+        {
+          "latex": "TRE_i=\\lVert x_i^{fixed}-T(x_i^{moving})\\rVert_2",
+          "meaning": "Distancia euclídea entre la localización física del objetivo i en la imagen fija y la localización transformada de su correspondencia móvil.",
+          "variables": {
+            "x_i": "coordenada física del landmark i",
+            "T": "transformación estimada"
+          }
+        }
+      ],
+      "key_points": [
+        "Separar ajuste de evaluación.",
+        "No confundir FRE bajo con TRE bajo.",
+        "Reportar error localizado y por caso.",
+        "Mantener reservada la evidencia usada para evaluación final."
+      ]
+    },
+    {
+      "heading": "4. Registro deformable: flexibilidad, regularidad y jacobiano",
+      "paragraphs": [
+        "Una transformación deformable puede escribirse como T(x)=x+u(x), donde u(x) es un campo de desplazamiento. Esta flexibilidad permite modelar cambios locales, pero también puede sobreajustar ruido, artefactos o diferencias de intensidad. Por ello se compara siempre con un baseline rígido o afín y se registra la regularización utilizada.",
+        "La transformación se audita inspeccionando el campo de desplazamiento, magnitudes extremas y el determinante jacobiano J(x)=det(∇T(x)). En muchos modelos de deformación, valores no positivos señalan pérdida de invertibilidad local o plegamiento. Un campo visualmente suave no demuestra correspondencia anatómica correcta, y un jacobiano positivo tampoco valida el registro por sí solo.",
+        "El jacobiano describe una propiedad geométrica de la transformación: expansión o contracción matemática local bajo el modelo. No se interpreta automáticamente como crecimiento, atrofia, edema o respuesta terapéutica. Para sostener una afirmación biológica se requiere evidencia independiente y un diseño que descarte explicaciones técnicas alternativas."
+      ],
+      "equations": [
+        {
+          "latex": "T(x)=x+u(x)",
+          "meaning": "Representación de una transformación mediante un campo de desplazamiento u(x)."
+        },
+        {
+          "latex": "J(x)=\\det(\\nabla T(x))",
+          "meaning": "Determinante jacobiano de la transformación; cuantifica cambio volumétrico matemático local, no un biomarcador biológico automático."
+        }
+      ],
+      "key_points": [
+        "Comparar deformable contra un baseline menos flexible.",
+        "Inspeccionar campo de desplazamiento y jacobiano.",
+        "Tratar plegamientos y extremos como fallos que deben investigarse.",
+        "No inferir biología directamente desde una deformación matemática."
+      ]
+    },
+    {
+      "heading": "5. Medición longitudinal: cambio, acuerdo y repetibilidad",
+      "paragraphs": [
+        "Una diferencia longitudinal combina posible cambio del objeto con variación de adquisición, reconstrucción, preprocesamiento, segmentación y registro. Por eso una diferencia distinta de cero no equivale automáticamente a cambio detectable. La medida primaria se define antes del análisis y, para máscaras, el volumen físico se calcula a partir del número de vóxeles y su espaciado.",
+        "El cambio puede expresarse como diferencia absoluta ΔV=V2−V1 y, cuando el denominador sea interpretable, como cambio relativo. Las máscaras originales se conservan y el efecto del remuestreo se cuantifica por separado. El registro sirve para establecer correspondencia; no debe modificar silenciosamente la definición de la medida.",
+        "Bland–Altman estudia acuerdo mediante diferencias frente a magnitudes y permite detectar sesgo y heterocedasticidad que una correlación alta puede ocultar. El intraclass correlation coefficient requiere declarar el modelo, las unidades y si se evalúa consistencia o acuerdo absoluto; reportar solamente 'ICC' es insuficiente.",
+        "Con repeticiones comparables puede estimarse una desviación estándar within-subject s_w. Bajo supuestos aproximadamente gaussianos y estables, un repeatability coefficient de aproximadamente 2.77·s_w proporciona una escala para contextualizar diferencias entre dos mediciones. Ese umbral depende del pipeline, población, rango y condiciones evaluadas; no es un criterio clínico universal.",
+        "U5 entrega a U6 transformaciones, métricas independientes, mediciones, incertidumbre, controles, fallos y decisiones de procesamiento. U6 integrará estos productos en un pipeline reproducible y un informe que preserve la separación entre desempeño técnico, interpretación científica y utilidad clínica."
+      ],
+      "equations": [
+        {
+          "latex": "V=N_{vox}s_xs_ys_z",
+          "meaning": "Volumen físico de una máscara cuando el espaciado describe correctamente el tamaño de cada vóxel.",
+          "variables": {
+            "N_{vox}": "número de vóxeles etiquetados",
+            "s_x,s_y,s_z": "espaciados físicos"
+          }
+        },
+        {
+          "latex": "\\Delta V=V_2-V_1",
+          "meaning": "Cambio volumétrico absoluto entre dos mediciones definidas de manera equivalente."
+        },
+        {
+          "latex": "RC\\approx2.77s_w",
+          "meaning": "Coeficiente de repetibilidad aproximado para la diferencia entre dos mediciones bajo supuestos gaussianos y varianza estable."
+        }
+      ],
+      "key_points": [
+        "Cambio observado no equivale automáticamente a cambio detectable.",
+        "Correlación no equivale a acuerdo.",
+        "Declarar el modelo de ICC y las condiciones de repetibilidad.",
+        "U5 no diagnostica progresión ni define criterios clínicos de respuesta."
+      ]
+    }
+  ],
+  "glossary": [
+    {"term": "imagen fija", "definition": "Imagen que define el sistema espacial de referencia para una operación de registro."},
+    {"term": "imagen móvil", "definition": "Imagen cuyas coordenadas se relacionan con el sistema de referencia mediante una transformación."},
+    {"term": "espacio físico", "definition": "Sistema de coordenadas expresado en unidades físicas y definido por origen, espaciado y orientación."},
+    {"term": "origen", "definition": "Coordenada física asociada al origen de la rejilla de una imagen."},
+    {"term": "espaciado", "definition": "Distancia física entre muestras consecutivas a lo largo de cada eje."},
+    {"term": "matriz de dirección", "definition": "Matriz que codifica la orientación de los ejes de imagen respecto del espacio físico."},
+    {"term": "transformación rígida", "definition": "Transformación que combina rotación y traslación preservando distancias y ángulos."},
+    {"term": "transformación afín", "definition": "Transformación lineal con traslación que puede incluir rotación, escala y cizalla."},
+    {"term": "transformación deformable", "definition": "Transformación con grados de libertad locales capaz de modelar desplazamientos no uniformes."},
+    {"term": "campo de desplazamiento", "definition": "Campo vectorial que asigna a cada posición un desplazamiento local."},
+    {"term": "B-spline", "definition": "Base local utilizada para parametrizar campos suaves mediante puntos de control."},
+    {"term": "métrica de similitud", "definition": "Función que cuantifica una propiedad usada por el optimizador para comparar imágenes."},
+    {"term": "mean squares", "definition": "Métrica basada en diferencias cuadráticas de intensidades correspondientes."},
+    {"term": "información mutua", "definition": "Medida de dependencia estadística frecuentemente utilizada para registro multimodal."},
+    {"term": "optimizador", "definition": "Algoritmo que modifica parámetros de una transformación para mejorar la función objetivo."},
+    {"term": "inicialización", "definition": "Estado inicial de los parámetros del registro antes de la optimización."},
+    {"term": "multirresolución", "definition": "Estrategia que optimiza el registro desde representaciones gruesas hacia resoluciones más finas."},
+    {"term": "remuestreo", "definition": "Evaluación de una imagen transformada sobre una rejilla de salida especificada."},
+    {"term": "nearest-neighbor", "definition": "Interpolación que asigna el valor de la muestra más próxima y preserva categorías discretas."},
+    {"term": "composición", "definition": "Construcción de una transformación equivalente a la aplicación sucesiva de varias transformaciones."},
+    {"term": "landmark", "definition": "Punto anatómico, geométrico o fiducial con correspondencia definida entre imágenes."},
+    {"term": "FLE", "definition": "Fiducial localization error: incertidumbre asociada a localizar un fiducial."},
+    {"term": "FRE", "definition": "Fiducial registration error: error residual en fiduciales usados para estimar el registro."},
+    {"term": "TRE", "definition": "Target registration error: error de registro en objetivos independientes del ajuste."},
+    {"term": "determinante jacobiano", "definition": "Determinante de la derivada espacial de una transformación, relacionado con expansión o contracción matemática local."},
+    {"term": "plegamiento", "definition": "Pérdida de invertibilidad local asociada, en muchos modelos, a un determinante jacobiano no positivo."},
+    {"term": "repetibilidad", "definition": "Precisión de mediciones obtenidas bajo condiciones repetidas especificadas."},
+    {"term": "reproducibilidad", "definition": "Precisión cuando cambian una o más condiciones relevantes del proceso de medición."},
+    {"term": "Bland–Altman", "definition": "Análisis de acuerdo que estudia diferencias entre mediciones respecto de su magnitud."},
+    {"term": "repeatability coefficient", "definition": "Magnitud que contextualiza la diferencia esperable entre dos mediciones repetidas bajo condiciones definidas."},
+    {"term": "ICC", "definition": "Intraclass correlation coefficient; familia de coeficientes cuyo significado depende del modelo y del tipo de acuerdo declarado."},
+    {"term": "cambio detectable", "definition": "Cambio cuya magnitud se interpreta respecto de la variabilidad de medición caracterizada para condiciones definidas."}
+  ],
+  "worked_examples": [
+    {
+      "title": "Registro rígido con transformación conocida",
+      "scenario": "Un fantoma 3D sintético se rota y traslada con parámetros conocidos; algunos landmarks se reservan para evaluación.",
+      "reasoning_steps": [
+        "Verificar que ambas imágenes expresen correctamente origen, espaciado y dirección.",
+        "Definir cuál imagen es fija, cuál móvil y el sentido de T.",
+        "Estimar una transformación rígida sin usar los landmarks reservados.",
+        "Comparar parámetros estimados con la transformación conocida y calcular TRE en los objetivos reservados.",
+        "Repetir con perturbaciones de inicialización para estudiar región de captura."
+      ],
+      "interpretation": "El fantoma permite detectar errores de implementación, unidades y dirección de transformación antes de trabajar con datos más complejos.",
+      "limitations": ["El resultado no demuestra desempeño sobre anatomía real ni sobre otras modalidades."]
+    },
+    {
+      "title": "Métrica monomodal frente a multimodal",
+      "scenario": "Dos imágenes comparten geometría pero la relación entre intensidades no es aproximadamente idéntica.",
+      "reasoning_steps": [
+        "Mantener constante la inicialización y el modelo de transformación.",
+        "Comparar mean squares e información mutua con parámetros documentados.",
+        "Evaluar ambas soluciones mediante landmarks reservados y no mediante la métrica optimizada.",
+        "Analizar casos donde una mejor métrica final no produzca menor TRE."
+      ],
+      "interpretation": "La elección de métrica depende de la relación entre señales y debe juzgarse por el objetivo de registro, no por hábito.",
+      "limitations": ["Información mutua no garantiza una correspondencia anatómica correcta."]
+    },
+    {
+      "title": "Volumen nativo y efecto del remuestreo",
+      "scenario": "Dos máscaras longitudinales poseen espaciados diferentes y deben compararse después del registro.",
+      "reasoning_steps": [
+        "Calcular primero cada volumen en su espacio nativo usando el espaciado físico.",
+        "Registrar las imágenes de intensidad asociadas.",
+        "Remuestrear una copia de la máscara con nearest-neighbor hacia la rejilla común.",
+        "Comparar volumen nativo y remuestreado para cuantificar el efecto de discretización.",
+        "Mantener la medición primaria predefinida y reportar el remuestreo como análisis adicional."
+      ],
+      "interpretation": "El registro establece correspondencia espacial, pero el remuestreo puede modificar bordes discretos y por tanto la medición.",
+      "limitations": ["La incertidumbre de segmentación permanece aunque el registro sea preciso."]
+    },
+    {
+      "title": "Deformable con auditoría del jacobiano",
+      "scenario": "Un fantoma incluye una deformación suave conocida y una parametrización excesivamente flexible puede crear plegamientos locales.",
+      "reasoning_steps": [
+        "Ejecutar primero un baseline rígido o afín.",
+        "Aplicar el modelo deformable con regularización predefinida.",
+        "Calcular TRE en objetivos reservados.",
+        "Inspeccionar magnitud del campo de desplazamiento y distribución de J(x).",
+        "Rechazar la conclusión de que una mejor similitud implica automáticamente una deformación físicamente plausible."
+      ],
+      "interpretation": "Una métrica de imagen favorable puede coexistir con una transformación local problemática; la validación necesita métricas complementarias.",
+      "limitations": ["Un jacobiano plausible tampoco demuestra por sí solo correspondencia anatómica correcta."]
+    },
+    {
+      "title": "Cambio longitudinal frente a variabilidad de medición",
+      "scenario": "Se dispone de pares repetidos sin cambio esperado y de un par longitudinal con una diferencia volumétrica observada.",
+      "reasoning_steps": [
+        "Estimar la variabilidad within-subject en las repeticiones con el mismo pipeline.",
+        "Calcular el repeatability coefficient bajo supuestos explícitos.",
+        "Calcular ΔV del par longitudinal sin reclasificarlo todavía como progresión.",
+        "Comparar la magnitud observada con la escala de repetibilidad y revisar heterocedasticidad.",
+        "Redactar una conclusión técnica que se limite a las condiciones evaluadas."
+      ],
+      "interpretation": "La repetibilidad contextualiza la magnitud del cambio, pero no convierte un cambio técnicamente detectable en una conclusión clínica.",
+      "limitations": ["La repetibilidad puede cambiar con scanner, protocolo, población, segmentación y rango de valores."]
+    }
+  ],
+  "guided_activities": [
+    {
+      "title": "Recuperación activa: geometría, transformación y remuestreo",
+      "instructions": [
+        "Dibuja imagen fija, móvil y rejilla de salida antes de consultar el texto.",
+        "Convierte tres índices de vóxel a coordenadas físicas con un ejemplo numérico.",
+        "Explica con tus palabras la diferencia entre transformar coordenadas y remuestrear una imagen.",
+        "Corrige tus respuestas usando una segunda versión y registra qué supuesto faltaba."
+      ],
+      "problems": [
+        "Dos volúmenes tienen shape idéntico y origen diferente: explica por qué no están necesariamente alineados.",
+        "Decide si un movimiento sintético requiere transformación rígida o afín y justifica los grados de libertad.",
+        "Selecciona un interpolador para una imagen de intensidad y otro para una máscara categórica.",
+        "Escribe explícitamente la dirección de T para un caso móvil→fija."
+      ],
+      "deliverables": ["Diagrama de espacios y transformaciones.", "Tabla índice→coordenada física.", "Corrección razonada de errores."],
+      "checking_criteria": ["Dirección explícita.", "Unidades físicas.", "Separación transformación/remuestreo.", "Etiquetas preservadas."]
+    },
+    {
+      "title": "Laboratorio longitudinal reproducible",
+      "instructions": [
+        "Usa exclusivamente datos sintéticos, fantomas o datos abiertos no identificables y autorizados para investigación.",
+        "Conserva los originales como artefactos inmutables y crea derivados versionados.",
+        "Predefine transformación, métrica, inicialización, optimizador, multirresolución, muestreo e interpolador antes de inspeccionar la evaluación final.",
+        "Reserva landmarks o controles que no participen en la estimación de T.",
+        "Ejecuta una transformación rígida como baseline antes de añadir grados de libertad.",
+        "Guarda la transformación y sus parámetros, no solo la imagen remuestreada.",
+        "Compón transformaciones antes de remuestrear cuando la cadena lo permita.",
+        "Conserva no convergencias y casos extremos como resultados auditables."
+      ],
+      "problems": [
+        "Audita size, spacing, origin y direction de todos los volúmenes.",
+        "Genera una transformación rígida conocida y verifica que el pipeline recupere una solución compatible.",
+        "Compara mean squares e información mutua manteniendo constantes otros componentes.",
+        "Calcula TRE en landmarks reservados y resume la distribución por caso.",
+        "Perturba la inicialización y determina cuándo el método deja de converger a una solución aceptable.",
+        "Justifica si una transformación afín añade valor o absorbe una diferencia que debería medirse.",
+        "Implementa opcionalmente un registro deformable con regularización explícita.",
+        "Calcula e inspecciona el determinante jacobiano si se usa una transformación deformable.",
+        "Remuestrea una imagen de intensidad y una máscara con interpoladores apropiados.",
+        "Calcula volumen físico antes y después del remuestreo de la máscara.",
+        "Calcula ΔV en un ejemplo longitudinal y separa resultado, interpretación e incertidumbre.",
+        "Usa repeticiones sintéticas o abiertas para estimar una medida de repetibilidad y discutir sus supuestos."
+      ],
+      "deliverables": [
+        "Manifiesto de datos y procedencia.",
+        "Configuración completa del registro.",
+        "Transformaciones serializadas y versionadas.",
+        "Tabla de TRE por objetivo y caso.",
+        "Resumen del campo y jacobiano cuando corresponda.",
+        "Tabla longitudinal con volumen, cambio y repetibilidad.",
+        "Registro de fallos, sensibilidad y decisiones."
+      ],
+      "checking_criteria": [
+        "Originales inmutables y derivados trazables.",
+        "Baseline rígido ejecutado antes de aumentar flexibilidad.",
+        "Evaluación independiente de la métrica optimizada.",
+        "TRE expresado en unidades físicas.",
+        "Máscaras tratadas como datos categóricos.",
+        "Jacobian auditado si existe deformación local.",
+        "Conclusiones sin afirmar progresión clínica.",
+        "Pipeline reconstruible a partir de configuración, datos y versiones.",
+        "Resultados negativos y no convergencias preservados."
+      ]
+    },
+    {
+      "title": "Revisión por pares y transferencia",
+      "instructions": [
+        "Intercambia el dossier con una persona que no haya construido el pipeline o aplica una lista de revisión independiente.",
+        "Repite a ciegas al menos una etapa de registro o medición usando únicamente la documentación entregada.",
+        "Clasifica hallazgos como críticos, metodológicos o editoriales.",
+        "Registra cada corrección en una tabla antes–después y justifica su impacto."
+      ],
+      "tasks": [
+        "Detecta una dirección de transformación ambigua y corrígela.",
+        "Detecta una validación circular que use la métrica optimizada como única prueba de calidad.",
+        "Propón un control contra sobreajuste de una transformación deformable.",
+        "Reescribe una conclusión que confunda deformación matemática con cambio biológico.",
+        "Transfiere el protocolo a un cambio de resolución o modalidad y enumera qué debe revalidarse."
+      ],
+      "deliverables": ["Checklist de revisión.", "Tabla antes–después.", "Nota de transferencia con supuestos que deben revalidarse."],
+      "checking_criteria": ["Cambios verificables.", "Supuestos explícitos.", "Evaluación independiente.", "Conclusión proporcional a la evidencia."]
+    }
+  ],
+  "common_errors": [
+    {"error": "Registrar volúmenes por índices sin auditar geometría.", "correction": "Verificar origen, espaciado y dirección y trabajar en coordenadas físicas."},
+    {"error": "No declarar el sentido de la transformación.", "correction": "Especificar fija, móvil, dominio, codominio y sentido de T en texto y configuración."},
+    {"error": "Comenzar con una transformación deformable.", "correction": "Ejecutar un baseline rígido o afín y justificar cada grado de libertad adicional."},
+    {"error": "Elegir la métrica por costumbre.", "correction": "Relacionar la métrica con modalidad, relación de intensidades y tarea de registro."},
+    {"error": "Validar usando solo la métrica optimizada.", "correction": "Reservar landmarks u otra evidencia independiente para evaluar el resultado."},
+    {"error": "Confundir FRE con TRE.", "correction": "Separar fiduciales usados para ajustar de objetivos independientes donde importa el error."},
+    {"error": "Interpolar máscaras con interpolación lineal sin justificarlo.", "correction": "Tratar etiquetas como categorías y usar nearest-neighbor como baseline reproducible."},
+    {"error": "Remuestrear después de cada transformación intermedia.", "correction": "Componer transformaciones y minimizar interpolaciones acumulativas."},
+    {"error": "Comparar recuentos de vóxeles entre resoluciones diferentes.", "correction": "Calcular volumen mediante espaciado físico y documentar unidades."},
+    {"error": "Interpretar el jacobiano como crecimiento o atrofia.", "correction": "Tratarlo como propiedad geométrica y exigir evidencia independiente para una inferencia biológica."},
+    {"error": "Eliminar casos que no convergen.", "correction": "Conservarlos y analizarlos como parte del desempeño y los límites del método."},
+    {"error": "Usar correlación alta como evidencia de acuerdo.", "correction": "Examinar diferencias con Bland–Altman y declarar el modelo de ICC si se utiliza."},
+    {"error": "Interpretar cualquier ΔV distinto de cero como cambio real.", "correction": "Comparar la magnitud con la variabilidad del pipeline y comunicar incertidumbre."},
+    {"error": "Usar un repeatability coefficient como umbral clínico universal.", "correction": "Restringirlo al pipeline, población y condiciones donde se estimó."},
+    {"error": "Seleccionar parámetros después de inspeccionar la prueba final.", "correction": "Separar ajuste, validación y evaluación final para evitar fuga de información."},
+    {"error": "Guardar solo la imagen registrada.", "correction": "Conservar transformación, configuración, versiones, métricas, controles y procedencia."}
+  ],
+  "self_assessment": [
+    {"question": "¿Dos imágenes con el mismo shape están alineadas?", "answer": "No; pueden diferir en origen, espaciado u orientación y representar espacios físicos distintos.", "reasoning": "La alineación se define físicamente, no por dimensiones de matriz.", "common_error": "Comparar únicamente índices o nombres de archivo."},
+    {"question": "¿Cuándo es preferible un baseline rígido?", "answer": "Cuando rotación y traslación explican razonablemente la diferencia y no se justifican grados de libertad adicionales.", "reasoning": "El baseline permite medir si la flexibilidad adicional aporta valor real.", "common_error": "Elegir el modelo más flexible por defecto."},
+    {"question": "¿Por qué puede utilizarse información mutua en multimodalidad?", "answer": "Porque cuantifica dependencia estadística sin exigir intensidades correspondientes idénticas.", "reasoning": "La relación entre señales puede cambiar entre modalidades.", "common_error": "Asumir que información mutua garantiza correspondencia anatómica."},
+    {"question": "¿El valor final de la métrica optimizada valida el registro?", "answer": "No; esa métrica participó en el ajuste y necesita evaluación independiente.", "reasoning": "Usarla como única validación produce circularidad.", "common_error": "Confundir función objetivo con evidencia externa de precisión."},
+    {"question": "¿FRE y TRE son intercambiables?", "answer": "No; FRE evalúa fiduciales usados para ajustar y TRE objetivos independientes.", "reasoning": "Un ajuste excelente en fiduciales no garantiza precisión donde importa la tarea.", "common_error": "Reportar solo FRE y extrapolarlo al objetivo."},
+    {"question": "¿Qué interpolador es un baseline razonable para una máscara de clases?", "answer": "Nearest-neighbor, porque no crea valores intermedios de clase.", "reasoning": "Una máscara categórica no es una señal continua ordinaria.", "common_error": "Usar interpolación lineal y luego redondear sin cuantificar el efecto."},
+    {"question": "¿Qué sugiere un determinante jacobiano negativo en muchos modelos deformables?", "answer": "Una pérdida de invertibilidad local o plegamiento que debe investigarse.", "reasoning": "Es una propiedad de la geometría de la transformación.", "common_error": "Ignorarlo porque la similitud de imagen mejoró."},
+    {"question": "¿Por qué calcular primero volumen en el espacio nativo?", "answer": "Para evitar que el remuestreo de etiquetas redefina silenciosamente la medida primaria.", "reasoning": "La discretización de bordes puede alterar el recuento de vóxeles.", "common_error": "Medir solamente la máscara remuestreada."},
+    {"question": "¿Qué aporta Bland–Altman frente a una correlación?", "answer": "Evalúa diferencias, sesgo y patrón de acuerdo en función de la magnitud.", "reasoning": "Dos métodos pueden correlacionar fuertemente y discrepar sistemáticamente.", "common_error": "Usar r alto como sustituto de acuerdo."},
+    {"question": "¿Qué debe acompañar a un ICC?", "answer": "El modelo, número y tipo de evaluadores o repeticiones, unidad analizada y si se evalúa consistencia o acuerdo absoluto.", "reasoning": "Distintas formulaciones de ICC responden a preguntas distintas.", "common_error": "Reportar 'ICC=...' sin especificar la definición."},
+    {"question": "¿ΔV distinto de cero demuestra un cambio biológico?", "answer": "No; primero debe contextualizarse respecto de error y repetibilidad, y la inferencia biológica requiere evidencia adicional.", "reasoning": "El pipeline completo aporta variación técnica.", "common_error": "Confundir diferencia numérica con progresión."},
+    {"question": "¿Qué debe recibir U6 desde U5?", "answer": "Transformaciones, configuración, mediciones, métricas independientes, incertidumbre, controles, fallos y procedencia.", "reasoning": "U6 necesita reconstruir y auditar el pipeline, no solo ver una imagen final.", "common_error": "Entregar únicamente capturas o métricas agregadas."}
+  ],
+  "biomedical_connections": [
+    {"topic": "Oncología cuantitativa", "connection": "Permite separar cambio volumétrico observado de variación técnica antes de cualquier interpretación de respuesta clínica."},
+    {"topic": "Neuroimagen longitudinal", "connection": "Exige distinguir deformación registrada, cambio morfométrico y evidencia biológica de atrofia."},
+    {"topic": "Radioterapia y navegación", "connection": "TRE recuerda que la precisión debe evaluarse en la región objetivo y no únicamente en los fiduciales de ajuste."},
+    {"topic": "Biomarcadores cuantitativos de imagen", "connection": "La metrología de QIBA enfatiza caracterizar sesgo, precisión y repetibilidad antes de interpretar cambio."},
+    {"topic": "Seguimiento musculoesquelético", "connection": "La correspondencia longitudinal puede apoyar mediciones de geometría si se preservan unidades y se cuantifica error del pipeline."},
+    {"topic": "Investigación reproducible", "connection": "Transformaciones serializadas, configuraciones y métricas por caso permiten volver a ejecutar y auditar el análisis."}
+  ],
+  "sources": [
+    {"title": "ImageRegistrationMethod", "organization": "SimpleITK", "url": "https://simpleitk.org/doxygen/latest/html/classitk_1_1simple_1_1ImageRegistrationMethod.html", "type": "documentación oficial", "description": "API y componentes del framework de registro de SimpleITK.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Fundamental Concepts", "organization": "SimpleITK", "url": "https://simpleitk.readthedocs.io/en/master/fundamentalConcepts.html", "type": "documentación oficial", "description": "Geometría física, origen, espaciado y dirección de imágenes.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "ITK Software Guide", "organization": "Insight Toolkit", "url": "https://itk.org/ItkSoftwareGuide.pdf", "type": "documentación oficial", "description": "Fundamentos de procesamiento y registro con ITK.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "elastix: a toolbox for intensity-based medical image registration", "organization": "IEEE Transactions on Medical Imaging", "url": "https://doi.org/10.1109/TMI.2009.2035616", "type": "artículo metodológico", "description": "Framework parametrizable de registro basado en intensidad.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "A survey of medical image registration", "organization": "Medical Image Analysis", "url": "https://doi.org/10.1016/S1361-8415(01)80026-8", "type": "revisión metodológica", "description": "Taxonomía clásica de métodos y componentes de registro médico.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Metrology Standards for Quantitative Imaging Biomarkers", "organization": "Radiology", "url": "https://doi.org/10.1148/radiol.2015142202", "type": "artículo metodológico", "description": "Marco metrológico para sesgo, precisión y desempeño de biomarcadores cuantitativos.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Predicting error in rigid-body point-based registration", "organization": "IEEE Transactions on Medical Imaging", "url": "https://doi.org/10.1109/42.736021", "type": "artículo metodológico", "description": "Relación entre localización fiducial, FRE y TRE en registro puntual rígido.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Evaluation of 14 nonlinear deformation algorithms applied to human brain MRI registration", "organization": "NeuroImage", "url": "https://doi.org/10.1016/j.neuroimage.2009.12.037", "type": "benchmark metodológico", "description": "Evaluación comparativa de algoritmos de deformación no lineal.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "A reproducible evaluation of ANTs similarity metric performance in brain image registration", "organization": "NeuroImage", "url": "https://doi.org/10.1016/j.neuroimage.2010.09.025", "type": "artículo metodológico", "description": "Comparación reproducible de métricas de similitud en registro cerebral.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Registration", "organization": "3D Slicer", "url": "https://slicer.readthedocs.io/en/latest/user_guide/registration.html", "type": "documentación oficial", "description": "Conceptos y herramientas de registro disponibles en 3D Slicer.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Quantitative Imaging Biomarkers Alliance", "organization": "RSNA", "url": "https://www.rsna.org/research/quantitative-imaging-biomarkers-alliance", "type": "iniciativa oficial", "description": "Perfiles y recursos de estandarización para biomarcadores de imagen.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Statistical methods for assessing agreement between two methods of clinical measurement", "organization": "The Lancet", "url": "https://doi.org/10.1016/S0140-6736(86)90837-8", "type": "artículo metodológico", "description": "Fundamento del análisis de acuerdo Bland–Altman.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Intraclass correlations: uses in assessing rater reliability", "organization": "Psychological Bulletin", "url": "https://doi.org/10.1037/0033-2909.86.2.420", "type": "artículo metodológico", "description": "Formulación clásica de familias de ICC.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "A Guideline of Selecting and Reporting Intraclass Correlation Coefficients for Reliability Research", "organization": "Journal of Chiropractic Medicine", "url": "https://doi.org/10.1016/j.jcm.2016.02.012", "type": "guía metodológica", "description": "Selección e informe explícito del modelo de ICC.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "Interpreting Change in Quantitative Imaging Biomarkers", "organization": "Academic Radiology", "url": "https://doi.org/10.1016/j.acra.2017.09.023", "type": "artículo metodológico", "description": "Interpretación de cambios longitudinales respecto de variabilidad de biomarcadores cuantitativos.", "verification_status": "official_or_primary_checked_2026-08"},
+    {"title": "DICOM Standard", "organization": "DICOM Standards Committee", "url": "https://www.dicomstandard.org/current", "type": "estándar", "description": "Representación, geometría e intercambio de imagen médica.", "verification_status": "official_or_primary_checked_2026-08"}
+  ],
+  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+}
