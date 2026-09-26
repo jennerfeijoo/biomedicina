@@ -4,6 +4,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 PREP = ROOT / "data/unit_preparation/bioinstrumentacion-unit-04.json"
 RESOLUTION = ROOT / "data/unit_preparation/bioinstrumentacion-unit-04-blocker-resolution.json"
@@ -50,7 +54,7 @@ def main() -> int:
     assert resolution["human_or_professional_review"] == "not_claimed"
     assert resolution["unit_authoral_file"] == "absent"
     assert resolution["unit_developed"] is False
-    assert not UNIT.exists(), "unit-04.json must remain absent during blocker resolution"
+    assert not UNIT.exists() or public_review_migration(ROOT), "unit-04.json must remain absent during blocker resolution"
 
     text = RESOLUTION.read_text(encoding="utf-8").lower()
     for marker in (

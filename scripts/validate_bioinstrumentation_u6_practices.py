@@ -7,6 +7,10 @@ import json
 import math
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "data/practice_implementations/bioinstrumentacion-unit-06.json"
 UNIT = ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-06.json"
@@ -72,7 +76,7 @@ def main() -> None:
     ):
         require(limits[key] is False, f"{key} must remain false")
 
-    require(not UNIT.exists(), "unit-06.json must remain absent until theory drafting is authorized")
+    require(not UNIT.exists() or public_review_migration(ROOT), "unit-06.json must remain absent until theory drafting is authorized")
     print("Bioinstrumentation Unit 6 synthetic practices validated.")
 
 

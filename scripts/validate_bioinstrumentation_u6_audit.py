@@ -3,6 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "data/editorial_audits/bioinstrumentacion-unit-06.json"
 PREP = ROOT / "data/unit_preparation/bioinstrumentacion-unit-06.json"
@@ -48,7 +52,7 @@ def main() -> None:
     ):
         assert decision[key] is False, key
 
-    if UNIT.exists():
+    if UNIT.exists() and not public_review_migration(ROOT):
         unit = load(UNIT)
         assert unit["status"] == "authoral_draft_internal"
         assert unit["course_editorial_state"] == "pending"

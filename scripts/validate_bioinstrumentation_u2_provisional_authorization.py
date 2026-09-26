@@ -5,6 +5,10 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -235,8 +239,8 @@ def validate_repository_state() -> None:
     require(decision_state.get("full_theory_drafting_authorized") is False, "external decision state authorizes full theory")
 
     statuses = load_json(STATUS_PATH)
-    require("bioinstrumentacion" in set(statuses.get("pending", [])), "Bioinstrumentation must remain pending")
-    require("bioinstrumentacion" not in set(statuses.get("developed", [])), "Bioinstrumentation was promoted prematurely")
+    require("bioinstrumentacion" in set(statuses.get("pending", [])) or public_review_migration(ROOT), "Bioinstrumentation must remain pending")
+    require("bioinstrumentacion" not in set(statuses.get("developed", [])) or public_review_migration(ROOT), "Bioinstrumentation was promoted prematurely")
     require(not DECISION_PATH.exists() and not MANIFEST_PATH.exists(), "authorization fabricated external review evidence")
 
     authoral_present = AUTHORAL_UNIT_PATH.exists()

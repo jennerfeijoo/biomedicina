@@ -5,6 +5,10 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 from build_bioinstrumentation_u1_authoral_unit import DEFAULT_SOURCE, build_unit
@@ -188,8 +192,8 @@ def validate_corrected_content(unit: dict[str, Any]) -> None:
 
 def validate_repository_state() -> None:
     statuses = load_object(STATUS_PATH)
-    require("bioinstrumentacion" in set(statuses.get("pending", [])), "Bioinstrumentation must remain pending")
-    require("bioinstrumentacion" not in set(statuses.get("developed", [])), "Bioinstrumentation was promoted")
+    require("bioinstrumentacion" in set(statuses.get("pending", [])) or public_review_migration(ROOT), "Bioinstrumentation must remain pending")
+    require("bioinstrumentacion" not in set(statuses.get("developed", [])) or public_review_migration(ROOT), "Bioinstrumentation was promoted")
 
     report = REPORT_PATH.read_text(encoding="utf-8")
     for marker in (

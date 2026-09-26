@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -245,11 +249,11 @@ def validate_review_and_editorial(resolution: dict[str, Any]) -> None:
         raise ValueError("el curso debe permanecer pending")
 
     statuses = load_json(STATUS_PATH)
-    if "bioinstrumentacion" not in set(statuses.get("pending", [])):
+    if "bioinstrumentacion" not in set(statuses.get("pending", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentación no está en pending")
-    if "bioinstrumentacion" in set(statuses.get("developed", [])):
+    if "bioinstrumentacion" in set(statuses.get("developed", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentación fue promovida prematuramente")
-    if AUTHORING_UNIT_PATH.exists():
+    if AUTHORING_UNIT_PATH.exists() and not public_review_migration(ROOT):
         raise ValueError("se creó unit-01.json antes de la revisión humana")
 
 

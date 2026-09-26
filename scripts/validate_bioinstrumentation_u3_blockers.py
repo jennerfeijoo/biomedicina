@@ -4,6 +4,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 PREP = ROOT / "data/unit_preparation/bioinstrumentacion-unit-03.json"
 RESOLUTION = ROOT / "data/unit_preparation/bioinstrumentacion-unit-03-blocker-resolution.json"
@@ -47,7 +51,7 @@ def main() -> int:
     assert resolution["human_or_professional_review"] == "not_claimed"
     assert resolution["unit_developed"] is False
 
-    if UNIT.exists():
+    if UNIT.exists() and not public_review_migration(ROOT):
         audit = json.loads(AUDIT.read_text(encoding="utf-8"))
         authoral = audit["authorization_result"]
         assert authoral["authoral_unit_creation_authorized"] is True

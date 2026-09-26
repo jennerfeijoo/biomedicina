@@ -14,6 +14,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from site_metadata import add_metadata
+
 ROOT = Path(__file__).resolve().parents[1]
 CURRICULUM_PATH = ROOT / "data" / "citonauta_curriculum.json"
 OVERRIDES_PATH = ROOT / "data" / "authored_unit_overrides.json"
@@ -131,7 +133,7 @@ def process(check: bool) -> tuple[int, list[str]]:
         try:
             original = page_path.read_text(encoding="utf-8")
             unit = load_json(unit_path)
-            expected = expected_page(original, unit)
+            expected = add_metadata(expected_page(original, unit), page_path.relative_to(ROOT).as_posix())
         except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
             errors.append(f"{page_path.relative_to(ROOT)}: {error}")
             continue

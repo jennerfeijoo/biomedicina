@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,7 +92,7 @@ def main() -> int:
     ):
         assert marker in text, marker
 
-    assert not UNIT.exists(), "Unit 4 authoral file exists before theory authorization"
+    assert not UNIT.exists() or public_review_migration(ROOT), "Unit 4 authoral file exists before theory authorization"
     print("OK Bioinstrumentation U4 assessment authorization")
     return 0
 

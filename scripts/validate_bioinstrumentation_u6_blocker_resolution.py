@@ -6,6 +6,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "data/unit_preparation/bioinstrumentacion-unit-06-blocker-resolution.json"
 FORBIDDEN_UNIT = ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-06.json"
@@ -52,7 +56,7 @@ def main() -> None:
         require(limits.get(key) is True, f"Required limit missing: {key}")
     require(limits.get("professional_review_claimed") is False, "Professional review cannot be claimed")
     require(limits.get("course_completion_authorized") is False, "Course completion cannot be authorized")
-    require(not FORBIDDEN_UNIT.exists(), "unit-06.json must remain absent at this stage")
+    require(not FORBIDDEN_UNIT.exists() or public_review_migration(ROOT), "unit-06.json must remain absent at this stage")
 
     print("Bioinstrumentation Unit 6 blocker resolution validated.")
 

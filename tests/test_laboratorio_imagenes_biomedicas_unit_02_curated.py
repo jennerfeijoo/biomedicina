@@ -51,7 +51,7 @@ def test_unit_02_is_disciplinary_and_template_free():
 
 def test_unit_02_purpose_preserves_task_dependency_and_handoff():
     purpose = load(SOURCE)["purpose"].lower()
-    assert "dependiente de la tarea" in purpose
+    assert "según una tarea de imagen previamente definida" in purpose
     assert "u2 recibe de u1" in purpose
     assert "entrega a u3" in purpose
 

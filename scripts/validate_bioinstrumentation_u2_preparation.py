@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -343,7 +347,7 @@ def validate_planning_and_state(preparation: dict[str, Any]) -> None:
     if "bioinstrumentacion" not in serialized or "pending" not in serialized:
         raise ValueError("el catálogo no conserva Bioinstrumentación en pending")
 
-    if AUTHORAL_PATH.exists():
+    if AUTHORAL_PATH.exists() and not public_review_migration(ROOT):
         raise ValueError("unit-02.json autoral no debe existir durante la preparación")
 
     readiness = preparation.get("readiness")

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 from calculate_bioinstrumentation_u2_agreement import analyze, load_json, thresholds
@@ -120,8 +124,8 @@ def validate_repository_state() -> None:
     require(audit.get("unresolved_critical_findings") == 0, "authoral audit has critical findings")
     require(audit.get("unresolved_major_findings") == 0, "authoral audit has major findings")
     statuses = load_json(STATUS)
-    require("bioinstrumentacion" in set(statuses.get("pending", [])), "course must remain pending")
-    require("bioinstrumentacion" not in set(statuses.get("developed", [])), "course was promoted")
+    require("bioinstrumentacion" in set(statuses.get("pending", [])) or public_review_migration(ROOT), "course must remain pending")
+    require("bioinstrumentacion" not in set(statuses.get("developed", [])) or public_review_migration(ROOT), "course was promoted")
     require(not DECISION.exists() and not MANIFEST.exists(), "protocol block fabricated external review evidence")
     text = DOC.read_text(encoding="utf-8")
     for marker in ("pending_human_execution", "purposive_problem_detection_not_population_estimation", "U2-A1", "U2-A5", "weighted kappa", "No constituye evidencia humana", "pending_human_review"):

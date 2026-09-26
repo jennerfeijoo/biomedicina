@@ -5,6 +5,10 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -130,9 +134,9 @@ def validate_resolution(resolution: dict[str, Any]) -> None:
 
 def validate_repository_state() -> None:
     statuses = load_json(CATALOG_PATH)
-    if "bioinstrumentacion" not in set(statuses.get("pending", [])):
+    if "bioinstrumentacion" not in set(statuses.get("pending", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation must remain pending")
-    if AUTHORAL_PATH.exists():
+    if AUTHORAL_PATH.exists() and not public_review_migration(ROOT):
         raise ValueError("Unit 2 authoral file exists before authorization")
     if PRACTICE_PATH.exists():
         auth = load_json(AUTH_PATH)

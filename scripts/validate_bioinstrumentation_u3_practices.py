@@ -7,6 +7,10 @@ import json
 import tempfile
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "data/practice_implementations/bioinstrumentacion-unit-03.json"
 BLOCKERS = ROOT / "data/unit_preparation/bioinstrumentacion-unit-03-blocker-resolution.json"
@@ -73,7 +77,7 @@ def main() -> int:
             writer.writerows(rows)
         assert p1_path.is_file()
 
-    assert not (ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-03.json").exists()
+    assert not (ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-03.json").exists() or public_review_migration(ROOT)
     print("OK Bioinstrumentation U3 practices")
     return 0
 

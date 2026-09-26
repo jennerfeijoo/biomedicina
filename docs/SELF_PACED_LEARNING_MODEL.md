@@ -13,4 +13,4 @@ CitoNauta estructura el conocimiento por asignaturas, unidades, prerrequisitos, 
 
 ## Consecuencia editorial
 
-Los campos temporales quedan fuera del esquema de datos, las plantillas, el agente generativo y los validadores. Cualquier nueva contribución que reintroduzca calendarios o cargas estándar debe ser rechazada por los quality gates.
+Los campos temporales quedan fuera del esquema de datos, las plantillas y los validadores. Cualquier nueva contribución que reintroduzca calendarios o cargas estándar debe ser rechazada por los quality gates.

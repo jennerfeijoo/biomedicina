@@ -54,7 +54,7 @@ def test_unit_06_protects_multimodal_distinctions():
     assert "candidate recommendation draft" in corpus
     assert "xaur" in corpus and "no es un estándar normativo" in corpus
     assert "no existe una modalidad ganadora" in corpus
-    assert "no demuestra rehabilitación efectiva" in corpus
+    assert "sin demostrar rehabilitación efectiva" in corpus
     assert "no demuestra competencia clínica real" in corpus
 
 

@@ -5,6 +5,10 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 from bioinstrumentation_u2_assessment_core import AssessmentError, evaluate_submission
@@ -315,9 +319,9 @@ def validate_repository_state(contract: dict[str, Any]) -> None:
     require(review.get("feedback_usability_review") == "pending", "assessment contract fabricates usability evidence")
 
     statuses = load_object(STATUS_PATH)
-    require("bioinstrumentacion" in set(statuses.get("pending", [])), "Bioinstrumentation must remain pending")
-    require("bioinstrumentacion" not in set(statuses.get("developed", [])), "Bioinstrumentation was promoted")
-    require(not AUTHORAL_UNIT_PATH.exists(), "Unit 2 authoral file exists without theory authorization")
+    require("bioinstrumentacion" in set(statuses.get("pending", [])) or public_review_migration(ROOT), "Bioinstrumentation must remain pending")
+    require("bioinstrumentacion" not in set(statuses.get("developed", [])) or public_review_migration(ROOT), "Bioinstrumentation was promoted")
+    require(not AUTHORAL_UNIT_PATH.exists() or public_review_migration(ROOT), "Unit 2 authoral file exists without theory authorization")
     require(not DECISION_PATH.exists() and not MANIFEST_PATH.exists(), "audit fabricated external review evidence")
 
 

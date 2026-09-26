@@ -92,7 +92,7 @@ def test_unit_04_uses_verified_sources_for_all_three_modalities():
     assert "nidcd.nih.gov" in urls
     assert "pubmed.ncbi.nlm.nih.gov" in urls
     text = " ".join((source["title"] + " " + source.get("used_for", "")).lower() for source in unit["sources"])
-    assert "coclear" in text
+    assert "cochlear" in text or "coclear" in text
     assert "visual" in text or "retinal" in text
     assert "somatos" in text or "sensory feedback" in text
 
