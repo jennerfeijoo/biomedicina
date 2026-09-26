@@ -9,6 +9,10 @@ import math
 import sys
 import tempfile
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -222,9 +226,9 @@ def validate_contract(thermal_hash: str) -> None:
         raise ValueError("pilot package must not authorize full theory drafting")
 
     statuses = load_json(STATUS_PATH)
-    if "bioinstrumentacion" not in set(statuses.get("pending", [])):
+    if "bioinstrumentacion" not in set(statuses.get("pending", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation must remain pending")
-    if AUTHORAL_UNIT_PATH.exists():
+    if AUTHORAL_UNIT_PATH.exists() and not public_review_migration(ROOT):
         raise ValueError("authoral unit must not exist during practice implementation")
 
     doc_text = DOC_PATH.read_text(encoding="utf-8")

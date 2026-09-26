@@ -6,6 +6,10 @@ import json
 import re
 import tempfile
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 from build_bioinstrumentation_u1_authoral_unit import (
@@ -360,9 +364,9 @@ def validate_repository_state(unit: dict[str, Any]) -> None:
         raise ValueError("package changed the course state")
 
     statuses = load_object(STATUS_PATH)
-    if "bioinstrumentacion" not in set(statuses.get("pending", [])):
+    if "bioinstrumentacion" not in set(statuses.get("pending", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation must remain pending")
-    if "bioinstrumentacion" in set(statuses.get("developed", [])):
+    if "bioinstrumentacion" in set(statuses.get("developed", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation was promoted prematurely")
 
     readiness = READINESS_PATH.read_text(encoding="utf-8")

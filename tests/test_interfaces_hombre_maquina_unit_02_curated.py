@@ -72,7 +72,7 @@ def test_unit_02_is_not_human_subjects_or_regulatory_validation():
     assert "no constituye investigación con seres humanos" in text
     assert "no constituye validación de usabilidad" in text
     assert "no calcula ni aprueba riesgo residual" in text
-    assert "no permite declarar cumplimiento" in text
+    assert "ni permite declarar cumplimiento" in text
 
 
 def test_unit_02_has_sufficient_academic_and_pedagogical_depth():

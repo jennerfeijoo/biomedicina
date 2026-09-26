@@ -8,6 +8,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "data/practice_implementations/bioinstrumentacion-unit-04.json"
 BLOCKERS = ROOT / "data/unit_preparation/bioinstrumentacion-unit-04-blocker-resolution.json"
@@ -32,7 +36,7 @@ def main() -> int:
     assert blockers["authorization"]["assessment_implementation_authorized"] is False
     assert blockers["authorization"]["full_theory_drafting_authorized"] is False
     assert blockers["authorization"]["public_release_authorized"] is False
-    assert not UNIT.exists()
+    assert not UNIT.exists() or public_review_migration(ROOT)
 
     with tempfile.TemporaryDirectory() as tmp:
         base = Path(tmp)

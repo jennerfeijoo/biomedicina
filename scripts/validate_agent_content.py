@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from citonauta_agent.reviewer_validation import find_applicable_validation  # noqa: E402
+from scripts.reviewer_validation import find_applicable_validation  # noqa: E402
 
 SUBJECTS_DIR = ROOT / "data" / "subjects"
 REVIEWER_VALIDATIONS = ROOT / "data" / "reviewer_validations"

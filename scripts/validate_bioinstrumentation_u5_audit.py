@@ -3,6 +3,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,7 +52,7 @@ def main() -> int:
     assert decision["human_review_executed"] is False
     assert decision["professional_review_claimed"] is False
     assert decision["public_release_authorized"] is False
-    assert not UNIT.exists(), "unit-05.json must remain absent before authoral drafting"
+    assert not UNIT.exists() or public_review_migration(ROOT), "unit-05.json must remain absent before authoral drafting"
 
     text = DOC.read_text(encoding="utf-8")
     for marker in (

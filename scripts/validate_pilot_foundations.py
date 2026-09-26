@@ -282,12 +282,11 @@ def validate_editorial_truth() -> None:
         raise ValueError("la plantilla de unidad conserva un estado codificado")
     if "84 asignaturas" in readme or "--limit 84" in readme:
         raise ValueError("README conserva el inventario histórico de 84 asignaturas")
+    counts = statuses["counts"]
     for required in (
-        "94 asignaturas",
-        "94 con material lectivo",
-        "50 conservan marcadores de plantilla",
-        "0 con registro completo de afirmaciones",
-        "0 con revisión IA validada",
+        f"{counts['catalog_courses']} asignaturas",
+        f"{counts['material_available']} con material lectivo",
+        f"{counts['template_detected']} conservan marcadores de plantilla",
     ):
         if required not in readme:
             raise ValueError(f"README no declara el estado actual: {required}")

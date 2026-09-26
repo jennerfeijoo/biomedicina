@@ -49,7 +49,7 @@ def test_unit_05_blocks_common_usability_misinterpretations():
     assert "error del usuario" in text
     assert "no se combinan métricas heterogéneas en un score" in text
     assert "no constituye human factors validation" in text
-    assert "no demuestra por sí sola efectividad clínica" in text
+    assert "tampoco demuestra por sí sola efectividad clínica" in text
 
 
 def test_unit_05_keeps_course_boundaries_explicit():

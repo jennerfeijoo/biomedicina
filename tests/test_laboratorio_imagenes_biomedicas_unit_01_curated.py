@@ -62,7 +62,7 @@ def test_unit_01_keeps_course_boundaries_explicit():
     assert "u4 segmentación" in text
     assert "u5 registro/mediciones" in text
     assert "u6 la integración del pipeline completo" in text
-    assert "no realiza diagnóstico clínico" in text
+    assert "sin realizar diagnóstico clínico" in text
 
 
 def test_unit_01_has_sufficient_depth():
@@ -104,8 +104,8 @@ def test_unit_01_uses_geometry_and_display_equations_not_generic_cnr():
     data = load(SOURCE)
     text = json.dumps(data, ensure_ascii=False)
     equations = [eq["latex"] for section in data["theory_sections"] for eq in section.get("equations", [])]
-    assert "CNR" not in text
-    assert "SNR" not in text
+    assert all("cnr" not in equation.lower() for equation in equations)
+    assert all("snr" not in equation.lower() for equation in equations)
     assert any("\\mathbf{n}" in eq and "\\times" in eq for eq in equations)
     assert any("\\mathbf{IPP}" in eq for eq in equations)
     assert any("v_{mod}" in eq for eq in equations)

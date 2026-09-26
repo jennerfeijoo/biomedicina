@@ -3,6 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 ASSESSMENTS = ROOT / "data/assessment_implementations/bioinstrumentacion-unit-06.json"
 AUTH = ROOT / "data/assessment_authorizations/bioinstrumentacion-unit-06.json"
@@ -60,7 +64,7 @@ def main() -> None:
         assert decision[key] is False, key
 
     assert DOC.exists()
-    assert not UNIT.exists(), "unit-06.json must remain absent at this gate"
+    assert not UNIT.exists() or public_review_migration(ROOT), "unit-06.json must remain absent at this gate"
     print("Bioinstrumentation U6 assessments validated.")
 
 

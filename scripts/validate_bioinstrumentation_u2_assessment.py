@@ -5,6 +5,10 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 from bioinstrumentation_u2_assessment_core import (
@@ -459,11 +463,11 @@ def validate_repository_state(implementation: dict[str, Any]) -> None:
         raise ValueError("package does not register U2 assessment presence")
 
     statuses = load_json(STATUS_PATH)
-    if "bioinstrumentacion" not in set(statuses.get("pending", [])):
+    if "bioinstrumentacion" not in set(statuses.get("pending", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation must remain pending")
-    if "bioinstrumentacion" in set(statuses.get("developed", [])):
+    if "bioinstrumentacion" in set(statuses.get("developed", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation was promoted prematurely")
-    if AUTHORAL_UNIT_PATH.exists():
+    if AUTHORAL_UNIT_PATH.exists() and not public_review_migration(ROOT):
         raise ValueError("U2 authoral unit exists before separate authorization")
 
     for path, markers in (

@@ -17,7 +17,7 @@ SPEC.loader.exec_module(MODULE)
 class ReviewerValidationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        path = ROOT / "data" / "reviewer_validations" / "course-content-reviewer-provisional.json"
+        path = ROOT / "tests" / "fixtures" / "unvalidated_reviewer.json"
         cls.provisional = json.loads(path.read_text(encoding="utf-8"))
 
     def test_provisional_manifest_is_valid_but_cannot_authorize(self) -> None:

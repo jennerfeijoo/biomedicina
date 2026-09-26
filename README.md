@@ -8,13 +8,13 @@ CitoNauta es una plataforma educativa abierta para explorar ciencias básicas, b
 
 - 94 asignaturas en cuatro áreas académicas.
 - 94 con material lectivo y actividades disponibles.
-- 21 conservan marcadores de plantilla en 118 unidades y requieren reconstrucción disciplinar.
-- 73 no contienen esos marcadores conocidos; esto no equivale a validación científica.
+- 19 conservan marcadores de plantilla en 113 unidades y requieren reconstrucción disciplinar.
+- 75 no contienen esos marcadores conocidos; esto no equivale a validación científica.
 - 0 con registro completo de afirmaciones y localizadores.
 - 0 con revisión IA validada para un alcance científico.
 - Ninguna asignatura tiene estado editorial `complete`.
 
-Una página navegable o un workflow verde demuestra integridad técnica, no validez científica. Las asignaturas permanecen en `review` hasta que sus afirmaciones estén trazadas y el sistema revisor haya demostrado validez para el alcance correspondiente.
+Una página navegable o un workflow verde demuestra integridad técnica, no validez científica. Las asignaturas permanecen en `review` hasta que sus afirmaciones estén trazadas y exista una revisión documentada adecuada al alcance. La revisión documental y los controles reproducibles no requieren un modelo de lenguaje; tampoco acreditan una revisión humana que no se haya realizado.
 
 ## Fuentes del sitio
 
@@ -40,30 +40,43 @@ CitoNauta organiza prerrequisitos, conceptos, actividades, evidencias y criterio
 
 El material es educativo. No sustituye programas oficiales, supervisión competente, revisión profesional ni certificación.
 
-## Generación y validación
+## Instalación y desarrollo
+
+Requiere Python 3.12 y Node.js 22 (para comprobar la sintaxis JavaScript). La generación utiliza la biblioteca estándar de Python; pytest es una dependencia exclusiva de pruebas.
 
 ```bash
-python scripts/complete_catalog_content.py --close-existing-partials
-python scripts/publish_courses.py --all
-python scripts/validate_curriculum.py
-python scripts/validate_course_plan_packages.py
-python scripts/validate_pilot_foundations.py
-python scripts/validate_academic_courses.py
-python scripts/validate_generated_units.py
-python scripts/audit_course_readiness.py --strict
-python scripts/audit_curriculum_completeness.py
-python scripts/audit_course_portfolio.py --strict
-python scripts/audit_generic_content.py
-python scripts/validate_scientific_traceability.py
-python scripts/validate_reviewer_validations.py
-python -m unittest discover -s tests
-python scripts/generate_site.py --force --with-units
-python scripts/check_generated_preview.py --limit 94
-python scripts/audit_public_unit_alignment.py --strict
-python scripts/validate_links.py --quiet
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m http.server 8000
 ```
 
-Los controles verifican estructura, trazabilidad, cobertura, bibliografía, diversidad textual, actividades, sincronización pública y enlaces. No promueven automáticamente una asignatura a `complete`.
+Abra `http://localhost:8000`. En Windows active el entorno con `.venv\Scripts\Activate.ps1`.
+
+## Generación y validación
+
+Edite las fuentes canónicas, publique sus espejos y regenere las páginas:
+
+```bash
+python scripts/publish_courses.py --all
+python scripts/sync_catalog_statuses.py
+python scripts/generate_site.py --force --with-units
+python scripts/run_quality.py
+```
+
+La suite ejecuta todos los validadores, unittest, pytest, auditorías, comprobaciones de JavaScript y dos generaciones consecutivas. Guarda logs y un resumen JSON; acepta `--report-dir` para elegir su ubicación. Comprueba enlaces, recursos y anclas, además de la coherencia de las salidas versionadas. No promueve automáticamente una asignatura a `complete`.
+
+La auditoría científica adicional incluye los registros canónicos migrados y detalla los campos o localizadores que faltan:
+
+```bash
+python scripts/audit_scientific_traceability.py --strict
+```
+
+Esta comprobación de finalización científica todavía detecta brechas. El resultado técnico de CI no sustituye ese control ni acredita la corrección o cobertura de todas las afirmaciones. Los informes de contenido genérico y trazabilidad forman parte de los artefactos de CI.
+
+## Publicación
+
+El sitio es estático y se publica en [GitHub Pages](https://jennerfeijoo.github.io/biomedicina/). El HTML generado, el sitemap y los recursos se versionan junto con las fuentes. El workflow `CitoNauta Quality Gates` ejecuta la misma suite en pull requests y en `main`; integre únicamente cambios técnicos sin regresiones. No se requieren procesos residentes ni APIs privadas para servir las páginas.
 
 ## Estructura
 
@@ -83,7 +96,7 @@ Las contribuciones deben:
 - distinguir observación, asociación, predicción, causalidad y utilidad;
 - conservar datos, código, parámetros y versiones cuando corresponda;
 - evitar texto genérico y referencias decorativas;
-- mantener `review` hasta una revisión documentada por un sistema validado para el alcance.
+- mantener `review` hasta una revisión documentada adecuada al alcance; no atribuir aprobación humana o clínica a pruebas automatizadas.
 
 ## Tecnologías
 

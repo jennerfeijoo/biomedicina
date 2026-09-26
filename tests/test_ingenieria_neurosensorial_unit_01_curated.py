@@ -48,7 +48,7 @@ def test_unit_01_protects_core_neurosensory_distinctions():
     assert "adaptación no equivale simplemente a fatiga" in text
     assert "el tamaño anatómico del receptor y el campo receptivo funcional no son sinónimos" in text
     assert "actividad neural y percepción pertenecen a niveles de observación diferentes" in text
-    assert "no una constante universal" in text
+    assert "no como constante universal" in text
 
 
 def test_unit_01_keeps_recording_and_stimulation_out_of_scope():

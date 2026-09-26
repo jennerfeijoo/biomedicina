@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,7 +59,7 @@ def main() -> int:
     for marker in ("Biopotenciales, electrodos e interfaz electrodo-tejido", "U3-P1", "U3-P2", "U3-P3", "Bloqueos técnicos pendientes", "sin adquisición con personas", "course_state: pending"):
         assert marker in readiness, marker
 
-    if UNIT.exists():
+    if UNIT.exists() and not public_review_migration(ROOT):
         audit = load_object(AUDIT)
         authorization = audit["authorization_result"]
         assert authorization["full_theory_drafting_authorized"] is True

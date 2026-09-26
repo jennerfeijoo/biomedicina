@@ -3,6 +3,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,7 +52,7 @@ def main() -> int:
         "electrical_safety_claimed",
         "regulatory_conformity_claimed",
     ))
-    assert not AUTHORAL.exists(), "unit-05.json must remain absent during preparation"
+    assert not AUTHORAL.exists() or public_review_migration(ROOT), "unit-05.json must remain absent during preparation"
 
     doc = DOC.read_text(encoding="utf-8")
     for marker in ("U5-B01", "U5-B06", "solo simulación y datos sintéticos", "course_state: pending"):

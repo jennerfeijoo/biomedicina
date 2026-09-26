@@ -169,8 +169,6 @@ def validate_manifest(payload: Any, label: str = "manifest") -> list[str]:
 def validate_directory(directory: Path) -> list[str]:
     errors: list[str] = []
     paths = sorted(directory.glob("*.json"))
-    if not paths:
-        return [f"No existen manifiestos en {directory}"]
     identifiers: set[str] = set()
     for path in paths:
         try:

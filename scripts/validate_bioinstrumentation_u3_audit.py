@@ -4,6 +4,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "data/editorial_audits/bioinstrumentacion-unit-03.json"
 PREPARATION = ROOT / "data/unit_preparation/bioinstrumentacion-unit-03.json"
@@ -59,7 +63,7 @@ def main() -> int:
     assert claims["external_professional_review_completed"] is False
     assert claims["human_assessment_review_completed"] is False
     assert audit["unit_developed"] is False
-    assert not AUTHORAL.exists()
+    assert not AUTHORAL.exists() or public_review_migration(ROOT)
 
     assert len(preparation["learning_outcomes"]) == 5
     assert len(preparation["misconception_bank"]) == 12

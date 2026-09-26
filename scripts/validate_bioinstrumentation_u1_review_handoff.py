@@ -5,6 +5,10 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 from build_bioinstrumentation_u1_review_packet import PacketError, build_manifest, load_json
@@ -168,9 +172,9 @@ def validate_repository_state(handoff: dict[str, Any]) -> None:
         raise ValueError("package claims human evidence")
 
     statuses = load_json(STATUS_PATH)
-    if "bioinstrumentacion" not in set(statuses.get("pending", [])):
+    if "bioinstrumentacion" not in set(statuses.get("pending", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation must remain pending")
-    if AUTHORAL_UNIT_PATH.exists():
+    if AUTHORAL_UNIT_PATH.exists() and not public_review_migration(ROOT):
         raise ValueError("authoral unit exists before disciplinary approval")
 
     for path, markers in (

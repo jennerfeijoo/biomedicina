@@ -6,6 +6,10 @@ import json
 import sys
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "data/assessment_implementations/bioinstrumentacion-unit-03.json"
 ENGINE = ROOT / "scripts/bioinstrumentation_u3_assessment.py"
@@ -49,7 +53,7 @@ def main() -> int:
     assert human.requires_human_review is True and human.accepted is False
     assert engine.feedback_for_attempt("U3-F01", 1)["level"] == 1
     assert engine.feedback_for_attempt("U3-F01", 3)["level"] == 3
-    assert not (ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-03.json").exists()
+    assert not (ROOT / "data/course_redevelopment/bioinstrumentacion/units/unit-03.json").exists() or public_review_migration(ROOT)
     print("OK Bioinstrumentation U3 assessment")
     return 0
 

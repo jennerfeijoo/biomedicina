@@ -22,14 +22,11 @@
 ## Controles mínimos
 
 ```bash
-python scripts/validate_curriculum.py
-python scripts/validate_catalog.py
-python scripts/audit_generic_content.py
-python scripts/validate_academic_courses.py
-python scripts/validate_scientific_traceability.py
-python scripts/validate_reviewer_validations.py
-python -m unittest discover -s tests
-python scripts/validate_links.py --quiet
+python -m pip install -r requirements-dev.txt
+python scripts/run_quality.py
+python scripts/audit_scientific_traceability.py --strict
 ```
+
+La auditoría científica estricta informa brechas pendientes en los registros migrados; no debe interpretarse un CI técnico verde como aprobación científica. La revisión documental no requiere un proveedor de modelos.
 
 La pull request debe explicar qué cambió, por qué, qué evidencia lo respalda, qué pruebas se ejecutaron y qué permanece provisional.

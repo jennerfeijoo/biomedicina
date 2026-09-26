@@ -6,7 +6,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-from citonauta_agent.reviewer_validation import find_applicable_validation
+from scripts.reviewer_validation import find_applicable_validation
 
 
 def validated_manifest() -> dict:
@@ -14,7 +14,7 @@ def validated_manifest() -> dict:
         "validation_id": "VALID-001",
         "status": "validated_for_scope",
         "reviewer": {
-            "provider": "ollama",
+            "provider": "synthetic-test-provider",
             "model": "review-model:1",
             "model_version": "sha256:model",
             "prompt_id": "prompt-v1",
@@ -59,13 +59,13 @@ def validated_manifest() -> dict:
     }
 
 
-class AgentReviewGateTests(unittest.TestCase):
+class ReviewEvidenceGateTests(unittest.TestCase):
     def find(self, payload: dict, **overrides):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             (directory / "record.json").write_text(json.dumps(payload), encoding="utf-8")
             arguments = {
-                "provider": "ollama",
+                "provider": "synthetic-test-provider",
                 "model": "review-model:1",
                 "model_version": "sha256:model",
                 "prompt_id": "prompt-v1",

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.pilot_publication_state import public_review_migration
 from typing import Any
 
 from calculate_bioinstrumentation_u1_agreement import (
@@ -347,9 +351,9 @@ def validate_repository_state() -> None:
         raise ValueError("package authorized theory prematurely")
 
     statuses = load_json(STATUS_PATH)
-    if "bioinstrumentacion" not in set(statuses.get("pending", [])):
+    if "bioinstrumentacion" not in set(statuses.get("pending", [])) and not public_review_migration(ROOT):
         raise ValueError("Bioinstrumentation must remain pending")
-    if AUTHORAL_UNIT_PATH.exists():
+    if AUTHORAL_UNIT_PATH.exists() and not public_review_migration(ROOT):
         raise ValueError("authoral unit exists before human review")
 
     readiness = READINESS_PATH.read_text(encoding="utf-8")

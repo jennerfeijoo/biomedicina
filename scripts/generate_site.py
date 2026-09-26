@@ -20,6 +20,8 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+from site_metadata import add_metadata, write_discovery_files
+
 from advanced_unit_renderer import (
     advanced_replacements,
     canonical_course_overlay,
@@ -1197,7 +1199,7 @@ def render_unit_page(template: str, area: dict[str, Any], course: dict[str, Any]
     output = template
     for key, value in replacements.items():
         output = output.replace("{{ " + key + " }}", value)
-    return normalize_output(output)
+    return normalize_output(add_metadata(output, output_path.relative_to(ROOT).as_posix()))
 
 
 def render_units_index(template: str, area: dict[str, Any], course: dict[str, Any]) -> str:
@@ -1229,7 +1231,7 @@ def render_units_index(template: str, area: dict[str, Any], course: dict[str, An
     output = template
     for key, value in replacements.items():
         output = output.replace("{{ " + key + " }}", value)
-    return normalize_output(output)
+    return normalize_output(add_metadata(output, output_path.relative_to(ROOT).as_posix()))
 
 
 def subject_neighbors(subjects: list[dict[str, Any]], index: int) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -1418,7 +1420,7 @@ def render_subject(template: str, area: dict[str, Any], subject: dict[str, Any],
     html_output = template
     for key, value in replacements.items():
         html_output = html_output.replace("{{ " + key + " }}", value)
-    return html_output
+    return add_metadata(html_output, output_path.relative_to(ROOT).as_posix())
 
 
 def load_tracks_config() -> list[dict[str, Any]]:
@@ -1501,7 +1503,7 @@ def render_area(template: str, area: dict[str, Any]) -> str:
     html_output = template
     for key, value in replacements.items():
         html_output = html_output.replace("{{ " + key + " }}", value)
-    return html_output
+    return add_metadata(html_output, output_path.relative_to(ROOT).as_posix())
 
 
 def render_catalog(template: str, data: dict[str, Any]) -> str:
@@ -1545,7 +1547,7 @@ def render_catalog(template: str, data: dict[str, Any]) -> str:
     html_output = template
     for key, value in replacements.items():
         html_output = html_output.replace("{{ " + key + " }}", value)
-    return normalize_output(html_output)
+    return normalize_output(add_metadata(html_output, output_path.relative_to(ROOT).as_posix()))
 
 
 
@@ -1721,6 +1723,8 @@ def main() -> int:
 
     if not args.force:
         print("\nModo seguro activo: las páginas existentes no se sobrescriben sin --force.")
+    if not args.dry_run and not args.subject:
+        write_discovery_files(ROOT)
     return 0
 
 
