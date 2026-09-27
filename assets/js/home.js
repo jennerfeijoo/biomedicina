@@ -157,7 +157,9 @@
         })
         .sort((left, right) => left.title.localeCompare(right.title, "es"));
 
-      status.textContent = `${matches.length} asignaturas coinciden. Se muestran hasta 6 resultados.`;
+      status.textContent = matches.length === 1
+        ? "1 asignatura coincide."
+        : `${matches.length} asignaturas coinciden. Se muestran hasta 6 resultados.`;
       results.replaceChildren(...matches.slice(0, 6).map(createResultCard));
 
       if (!matches.length) {
