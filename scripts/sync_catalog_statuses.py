@@ -23,6 +23,7 @@ import audit_course_completion  # noqa: E402
 import audit_developed_courses  # noqa: E402
 import audit_generic_content  # noqa: E402
 import validate_scientific_traceability  # noqa: E402
+import audit_scientific_traceability  # noqa: E402
 
 DEFAULT_OUTPUT = ROOT / "data" / "catalog_statuses.json"
 
@@ -30,11 +31,10 @@ DEFAULT_OUTPUT = ROOT / "data" / "catalog_statuses.json"
 def traced_subjects() -> list[str]:
     subjects: list[str] = []
     directory = ROOT / "data" / "claim_registry"
-    for path in sorted(directory.glob("*.json")):
-        if path.name.startswith("_"):
-            continue
+    # Share the canonical-over-legacy precedence used by the scientific audit.
+    for path in audit_scientific_traceability.registry_paths(directory):
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload = audit_scientific_traceability.load_registry(path)
         except json.JSONDecodeError:
             continue
         claims = payload.get("claims") if isinstance(payload, dict) else None
@@ -90,6 +90,7 @@ def build_manifest(report: dict[str, Any]) -> dict[str, Any]:
             "scripts/audit_developed_courses.py",
             "scripts/audit_generic_content.py",
             "scripts/validate_scientific_traceability.py",
+            "scripts/audit_scientific_traceability.py",
         ],
         "definitions": {
             "material_available": "Existen páginas y actividades; no implica especificidad ni validez.",
