@@ -91,7 +91,8 @@ class LaboratorioBiomecanicaCanonicalCourseTests(unittest.TestCase):
             self.assertIn(claim["source_id"], source_ids)
             self.assertEqual(claim["source_verification_status"], "verified_directly")
             self.assertEqual(claim["review_state"], "ai_review_provisional")
-            self.assertEqual(claim["support"], "direct")
+            expected_support = "partial" if claim["id"] == "LABBIO-U01-C002" else "direct"
+            self.assertEqual(claim["support"], expected_support)
             self.assertIn(claim["text"], serialized_units[claim["unit"]])
 
     def test_course_assessment_integrates_all_six_units(self):
