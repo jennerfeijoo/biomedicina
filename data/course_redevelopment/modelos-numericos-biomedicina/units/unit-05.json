@@ -6,387 +6,376 @@
   "slug": "calibracion-e-incertidumbre",
   "title": "Calibración e incertidumbre",
   "status": "review",
-  "purpose": "Integrar estimación de parámetros, sensibilidad, incertidumbre y verificabilidad para resolver un caso de comparación del modelo con datos experimentales con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Estimar parámetros con un modelo de observación explícito, detectar falta de identificabilidad y propagar incertidumbre sin confundir convergencia del optimizador con evidencia sobre el sistema.",
   "learning_objectives": [
-    "Definir estimación de parámetros, sensibilidad y incertidumbre y verificabilidad mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte estimación de parámetros con sensibilidad y delimite el papel de incertidumbre y verificabilidad.",
-    "Seleccionar derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo.",
-    "Resolver y comunicar un caso sobre comparación del modelo con datos experimentales con incertidumbre y límites.",
-    "Transferir el método de Calibración e incertidumbre a un escenario nuevo y justificar qué debe revalidarse."
+    "Definir residuos y pesos coherentes con las unidades y el modelo de error.",
+    "Resolver una calibración lineal y comprobar sus residuos.",
+    "Distinguir identificabilidad estructural y precisión con datos finitos.",
+    "Calcular sensibilidades y reconocer columnas dependientes del jacobiano.",
+    "Propagar incertidumbre incluyendo covarianzas.",
+    "Separar incertidumbre de parámetros, error numérico y discrepancia del modelo."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Calibración e incertidumbre",
+      "heading": "Qué se ajusta y cómo se mide la discrepancia",
       "paragraphs": [
-        "La unidad «Calibración e incertidumbre» sitúa estimación de parámetros, sensibilidad y incertidumbre y verificabilidad dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Modelos Numéricos en Biomedicina, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Calibración e incertidumbre» en Modelos Numéricos en Biomedicina, «estimación de parámetros», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Calibración e incertidumbre», «sensibilidad», aporta otra dimensión al problema de Modelos Numéricos en Biomedicina: Proporción de casos positivos de referencia que una prueba identifica correctamente. Su relación con estimación de parámetros debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Calibración e incertidumbre» en Modelos Numéricos en Biomedicina, «incertidumbre y verificabilidad», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "La calibración relaciona parámetros θ con observaciones yi mediante una predicción mi(θ). Esa predicción incluye el modelo físico y el instrumento: una medición puede ser un promedio espacial, una señal filtrada o una lectura con ganancia y offset. Comparar directamente un valor puntual del campo con un promedio experimental produce una discrepancia que el optimizador podría compensar alterando parámetros físicos. Antes del ajuste, escriba unidades, instantes, condiciones de contorno y operador de observación para cada dato.",
+        "En mínimos cuadrados ordinarios se minimiza la suma de residuos al cuadrado. Si las observaciones tienen incertidumbres estándar diferentes y errores independientes, puede utilizarse ri=(mi−yi)/si y minimizar Σri². Los pesos son 1/si², no 1/si; K1 y K2 explican mínimos cuadrados y variación no constante. Si hay correlación, la forma cuadrática emplea la inversa de la matriz de covarianza completa. Sumar residuos de temperatura y desplazamiento sin escalas justificadas hace que la unidad elegida cambie arbitrariamente el ajuste.",
+        "La función objetivo expresa una decisión estadística, además de una receta numérica. Bajo errores gaussianos independientes con desviaciones conocidas, mínimos cuadrados ponderados corresponde al máximo de verosimilitud para la media especificada. Fuera de esas condiciones puede seguir siendo útil, pero la interpretación probabilística cambia. Un residuo grande no debe borrarse automáticamente: compruebe transcripción, instrumento y condición experimental. Una pérdida robusta reduce influencia de ciertos residuos; no demuestra que esos datos sean falsos ni que el modelo físico sea correcto."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Calibración e incertidumbre.",
-        "Relacionar estimación de parámetros, sensibilidad y incertidumbre y verificabilidad mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Calibración e incertidumbre» dentro de Modelos Numéricos en Biomedicina, el flujo recomendado es formular → derivar → resolver → verificar → analizar sensibilidad → interpretar. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Modelos Numéricos en Biomedicina, la evidencia pertinente incluye derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre estimación de parámetros o sensibilidad debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Calibración e incertidumbre», los controles mínimos son solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Modelos Numéricos en Biomedicina, la incertidumbre de «Calibración e incertidumbre» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: comparación del modelo con datos experimentales",
-      "paragraphs": [
-        "En la unidad «Calibración e incertidumbre» de Modelos Numéricos en Biomedicina, el caso conductor es comparación del modelo con datos experimentales. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Calibración e incertidumbre» conecta estimación de parámetros con sensibilidad y utiliza incertidumbre y verificabilidad como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «comparación del modelo con datos experimentales» en Modelos Numéricos en Biomedicina, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Calibración e incertidumbre» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de comparación del modelo con datos experimentales y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Incluya el operador de observación.",
+        "Los pesos requieren justificación estadística.",
+        "Conserve unidades y correlaciones relevantes."
       ],
       "equations": [
         {
-          "latex": "e_{rel}=\\frac{|x-\\hat{x}|}{\\max(|x|,\\epsilon)}",
-          "meaning": "Error relativo regularizado para comparar una referencia x con una aproximación; epsilon evita división inestable cerca de cero.",
+          "latex": "\\Phi(\\theta)=(m(\\theta)-y)^T\\Sigma^{-1}(m(\\theta)-y)",
+          "meaning": "Objetivo cuadrático con covarianza de observación conocida y definida positiva.",
           "variables": {
-            "x": "referencia",
-            "\\hat{x}": "aproximación",
-            "\\epsilon": "escala pequeña declarada"
+            "Sigma": "covarianza de errores",
+            "theta": "parámetros"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de comparación del modelo con datos experimentales antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Identificabilidad antes de optimizar",
       "paragraphs": [
-        "La reproducibilidad de «Calibración e incertidumbre» en Modelos Numéricos en Biomedicina requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Calibración e incertidumbre» es esta: una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables. Por ello, la entrega de Modelos Numéricos en Biomedicina separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Calibración e incertidumbre» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de estimación de parámetros, sensibilidad y incertidumbre y verificabilidad debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Modelos Numéricos en Biomedicina.",
-        "El producto de dominio será un cuaderno matemático reproducible con verificación y sensibilidad sobre comparación del modelo con datos experimentales. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Modelos Numéricos en Biomedicina como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un parámetro es estructuralmente identificable respecto a un diseño y un modelo si observaciones ideales suficientes permiten distinguir su valor de alternativas, con las condiciones de unicidad pertinentes. En cambio, identificabilidad práctica pregunta cuánto restringen los datos finitos y ruidosos. En y(t)=a exp(−kt), una observación inicial informa a; observaciones posteriores aportan información sobre k. Si todos los tiempos son casi cero, cambios pequeños de k apenas alteran la señal y estimarlo puede ser impreciso aunque la fórmula no tenga una ambigüedad exacta.",
+        "La ambigüedad puede mostrarse sin ejecutar software. En y(t)=ab exp(−kt), sustituir a por ca y b por b/c deja todas las predicciones iguales para cualquier c no nulo admisible. Ningún número adicional de tiempos del mismo tipo separa a y b. El jacobiano contiene columnas proporcionales para esos dos parámetros. Una medida independiente de ganancia o concentración inicial, una reparametrización mediante p=ab o un experimento adicional que dependa de ellos de otra forma puede resolver el problema. Cambiar de optimizador no añade información.",
+        "Las sensibilidades locales Jij=∂mi/∂θj describen cómo cambia cada salida cerca de un conjunto de parámetros. Su magnitud depende de las unidades; una sensibilidad normalizada puede ayudar a comparar escalas, pero pierde significado cuando el denominador es cero. Columnas casi dependientes indican combinaciones difíciles de distinguir localmente. Esa comprobación no prueba unicidad global: mínimos separados pueden existir lejos del punto evaluado. Conviene explorar inicios, perfiles del objetivo y rangos admisibles, conservando también soluciones alternativas con ajuste semejante."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un cuaderno matemático reproducible con verificación y sensibilidad que pueda ser auditado y corregido."
+        "Más datos iguales no identifican.",
+        "Una transformación puede revelar ambigüedad.",
+        "El jacobiano describe dependencia local."
+      ],
+      "equations": [
+        {
+          "latex": "\\frac{\\partial (ae^{-kt})}{\\partial a}=e^{-kt},\\qquad \\frac{\\partial (ae^{-kt})}{\\partial k}=-tae^{-kt}",
+          "meaning": "Sensibilidades del decaimiento exponencial.",
+          "variables": {
+            "a": "amplitud inicial",
+            "k": "constante de decaimiento"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Optimización, residuos y precisión de parámetros",
+      "paragraphs": [
+        "La documentación K3 de least_squares distingue residuos, jacobiano, cotas, escalado y criterios de parada. Una terminación por cambio pequeño del objetivo no garantiza que se haya encontrado el mejor mínimo global ni que los parámetros estén bien determinados. Registre el motivo de parada, el coste, los residuos y las cotas activas. Una solución pegada a una cota puede reflejar una restricción física válida, datos incompatibles o un modelo inadecuado; quitarla automáticamente para reducir el coste no resuelve esa interpretación.",
+        "En una aproximación local lineal con errores independientes de varianza común estimada, la covarianza de parámetros suele aproximarse por s²(JᵀJ)⁻¹ cuando el jacobiano tiene rango completo y los supuestos son razonables. Con pesos absolutos conocidos cambia el factor de escala. K4 documenta esas distinciones y las limitaciones de la covarianza aproximada. Cerca de límites, con fuerte no linealidad o rango deficiente, una matriz devuelta por el software puede ser poco informativa. Un error estándar pequeño bajo supuestos incorrectos no es evidencia de precisión real.",
+        "Examine los residuos frente a tiempo, predicción y condiciones del experimento. Una secuencia de signos o una tendencia puede indicar dinámica ausente, retardo instrumental o una dependencia no modelada de la varianza. Separar datos de ajuste y comparación ayuda a detectar adaptación excesiva, pero no corrige un conjunto de validación que comparte el mismo error sistemático. El ajuste de esta unidad es deliberadamente simple para permitir reconstruir a mano pendientes, residuos y grados de libertad; después se puede contrastar la solución con un optimizador."
+      ],
+      "key_points": [
+        "La parada no acredita identificabilidad.",
+        "Revise cotas y mínimos alternativos.",
+        "Interprete covarianza bajo sus supuestos."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "Propagación y discrepancia del modelo",
+      "paragraphs": [
+        "Para una salida escalar q=g(θ), una aproximación de primer orden propaga la covarianza mediante Var(q)≈∇gᵀΣθ∇g. K5 presenta la ley de propagación incluyendo entradas correlacionadas. Los términos cruzados pueden aumentar o disminuir la incertidumbre según los signos de derivadas y covarianzas. Omitirlos no es siempre conservador. Esta linealización debe revisarse si la salida es muy no lineal, las distribuciones son amplias o existen límites físicos; simular muestras puede explorar esos efectos, siempre que las distribuciones conjuntas de entrada estén justificadas.",
+        "Un análisis de sensibilidad cambia entradas para observar efectos; una distribución de incertidumbre añade probabilidades a esas entradas. No son intercambiables: barrer un intervalo uniforme no demuestra que todos sus valores sean igualmente probables. En una propagación por muestreo se conservan dependencias entre parámetros y se registra semilla, tamaño de muestra y estabilidad de los resúmenes. Muestrear cada parámetro de forma independiente cuando el ajuste los correlaciona puede producir combinaciones incompatibles con las observaciones y exagerar o reducir artificialmente la dispersión de la salida.",
+        "La incertidumbre paramétrica no incluye automáticamente error de discretización, incertidumbre geométrica, sesgo instrumental ni discrepancia estructural. Si una ecuación omite un proceso, aumentar el número de simulaciones del mismo modelo no lo incorpora. Prepare un presupuesto que identifique cada contribución y evite sumarlas como independientes sin fundamento. Una salida poco sensible a parámetros mal identificados puede aun ser predecible en el rango observado, mientras otra salida depende fuertemente de ellos. Por eso la credibilidad se formula para una cantidad y unas condiciones concretas."
+      ],
+      "key_points": [
+        "Propague también las covarianzas cruzadas.",
+        "Sensibilidad no asigna probabilidades automáticamente.",
+        "Separe parámetros de discrepancia estructural."
+      ],
+      "equations": [
+        {
+          "latex": "\\operatorname{Var}(g)\\approx\\sum_i g_i^2\\operatorname{Var}(\\theta_i)+2\\sum_{i<j}g_i g_j\\operatorname{Cov}(\\theta_i,\\theta_j)",
+          "meaning": "Propagación local de primer orden, con gi derivada parcial de g.",
+          "variables": {
+            "g_i": "sensibilidad de la salida"
+          }
+        }
       ]
     }
   ],
   "glossary": [
     {
-      "term": "estimación de parámetros",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Calibración paramétrica",
+      "definition": "Estimación de parámetros mediante comparación con observaciones."
     },
     {
-      "term": "sensibilidad",
-      "definition": "Proporción de casos positivos de referencia que una prueba identifica correctamente."
+      "term": "Operador de observación",
+      "definition": "Regla que convierte el estado simulado en la magnitud medida."
     },
     {
-      "term": "incertidumbre y verificabilidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Residuo",
+      "definition": "Diferencia entre observación y predicción con signo declarado."
     },
     {
-      "term": "Calibración e incertidumbre",
-      "definition": "Dominio de estudio que integra estimación de parámetros, sensibilidad, incertidumbre y verificabilidad para resolver un problema delimitado y verificable."
+      "term": "Peso estadístico",
+      "definition": "Factor que determina la contribución de una observación al objetivo."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de comparación del modelo con datos experimentales usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Identificabilidad estructural",
+      "definition": "Posibilidad de distinguir parámetros con observaciones ideales según el modelo y diseño."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Identificabilidad práctica",
+      "definition": "Grado de restricción de parámetros con los datos disponibles y su ruido."
     },
     {
-      "term": "Evidencia",
-      "definition": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Jacobiano de sensibilidad",
+      "definition": "Matriz de derivadas de predicciones o residuos respecto a parámetros."
     },
     {
-      "term": "Control",
-      "definition": "Solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Cota activa",
+      "definition": "Límite de parámetro alcanzado por una solución optimizada."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Mínimo local",
+      "definition": "Valor del objetivo no mayor que los de un entorno cercano."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Covarianza",
+      "definition": "Medida de variación conjunta de dos cantidades."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Perfil del objetivo",
+      "definition": "Objetivo mínimo al fijar un parámetro y reajustar los restantes."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Propagación de incertidumbre",
+      "definition": "Transformación de incertidumbres de entrada hacia salidas."
+    },
+    {
+      "term": "Discrepancia estructural",
+      "definition": "Diferencia atribuible a limitaciones de la representación del fenómeno."
+    },
+    {
+      "term": "Heterocedasticidad",
+      "definition": "Variación de la dispersión del error entre observaciones."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Calibración e incertidumbre",
-      "scenario": "Un equipo propone estudiar comparación del modelo con datos experimentales, pero su pregunta mezcla estimación de parámetros, sensibilidad y incertidumbre y verificabilidad sin definir unidades, referencias ni resultado admisible.",
+      "title": "Calibración lineal verificable",
+      "scenario": "Datos sintéticos x=(0,1,2), y=(1,2,4), modelo y≈a+bx y pesos iguales.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de estimación de parámetros, sensibilidad y incertidumbre y verificabilidad.",
-        "Seleccionar derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica y registrar procedencia y condiciones.",
-        "Predefinir solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "La media de x es 1 y la de y es 7/3.",
+        "Sxx=2 y Sxy=3; por tanto b=3/2 y a=7/3−3/2=5/6.",
+        "Las predicciones son (5/6,7/3,23/6).",
+        "Los residuos y−predicción son (1/6,−1/3,1/6) y suman cero.",
+        "La suma de cuadrados es 1/6. Con n−p=1, s²=1/6.",
+        "Bajo el modelo de errores homocedásticos, Var(b) estimada=s²/Sxx=1/12."
       ],
-      "interpretation": "El resultado defendible es un cuaderno matemático reproducible con verificación y sensibilidad trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "La solución y los residuos pueden comprobarse sin optimización no lineal.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+        "Solo un grado de libertad residual: estimación de variabilidad muy limitada.",
+        "No son mediciones clínicas ni prueba de una relación causal."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre estimación de parámetros y sensibilidad en el caso de comparación del modelo con datos experimentales; una condición vinculada con incertidumbre y verificabilidad podría producir el mismo patrón.",
+      "title": "Una familia indistinguible de parámetros",
+      "scenario": "Modelo y(t)=ab exp(−0,2t), con a,b positivos y producto observado ab=6.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar incertidumbre y verificabilidad como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Las parejas (a,b)=(2,3), (1,6) y (4; 1,5) producen la misma curva.",
+        "En t=0 todas predicen 6 y en t=5 todas predicen 6/e≈2,207276647.",
+        "Las columnas de sensibilidad son b exp(−0,2t) y a exp(−0,2t), proporcionales en todos los tiempos.",
+        "Estimar solo p=ab elimina la ambigüedad de esta parametrización; estimar a y b por separado exige información adicional."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "Un ajuste perfecto puede coexistir con infinitas parejas de parámetros.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "El argumento se refiere al modelo y observaciones declarados.",
+        "Una nueva clase de medición podría romper la simetría."
+      ]
+    },
+    {
+      "title": "La correlación cambia la incertidumbre",
+      "scenario": "Entradas X e Y con Var(X)=Var(Y)=4 y Cov(X,Y)=3; salida S=X+Y o diferencia D=X−Y.",
+      "reasoning_steps": [
+        "Var(S)=4+4+2·3=14.",
+        "Var(D)=4+4−2·3=2.",
+        "Ignorar correlación daría 8 en ambos casos.",
+        "La desviación estándar es √14≈3,741657 para S y √2≈1,414214 para D."
+      ],
+      "interpretation": "Omitir correlación subestima la variabilidad de la suma y sobreestima la de la diferencia en este ejemplo.",
+      "limitations": [
+        "Las dos entradas deben tener unidades compatibles.",
+        "Aquí la propagación es exacta porque las salidas son lineales."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Objetivo y sensibilidad",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Resuelve el caso sintético conservando ecuaciones, unidades y cálculos.",
+        "Compara tu respuesta con los criterios después de intentarlo."
       ],
       "problems": [
-        "Define estimación de parámetros mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo sensibilidad modifica o complementa a estimación de parámetros.",
-        "Propón una prueba que distinga el papel de incertidumbre y verificabilidad de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Para incertidumbres s1=1 y s2=2 calcula la razón de pesos w1/w2.",
+        "Comprueba que los residuos del ajuste lineal suman cero y que Σxi ri=0.",
+        "Calcula ∂y/∂k en y=2exp(−kt), k=0,5, t=2.",
+        "Explica qué cambia si el instrumento añade un offset desconocido."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Cálculo de pesos y derivadas.",
+        "Modelo de observación ampliado."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "La razón es 4.",
+        "Ambas sumas son cero con residuos (1/6,−1/3,1/6).",
+        "La derivada es −4/e≈−1,471517765.",
+        "El operador incluye un parámetro adicional; su distinción de amplitud y dinámica depende de los tiempos y datos."
       ]
     },
     {
-      "title": "Taller de evidencia: comparación del modelo con datos experimentales",
+      "title": "Interpretar incertidumbre",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo formular → derivar → resolver → verificar → analizar sensibilidad → interpretar.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Resuelve el caso sintético conservando ecuaciones, unidades y cálculos.",
+        "Compara tu respuesta con los criterios después de intentarlo."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para estimación de parámetros, sensibilidad y incertidumbre y verificabilidad.",
-        "Selecciona entre derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Calcula Var(X+2Y) para el tercer ejemplo.",
+        "Calcula Var(X−2Y) para el mismo caso.",
+        "Propón una medición para separar a y b del segundo ejemplo.",
+        "Clasifica malla gruesa, ganancia incierta y reacción omitida en el presupuesto de incertidumbre."
       ],
       "deliverables": [
-        "Cuaderno matemático reproducible con verificación y sensibilidad.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Presupuesto de contribuciones y supuestos de dependencia."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de comparación del modelo con datos experimentales y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte estimación de parámetros, sensibilidad y incertidumbre y verificabilidad.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "4+16+12=32.",
+        "4+16−12=8.",
+        "Medir independientemente uno de los factores, o añadir una salida que dependa de ellos de otra manera.",
+        "Error numérico; incertidumbre instrumental/paramétrica; discrepancia estructural, respectivamente."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar estimación de parámetros como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar estimación de parámetros en una explicación."
+      "error": "Usar peso inverso a la desviación estándar en la suma cuadrática.",
+      "correction": "Para errores independientes con varianza conocida usar peso inverso a la varianza."
     },
     {
-      "error": "Afirmar que una relación entre estimación de parámetros y sensibilidad demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Interpretar convergencia como unicidad del parámetro.",
+      "correction": "Comprobar simetrías, rango y soluciones alternativas."
     },
     {
-      "error": "Añadir incertidumbre y verificabilidad después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Mezclar residuos con unidades distintas.",
+      "correction": "Definir escalas o covarianza con significado."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Ignorar correlaciones al propagar.",
+      "correction": "Incluir covarianzas o justificar su ausencia."
     },
     {
-      "error": "Generalizar la conclusión de Calibración e incertidumbre al uso clínico o real.",
-      "correction": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+      "error": "Eliminar un residuo grande para mejorar el ajuste.",
+      "correction": "Investigar su origen y documentar decisiones antes de excluirlo."
+    },
+    {
+      "error": "Llamar incertidumbre total a dispersión de parámetros.",
+      "correction": "Incluir o delimitar fuentes numéricas, geométricas, instrumentales y estructurales."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar comparación del modelo con datos experimentales?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué estima el ajuste lineal del ejemplo?",
+      "answer": "a=5/6 y b=3/2.",
+      "reasoning": "Son los coeficientes que minimizan la suma cuadrática."
     },
     {
-      "question": "¿Cómo se relacionan estimación de parámetros y sensibilidad?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; incertidumbre y verificabilidad puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Cuántos grados de libertad residuales tiene?",
+      "answer": "Uno.",
+      "reasoning": "Hay tres datos y dos coeficientes estimados."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre incertidumbre y verificabilidad?",
-      "answer": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Más tiempos distinguen a y b si solo aparece ab?",
+      "answer": "No.",
+      "reasoning": "La transformación a→ca, b→b/c conserva toda la curva."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Qué evalúa una sensibilidad local?",
+      "answer": "La derivada cerca de un punto paramétrico.",
+      "reasoning": "No prueba unicidad global."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Qué representa una cota activa?",
+      "answer": "Un parámetro alcanza su límite permitido.",
+      "reasoning": "La causa debe interpretarse junto al modelo y los datos."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿La incertidumbre de una suma siempre aumenta al ignorar correlación?",
+      "answer": "No.",
+      "reasoning": "Depende de signos; en el ejemplo disminuye de 14 a 8."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre comparación del modelo con datos experimentales?",
-      "answer": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Un barrido uniforme demuestra distribución uniforme?",
+      "answer": "No.",
+      "reasoning": "Explorar valores no asigna probabilidades justificadas."
     },
     {
-      "question": "¿Qué demuestra dominio de Calibración e incertidumbre?",
-      "answer": "Producir un cuaderno matemático reproducible con verificación y sensibilidad auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué no incorpora automáticamente muestrear parámetros?",
+      "answer": "Los procesos omitidos por el modelo.",
+      "reasoning": "La discrepancia estructural requiere tratamiento separado."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Comparación del modelo con datos experimentales."
+      "topic": "Sensores y cámaras experimentales",
+      "connection": "Ganancia, offset y promedios del instrumento deben aparecer en la comparación con la simulación."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica."
+      "topic": "Parámetros de transporte",
+      "connection": "Dos parámetros compensatorios pueden producir el mismo perfil y requerir un experimento adicional."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+      "topic": "Predicciones de modelos",
+      "connection": "La incertidumbre depende de la salida y del rango de uso, no solo del ajuste nominal."
     }
   ],
   "sources": [
     {
-      "title": "SciPy documentation",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/",
-      "type": "documentación",
-      "description": "Solucionadores, optimización e integración numérica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "K1 · Least Squares",
+      "organization": "NIST/SEMATECH e-Handbook",
+      "url": "https://www.itl.nist.gov/div898/handbook/pmd/section4/pmd431.htm",
+      "type": "fuente técnica consultada",
+      "description": "Sección 4.4.3.1: criterio de mínimos cuadrados.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "The Turing Way",
-      "organization": "The Turing Way community",
-      "url": "https://book.the-turing-way.org/",
-      "type": "guía abierta",
-      "description": "Reproducibilidad, revisión y procedencia computacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "K2 · Accounting for Non-Constant Variation Across the Data",
+      "organization": "NIST/SEMATECH e-Handbook",
+      "url": "https://www.itl.nist.gov/div898/handbook/pmd/section4/pmd452.htm",
+      "type": "fuente técnica consultada",
+      "description": "Sección 4.4.5.2: varianza no constante y ponderación.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "Jupyter documentation",
-      "organization": "Project Jupyter",
-      "url": "https://docs.jupyter.org/",
-      "type": "documentación",
-      "description": "Cuadernos ejecutables para derivaciones y experimentos numéricos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "K3 · scipy.optimize.least_squares",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html",
+      "type": "fuente técnica consultada",
+      "description": "Parámetros jac, bounds, x_scale, loss y criterios de terminación.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos fisiológicos para formular y validar modelos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "K4 · scipy.optimize.curve_fit",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html",
+      "type": "fuente técnica consultada",
+      "description": "sigma, absolute_sigma y pcov: escala y límites de la covarianza aproximada.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "Calculus Volume 3",
-      "organization": "OpenStax",
-      "url": "https://openstax.org/details/books/calculus-volume-3",
-      "type": "libro abierto",
-      "description": "Cálculo multivariable, vectorial y ecuaciones diferenciales introductorias.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "K5 · Evaluation of measurement data — Guide to the expression of uncertainty in measurement",
+      "organization": "JCGM / BIPM",
+      "url": "https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf",
+      "type": "fuente técnica consultada",
+      "description": "JCGM 100:2008, sección 5: incertidumbre estándar combinada y entradas correlacionadas. Los contraejemplos de identificabilidad se derivan en el texto.",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Reconstrucción documental con ajustes sintéticos y derivaciones explícitas. Estado review; no atribuye incertidumbre clínica ni aprobación humana externa."
 }

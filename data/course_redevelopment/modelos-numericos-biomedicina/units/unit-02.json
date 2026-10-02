@@ -6,387 +6,374 @@
   "slug": "geometria-y-discretizacion",
   "title": "Geometría y discretización",
   "status": "review",
-  "purpose": "Integrar mallas, elementos y volúmenes finitos, calidad geométrica para resolver un caso de representación de órganos, tejidos y dispositivos con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Discretizar dominios y operadores sin confundir resolución de imagen, geometría, malla y precisión de la solución; comprobar ensamblaje, contornos y convergencia con problemas analíticos.",
   "learning_objectives": [
-    "Definir mallas, elementos y volúmenes finitos y calidad geométrica mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte mallas con elementos y volúmenes finitos y delimite el papel de calidad geométrica.",
-    "Seleccionar derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo.",
-    "Resolver y comunicar un caso sobre representación de órganos, tejidos y dispositivos con incertidumbre y límites.",
-    "Transferir el método de Geometría y discretización a un escenario nuevo y justificar qué debe revalidarse."
+    "Separar las incertidumbres de segmentación y geometría del error de discretización.",
+    "Construir una diferencia central para una segunda derivada y estimar su orden.",
+    "Derivar una formulación débil de Poisson con condiciones de contorno explícitas.",
+    "Ensamblar un sistema de elementos lineales en una dimensión.",
+    "Comparar errores con una norma y una cantidad de interés previamente definidas.",
+    "Interpretar refinamiento, orden observado y extrapolación dentro de sus supuestos."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Geometría y discretización",
+      "heading": "De la geometría a la malla",
       "paragraphs": [
-        "La unidad «Geometría y discretización» sitúa mallas, elementos y volúmenes finitos y calidad geométrica dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Modelos Numéricos en Biomedicina, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Geometría y discretización» en Modelos Numéricos en Biomedicina, «mallas», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Geometría y discretización», «elementos y volúmenes finitos», aporta otra dimensión al problema de Modelos Numéricos en Biomedicina: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con mallas debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Geometría y discretización» en Modelos Numéricos en Biomedicina, «calidad geométrica», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Una imagen segmentada, una superficie reconstruida y una malla de cálculo son objetos diferentes. La segmentación decide qué puntos pertenecen a cada región; la superficie aproxima su frontera; la malla subdivide el dominio donde se representa la solución. Reducir el tamaño de los elementos no recupera una rama anatómica eliminada durante segmentación. Por eso hay que conservar el origen de la geometría, sus unidades, las operaciones de reparación y el significado de cada etiqueta, especialmente las entradas, salidas e interfaces entre materiales.",
+        "El tamaño de vóxel limita el detalle de la imagen de partida, pero no obliga a utilizar un elemento por vóxel ni establece por sí mismo el error de la simulación. Una magnitud integrada puede ser relativamente insensible a irregularidades pequeñas; una salida local puede depender de la curvatura o de una sección estrecha. En un ejercicio sintético es útil modificar una dimensión geométrica manteniendo comparable la resolución, y luego refinar una geometría fija. Así se separan dos perturbaciones que de otro modo quedarían confundidas.",
+        "La conectividad indica qué nodos forman cada elemento y qué entidades comparten una frontera. En elementos isoparamétricos, un mapa desde una celda de referencia lleva las funciones al dominio físico. Un jacobiano degenerado impide esa transformación y los elementos muy deformados pueden degradar el cálculo. La convención de orientación depende del tipo de elemento y del software; no basta con invertir signos a ciegas. El manual G1 de Gmsh describe entidades físicas, generación y evaluación de elementos; las etiquetas deben comprobarse después de exportar."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Geometría y discretización.",
-        "Relacionar mallas, elementos y volúmenes finitos y calidad geométrica mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
+        "La malla no corrige segmentaciones.",
+        "Conserve etiquetas de las fronteras.",
+        "Controle geometría y resolución separadamente."
+      ],
+      "equations": []
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "Diferencias finitas y significado del error",
       "paragraphs": [
-        "Para «Geometría y discretización» dentro de Modelos Numéricos en Biomedicina, el flujo recomendado es formular → derivar → resolver → verificar → analizar sensibilidad → interpretar. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Modelos Numéricos en Biomedicina, la evidencia pertinente incluye derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre mallas o elementos y volúmenes finitos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Geometría y discretización», los controles mínimos son solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Modelos Numéricos en Biomedicina, la incertidumbre de «Geometría y discretización» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "En una malla uniforme de paso h, las expansiones de Taylor alrededor de xi permiten sumar los valores a izquierda y derecha. Los términos impares se cancelan y se obtiene (ui−1−2ui+ui+1)/h² como aproximación de u″. Para funciones suficientemente suaves, el término principal del error local es proporcional a h² y a la cuarta derivada. La simetría del stencil es importante: una malla no uniforme exige otros coeficientes, y cerca de una frontera hay que incorporar las condiciones sin aplicar una fórmula fuera del dominio.",
+        "En el problema −u″=f sobre [0,1], con valores prescritos en ambos extremos, las incógnitas son los valores interiores. Cada ecuación tiene diagonal 2/h² y vecinos −1/h². Un valor de contorno conocido se lleva al lado derecho con el signo correspondiente. La matriz resultante no debe confundirse con el operador continuo: resolverla con residuo casi nulo solo demuestra que se satisfacen bien esas ecuaciones discretas, no que la solución continua se haya aproximado con el error requerido.",
+        "La prueba con una función fabricada permite conocer simultáneamente solución, fuente y contornos. Si se elige u=x−x⁴, entonces f=12x² y u(0)=u(1)=0. El ejemplo de esta unidad calcula valores en tres mallas y muestra una reducción cuadrática del error. Si se utiliza en cambio una función cuadrática, la diferencia central reproduce exactamente su segunda derivada y podría ocultar un defecto en la interpretación de la convergencia. Por ello conviene combinar pruebas exactas sencillas y soluciones con derivadas de orden superior no nulas."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: representación de órganos, tejidos y dispositivos",
-      "paragraphs": [
-        "En la unidad «Geometría y discretización» de Modelos Numéricos en Biomedicina, el caso conductor es representación de órganos, tejidos y dispositivos. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Geometría y discretización» conecta mallas con elementos y volúmenes finitos y utiliza calidad geométrica como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «representación de órganos, tejidos y dispositivos» en Modelos Numéricos en Biomedicina, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Geometría y discretización» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de representación de órganos, tejidos y dispositivos y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "El stencil presupone una malla.",
+        "El residuo no mide discretización.",
+        "Fabrique una solución suficientemente exigente."
       ],
       "equations": [
         {
-          "latex": "e_{rel}=\\frac{|x-\\hat{x}|}{\\max(|x|,\\epsilon)}",
-          "meaning": "Error relativo regularizado para comparar una referencia x con una aproximación; epsilon evita división inestable cerca de cero.",
+          "latex": "\\frac{u(x-h)-2u(x)+u(x+h)}{h^2}=u^{\\prime\\prime}(x)+\\frac{h^2}{12}u^{(4)}(x)+O(h^4)",
+          "meaning": "Expansión para una función con suavidad suficiente; muestra el término principal de la diferencia central.",
           "variables": {
-            "x": "referencia",
-            "\\hat{x}": "aproximación",
-            "\\epsilon": "escala pequeña declarada"
+            "h": "paso espacial"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de representación de órganos, tejidos y dispositivos antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Elementos finitos: del balance débil al sistema",
       "paragraphs": [
-        "La reproducibilidad de «Geometría y discretización» en Modelos Numéricos en Biomedicina requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Geometría y discretización» es esta: una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables. Por ello, la entrega de Modelos Numéricos en Biomedicina separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Geometría y discretización» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de mallas, elementos y volúmenes finitos y calidad geométrica debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Modelos Numéricos en Biomedicina.",
-        "El producto de dominio será un cuaderno matemático reproducible con verificación y sensibilidad sobre representación de órganos, tejidos y dispositivos. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Modelos Numéricos en Biomedicina como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "En una dimensión, multiplicar −u″=f por una función de prueba v que se anula en los extremos e integrar por partes da ∫u′v′ dx=∫fv dx. La solución débil permite trabajar con derivadas de primer orden y expresa el problema en un espacio de funciones. La formulación de Poisson en G2 presenta la construcción general. No se trata de eliminar la física del contorno: el término de frontera desaparece aquí porque v vale cero donde se prescribe u; con flujo impuesto aparece en el funcional de carga.",
+        "Con funciones continuas y lineales por tramos, cada elemento de longitud ℓ aporta una matriz Ke=(1/ℓ)[[1,−1],[−1,1]] para el coeficiente unitario. Las contribuciones de elementos que comparten un nodo se suman en la misma fila y columna. Para una fuente constante f, el vector elemental es fℓ/2 en cada extremo. Esta derivación permite verificar un ensamblador con solo dos elementos antes de confiar en miles de grados de libertad. Si el coeficiente material varía, debe incluirse en la integral y no añadirse después como una corrección arbitraria.",
+        "Imponer desplazamientos o valores de campo conocidos reduce las incógnitas y modifica la carga de las restantes. Un problema con solo condiciones de Neumann puede tener un modo constante indeterminado y requerir una condición adicional y compatibilidad de la carga. Que el solucionador declare matriz singular puede reflejar ese problema matemático, no un fallo del paquete. Además, integración numérica, orden de interpolación y representación geométrica son decisiones separadas: aumentar el grado de las funciones no corrige automáticamente una frontera incorrecta."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un cuaderno matemático reproducible con verificación y sensibilidad que pueda ser auditado y corregido."
+        "Integre por partes con contornos.",
+        "Ensamble sumando contribuciones compartidas.",
+        "La singularidad puede tener significado."
+      ],
+      "equations": [
+        {
+          "latex": "K_{ij}=\\int_\\Omega \\phi_i^{\\prime}\\phi_j^{\\prime}\\,dx,\\quad F_i=\\int_\\Omega f\\phi_i\\,dx",
+          "meaning": "Sistema de Galerkin para Poisson unidimensional con coeficiente unitario.",
+          "variables": {
+            "phi": "funciones base"
+          }
+        },
+        {
+          "latex": "K_e=\\frac{1}{\\ell}\\begin{pmatrix}1&-1\\\\-1&1\\end{pmatrix}",
+          "meaning": "Contribución de un elemento lineal de longitud positiva.",
+          "variables": {
+            "ell": "longitud del elemento"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Medir convergencia sin esconder la salida",
+      "paragraphs": [
+        "Una norma debe especificar qué error se mide. El máximo nodal examina los nodos muestreados, mientras que una norma L² integra error en todo el dominio y una seminorma H¹ atiende a sus gradientes. Es posible obtener valores nodales exactos con interpolación incorrecta entre nodos. G3 distingue normas y órdenes; una tabla que mezcla el error de un gradiente con el orden esperado de los valores no prueba una regresión. Escriba también si la comparación se hace sobre el mismo dominio y cómo se interpola entre mallas.",
+        "Si el error se comporta como C h^p y se conoce la solución exacta, p puede estimarse mediante log(Eh/Eh/2)/log(2). Si solo se dispone de resultados de tres mallas, se pueden examinar sus diferencias bajo una hipótesis asintótica; no toda secuencia permite inferir un orden estable. Oscilaciones, errores temporales, tolerancias del solver o cambios de geometría pueden dominar. El tutorial NASA G4 presenta el refinamiento espacial y sus supuestos. Una diferencia pequeña entre dos mallas aisladas no basta para afirmar independencia universal de malla.",
+        "La extrapolación de Richardson combina resultados con un término principal de error común. Con p conocido y refinamiento por dos, Qext=Qh/2+(Qh/2−Qh)/(2^p−1). Es una estimación bajo ese modelo de error y no una nueva medición del sistema físico. Una práctica reproducible registra tamaños, grados de libertad, tolerancias, cantidad de interés, norma y coste. Si la salida requerida converge mientras un máximo singular sigue creciendo, hay que reconsiderar qué salida tiene significado físico y qué idealización introdujo la singularidad."
+      ],
+      "key_points": [
+        "Especifique norma y magnitud comparada.",
+        "Tres mallas permiten contrastar tendencias.",
+        "Extrapolar exige régimen y orden."
+      ],
+      "equations": [
+        {
+          "latex": "p_{\\rm obs}=\\frac{\\log(E_h/E_{h/2})}{\\log 2}",
+          "meaning": "Orden observado con una referencia exacta y errores positivos.",
+          "variables": {
+            "E": "error medido con la misma norma"
+          }
+        },
+        {
+          "latex": "Q_{\\rm ext}=Q_{h/2}+\\frac{Q_{h/2}-Q_h}{2^p-1}",
+          "meaning": "Extrapolación para un término dominante proporcional a h^p.",
+          "variables": {
+            "p": "orden asumido o estimado"
+          }
+        }
       ]
     }
   ],
   "glossary": [
     {
-      "term": "mallas",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Geometría",
+      "definition": "Descripción del dominio y sus fronteras."
     },
     {
-      "term": "elementos y volúmenes finitos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Malla",
+      "definition": "Subdivisión del dominio en celdas conectadas."
     },
     {
-      "term": "calidad geométrica",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Conectividad",
+      "definition": "Relación entre nodos, celdas y fronteras compartidas."
     },
     {
-      "term": "Geometría y discretización",
-      "definition": "Dominio de estudio que integra mallas, elementos y volúmenes finitos, calidad geométrica para resolver un problema delimitado y verificable."
+      "term": "Grado de libertad",
+      "definition": "Coeficiente independiente de la representación discreta."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de representación de órganos, tejidos y dispositivos usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Stencil",
+      "definition": "Conjunto de puntos y pesos usado para aproximar un operador."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Error de truncamiento",
+      "definition": "Defecto introducido al sustituir una operación continua por una aproximación."
     },
     {
-      "term": "Evidencia",
-      "definition": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Formulación débil",
+      "definition": "Problema integral obtenido al probar contra funciones de un espacio admisible."
     },
     {
-      "term": "Control",
-      "definition": "Solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Función base",
+      "definition": "Función que participa en la representación discreta de la solución."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Ensamblaje",
+      "definition": "Suma de aportes elementales en el sistema global."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Jacobiano geométrico",
+      "definition": "Derivada del mapa entre elemento de referencia y físico."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Norma de error",
+      "definition": "Regla que cuantifica la diferencia entre soluciones."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Orden observado",
+      "definition": "Exponente estimado al relacionar error y resolución."
+    },
+    {
+      "term": "Refinamiento",
+      "definition": "Reducción de tamaños o aumento de grado para mejorar aproximación."
+    },
+    {
+      "term": "Extrapolación de Richardson",
+      "definition": "Cancelación estimada del término dominante de error mediante varias resoluciones."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Geometría y discretización",
-      "scenario": "Un equipo propone estudiar representación de órganos, tejidos y dispositivos, pero su pregunta mezcla mallas, elementos y volúmenes finitos y calidad geométrica sin definir unidades, referencias ni resultado admisible.",
+      "title": "Diferencia central y orden dos",
+      "scenario": "Resolver −u″=12x² en [0,1] con u(0)=u(1)=0 y observar u(0,5). La solución exacta es x−x⁴.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de mallas, elementos y volúmenes finitos y calidad geométrica.",
-        "Seleccionar derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica y registrar procedencia y condiciones.",
-        "Predefinir solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Con h=1/2 hay una incógnita: 8u1=3, de modo que u1=0,375.",
+        "El valor exacto es 0,5−0,5⁴=0,4375; el error absoluto es 0,0625.",
+        "Con h=1/4 el sistema tridiagonal da en el centro 0,421875 y error 0,015625.",
+        "Con h=1/8 el valor central es 0,43359375 y error 0,00390625.",
+        "Los errores se dividen por cuatro: p observado=2. Richardson con las dos primeras mallas da 0,421875+(0,421875−0,375)/3=0,4375."
       ],
-      "interpretation": "El resultado defendible es un cuaderno matemático reproducible con verificación y sensibilidad trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "En este problema el error nodal es exactamente −h²x(1−x); la extrapolación cancela ese término.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+        "Esta cancelación exacta depende del ejemplo polinómico.",
+        "No demuestra igual comportamiento en dominios irregulares ni en soluciones no suaves."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre mallas y elementos y volúmenes finitos en el caso de representación de órganos, tejidos y dispositivos; una condición vinculada con calidad geométrica podría producir el mismo patrón.",
+      "title": "Dos elementos y exactitud nodal engañosa",
+      "scenario": "Resolver −u″=2 en [0,1], u(0)=u(1)=0, con dos elementos lineales iguales.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar calidad geométrica como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Cada elemento aporta 2[[1,−1],[−1,1]] y carga [0,5;0,5].",
+        "Al ensamblar, la fila interior reducida es 4u1=1.",
+        "u1=0,25 coincide con u exacta=x(1−x) en x=0,5.",
+        "En x=0,25, la interpolación lineal vale 0,125 y la solución exacta 0,1875.",
+        "El error de 0,0625 entre nodos muestra que exactitud nodal no implica exactitud del campo."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "La elección de la norma determina qué defecto detecta la verificación.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "Poisson con coeficiente y fuente constantes.",
+        "Una comparación solo nodal habría omitido el error de interpolación."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Comprobar el sistema discreto",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Resuelve el caso sintético conservando ecuaciones, unidades y cálculos.",
+        "Compara tu respuesta con los criterios después de intentarlo."
       ],
       "problems": [
-        "Define mallas mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo elementos y volúmenes finitos modifica o complementa a mallas.",
-        "Propón una prueba que distinga el papel de calidad geométrica de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Escribe la matriz interior para tres nodos con h=1/4.",
+        "Calcula el vector fuente para f=12x² en esos nodos.",
+        "Comprueba los tres valores u=(0,234375;0,421875;0,421875).",
+        "Determina el orden si los errores son 0,08, 0,02 y 0,005."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Sistema completo y residuo calculado.",
+        "Tabla de refinamiento."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "Matriz 16[[2,−1,0],[−1,2,−1],[0,−1,2]].",
+        "f=(0,75;3;6,75).",
+        "La sustitución produce el vector fuente indicado.",
+        "p=2 para ambas parejas de errores."
       ]
     },
     {
-      "title": "Taller de evidencia: representación de órganos, tejidos y dispositivos",
+      "title": "Contornos y geometría",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo formular → derivar → resolver → verificar → analizar sensibilidad → interpretar.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Resuelve el caso sintético conservando ecuaciones, unidades y cálculos.",
+        "Compara tu respuesta con los criterios después de intentarlo."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para mallas, elementos y volúmenes finitos y calidad geométrica.",
-        "Selecciona entre derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Si el extremo derecho de Poisson tiene u=1, explica su contribución a la última ecuación interior.",
+        "Calcula el error a mitad del primer elemento en el segundo ejemplo.",
+        "Explica por qué cuatro veces más nodos no corrigen una salida mal etiquetada.",
+        "Diseña dos series para separar sensibilidad a un radio geométrico y sensibilidad a h."
       ],
       "deliverables": [
-        "Cuaderno matemático reproducible con verificación y sensibilidad.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Esquema de contornos.",
+        "Plan de dos experimentos numéricos distintos."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de representación de órganos, tejidos y dispositivos y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte mallas, elementos y volúmenes finitos y calidad geométrica.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Se añade 1/h² al lado derecho de la última fila.",
+        "En x=0,25 el error absoluto es 0,0625.",
+        "El operador se sigue aplicando al contorno equivocado.",
+        "Primero fijar radio y refinar; después variar radio con resolución numérica suficiente y comparar la misma cantidad."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar mallas como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar mallas en una explicación."
+      "error": "Llamar convergencia a residuo pequeño.",
+      "correction": "El residuo corresponde al sistema discreto; comparar resoluciones o referencia continua."
     },
     {
-      "error": "Afirmar que una relación entre mallas y elementos y volúmenes finitos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Confundir nodos exactos con campo exacto.",
+      "correction": "Evaluar entre nodos y usar una norma pertinente."
     },
     {
-      "error": "Añadir calidad geométrica después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Cambiar geometría en cada malla.",
+      "correction": "Separar sensibilidad geométrica y refinamiento."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Suponer orden dos para cualquier derivada.",
+      "correction": "El orden depende del operador, norma, suavidad y esquema."
     },
     {
-      "error": "Generalizar la conclusión de Geometría y discretización al uso clínico o real.",
-      "correction": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+      "error": "Omitir las etiquetas al exportar.",
+      "correction": "Comprobar entidades físicas y condiciones en la malla importada."
+    },
+    {
+      "error": "Aplicar Richardson a cualquier secuencia.",
+      "correction": "Examinar si existe un término dominante de error y un orden estable."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar representación de órganos, tejidos y dispositivos?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué aporta un contorno conocido al sistema interior?",
+      "answer": "Un término al vector derecho.",
+      "reasoning": "Su valor no es una incógnita libre."
     },
     {
-      "question": "¿Cómo se relacionan mallas y elementos y volúmenes finitos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; calidad geométrica puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Qué representa h?",
+      "answer": "Una escala espacial de la discretización declarada.",
+      "reasoning": "No es necesariamente el tamaño del vóxel original."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre calidad geométrica?",
-      "answer": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Qué función fabrica f=12x² en el ejemplo?",
+      "answer": "u=x−x⁴.",
+      "reasoning": "Su segunda derivada es −12x²."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Cuánto disminuye un error O(h²) al dividir h por dos?",
+      "answer": "Aproximadamente por cuatro en régimen asintótico.",
+      "reasoning": "El término dominante es proporcional a h²."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Por qué se suman matrices elementales?",
+      "answer": "Porque los elementos comparten grados de libertad.",
+      "reasoning": "Las contribuciones integrales se acumulan en el dominio."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Se anula siempre el término de frontera?",
+      "answer": "No.",
+      "reasoning": "Depende del espacio de prueba y del tipo de condición."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre representación de órganos, tejidos y dispositivos?",
-      "answer": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Qué demuestra la coincidencia en x=0,5 del segundo ejemplo?",
+      "answer": "Solo exactitud en ese nodo.",
+      "reasoning": "El campo lineal no coincide con la parábola entre nodos."
     },
     {
-      "question": "¿Qué demuestra dominio de Geometría y discretización?",
-      "answer": "Producir un cuaderno matemático reproducible con verificación y sensibilidad auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Una malla fina recupera una región segmentada ausente?",
+      "answer": "No.",
+      "reasoning": "La resolución no cambia la definición del dominio."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Representación de órganos, tejidos y dispositivos."
+      "topic": "Geometrías de vasos",
+      "connection": "Separar radio y resolución evita atribuir cambios geométricos a convergencia numérica."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica."
+      "topic": "Campos de concentración",
+      "connection": "Promedios, flujos y máximos requieren comparaciones diferentes del error."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+      "topic": "Interfaces materiales",
+      "connection": "Las etiquetas determinan dónde se aplican coeficientes y condiciones; deben conservarse al exportar."
     }
   ],
   "sources": [
     {
-      "title": "Linear Algebra",
-      "organization": "MIT OpenCourseWare",
-      "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/",
-      "type": "curso abierto",
-      "description": "Álgebra lineal, transformaciones y descomposiciones.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "G1 · Gmsh reference manual",
+      "organization": "Gmsh",
+      "url": "https://gmsh.info/doc/texinfo/gmsh.html",
+      "type": "fuente técnica consultada",
+      "description": "Geometry module, Mesh module y Physical groups: entidades, elementos y etiquetas.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "Digital Library of Mathematical Functions",
-      "organization": "NIST",
-      "url": "https://dlmf.nist.gov/",
-      "type": "referencia",
-      "description": "Definiciones y propiedades verificadas de funciones matemáticas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "G2 · Solving the Poisson equation",
+      "organization": "FEniCSx tutorial",
+      "url": "https://jsdokken.com/dolfinx-tutorial/chapter1/fundamentals.html",
+      "type": "fuente técnica consultada",
+      "description": "The PDE problem y variational formulation; los ejemplos unidimensionales se derivan en esta unidad.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "NumPy documentation",
-      "organization": "NumPy project",
-      "url": "https://numpy.org/doc/stable/",
-      "type": "documentación",
-      "description": "Cómputo matricial reproducible y pruebas numéricas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "G3 · Error control: Computing convergence rates",
+      "organization": "FEniCSx tutorial",
+      "url": "https://jsdokken.com/dolfinx-tutorial/chapter4/convergence.html",
+      "type": "fuente técnica consultada",
+      "description": "Computing error norms y Computing convergence rates: diferencia entre normas y orden.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "SciPy documentation",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/",
-      "type": "documentación",
-      "description": "Solucionadores, optimización e integración numérica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "G4 · Examining Spatial (Grid) Convergence",
+      "organization": "NASA / NPARC Alliance",
+      "url": "https://www.grc.nasa.gov/www/wind/valid/tutorial/spatconv.html",
+      "type": "fuente técnica consultada",
+      "description": "Refinamiento sistemático, orden y extrapolación de Richardson.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "The Turing Way",
-      "organization": "The Turing Way community",
-      "url": "https://book.the-turing-way.org/",
-      "type": "guía abierta",
-      "description": "Reproducibilidad, revisión y procedencia computacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "G5 · Verification Assessment",
+      "organization": "NASA / NPARC Alliance",
+      "url": "https://www.grc.nasa.gov/www/wind/valid/tutorial/verassess.html",
+      "type": "fuente técnica consultada",
+      "description": "Comprobaciones de implementación y solución frente a referencias conocidas.",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Reconstrucción documental con ejemplos matemáticos sintéticos y soluciones verificables. Estado review; no acredita validación física, clínica ni revisión humana externa."
 }
