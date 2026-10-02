@@ -6,387 +6,366 @@
   "slug": "mecanica-computacional",
   "title": "Mecánica computacional",
   "status": "review",
-  "purpose": "Integrar elasticidad, materiales no lineales, contacto para resolver un caso de simulación de tejidos e implantes con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Formular y verificar un modelo mecánico discreto, relacionando desplazamientos, deformaciones, tensiones y reacciones; reconocer cuándo elasticidad lineal, malla o contornos dejan de representar la pregunta.",
   "learning_objectives": [
-    "Definir elasticidad, materiales no lineales y contacto mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte elasticidad con materiales no lineales y delimite el papel de contacto.",
-    "Seleccionar derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo.",
-    "Resolver y comunicar un caso sobre simulación de tejidos e implantes con incertidumbre y límites.",
-    "Transferir el método de Mecánica computacional a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir equilibrio, cinemática y ley constitutiva.",
+    "Derivar la rigidez axial de una barra y ensamblar elementos en serie.",
+    "Eliminar modos rígidos con restricciones físicamente justificadas.",
+    "Comprobar fuerzas, reacciones y energía de una solución lineal.",
+    "Separar concentración de tensión, singularidad y error de discretización.",
+    "Reconocer límites de pequeñas deformaciones, isotropía y casi incompresibilidad."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Mecánica computacional",
+      "heading": "Tres relaciones que cierran el problema",
       "paragraphs": [
-        "La unidad «Mecánica computacional» sitúa elasticidad, materiales no lineales y contacto dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Modelos Numéricos en Biomedicina, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Mecánica computacional» en Modelos Numéricos en Biomedicina, «elasticidad», se entiende así: Capacidad de un material para deformarse bajo carga y recuperar su forma al retirarla dentro de su régimen elástico. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Mecánica computacional», «materiales no lineales», aporta otra dimensión al problema de Modelos Numéricos en Biomedicina: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con elasticidad debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Mecánica computacional» en Modelos Numéricos en Biomedicina, «contacto», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "La mecánica de sólidos combina equilibrio, cinemática y constitución. En un problema estático, la divergencia de la tensión más la fuerza de volumen es cero. La cinemática relaciona desplazamiento con deformación; bajo pequeños gradientes de desplazamiento, ε=(∇u+∇uᵀ)/2. La ley constitutiva determina qué tensión corresponde a esa deformación. Ninguna de estas relaciones sustituye a las otras: ajustar un módulo para obtener un desplazamiento esperado no corrige una carga incorrecta ni una restricción que cambia el equilibrio del modelo.",
+        "Para elasticidad lineal isotrópica tridimensional, σ=λ tr(ε)I+2με. Las constantes de Lamé se relacionan con E y ν mediante μ=E/[2(1+ν)] y λ=Eν/[(1+ν)(1−2ν)]. M1 expone estas ecuaciones y su formulación variacional. E tiene unidades de tensión, mientras ν y ε son adimensionales. No se deben mezclar formulaciones de tensión plana y deformación plana: la primera impone ciertas tensiones fuera del plano nulas y la segunda impone deformaciones fuera del plano nulas, produciendo respuestas diferentes.",
+        "La elección constitutiva depende del rango de carga y de la salida solicitada. Un módulo constante puede aproximar una pendiente local de una curva, pero no describe por sí mismo anisotropía, dependencia temporal, daño o grandes cambios de forma. La reducción a una barra axial sirve para comprobar unidades y ensamblaje, no para representar cualquier tejido. Antes de añadir complejidad, escriba qué observación exigiría abandonar la aproximación y qué parámetros adicionales podrían determinarse con los datos disponibles."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Mecánica computacional.",
-        "Relacionar elasticidad, materiales no lineales y contacto mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Mecánica computacional» dentro de Modelos Numéricos en Biomedicina, el flujo recomendado es formular → derivar → resolver → verificar → analizar sensibilidad → interpretar. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Modelos Numéricos en Biomedicina, la evidencia pertinente incluye derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre elasticidad o materiales no lineales debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Mecánica computacional», los controles mínimos son solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Modelos Numéricos en Biomedicina, la incertidumbre de «Mecánica computacional» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: simulación de tejidos e implantes",
-      "paragraphs": [
-        "En la unidad «Mecánica computacional» de Modelos Numéricos en Biomedicina, el caso conductor es simulación de tejidos e implantes. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Mecánica computacional» conecta elasticidad con materiales no lineales y utiliza contacto como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «simulación de tejidos e implantes» en Modelos Numéricos en Biomedicina, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Mecánica computacional» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de simulación de tejidos e implantes y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Separe equilibrio, cinemática y constitución.",
+        "Declare la hipótesis de dimensionalidad.",
+        "El módulo no corrige contornos."
       ],
       "equations": [
         {
-          "latex": "e_{rel}=\\frac{|x-\\hat{x}|}{\\max(|x|,\\epsilon)}",
-          "meaning": "Error relativo regularizado para comparar una referencia x con una aproximación; epsilon evita división inestable cerca de cero.",
+          "latex": "\\epsilon(u)=\\tfrac12(\\nabla u+\\nabla u^T),\\quad \\sigma=\\lambda\\,\\operatorname{tr}(\\epsilon)I+2\\mu\\epsilon",
+          "meaning": "Elasticidad lineal isotrópica con pequeñas deformaciones.",
           "variables": {
-            "x": "referencia",
-            "\\hat{x}": "aproximación",
-            "\\epsilon": "escala pequeña declarada"
+            "u": "desplazamiento",
+            "epsilon": "deformación infinitesimal",
+            "sigma": "tensión"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de simulación de tejidos e implantes antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Barra axial, ensamblaje y reacciones",
       "paragraphs": [
-        "La reproducibilidad de «Mecánica computacional» en Modelos Numéricos en Biomedicina requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Mecánica computacional» es esta: una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables. Por ello, la entrega de Modelos Numéricos en Biomedicina separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Mecánica computacional» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de elasticidad, materiales no lineales y contacto debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Modelos Numéricos en Biomedicina.",
-        "El producto de dominio será un cuaderno matemático reproducible con verificación y sensibilidad sobre simulación de tejidos e implantes. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Modelos Numéricos en Biomedicina como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Una barra recta de longitud L, sección A y módulo E constantes, cargada axialmente y sin fuerza de volumen, tiene fuerza interna N=EA du/dx. Con interpolación lineal, la deformación es constante en cada elemento y su matriz es Ke=(EA/L)[[1,−1],[−1,1]]. La rigidez EA/L se mide en fuerza por longitud. Una traslación igual de ambos nodos produce deformación cero y fuerza cero; por eso la matriz elemental aislada es singular. Esa propiedad es correcta y permite comprobar el modo rígido del elemento.",
+        "En dos elementos en serie, el nodo común recibe la suma de sus contribuciones. Si el extremo izquierdo está fijo y el derecho recibe fuerza F, la fuerza axial es F en ambos elementos cuando no hay otras cargas. Cada alargamiento es FLi/(EiAi), y los alargamientos se suman. La rigidez equivalente satisface 1/keq=1/k1+1/k2. El ejemplo permite comprobar el sistema ensamblado contra una solución elemental antes de usar geometrías tridimensionales. M2 desarrolla la construcción general por elementos y el papel de las restricciones.",
+        "Las reacciones se recuperan con las filas originales del sistema: R=Ku−f en los grados restringidos, conservando las cargas originales. Si se reemplazan filas para imponer desplazamientos y luego se usan esas filas modificadas, se pueden obtener reacciones falsas. En estática, fuerzas y momentos externos deben equilibrarse incluyendo las reacciones. Para una carga proporcional sobre un sistema lineal inicialmente descargado, la energía elástica es U=½uᵀKu=½Fδ en una barra simple; Fδ es el doble porque la fuerza aumentó gradualmente desde cero."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un cuaderno matemático reproducible con verificación y sensibilidad que pueda ser auditado y corregido."
+        "La traslación rígida no deforma.",
+        "Recupere reacciones del sistema original.",
+        "Verifique energía además de desplazamiento."
+      ],
+      "equations": [
+        {
+          "latex": "K_e=\\frac{EA}{L}\\begin{pmatrix}1&-1\\\\-1&1\\end{pmatrix},\\qquad \\delta=\\frac{FL}{EA}",
+          "meaning": "Elemento axial lineal y alargamiento con carga axial.",
+          "variables": {
+            "E": "módulo",
+            "A": "sección",
+            "L": "longitud",
+            "F": "fuerza"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Restricciones, malla y tensiones singulares",
+      "paragraphs": [
+        "Un sólido libre puede trasladarse y rotar sin energía de deformación. En tres dimensiones existen seis modos rígidos independientes para un cuerpo conectado no degenerado; en un modelo plano usual, tres. Las condiciones de apoyo deben eliminarlos cuando se pretende una solución estática única. Fijar todos los nodos de una cara también restringe su deformación y puede introducir tensiones locales. Agregar apoyos únicamente para que el solver termine cambia el problema: documente la correspondencia entre cada restricción y el montaje que representa.",
+        "Una tensión se calcula a partir de derivadas de desplazamiento y puede converger de forma distinta al desplazamiento. Además, una fuerza puntual idealizada o una esquina entrante puede originar una singularidad en el modelo continuo. El máximo discreto aumenta al refinar porque aproxima una cantidad no acotada, no necesariamente porque el solver esté fallando. M3 muestra este problema. Conviene examinar salidas a una distancia física fija, integrales o cargas resultantes, y revisar si un radio o una superficie de contacto finita representan mejor el dispositivo real.",
+        "No es suficiente eliminar visualmente la zona roja del mapa ni elegir una malla que produzca una tensión menor. Predefina la cantidad de interés y su posición, conserve la geometría entre refinamientos y compare cargas resultantes y energía. Una concentración finita debida a un radio geométrico real debe resolverse; una singularidad debida a una idealización exige declarar que el máximo puntual no es una predicción utilizable. Tampoco una tensión equivalente aislada demuestra fallo de un tejido sin una ley de daño y evidencia apropiada para ese material."
+      ],
+      "key_points": [
+        "Los apoyos forman parte física.",
+        "Gradientes y valores convergen distinto.",
+        "Una singularidad exige revisar salidas."
+      ],
+      "equations": []
+    },
+    {
+      "heading": "Casi incompresibilidad y extensión no lineal",
+      "paragraphs": [
+        "En elasticidad isotrópica, el módulo volumétrico es K=E/[3(1−2ν)]. Cuando ν se acerca a 0,5 desde abajo, K crece mucho respecto al módulo cortante. Algunas formulaciones de desplazamiento con interpolación inadecuada presentan bloqueo volumétrico: predicen una respuesta artificialmente rígida al intentar imponer conservación de volumen. M4 describe este defecto y formulaciones alternativas. No se resuelve declarando más cifras en ν; deben elegirse espacios y métodos apropiados y verificarlos con un caso que detecte el bloqueo.",
+        "Las grandes deformaciones requieren otra cinemática. El gradiente de deformación F=I+∇u lleva vectores de la configuración de referencia a la actual, y J=det(F) mide el cambio local de volumen. En hiperelasticidad se especifica una energía de deformación y se obtienen tensiones derivándola con respecto a una medida adecuada. M5 presenta un ejemplo computacional. J debe ser positivo para una transformación local físicamente admisible; valores negativos pueden revelar inversión de elementos o una configuración inválida, no una compresión ordinaria.",
+        "El contacto añade una desigualdad: dos superficies no deben penetrarse y solo transmiten compresión normal en un modelo unilateral sin adhesión. Activar o desactivar contacto cambia las ecuaciones efectivas durante la solución. Aumentar un parámetro de penalización puede reducir penetración y a la vez empeorar el condicionamiento; la tolerancia del solver no equivale a una tolerancia física de penetración. Un modelo avanzado debe añadir estas decisiones gradualmente, comprobando primero el caso lineal y después carga, material y contacto, para atribuir cada discrepancia a una modificación identificable."
+      ],
+      "key_points": [
+        "Casi incompresible exige formulación apropiada.",
+        "Grandes deformaciones cambian la cinemática.",
+        "Controle penetración y equilibrio separadamente."
+      ],
+      "equations": [
+        {
+          "latex": "K=\\frac{E}{3(1-2\\nu)},\\qquad F=I+\\nabla u,\\quad J=\\det F",
+          "meaning": "K corresponde a elasticidad isotrópica; F y J describen deformación finita.",
+          "variables": {
+            "K": "módulo volumétrico",
+            "J": "razón local de volúmenes"
+          }
+        }
       ]
     }
   ],
   "glossary": [
     {
-      "term": "elasticidad",
-      "definition": "Capacidad de un material para deformarse bajo carga y recuperar su forma al retirarla dentro de su régimen elástico."
+      "term": "Desplazamiento",
+      "definition": "Diferencia entre posición actual y de referencia."
     },
     {
-      "term": "materiales no lineales",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Deformación infinitesimal",
+      "definition": "Parte simétrica del gradiente de desplazamiento en la aproximación pequeña."
     },
     {
-      "term": "contacto",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un modelo matemático con variables, dominio, parámetros y supuestos explícitos; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Tensión",
+      "definition": "Fuerza interna por área representada mediante un tensor."
     },
     {
-      "term": "Mecánica computacional",
-      "definition": "Dominio de estudio que integra elasticidad, materiales no lineales, contacto para resolver un problema delimitado y verificable."
+      "term": "Tracción superficial",
+      "definition": "Vector σn que actúa sobre una superficie orientada."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de simulación de tejidos e implantes usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Ley constitutiva",
+      "definition": "Relación material entre variables como deformación y tensión."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Módulo de Young",
+      "definition": "Pendiente elástica axial bajo condiciones uniaxiales apropiadas."
     },
     {
-      "term": "Evidencia",
-      "definition": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Coeficiente de Poisson",
+      "definition": "Razón negativa entre deformación lateral y axial en tracción uniaxial lineal."
     },
     {
-      "term": "Control",
-      "definition": "Solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Rigidez elemental",
+      "definition": "Matriz que relaciona desplazamientos y fuerzas nodales del elemento lineal."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Reacción",
+      "definition": "Fuerza ejercida por una restricción de desplazamiento."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Modo rígido",
+      "definition": "Movimiento sin deformación ni energía elástica."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Singularidad de tensión",
+      "definition": "Comportamiento no acotado asociado a una idealización del problema."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Bloqueo volumétrico",
+      "definition": "Rigidez numérica artificial asociada a una representación deficiente de incompresibilidad."
+    },
+    {
+      "term": "Hiperelasticidad",
+      "definition": "Modelo en que una energía de deformación determina la respuesta elástica."
+    },
+    {
+      "term": "Contacto unilateral",
+      "definition": "Restricción de no penetración con transmisión normal compresiva sin adhesión."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Mecánica computacional",
-      "scenario": "Un equipo propone estudiar simulación de tejidos e implantes, pero su pregunta mezcla elasticidad, materiales no lineales y contacto sin definir unidades, referencias ni resultado admisible.",
+      "title": "Dos barras en serie",
+      "scenario": "Caso sintético: dos barras de L1=L2=10 mm y A1=A2=2 mm²; E1=100 MPa y E2=200 MPa. Extremo izquierdo fijo, fuerza derecha F=1 N.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de elasticidad, materiales no lineales y contacto.",
-        "Seleccionar derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica y registrar procedencia y condiciones.",
-        "Predefinir solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Como 1 MPa=1 N/mm², k1=20 N/mm y k2=40 N/mm.",
+        "Las ecuaciones libres son 60u1−40u2=0 y −40u1+40u2=1.",
+        "Los desplazamientos son u1=0,05 mm y u2=0,075 mm.",
+        "Los alargamientos son 0,05 y 0,025 mm; las deformaciones 0,005 y 0,0025.",
+        "La tensión en ambas barras es F/A=0,5 MPa; la reacción izquierda es −1 N.",
+        "La energía es ½F u2=0,0375 N·mm y la rigidez equivalente 1/0,075=13,333333 N/mm."
       ],
-      "interpretation": "El resultado defendible es un cuaderno matemático reproducible con verificación y sensibilidad trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "El elemento más rígido se alarga menos, aunque ambos transmiten la misma fuerza.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+        "Modelo axial, lineal, sección uniforme y conexión perfecta.",
+        "Los valores no son propiedades de un tejido ni un implante comercial."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre elasticidad y materiales no lineales en el caso de simulación de tejidos e implantes; una condición vinculada con contacto podría producir el mismo patrón.",
+      "title": "El mismo material con restricción transversal",
+      "scenario": "E=100 MPa, ν=0,3 y deformación axial εx=0,01. Comparar tracción uniaxial libre y estado con εy=εz=0.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar contacto como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "En tracción uniaxial libre, σx=Eεx=1 MPa y εy=εz=−0,003.",
+        "μ=100/2,6=38,461538 MPa; λ=30/(1,3·0,4)=57,692308 MPa.",
+        "Si εy=εz=0, entonces σx=(λ+2μ)εx=1,34615385 MPa.",
+        "Las tensiones laterales son σy=σz=λεx=0,57692308 MPa.",
+        "El cambio de respuesta proviene de las restricciones, aunque E y ν sean iguales."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "La condición transversal debe identificarse antes de inferir un módulo a partir de fuerza y desplazamiento.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "Elasticidad isotrópica tridimensional y pequeñas deformaciones.",
+        "No confundir este estado con tensión plana."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Reproducir la barra",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Resuelve el caso sintético conservando ecuaciones, unidades y cálculos.",
+        "Compara tu respuesta con los criterios después de intentarlo."
       ],
       "problems": [
-        "Define elasticidad mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo materiales no lineales modifica o complementa a elasticidad.",
-        "Propón una prueba que distinga el papel de contacto de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Ensambla la matriz global de las dos barras.",
+        "Comprueba la reacción con la fila restringida original.",
+        "Duplica E1 manteniendo todo lo demás y calcula u2.",
+        "Calcula la energía sumando ½kiδi² de cada barra original."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Matriz, reacciones y comparación de energía."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "K=[[20,−20,0],[−20,60,−40],[0,−40,40]] N/mm.",
+        "R0=20·0−20·0,05=−1 N.",
+        "Ambas rigideces valen 40 N/mm y u2=0,05 mm.",
+        "U=0,025+0,0125=0,0375 N·mm."
       ]
     },
     {
-      "title": "Taller de evidencia: simulación de tejidos e implantes",
+      "title": "Contornos y material",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo formular → derivar → resolver → verificar → analizar sensibilidad → interpretar.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Resuelve el caso sintético conservando ecuaciones, unidades y cálculos.",
+        "Compara tu respuesta con los criterios después de intentarlo."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para elasticidad, materiales no lineales y contacto.",
-        "Selecciona entre derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Para E=100 MPa compara K con ν=0,3 y ν=0,499.",
+        "Explica por qué fijar una cara puede impedir contracción lateral.",
+        "Diseña una comparación de tensiones a distancia fija de una esquina singular.",
+        "Si F=diag(1,1,0,9), calcula J y su interpretación."
       ],
       "deliverables": [
-        "Cuaderno matemático reproducible con verificación y sensibilidad.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Tabla de módulos y plan de refinamiento.",
+        "Interpretación cinemática."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de simulación de tejidos e implantes y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte elasticidad, materiales no lineales y contacto.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "K≈83,3333 MPa y 16666,6667 MPa, respectivamente.",
+        "Prescribir componentes laterales nulas elimina la libertad de contraerse en esa cara.",
+        "Conservar geometría y punto a distancia física fija; refinar y registrar también el máximo y la carga resultante.",
+        "J=0,9: el volumen local es el 90% del inicial."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar elasticidad como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar elasticidad en una explicación."
+      "error": "Usar MPa como N/m².",
+      "correction": "1 MPa=10⁶ N/m²=1 N/mm²."
     },
     {
-      "error": "Afirmar que una relación entre elasticidad y materiales no lineales demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Interpretar una matriz libre singular como fallo de código.",
+      "correction": "Comprobar los modos rígidos y los apoyos."
     },
     {
-      "error": "Añadir contacto después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Recuperar reacciones de filas ya sustituidas.",
+      "correction": "Usar K y f originales."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir solución conocida, caso límite, refinamiento de malla o paso, conservación y método alternativo, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Confundir tensión plana y deformación plana.",
+      "correction": "Declarar qué componentes se anulan y derivar la relación constitutiva."
     },
     {
-      "error": "Generalizar la conclusión de Mecánica computacional al uso clínico o real.",
-      "correction": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+      "error": "Tomar el máximo singular como tensión física finita.",
+      "correction": "Revisar idealización y salida, sin ocultar el máximo creciente."
+    },
+    {
+      "error": "Cambiar ν a 0,5 en una fórmula compresible.",
+      "correction": "La fórmula se vuelve singular; usar una formulación de incompresibilidad apropiada."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar simulación de tejidos e implantes?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué unidad tiene EA/L?",
+      "answer": "Fuerza por longitud.",
+      "reasoning": "Relaciona desplazamiento con fuerza."
     },
     {
-      "question": "¿Cómo se relacionan elasticidad y materiales no lineales?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; contacto puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Qué fuerza atraviesa ambas barras en serie del ejemplo?",
+      "answer": "1 N.",
+      "reasoning": "No existen cargas intermedias."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre contacto?",
-      "answer": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Qué barra se alarga más?",
+      "answer": "La de E=100 MPa.",
+      "reasoning": "Con igual L y A tiene menor rigidez."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Por qué Ku=0 para una traslación rígida libre?",
+      "answer": "No hay deformación.",
+      "reasoning": "La energía elástica y las fuerzas internas son nulas."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Cuál es la reacción total del ejemplo?",
+      "answer": "−1 N.",
+      "reasoning": "Equilibra la carga aplicada de +1 N."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Por qué U no es Fδ en carga lineal gradual?",
+      "answer": "La fuerza media durante la carga es F/2.",
+      "reasoning": "El trabajo es la integral de fuerza respecto a desplazamiento."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre simulación de tejidos e implantes?",
-      "answer": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Qué puede causar un máximo que crece al refinar?",
+      "answer": "Una singularidad del modelo.",
+      "reasoning": "La convergencia debe examinarse según la salida y la idealización."
     },
     {
-      "question": "¿Qué demuestra dominio de Mecánica computacional?",
-      "answer": "Producir un cuaderno matemático reproducible con verificación y sensibilidad auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué mide det(F)?",
+      "answer": "La razón local de volumen actual a inicial.",
+      "reasoning": "F transforma la configuración de referencia."
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Simulación de tejidos e implantes."
+      "topic": "Ensayos de materiales",
+      "connection": "El montaje y las restricciones laterales condicionan el módulo inferido de fuerza y desplazamiento."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Derivación, prueba, cálculo reproducible, caso límite, análisis dimensional y comparación numérica."
+      "topic": "Simulación de dispositivos",
+      "connection": "Reacciones y energía permiten detectar cargas o apoyos mal aplicados antes de interpretar tensiones."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una solución numérica estable no demuestra que el modelo represente el fenómeno biomédico ni que sus parámetros sean identificables."
+      "topic": "Tejidos deformables",
+      "connection": "La linealidad e isotropía son hipótesis que deben contrastarse, no propiedades universales de los tejidos."
     }
   ],
   "sources": [
     {
-      "title": "NumPy documentation",
-      "organization": "NumPy project",
-      "url": "https://numpy.org/doc/stable/",
-      "type": "documentación",
-      "description": "Cómputo matricial reproducible y pruebas numéricas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "M1 · The equations of linear elasticity",
+      "organization": "FEniCSx tutorial",
+      "url": "https://jsdokken.com/dolfinx-tutorial/chapter2/linearelasticity.html",
+      "type": "fuente técnica consultada",
+      "description": "The PDE problem y The variational formulation: equilibrio, tensión, deformación y tracciones.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "SciPy documentation",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/",
-      "type": "documentación",
-      "description": "Solucionadores, optimización e integración numérica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "M2 · Theory and Implementation of Finite Element Analysis",
+      "organization": "A. F. Bower / Applied Mechanics of Solids",
+      "url": "https://solidmechanics.org/Text/Chapter8_1/Chapter8_1.php",
+      "type": "fuente técnica consultada",
+      "description": "Formulación y discretización de problemas mecánicos; las barras de la unidad son derivaciones sintéticas.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "The Turing Way",
-      "organization": "The Turing Way community",
-      "url": "https://book.the-turing-way.org/",
-      "type": "guía abierta",
-      "description": "Reproducibilidad, revisión y procedencia computacional.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "M3 · Singularities in Finite Element Models: Dealing with Red Spots",
+      "organization": "COMSOL",
+      "url": "https://www.comsol.com/blogs/singularities-in-finite-element-models-dealing-with-red-spots",
+      "type": "fuente técnica consultada",
+      "description": "Singularidades, tensiones locales y comportamiento al refinar.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "Jupyter documentation",
-      "organization": "Project Jupyter",
-      "url": "https://docs.jupyter.org/",
-      "type": "documentación",
-      "description": "Cuadernos ejecutables para derivaciones y experimentos numéricos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "M4 · Advanced Element Formulations",
+      "organization": "A. F. Bower / Applied Mechanics of Solids",
+      "url": "https://solidmechanics.org/Text/Chapter8_6/Chapter8_6.php",
+      "type": "fuente técnica consultada",
+      "description": "Sección de bloqueo volumétrico y formulaciones para materiales casi incompresibles.",
+      "verification_status": "verified_directly"
     },
     {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Datos fisiológicos para formular y validar modelos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "M5 · Hyperelasticity",
+      "organization": "FEniCSx tutorial",
+      "url": "https://jsdokken.com/dolfinx-tutorial/chapter2/hyperelasticity.html",
+      "type": "fuente técnica consultada",
+      "description": "Gradiente F, determinante J y energía de deformación en un problema no lineal.",
+      "verification_status": "verified_directly"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Reconstrucción documental con modelos y parámetros sintéticos. Estado review; no acredita propiedades de tejidos, seguridad de dispositivos ni revisión humana externa."
 }

@@ -8,8 +8,8 @@ CitoNauta es una plataforma educativa abierta para explorar ciencias básicas, b
 
 - 94 asignaturas en cuatro áreas académicas.
 - 94 con material lectivo y actividades disponibles.
-- 18 conservan marcadores de plantilla en 107 unidades y requieren reconstrucción disciplinar.
-- 76 no contienen esos marcadores conocidos; esto no equivale a validación científica.
+- 17 conservan marcadores de plantilla en 101 unidades y requieren reconstrucción disciplinar.
+- 77 no contienen esos marcadores conocidos; esto no equivale a validación científica.
 - 0 con registro completo de afirmaciones y localizadores.
 - 0 con revisión IA validada para un alcance científico.
 - Ninguna asignatura tiene estado editorial `complete`.
