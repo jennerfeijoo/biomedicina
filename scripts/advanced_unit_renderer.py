@@ -202,13 +202,23 @@ def render_text_list(items: list[str], *, ordered: bool = False, css_class: str 
 
 def normalize_latex(value: Any) -> str:
     latex = str(value or "").strip()
-    if latex.startswith("\\[") and latex.endswith("\\]"):
+    if (latex.startswith("\\[") and latex.endswith("\\]")) or (
+        latex.startswith("\\(") and latex.endswith("\\)")
+    ):
         latex = latex[2:-2].strip()
     if latex.startswith("$$") and latex.endswith("$$") and len(latex) >= 4:
         latex = latex[2:-2].strip()
     elif latex.startswith("$") and latex.endswith("$") and len(latex) >= 2:
         latex = latex[1:-1].strip()
     return latex
+
+
+def render_variable_symbol(symbol: Any) -> str:
+    """Typeset explicit TeX while preserving plain identifiers as authored."""
+    raw = str(symbol or "").strip()
+    if "\\" in raw:
+        return f'<span class="math-inline">\\({esc(normalize_latex(raw))}\\)</span>'
+    return f"<code>{esc(raw)}</code>"
 
 
 def render_equation(equation: Any) -> str:
@@ -242,7 +252,7 @@ def render_equation(equation: Any) -> str:
     variable_items = ""
     if variables:
         rows = "\n".join(
-            f"              <li><code>{esc(symbol)}</code>: {esc(meanings)}</li>"
+            f"              <li>{render_variable_symbol(symbol)}: {esc(meanings)}</li>"
             for symbol, meanings in variables.items()
         )
         variable_items = f"\n            <ul class=\"equation-variables\">\n{rows}\n            </ul>"
