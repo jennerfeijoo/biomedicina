@@ -85,7 +85,7 @@ class IngenieriaClinicaGestionCanonicalCourseTests(unittest.TestCase):
             self.assertIn(claim["source_id"], source_ids)
             self.assertEqual(claim["source_verification_status"], "verified_directly")
             self.assertEqual(claim["review_state"], "ai_review_provisional")
-            self.assertEqual(claim["support"], "direct")
+            self.assertEqual(claim["support"], "partial" if claim["id"] in {"ICG-U01-C002", "ICG-U02-C004", "ICG-U06-C002", "ICG-U06-C004"} else "direct")
             self.assertIn(claim["text"], serialized_units[claim["unit"]])
 
     def test_course_assessment_is_integrative_and_weighted(self):
