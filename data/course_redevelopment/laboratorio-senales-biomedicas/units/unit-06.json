@@ -6,386 +6,299 @@
   "slug": "pipeline-reproducible",
   "title": "Pipeline reproducible",
   "status": "review",
-  "purpose": "Integrar código, pruebas, figuras y reporte para resolver un caso de entrega auditable de un análisis de señal con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Entregar un análisis de señales que pueda reconstruirse desde entradas identificadas, con particiones por sujeto, parámetros congelados, pruebas de fallo y resultados cuyo alcance corresponda a la evidencia.",
   "learning_objectives": [
-    "Definir código, pruebas y figuras y reporte mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte código con pruebas y delimite el papel de figuras y reporte.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre entrega auditable de un análisis de señal con incertidumbre y límites.",
-    "Transferir el método de Pipeline reproducible a un escenario nuevo y justificar qué debe revalidarse."
+    "Definir entradas, salidas y contratos de cada etapa.",
+    "Identificar archivos mediante hashes y conservar metadatos interpretativos.",
+    "Separar sujetos y ajustar transformaciones solo en desarrollo.",
+    "Construir pruebas con referencias analíticas y defectos inyectados.",
+    "Distinguir reproducción numérica de validación científica.",
+    "Redactar un informe que incluya cobertura, errores y limitaciones."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Pipeline reproducible",
+      "heading": "Un flujo con contratos comprobables",
       "paragraphs": [
-        "La unidad «Pipeline reproducible» sitúa código, pruebas y figuras y reporte dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Señales Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Pipeline reproducible» en Laboratorio de Señales Biomédicas, «código», se entiende así: Representación ejecutable o interpretable de un procedimiento mediante un lenguaje formal. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Pipeline reproducible», «pruebas», aporta otra dimensión al problema de Laboratorio de Señales Biomédicas: Procedimientos planificados que producen evidencia sobre cumplimiento, comportamiento o error respecto a criterios definidos. Su relación con código debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Pipeline reproducible» en Laboratorio de Señales Biomédicas, «figuras y reporte», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "El producto final no es una sucesión de celdas que solo funciona en la memoria de quien la ejecutó. Cada etapa recibe entradas declaradas y devuelve una salida con significado: lectura con unidades, máscara de calidad, transformación, eventos y características. El contrato especifica dimensiones, frecuencia de muestreo, unidades y tratamiento de ausencia. Si una etapa cambia el reloj, también actualiza los tiempos de sus salidas. La siguiente etapa no debe adivinar si un entero representa muestras originales, muestras remuestreadas o milisegundos.",
+        "La entrada original se conserva y las salidas derivadas se guardan por separado. La configuración describe canal, intervalo, filtro, tolerancias, regla de calidad y agregación. Un nombre como resultado_final no distingue dos ejecuciones con parámetros diferentes. En el laboratorio se asigna a cada ejecución un identificador y se almacena junto a configuración y resultados. No hace falta un sistema complejo para que otra persona pueda seguir qué archivo y qué decisión produjeron una cifra de la tabla final.",
+        "Las etapas deben fallar de forma informativa cuando no se cumplen sus condiciones. Una frecuencia no positiva, un arreglo vacío o un canal sin unidad requieren una decisión explícita. No se oculta la excepción produciendo una lista vacía de eventos y reportando sensibilidad cero: eso confundiría un problema de entrada con un fallo del detector. El registro de ejecución diferencia ausencia de datos, incompatibilidad de parámetros y resultado válido sin eventos. Esa distinción permite corregir la causa adecuada y evita métricas engañosas."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Pipeline reproducible.",
-        "Relacionar código, pruebas y figuras y reporte mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Declare unidades y dimensiones entre etapas.",
+        "Conserve entradas y derivados en rutas distintas.",
+        "Diferencie fallo de ejecución y resultado vacío."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "Procedencia, versiones y reproducción",
       "paragraphs": [
-        "Para «Pipeline reproducible» dentro de Laboratorio de Señales Biomédicas, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Laboratorio de Señales Biomédicas, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre código o pruebas debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Pipeline reproducible», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Laboratorio de Señales Biomédicas, la incertidumbre de «Pipeline reproducible» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Un hash criptográfico resume los bytes de un archivo y permite comprobar si esos bytes coinciden con los de una versión registrada. No demuestra que los datos sean correctos, que el consentimiento exista o que las unidades estén bien interpretadas. Por eso el manifiesto incluye además origen, versión, condiciones de acceso y metadatos. La documentación de hashlib permite calcular SHA-256; el laboratorio lo utiliza para identidad del archivo, sin presentarlo como certificación del contenido científico.",
+        "La configuración reproducible registra versiones de bibliotecas y parámetros explícitos. Un valor por defecto puede cambiar entre versiones; fijar la ventana de Welch o el eje del filtro evita depender de esa variación silenciosa. Cuando una operación contiene azar, se documentan generador, semilla y propósito. La semilla sola no garantiza resultados idénticos entre implementaciones o versiones. Conservar también entradas sintéticas generadas, o una referencia de sus bytes cuando se distribuyen, facilita distinguir cambios del generador de cambios del método analítico.",
+        "La reproducción se comprueba desde un proceso nuevo, no ejecutando únicamente la última celda. Se eliminan dependencias de variables creadas manualmente y se comprueba que el resultado se reconstruya con la documentación disponible. Para cálculos flotantes puede ser apropiada una tolerancia numérica en vez de identidad binaria, siempre que se justifique por la operación. Los datos y parámetros deben seguir siendo los mismos. Una tolerancia grande elegida después de ver una discrepancia no sustituye la investigación de su causa."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "Un hash identifica bytes y no significado.",
+        "Fije parámetros que afectan la interpretación.",
+        "Reejecute desde un proceso sin estado previo."
       ]
     },
     {
-      "heading": "Aplicación razonada: entrega auditable de un análisis de señal",
+      "heading": "Particiones y ajustes sin información reservada",
       "paragraphs": [
-        "En la unidad «Pipeline reproducible» de Laboratorio de Señales Biomédicas, el caso conductor es entrega auditable de un análisis de señal. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Pipeline reproducible» conecta código con pruebas y utiliza figuras y reporte como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «entrega auditable de un análisis de señal» en Laboratorio de Señales Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Pipeline reproducible» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de entrega auditable de un análisis de señal y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
-      ],
-      "equations": [
-        {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
-          "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
-          }
-        }
+        "La partición responde al uso que se desea estudiar. Si se evalúa comportamiento en nuevas personas, los registros de una persona se mantienen juntos y no se reparten ventanas aleatoriamente entre conjuntos. Si se estudia generalización temporal dentro de una persona, se respeta el orden y se declara ese objetivo diferente. No existe una partición universalmente correcta para todas las preguntas. La lista explícita de identificadores por conjunto es parte del resultado y permite verificar que las afirmaciones de independencia tienen fundamento.",
+        "Las operaciones aprendidas de datos incluyen normalización, selección de características, ajuste del detector y elección de umbrales de calidad. Se estiman en desarrollo y se aplican a evaluación sin reaprender de ella. La documentación de scikit-learn explica esta separación y el uso de Pipeline para reducir errores de procedimiento. GroupKFold mantiene grupos no solapados entre particiones, pero no elimina automáticamente todas las vías de fuga: una estadística calculada previamente sobre el conjunto completo sigue contaminando la evaluación aunque los índices finales estén separados.",
+        "El conjunto de prueba no se convierte en entrenamiento informal al revisar repetidamente sus resultados para elegir la mejor configuración. Para decisiones iterativas se utiliza validación dentro del desarrollo; el test responde después una pregunta sobre el procedimiento ya fijado. Si se modifica el método tras inspeccionar el test, se reconoce que esa evidencia ya participó en desarrollo y se busca una nueva evaluación independiente. El informe conserva también configuraciones descartadas para que el resultado final no oculte cuánta selección ocurrió."
       ],
       "key_points": [
-        "Delimitar el caso de entrega auditable de un análisis de señal antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "Defina generalización antes de separar datos.",
+        "Mantenga cada sujeto dentro de un conjunto.",
+        "No ajuste transformaciones con información reservada."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Pruebas y un informe que admite fallos",
       "paragraphs": [
-        "La reproducibilidad de «Pipeline reproducible» en Laboratorio de Señales Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Pipeline reproducible» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Laboratorio de Señales Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Pipeline reproducible» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de código, pruebas y figuras y reporte debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Laboratorio de Señales Biomédicas.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre entrega auditable de un análisis de señal. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Laboratorio de Señales Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Las pruebas más informativas tienen una respuesta conocida independiente del código que se está comprobando. La conversión afín debe llevar el código de referencia a cero; un cambio de unidades por factor mil debe multiplicar RMS por mil y potencia por un millón; una omisión sintética debe fusionar dos intervalos. Estos ensayos contrastan relaciones matemáticas y conectan las seis unidades. No basta comprobar que una función devuelve un arreglo del tamaño esperado, porque una escala equivocada puede conservar perfectamente ese tamaño.",
+        "Las pruebas adversas incluyen señal vacía, constante, con huecos, recortada y con eventos duplicados. También se evalúa un filtro cuyo relleno no cabe en la longitud del registro y una frecuencia de muestreo incompatible con los parámetros. Cada caso tiene un comportamiento esperado: rechazo informado, salida no definida o cálculo con máscara declarada. Guardar esos resultados hace visible el alcance del algoritmo. Un sistema que siempre produce un número puede ser menos fiable que otro que reconoce cuándo sus supuestos no se cumplen.",
+        "El informe integrador muestra procedencia, configuración, tiempo elegible, cobertura, conteos de eventos, métricas y ejemplos de error. Las figuras conservan ejes, unidades y la superposición de referencia cuando existe. La conclusión distingue tres niveles: el cálculo pasó pruebas sintéticas, el método obtuvo cierto resultado en una base concreta y todavía falta evidencia para otro contexto. Reproducir una cifra no demuestra utilidad clínica ni ausencia de sesgo. La entrega se considera académicamente auditable cuando otra persona puede reconstruir tanto el resultado favorable como el fallo documentado.",
+        "El script descargable incluido en las fuentes ejecuta un caso por unidad con la biblioteca estándar de Python. Guárdalo como signal_laboratory.py y ejecuta python signal_laboratory.py desde una terminal con Python 3.10 o superior. Compara las claves u1 a u6 de su salida JSON con los ejemplos del texto. Conserva esa salida, modifica un parámetro y explica la diferencia antes de repetir. El emparejamiento implementado prioriza el número de parejas y después su error total; su coste cuadrático limita su uso a ejemplos pequeños."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Use referencias independientes del código probado.",
+        "Incluya entradas que violan los supuestos.",
+        "Reconstruya resultados favorables y también adversos."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "código",
-      "definition": "Representación ejecutable o interpretable de un procedimiento mediante un lenguaje formal."
+      "term": "Contrato de etapa",
+      "definition": "Condiciones y significado de entradas y salidas de una operación."
     },
     {
-      "term": "pruebas",
-      "definition": "Procedimientos planificados que producen evidencia sobre cumplimiento, comportamiento o error respecto a criterios definidos."
+      "term": "Manifiesto",
+      "definition": "Registro que vincula archivos, parámetros, versiones y ejecución."
     },
     {
-      "term": "figuras y reporte",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Hash",
+      "definition": "Resumen de bytes utilizado para comprobar identidad de contenido."
     },
     {
-      "term": "Pipeline reproducible",
-      "definition": "Dominio de estudio que integra código, pruebas, figuras y reporte para resolver un problema delimitado y verificable."
+      "term": "Configuración",
+      "definition": "Conjunto explícito de decisiones y parámetros de una ejecución."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de entrega auditable de un análisis de señal usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Semilla",
+      "definition": "Entrada que inicializa un generador pseudoaleatorio específico."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Desarrollo",
+      "definition": "Datos utilizados para ajustar y seleccionar el procedimiento."
     },
     {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Validación interna",
+      "definition": "Comparación usada para decisiones dentro del desarrollo."
     },
     {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Test reservado",
+      "definition": "Datos mantenidos fuera de ajustes para evaluar un método fijado."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Grupo",
+      "definition": "Identidad que debe permanecer junta dentro de una partición."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Prueba adversa",
+      "definition": "Ensayo con entradas que desafían supuestos del procedimiento."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Tolerancia numérica",
+      "definition": "Diferencia admitida y justificada en una comparación de cálculo."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Reproducción",
+      "definition": "Reconstrucción de resultados con las mismas entradas y procedimiento."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Pipeline reproducible",
-      "scenario": "Un equipo propone estudiar entrega auditable de un análisis de señal, pero su pregunta mezcla código, pruebas y figuras y reporte sin definir unidades, referencias ni resultado admisible.",
+      "title": "Cambio de unidades",
+      "scenario": "Señal x en mV con RMS=2; convertirla a µV.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de código, pruebas y figuras y reporte.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Multiplicar amplitudes por 1000.",
+        "Esperar RMS=2000 µV.",
+        "Esperar potencia=4 000 000 µV² en vez de 4 mV²."
       ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-      ]
+      "interpretation": "La relación sirve para detectar errores de escala sin repetir el algoritmo interno.",
+      "limitations": "Se presupone conversión uniforme sin recorte ni redondeo adicional."
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre código y pruebas en el caso de entrega auditable de un análisis de señal; una condición vinculada con figuras y reporte podría producir el mismo patrón.",
+      "title": "La partición aparentemente grande",
+      "scenario": "Cuatro personas aportan cien ventanas cada una; se mezclan 400 ventanas y se divide al azar.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar figuras y reporte como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Identificar las personas de cada ventana.",
+        "Comprobar si alguna identidad aparece en ambos conjuntos.",
+        "Rehacer la partición por persona si la pregunta trata personas nuevas."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "interpretation": "Cuatrocientas ventanas no representan cuatrocientas personas independientes.",
+      "limitations": "Con cuatro personas la evaluación externa sigue siendo limitada aunque no exista fuga de identidad."
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Cuaderno de comprobación de pipeline reproducible",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja con los datos sintéticos concretos de cada problema y conserva las operaciones.",
+        "Consulta los criterios después de resolver; contrasta una condición modificada y explica el cambio."
       ],
       "problems": [
-        "Define código mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo pruebas modifica o complementa a código.",
-        "Propón una prueba que distinga el papel de figuras y reporte de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Ejecuta el script descargable y conserva la salida JSON de las seis unidades.",
+        "Duplica una predicción ya emparejada en el ejemplo y evalúa el efecto.",
+        "Introduce NaN en una entrada de RMS y registra el resultado esperado.",
+        "Construye una lista de ocho registros de cuatro sujetos y una partición por identidad.",
+        "Registra una configuración que incluya reloj, canal, filtro, máscara y tolerancia.",
+        "Calcula SHA-256 del archivo de entrada, cambia un valor y repite.",
+        "Reproduce desde un proceso nuevo sin variables previas y compara resultados con tolerancias declaradas.",
+        "Escribe una conclusión de tres frases distinguiendo cálculo, evidencia del conjunto y generalización pendiente."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Tabla de resultados con unidades y procedimiento.",
+        "Figura o tabla que contraste el caso nominal y el fallo estudiado."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: entrega auditable de un análisis de señal",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para código, pruebas y figuras y reporte.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de entrega auditable de un análisis de señal y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte código, pruebas y figuras y reporte.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Comparar alias cercano a cero, cobertura 0,87, borde [1,2,3], TP=2, potencia de banda 20 y factor de potencia cercano a un millón.",
+        "No aumenta el número de referencias disponibles; aparece una predicción adicional sin pareja si las otras asociaciones se conservan.",
+        "Debe producir ValueError; no convertir ausencia en cero.",
+        "Comprobar conjuntos disjuntos de sujetos; dos registros por persona permanecen juntos.",
+        "Todos los valores deben estar explícitos, con unidades y versión; ninguna etiqueta se sustituye por un valor por defecto desconocido.",
+        "Conservar ambos hashes y versiones; una diferencia indica cambio de bytes, no explica si fue correcto.",
+        "Una discrepancia debe rastrearse a entradas, parámetros, versiones o aritmética antes de ampliar tolerancias.",
+        "No presentar pruebas sintéticas como validación clínica; incluir cobertura y un fallo observado."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar código como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar código en una explicación."
+      "error": "Guardar solo la figura final.",
+      "correction": "Conservar entradas, configuración y resultados intermedios interpretables."
     },
     {
-      "error": "Afirmar que una relación entre código y pruebas demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Presentar hash como garantía científica.",
+      "correction": "Usarlo únicamente para identidad de bytes."
     },
     {
-      "error": "Añadir figuras y reporte después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Partir ventanas mezclando sujetos para evaluar personas nuevas.",
+      "correction": "Separar identidades antes del ajuste."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Ocultar excepciones con métricas por defecto.",
+      "correction": "Distinguir fallos y salidas válidas no definidas."
     },
     {
-      "error": "Generalizar la conclusión de Pipeline reproducible al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+      "error": "Declarar validación clínica tras pruebas sintéticas.",
+      "correction": "Limitar la conclusión al nivel de evidencia efectivamente obtenido."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar entrega auditable de un análisis de señal?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué garantiza igualdad de hash de dos archivos en el uso práctico descrito?",
+      "answer": "Identidad de bytes con la garantía criptográfica del método, no validez científica.",
+      "reasoning": "Las unidades y la procedencia requieren metadatos adicionales."
     },
     {
-      "question": "¿Cómo se relacionan código y pruebas?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; figuras y reporte puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "RMS=3 mV. ¿Valor al expresar señal en µV?",
+      "answer": "3000 µV.",
+      "reasoning": "La amplitud se multiplica por mil."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre figuras y reporte?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "Potencia=9 mV². ¿Valor en µV²?",
+      "answer": "9 000 000 µV².",
+      "reasoning": "El factor de amplitud se eleva al cuadrado."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Puede calcularse la media de normalización con todos los sujetos antes de separarlos?",
+      "answer": "No para una evaluación reservada de un ajuste aprendido.",
+      "reasoning": "Los sujetos de test aportarían información al procedimiento."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Qué informar si el filtro no admite la longitud del registro?",
+      "answer": "Incompatibilidad y parámetros que la causan.",
+      "reasoning": "No fingir una detección válida sin eventos."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Una semilla garantiza identidad entre cualquier versión de biblioteca?",
+      "answer": "No.",
+      "reasoning": "También importan generador, versión y secuencia de operaciones."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre entrega auditable de un análisis de señal?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Qué ocurre si se elige el umbral mirando repetidamente el test?",
+      "answer": "Ese conjunto participa en el desarrollo.",
+      "reasoning": "Se necesita reconocerlo y obtener evaluación independiente."
     },
     {
-      "question": "¿Qué demuestra dominio de Pipeline reproducible?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué demuestra repetir exactamente una métrica de una base concreta?",
+      "answer": "Reproducción de ese cálculo bajo sus condiciones.",
+      "reasoning": "No demuestra generalización clínica ni ausencia de sesgos del conjunto."
     }
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Entrega auditable de un análisis de señal."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    "El procedimiento se aplica a registros fisiológicos solo después de comprobar sus unidades, anotaciones y condiciones de adquisición.",
+    "Los resultados sintéticos verifican operaciones matemáticas; la generalización a pacientes requiere evidencia independiente."
   ],
   "sources": [
     {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "hashlib: resúmenes de archivos",
+      "organization": "Python Software Foundation",
+      "url": "https://docs.python.org/3/library/hashlib.html",
+      "description": "sha256 y file_digest: identificación de bytes, no certificación del significado.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "CDRH Learn",
-      "organization": "U.S. FDA",
-      "url": "https://www.fda.gov/training-and-continuing-education/cdrh-learn",
-      "type": "formación regulatoria",
-      "description": "Módulos oficiales sobre dispositivos y evidencia.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Common pitfalls: data leakage",
+      "organization": "scikit-learn",
+      "url": "https://scikit-learn.org/stable/common_pitfalls.html",
+      "description": "12.2: separar antes de ajustar transformaciones; uso de Pipeline.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "GNU Radio documentation",
-      "organization": "GNU Radio project",
-      "url": "https://wiki.gnuradio.org/index.php/Main_Page",
-      "type": "documentación abierta",
-      "description": "Simulación y procesamiento de señales por bloques.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "GroupKFold",
+      "organization": "scikit-learn",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GroupKFold.html",
+      "description": "Particiones con grupos no solapados; independencia de identidad.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "University Physics Volume 2",
-      "organization": "OpenStax",
-      "url": "https://openstax.org/details/books/university-physics-volume-2",
-      "type": "libro abierto",
-      "description": "Electricidad, magnetismo, circuitos y ondas.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "WFDB: entrada, metadatos y unidades",
+      "organization": "MIT-LCP",
+      "url": "https://wfdb.readthedocs.io/en/latest/io.html",
+      "description": "rdheader, rdrecord, physical, adc_gain y baseline.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "Lessons in Electric Circuits",
-      "organization": "All About Circuits",
-      "url": "https://www.allaboutcircuits.com/textbook/",
-      "type": "libro abierto",
-      "description": "Circuitos, dispositivos y análisis con ejercicios.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "scipy.signal.welch",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html",
+      "description": "Parámetros nperseg, noverlap, nfft y scaling; unidades de densidad.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
+    },
+    {
+      "title": "Script reproducible del laboratorio de señales",
+      "organization": "CitoNauta",
+      "url": "https://jennerfeijoo.github.io/biomedicina/assets/labs/signal_laboratory.py",
+      "type": "código educativo propio",
+      "description": "Descarga y ejecuta python signal_laboratory.py con Python 3.10 o superior, sin dependencias. Imprime resultados sintéticos de las seis unidades; el emparejamiento es una referencia cuadrática para ejemplos pequeños.",
+      "verification_status": "checked_locally"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo con cálculos sintéticos y fuentes documentales; revisión disciplinaria humana pendiente. Las prácticas no requieren adquirir señales de personas ni autorizan uso clínico."
 }
