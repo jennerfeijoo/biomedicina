@@ -306,7 +306,12 @@ def render_worked_examples(unit: dict[str, Any]) -> str:
         scenario = str(example.get("scenario") or "").strip()
         steps = as_text_list(example.get("reasoning_steps"))
         interpretation = str(example.get("interpretation") or example.get("conclusion") or "").strip()
-        limitations = as_text_list(example.get("limitations"))
+        raw_limitations = example.get("limitations")
+        # Older authored units contain a single prose caveat rather than a list.
+        # Keep it as one item; do not silently discard it or split into characters.
+        limitations = as_text_list(
+            [raw_limitations] if isinstance(raw_limitations, str) else raw_limitations
+        )
 
         rendered.append('      <article class="worked-example advanced-worked-example">')
         rendered.append(f"        <h3>{esc(title)}</h3>")

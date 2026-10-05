@@ -31,3 +31,17 @@ class ClinicalEngineeringEvidenceTests(unittest.TestCase):
         self.assertIn('necesario, pero no suficiente', paragraphs)
         self.assertIn('subregistro', paragraphs)
         self.assertIn('fda-maude-limitations', unit['source_ids'])
+
+    def test_reporting_rate_can_fall_without_incidence_change(self):
+        # Explicit counterexample: equal underlying incidence, changing capture.
+        true_events = [20, 80]
+        exposure = [2000, 8000]
+        capture = [.2, .1]
+        self.assertEqual(true_events[0]/exposure[0], true_events[1]/exposure[1])
+        observed = [n*p/e for n, p, e in zip(true_events, capture, exposure)]
+        self.assertEqual(observed, [.002, .001])
+        unit = json.loads((ROOT / 'data/courses/ingenieria-clinica-gestion/units/unit-05.json').read_text())
+        equation = unit['topics'][3]['blocks'][0]
+        self.assertIn('n_{reportes}', equation['latex'])
+        self.assertIn('No estima incidencia', equation['label'])
+        self.assertIn('fracción reportada', unit['examples'][4]['interpretation'])

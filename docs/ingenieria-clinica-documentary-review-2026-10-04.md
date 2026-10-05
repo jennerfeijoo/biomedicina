@@ -22,3 +22,7 @@ Cuatro afirmaciones conservan soporte parcial: ICG-U01-C002, ICG-U02-C004, ICG-U
 ## Verificación
 
 Las pruebas comprueban el contrato de las 24 afirmaciones y conservan los cuatro soportes parciales. El proceso de integración ejecuta los controles completos y verifica la reproducibilidad del sitio generado. El registro de este curso pasa de 48 errores de contrato a cero; el total del repositorio baja de 1773 a 1725. Se superan 98 controles y dos generaciones consecutivas sin cambios. Un contrato documental sin errores no equivale a certificación científica ni a cobertura exhaustiva.
+
+## Coherencia de la unidad de incidentes — 5 de octubre
+
+Se extiende la distinción entre notificación e incidencia a la fórmula, el caso resuelto, las actividades y la respuesta de autoevaluación. El cociente de reportes por exposición se identifica como descriptivo. Un contraejemplo con 20 eventos/2000 h y 80 eventos/8000 h mantiene incidencia sintética de 0,01 eventos/h; al cambiar captura del 20 % al 10 %, las notificaciones bajan de 0,002 a 0,001 por hora. Así se demuestra que conocer el denominador no corrige el subregistro del numerador. La prueba automatizada comprueba los dos cocientes y la terminología publicada.

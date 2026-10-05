@@ -65,3 +65,15 @@ class SignalLaboratoryReferenceTests(unittest.TestCase):
                 lab.match_events(ref, pred, tol)
         with self.assertRaises(ValueError):
             lab.moving_average_three([0, float('nan')])
+
+    def test_all_example_limitations_reach_published_html(self):
+        import html
+        import json
+        for n in range(1, 7):
+            unit = json.loads((ROOT / f'data/course_redevelopment/laboratorio-senales-biomedicas/units/unit-{n:02}.json').read_text())
+            page = (ROOT / f'ingenieria-biomedica/laboratorio-senales-biomedicas/unidades/unidad-{n:02}.html').read_text()
+            for example in unit['worked_examples']:
+                self.assertIsInstance(example['limitations'], list)
+                self.assertTrue(example['limitations'])
+                for limitation in example['limitations']:
+                    self.assertIn(html.escape(limitation, quote=True), page)
