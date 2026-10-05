@@ -6,386 +6,301 @@
   "slug": "extraccion-de-eventos",
   "title": "Extracción de eventos",
   "status": "review",
-  "purpose": "Integrar picos, intervalos, envolventes y detección para resolver un caso de cuantificación de ritmo y actividad con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Convertir candidatos de una señal en eventos evaluables, asociarlos uno a uno con referencias y separar detección, error temporal y cálculo de intervalos.",
   "learning_objectives": [
-    "Definir picos, intervalos y envolventes y detección mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte picos con intervalos y delimite el papel de envolventes y detección.",
-    "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-    "Resolver y comunicar un caso sobre cuantificación de ritmo y actividad con incertidumbre y límites.",
-    "Transferir el método de Extracción de eventos a un escenario nuevo y justificar qué debe revalidarse."
+    "Diferenciar un máximo local de un evento fisiológico anotado.",
+    "Convertir distancias y tolerancias entre segundos y muestras.",
+    "Diseñar emparejamientos uno a uno sin contar dos veces un evento.",
+    "Calcular sensibilidad, precisión positiva y errores temporales.",
+    "Explicar cómo una omisión distorsiona intervalos sucesivos.",
+    "Reservar registros para evaluar parámetros fijados previamente."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Extracción de eventos",
+      "heading": "Del máximo local al candidato",
       "paragraphs": [
-        "La unidad «Extracción de eventos» sitúa picos, intervalos y envolventes y detección dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Laboratorio de Señales Biomédicas, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Extracción de eventos» en Laboratorio de Señales Biomédicas, «picos», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Extracción de eventos», «intervalos», aporta otra dimensión al problema de Laboratorio de Señales Biomédicas: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con picos debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Extracción de eventos» en Laboratorio de Señales Biomédicas, «envolventes y detección», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Un máximo local se define comparando valores vecinos; un evento fisiológico se define por el fenómeno y el protocolo de anotación. La coincidencia entre ambos requiere demostración. Un complejo de una señal puede contener varias crestas y un artefacto puede superar a todas en amplitud. Por eso el detector se divide en generación de candidatos y selección con reglas explícitas. La evaluación posterior decide si esas reglas sirven para la tarea concreta, sin llamar verdadero a un candidato por el hecho de haber sido seleccionado.",
+        "La función find_peaks identifica máximos según propiedades configurables. Su distancia mínima está expresada en muestras, mientras que altura y prominencia utilizan la escala vertical del arreglo. Convertir una distancia de 0,2 segundos a 250 Hz da 50 muestras. Usar el número 0,2 directamente como distancia no representa ese requisito. La prominencia compara un pico con su entorno y no equivale simplemente a su altura absoluta; ambas propiedades pueden favorecer candidatos distintos en una línea base cambiante.",
+        "La polaridad debe formar parte del procedimiento. Un máximo de x no detecta automáticamente una deflexión negativa dominante. Invertir el signo, usar una transformación energética o procesar canales separados son decisiones que modifican qué candidato se extrae. Una transformación puede ayudar a localizar una región, pero el instante final puede necesitar refinamiento en la señal original. El laboratorio registra tanto la región candidata como la muestra elegida y mide el desplazamiento introducido por esa elección."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Extracción de eventos.",
-        "Relacionar picos, intervalos y envolventes y detección mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Un máximo local es solo un candidato.",
+        "Convierta todas las distancias a muestras.",
+        "Declare polaridad y criterio de refinamiento."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "Asociación uno a uno con la referencia",
       "paragraphs": [
-        "Para «Extracción de eventos» dentro de Laboratorio de Señales Biomédicas, el flujo recomendado es especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Laboratorio de Señales Biomédicas, la evidencia pertinente incluye señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre picos o intervalos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Extracción de eventos», los controles mínimos son entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Laboratorio de Señales Biomédicas, la incertidumbre de «Extracción de eventos» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "Para comparar eventos se define una tolerancia temporal antes de ver los resultados. Una predicción puede asociarse a una referencia si la diferencia absoluta de tiempos no supera esa tolerancia. Además, cada referencia y cada predicción deben participar en como máximo una pareja. Sin esta segunda condición, dos detecciones próximas a un mismo evento podrían contarse como dos aciertos. El conjunto de parejas se conserva como salida auditable, acompañado por referencias omitidas y predicciones sin correspondencia.",
+        "Cuando varias parejas son posibles, una regla reproducible puede maximizar primero el número de asociaciones y minimizar después el error total. Un algoritmo que toma sin más la primera coincidencia disponible puede depender del orden de entrada. Para eventos ordenados, el problema se resuelve mediante un algoritmo documentado o una rutina verificada. La documentación de WFDB ofrece comparación de anotaciones y define window_width en muestras. Si se utiliza otra implementación, se prueban explícitamente ambigüedades, duplicados y eventos a exactamente la distancia límite.",
+        "La referencia también necesita alcance. Una anotación de comienzo de complejo y una de su máximo no representan el mismo instante, aunque ambas se llamen evento en una tabla abreviada. Antes de evaluar se comprueban símbolos, origen del índice, recortes y reloj. Si la referencia empieza en un fragmento y el detector usa el registro completo, hay que reconciliar el desplazamiento. Una tolerancia excesiva puede ocultar ese error sistemático y convertir una comparación incorrecta en un resultado aparentemente excelente."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "Cada evento participa en una sola pareja.",
+        "Fije tolerancia antes de evaluar resultados.",
+        "Alinee definición, origen y reloj de referencia."
       ]
     },
     {
-      "heading": "Aplicación razonada: cuantificación de ritmo y actividad",
+      "heading": "Tres preguntas: cuántos, cuándo y con qué cobertura",
       "paragraphs": [
-        "En la unidad «Extracción de eventos» de Laboratorio de Señales Biomédicas, el caso conductor es cuantificación de ritmo y actividad. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Extracción de eventos» conecta picos con intervalos y utiliza envolventes y detección como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «cuantificación de ritmo y actividad» en Laboratorio de Señales Biomédicas, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Extracción de eventos» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de cuantificación de ritmo y actividad y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Los verdaderos positivos son parejas aceptadas; las referencias sin pareja son falsos negativos y las predicciones sin pareja son falsos positivos. La sensibilidad es TP/(TP+FN), mientras que la precisión positiva es TP/(TP+FP). Un detector que marca casi todos los instantes puede recuperar muchas referencias y producir una enorme cantidad de falsas detecciones. Ambas fracciones se informan con sus conteos. Si un denominador es cero, la métrica se declara no definida bajo esa convención, en vez de convertirla silenciosamente en un acierto perfecto.",
+        "El error temporal se mide sobre las parejas como tiempo predicho menos tiempo de referencia. Su promedio firmado identifica adelanto o retraso sistemático, pero errores positivos y negativos pueden cancelarse. Se acompaña de error absoluto o una distribución de errores. Esas estadísticas están condicionadas a detecciones emparejadas: un algoritmo que omite eventos difíciles puede parecer preciso en tiempo entre los restantes. Por eso no se usa el error temporal para sustituir sensibilidad, falsas detecciones y cobertura de segmentos válidos.",
+        "La unidad de agregación también cambia la respuesta. Sumar TP y denominadores entre registros pondera más los registros con más eventos; promediar sensibilidades por sujeto da el mismo peso a cada sujeto elegible. Ninguno debe presentarse sin su regla. Si un registro tiene cero referencias, su sensibilidad no contribuye como un cero inventado al promedio. El informe incluye distribuciones por registro y casos adversos, especialmente cuando un promedio alto puede ocultar un canal o una condición donde el método falla."
+      ],
+      "key_points": [
+        "Informe conteos además de porcentajes finales.",
+        "Separe sesgo temporal y error absoluto.",
+        "Declare cómo agrega registros y sujetos."
       ],
       "equations": [
         {
-          "latex": "\\mathrm{SNR}_{dB}=10\\log_{10}\\left(\\frac{P_s}{P_n}\\right)",
-          "meaning": "Relación señal-ruido en potencia; banda, ventana y punto de medición deben permanecer fijos.",
+          "latex": "\\mathrm{Se}=\\frac{TP}{TP+FN},\\qquad \\mathrm{PPV}=\\frac{TP}{TP+FP}",
+          "meaning": "Métricas del emparejamiento de eventos; requieren denominadores positivos.",
           "variables": {
-            "P_s": "potencia de señal",
-            "P_n": "potencia de ruido"
+            "TP": "parejas aceptadas",
+            "FN": "referencias omitidas",
+            "FP": "predicciones sin pareja"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de cuantificación de ritmo y actividad antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Intervalos, omisiones y parámetros reservados",
       "paragraphs": [
-        "La reproducibilidad de «Extracción de eventos» en Laboratorio de Señales Biomédicas requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Extracción de eventos» es esta: una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas. Por ello, la entrega de Laboratorio de Señales Biomédicas separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Extracción de eventos» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de picos, intervalos y envolventes y detección debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Laboratorio de Señales Biomédicas.",
-        "El producto de dominio será un expediente de cadena de señal con presupuestos y pruebas sobre cuantificación de ritmo y actividad. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Laboratorio de Señales Biomédicas como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Los intervalos se calculan entre tiempos consecutivos de eventos que cumplan la definición prevista. Si los índices son 100, 300 y 500 a 250 Hz, ambos intervalos son 0,8 segundos. Omitir el central produce un intervalo de 1,6 segundos sin que el ritmo verdadero del ejemplo haya cambiado. Una detección extra puede dividir un intervalo en dos. Estas alteraciones explican por qué un pequeño error de conteo puede afectar de manera importante medidas derivadas de variabilidad.",
+        "La frecuencia equivalente de un intervalo positivo T es 60/T por minuto cuando T está en segundos. Promediar 60/T no es igual en general a calcular 60 dividido por el intervalo promedio, debido a la no linealidad. Además, los intervalos consecutivos comparten eventos: un error de localización puede alargar uno y acortar el siguiente. La práctica conserva las posiciones originales y examina ese patrón antes de interpretar cambios de variabilidad como cambios fisiológicos. No se rellenan omisiones automáticamente sin una regla documentada.",
+        "Los umbrales, distancias y reglas de calidad se seleccionan en registros de desarrollo. Una vez fijados, se aplican a registros reservados sin reajustarlos observando sus anotaciones. Si el objetivo es generalizar a personas nuevas, las ventanas de una misma persona no se distribuyen entre entrenamiento y evaluación. Una prueba sintética permite verificar conteos y conversiones, mientras que un archivo abierto permite estudiar un contexto concreto. Ninguno de estos pasos transforma un detector educativo de máximos en un dispositivo clínico validado."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un expediente de cadena de señal con presupuestos y pruebas que pueda ser auditado y corregido."
+        "Una omisión fusiona intervalos reales consecutivos.",
+        "La transformación inversa no conmuta con promediar.",
+        "Reserve sujetos antes de elegir umbrales."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "picos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Candidato",
+      "definition": "Posición propuesta antes de validar su asociación con un evento."
     },
     {
-      "term": "intervalos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Prominencia",
+      "definition": "Relieve de un máximo respecto a su entorno según la definición del algoritmo."
     },
     {
-      "term": "envolventes y detección",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena física de transducción, acondicionamiento, adquisición y procesamiento; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Referencia",
+      "definition": "Anotación utilizada como comparación bajo un protocolo declarado."
     },
     {
-      "term": "Extracción de eventos",
-      "definition": "Dominio de estudio que integra picos, intervalos, envolventes y detección para resolver un problema delimitado y verificable."
+      "term": "Tolerancia",
+      "definition": "Diferencia temporal máxima admitida para asociar eventos."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de cuantificación de ritmo y actividad usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Emparejamiento",
+      "definition": "Conjunto de correspondencias uno a uno."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Verdadero positivo",
+      "definition": "Pareja aceptada entre predicción y referencia."
     },
     {
-      "term": "Evidencia",
-      "definition": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Falso positivo",
+      "definition": "Predicción que queda sin referencia asociada."
     },
     {
-      "term": "Control",
-      "definition": "Entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Falso negativo",
+      "definition": "Referencia sin predicción asociada."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Sensibilidad",
+      "definition": "Proporción de referencias detectadas bajo la regla definida."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Precisión positiva",
+      "definition": "Proporción de predicciones asociadas a referencias."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Sesgo temporal",
+      "definition": "Promedio firmado del error entre eventos asociados."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Intervalo",
+      "definition": "Diferencia de tiempo entre eventos consecutivos elegibles."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Extracción de eventos",
-      "scenario": "Un equipo propone estudiar cuantificación de ritmo y actividad, pero su pregunta mezcla picos, intervalos y envolventes y detección sin definir unidades, referencias ni resultado admisible.",
+      "title": "Una detección duplicada",
+      "scenario": "Referencias [100,200,300], predicciones [98,102,205,450], tolerancia 5 muestras.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de picos, intervalos y envolventes y detección.",
-        "Seleccionar señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y registrar procedencia y condiciones.",
-        "Predefinir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Asociar una sola de 98 o 102 con 100.",
+        "Asociar 205 con 200; 300 queda omitida.",
+        "TP=2, FN=1, FP=2; Se=2/3 y PPV=1/2."
       ],
-      "interpretation": "El resultado defendible es un expediente de cadena de señal con presupuestos y pruebas trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
-      "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-      ]
+      "interpretation": "Una duplicación no incrementa el número de referencias recuperadas.",
+      "limitations": "El empate de error ±2 exige una regla determinista, aunque no cambie los conteos."
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre picos y intervalos en el caso de cuantificación de ritmo y actividad; una condición vinculada con envolventes y detección podría producir el mismo patrón.",
+      "title": "Omisión e intervalo aparente",
+      "scenario": "Eventos a 0, 0,8 y 1,6 s; se pierde el evento central.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar envolventes y detección como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Intervalos reales: 0,8 y 0,8 s.",
+        "Intervalo detectado: 1,6 s.",
+        "Frecuencia equivalente detectada: 60/1,6=37,5 por minuto frente a 75."
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
-      "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
-      ]
+      "interpretation": "El cambio calculado se debe a la omisión del detector.",
+      "limitations": "Ejemplo sintético; no describe una arritmia ni un paciente."
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Cuaderno de comprobación de extracción de eventos",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Trabaja con los datos sintéticos concretos de cada problema y conserva las operaciones.",
+        "Consulta los criterios después de resolver; contrasta una condición modificada y explica el cambio."
       ],
       "problems": [
-        "Define picos mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo intervalos modifica o complementa a picos.",
-        "Propón una prueba que distinga el papel de envolventes y detección de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Usa referencias [10,20,30] y predicciones [9,11,21,40], tolerancia 1 muestra. Construye parejas.",
+        "Calcula TP, FN, FP, sensibilidad y PPV de ese caso.",
+        "Reduce tolerancia a cero y vuelve a evaluar.",
+        "A fs=100 Hz, convierte tolerancia de 30 ms a muestras.",
+        "Para parejas con errores −2,1,4 muestras a 100 Hz, calcula sesgo y error absoluto medio.",
+        "Eventos [0,100,200,300] a 100 Hz: elimina 200 y calcula intervalos.",
+        "Añade un evento extra en 150 al caso completo. ¿Intervalos?",
+        "Diseña un caso de referencias vacías con tres predicciones y explica las métricas."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Tabla de resultados con unidades y procedimiento.",
+        "Figura o tabla que contraste el caso nominal y el fallo estudiado."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: cuantificación de ritmo y actividad",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo especificar mensurando → presupuestar rango y banda → modelar cadena → simular fallos → verificar salida.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para picos, intervalos y envolventes y detección.",
-        "Selecciona entre señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Expediente de cadena de señal con presupuestos y pruebas.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de cuantificación de ritmo y actividad y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte picos, intervalos y envolventes y detección.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Una de 9 u 11 con 10, 21 con 20; 30 omitida y dos predicciones sin pareja.",
+        "2,1,2; sensibilidad 2/3 y PPV 1/2.",
+        "No hay coincidencias exactas: TP=0,FN=3,FP=4.",
+        "3 muestras; declarar inclusión del extremo.",
+        "Sesgo 10 ms; error absoluto medio 70/3≈23,333 ms.",
+        "[1,2] s; no confundir la omisión con un cambio demostrado del proceso.",
+        "[1,0,5,0,5,1] s, expresados como cuatro valores 1;0,5;0,5;1.",
+        "TP=0,FP=3,FN=0; sensibilidad no definida y PPV=0."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar picos como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar picos en una explicación."
+      "error": "Contar dos candidatos como dos aciertos del mismo evento.",
+      "correction": "Imponer asociación uno a uno."
     },
     {
-      "error": "Afirmar que una relación entre picos y intervalos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Usar segundos donde la función espera muestras.",
+      "correction": "Convertir con la frecuencia del arreglo procesado."
     },
     {
-      "error": "Añadir envolventes y detección después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Informar solo error temporal de aciertos.",
+      "correction": "Añadir omisiones, falsos positivos y cobertura."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir entrada patrón, cortocircuito o cero, señal de referencia, saturación controlada y ruido simulado, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Confundir anotación de inicio con máximo.",
+      "correction": "Homogeneizar definición antes de comparar."
     },
     {
-      "error": "Generalizar la conclusión de Extracción de eventos al uso clínico o real.",
-      "correction": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
+      "error": "Interpretar un intervalo duplicado como cambio fisiológico demostrado.",
+      "correction": "Revisar primero omisiones y artefactos del detector."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar cuantificación de ritmo y actividad?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "Convierte distancia de 0,2 s a muestras con fs=250 Hz.",
+      "answer": "50 muestras.",
+      "reasoning": "Se multiplica 0,2 por 250."
     },
     {
-      "question": "¿Cómo se relacionan picos y intervalos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; envolventes y detección puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "Con TP=90, FN=10 y FP=30, calcula sensibilidad.",
+      "answer": "90 %.",
+      "reasoning": "90/(90+10)."
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre envolventes y detección?",
-      "answer": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "Con los mismos conteos, calcula precisión positiva.",
+      "answer": "75 %.",
+      "reasoning": "90/(90+30)."
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "Dos predicciones rodean una sola referencia dentro de tolerancia. ¿Cuántos aciertos máximos?",
+      "answer": "Uno.",
+      "reasoning": "La referencia no puede utilizarse dos veces."
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "Errores temporales −10 y +10 ms: ¿sesgo y error absoluto medio?",
+      "answer": "0 ms y 10 ms.",
+      "reasoning": "El promedio firmado oculta la magnitud de ambos errores."
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Qué intervalo resulta al omitir un evento de una secuencia regular de 0,8 s?",
+      "answer": "1,6 s entre los vecinos conservados.",
+      "reasoning": "Se suman dos intervalos."
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre cuantificación de ritmo y actividad?",
-      "answer": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "Compara promedio de 60/T para T=0,5 y 1,5 s con 60/promedio(T).",
+      "answer": "80 frente a 60 por minuto.",
+      "reasoning": "(120+40)/2 difiere de 60/1."
     },
     {
-      "question": "¿Qué demuestra dominio de Extracción de eventos?",
-      "answer": "Producir un expediente de cadena de señal con presupuestos y pruebas auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Es válido reajustar el umbral mirando etiquetas del test?",
+      "answer": "No para una evaluación reservada.",
+      "reasoning": "Esas etiquetas pasarían a formar parte del desarrollo."
     }
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Cuantificación de ritmo y actividad."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Señal cruda, función de transferencia, calibración, espectro, incertidumbre y pruebas de límites."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una simulación o un cálculo educativo no demuestra seguridad eléctrica, compatibilidad electromagnética ni desempeño en personas."
-    }
+    "El procedimiento se aplica a registros fisiológicos solo después de comprobar sus unidades, anotaciones y condiciones de adquisición.",
+    "Los resultados sintéticos verifican operaciones matemáticas; la generalización a pacientes requiere evidencia independiente."
   ],
   "sources": [
     {
-      "title": "PhysioNet",
-      "organization": "MIT Laboratory for Computational Physiology",
-      "url": "https://physionet.org/",
-      "type": "datos abiertos",
-      "description": "Señales fisiológicas y anotaciones para análisis reproducible.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "scipy.signal.find_peaks",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html",
+      "description": "Máximos locales; height, distance en muestras, prominence y advertencia sobre NaN.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "SciPy Signal",
-      "organization": "SciPy project",
-      "url": "https://docs.scipy.org/doc/scipy/reference/signal.html",
-      "type": "documentación",
-      "description": "Procesamiento digital, filtrado y análisis espectral.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "WFDB: evaluación de anotaciones",
+      "organization": "MIT-LCP",
+      "url": "https://wfdb.readthedocs.io/en/latest/processing.html",
+      "description": "Comparitor y compare_annotations: tolerancia de emparejamiento en muestras.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "Medical device technologies",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics/medical-device-technologies",
-      "type": "recurso oficial",
-      "description": "Sistemas, sensores y aplicaciones de tecnología médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "WFDB: entrada, metadatos y unidades",
+      "organization": "MIT-LCP",
+      "url": "https://wfdb.readthedocs.io/en/latest/io.html",
+      "description": "rdheader, rdrecord, physical, adc_gain y baseline.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "CDRH Learn",
-      "organization": "U.S. FDA",
-      "url": "https://www.fda.gov/training-and-continuing-education/cdrh-learn",
-      "type": "formación regulatoria",
-      "description": "Módulos oficiales sobre dispositivos y evidencia.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "MIT-BIH Arrhythmia Database 1.0.0",
+      "organization": "PhysioNet",
+      "url": "https://physionet.org/content/mitdb/1.0.0/",
+      "description": "Data Description: selección de registros, canales, muestreo y anotaciones.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     },
     {
-      "title": "GNU Radio documentation",
-      "organization": "GNU Radio project",
-      "url": "https://wiki.gnuradio.org/index.php/Main_Page",
-      "type": "documentación abierta",
-      "description": "Simulación y procesamiento de señales por bloques.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "GroupKFold",
+      "organization": "scikit-learn",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GroupKFold.html",
+      "description": "Particiones con grupos no solapados; independencia de identidad.",
+      "type": "documentación primaria",
+      "verification_status": "verified_directly",
+      "accessed_at": "2026-10-04"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Material educativo con cálculos sintéticos y fuentes documentales; revisión disciplinaria humana pendiente. Las prácticas no requieren adquirir señales de personas ni autorizan uso clínico."
 }
