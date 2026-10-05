@@ -19,3 +19,7 @@ Las pruebas contrastan escalas y alias, unión de defectos, cancelación espectr
 La auditoría de contenido pasa de 17 a 16 cursos con patrones de plantilla detectados, de 101 a 95 unidades afectadas y de 512 a 486 coincidencias. Esto mide los patrones conocidos de la auditoría; no acredita revisión científica exhaustiva. La reconstrucción no añade un registro de afirmaciones validado ni una revisión humana.
 
 La integración exige los 98 controles completos y dos generaciones consecutivas sin cambios; el README se actualiza junto al catálogo para conservar el mismo estado público.
+
+Verificación pública del 5 de octubre: se corrige la representación de las limitaciones de los 12 ejemplos de texto a lista, formato requerido por el generador. Una regresión comprueba que cada limitación llegue al HTML publicado; conservarla solo en JSON no basta.
+
+La inspección de las fuentes efectivamente publicadas, respetando la precedencia canónica, detectó otras 88 limitaciones en formato de texto: 28 en Biomecánica de Medios Continuos, 20 en Ingeniería Neurosensorial, 30 en Biomateriales, 5 en Laboratorio de Imágenes Biomédicas y 5 en Innovación y Emprendimiento. Se comprobó que las 88 aparecen en el HTML generado. El generador ahora acepta una limitación de texto como un único elemento, además del formato de lista. Las pruebas verifican conservación, escape HTML y ausencia de encabezados vacíos. No se modifican las afirmaciones de esos ejemplos: se publica el límite que ya contenía su fuente local.
