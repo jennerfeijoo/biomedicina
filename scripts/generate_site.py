@@ -1526,6 +1526,7 @@ def render_catalog(template: str, data: dict[str, Any]) -> str:
             f'        <a class="track-card" href="?track={html.escape(str(track["id"]), quote=True)}#asignaturas">'
             f'<strong>{escape(str(track["title"]))}</strong>'
             f'<p>{escape(str(track["description"]))}</p>'
+            + (f'<p class="track-scope">{escape(str(track["scope_note"]))}</p>' if track.get("scope_note") else '') +
             f'<span>{len(track.get("subjects", []))} asignaturas relacionadas →</span></a>'
         )
         for track in tracks
@@ -1691,6 +1692,11 @@ def generate(
                 catalog_path.write_text(rendered_catalog, encoding="utf-8")
                 print(f"[ok] generado catálogo: {catalog_path.relative_to(ROOT)}")
                 summary["generated_catalog"] += 1
+
+    if not only_subjects and force and not dry_run:
+        from home_discovery import update_home
+        home = ROOT / "index.html"
+        home.write_text(update_home(home.read_text(encoding="utf-8"), load_json(TRACKS_PATH)), encoding="utf-8")
 
     return summary
 

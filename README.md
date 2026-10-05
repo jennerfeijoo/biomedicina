@@ -38,6 +38,8 @@ independientes. Consulte [el modelo académico canónico](docs/academic-content-
 
 CitoNauta organiza prerrequisitos, conceptos, actividades, evidencias y criterios de dominio sin imponer una duración universal. Cada persona avanza según su base previa, profundidad requerida y resultados demostrados.
 
+La portada ofrece ocho familias y 18 rutas temáticas que conectan las 94 asignaturas. `data/tracks.json` alimenta las entradas de portada, sus rutas y los filtros del catálogo. Las familias amplían la navegación y se solapan con los cuatro bloques académicos de origen. Consulte la [revisión curricular de las rutas](docs/biomedical-pathways-2026-10-05.md).
+
 El material es educativo. No sustituye programas oficiales, supervisión competente, revisión profesional ni certificación.
 
 ## Instalación y desarrollo

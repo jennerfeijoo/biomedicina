@@ -169,6 +169,12 @@
       const count = document.createElement("span");
       count.textContent = `${track.subjects.length} asignaturas relacionadas →`;
       card.append(title, description, count);
+      if (track.scope_note) {
+        const scope = document.createElement("p");
+        scope.className = "track-scope";
+        scope.textContent = track.scope_note;
+        card.insertBefore(scope, count);
+      }
       return card;
     });
     grid.replaceChildren(...cards);
