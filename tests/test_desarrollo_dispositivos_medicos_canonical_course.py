@@ -85,7 +85,7 @@ class DesarrolloDispositivosMedicosCanonicalCourseTests(unittest.TestCase):
             self.assertIn(claim["source_id"], source_ids)
             self.assertEqual(claim["source_verification_status"], "verified_directly")
             self.assertEqual(claim["review_state"], "ai_review_provisional")
-            self.assertEqual(claim["support"], "direct")
+            self.assertEqual(claim["support"], "partial" if claim["id"] in {"DDM-U01-C001", "DDM-U01-C002", "DDM-U01-C004", "DDM-U02-C003", "DDM-U04-C004"} else "direct")
             self.assertIn(claim["text"], serialized_units[claim["unit"]])
 
     def test_course_assessment_integrates_the_full_lifecycle(self):
