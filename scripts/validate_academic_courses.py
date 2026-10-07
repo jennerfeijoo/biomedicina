@@ -519,6 +519,24 @@ def validate_course_directory(course_dir: Path) -> Report:
         unit_id = str(item.get("unit_id") or "")
         if unit_id not in all_unit_ids:
             report.error(f"media.json.items[{media_id}].unit_id", f"unidad inexistente {unit_id}")
+        if item.get("status") == "complete":
+            location = f"media.json.items[{media_id}]"
+            for field in ("asset_path", "alt_text", "caption", "title", "license", "attribution", "topic_id"):
+                if not str(item.get(field) or "").strip():
+                    report.error(location, f"falta {field} para figura completa")
+            asset = Path(str(item.get("asset_path") or ""))
+            if not asset.as_posix().startswith("assets/figures/") or ".." in asset.parts or not (ROOT / asset).is_file():
+                report.error(location, "archivo de figura local inexistente o fuera de assets/figures")
+            for dimension in ("width", "height"):
+                if not isinstance(item.get(dimension), int) or item[dimension] <= 0:
+                    report.error(location, f"{dimension} debe ser un entero positivo")
+            if not item.get("source_ids") or any(key not in source_records for key in item.get("source_ids", [])):
+                report.error(location, "fuentes de figura ausentes o desconocidas")
+            matched = [unit for _, unit in unit_preloads if unit.get("id") == unit_id]
+            if not matched or item.get("topic_id") not in {t.get("id") for t in matched[0].get("topics", [])}:
+                report.error(location, "tema de inserción de figura inexistente")
+            if matched and media_id not in matched[0].get("media_ids", []):
+                report.error(location, "la unidad no referencia la figura completa")
         if item.get("status") == "planned":
             report.gap(
                 f"media.json.items[{media_id}]",

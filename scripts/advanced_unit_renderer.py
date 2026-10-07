@@ -89,6 +89,8 @@ def canonical_unit_to_advanced(root: Path, unit: dict[str, Any]) -> dict[str, An
     """Project canonical topic blocks and registries into the legacy renderer API."""
     subject_id = str(unit.get("course_id") or "").strip()
     course_dir = canonical_course_directory(root, subject_id)
+    media_records = canonical_records(course_dir, "media.json", "items")
+    figure_sources = canonical_records(course_dir, "sources.json", "sources")
     theory_sections: list[dict[str, Any]] = []
     for topic in as_dict_list(unit.get("topics")):
         paragraphs: list[str] = []
@@ -111,12 +113,19 @@ def canonical_unit_to_advanced(root: Path, unit: dict[str, Any]) -> dict[str, An
             if isinstance(block.get("variables"), dict):
                 equation["variables"] = block["variables"]
             equations.append(equation)
+        figures = []
+        for media_id in unit.get("media_ids", []):
+            item = media_records.get(media_id, {})
+            if item.get("status") == "complete" and item.get("topic_id") == topic.get("id"):
+                references = [figure_sources[key] for key in item.get("source_ids", []) if key in figure_sources]
+                figures.append(dict(item, sources=references))
         theory_sections.append(
             {
                 "heading": str(topic.get("title") or "Tema").strip(),
                 "paragraphs": paragraphs,
                 "equations": equations,
                 "key_points": key_points,
+                "figures": figures,
             }
         )
 
@@ -265,6 +274,24 @@ def render_equation(equation: Any) -> str:
     )
 
 
+def render_figure(item: dict[str, Any]) -> str:
+    """Render local educational figures; only completed registry entries reach here."""
+    asset = str(item.get("asset_path") or "")
+    path = Path(asset)
+    if not asset.startswith("assets/figures/") or ".." in path.parts or path.suffix.lower() not in {".svg", ".png", ".jpg", ".webp"}:
+        raise ValueError("Figure must use a local assets/figures path")
+    src = "../../../" + asset
+    references = "; ".join(f'<a href="{esc(source.get("url"))}">{esc(source.get("title"))}</a>' for source in item.get("sources", []))
+    return (
+        f'<figure class="lesson-figure" id="{esc(item.get("id"))}">'
+        f'<a class="lesson-figure-image" href="{esc(src)}" aria-label="{esc("Ampliar figura: " + str(item.get("title") or ""))}">'
+        f'<img src="{esc(src)}" alt="{esc(item.get("alt_text"))}" width="{int(item["width"])}" height="{int(item["height"])}" loading="lazy" decoding="async" /></a>'
+        f'<figcaption><strong>{esc(item.get("title"))}.</strong> {esc(item.get("caption"))}'
+        f'<span class="lesson-figure-credit">{esc(item.get("attribution"))} · {esc(item.get("license"))}. Fuentes de apoyo: {references}.</span>'
+        f'<a href="{esc(src)}">Ampliar figura</a></figcaption></figure>'
+    )
+
+
 def render_theory_sections(unit: dict[str, Any]) -> str:
     rendered: list[str] = [f"      {ADVANCED_MARKER}"]
     for index, section in enumerate(as_dict_list(unit.get("theory_sections")), start=1):
@@ -276,6 +303,7 @@ def render_theory_sections(unit: dict[str, Any]) -> str:
         rendered.append('      <article class="lesson-topic advanced-theory-section">')
         rendered.append(f'        <p class="eyebrow">Desarrollo {index}</p>')
         rendered.append(f"        <h3>{esc(heading)}</h3>")
+        rendered.extend(render_figure(figure) for figure in as_dict_list(section.get("figures")))
         rendered.extend(f"        <p>{esc(paragraph)}</p>" for paragraph in paragraphs)
 
         equation_html = [render_equation(item) for item in equations]
