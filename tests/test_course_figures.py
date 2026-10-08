@@ -33,7 +33,7 @@ class CourseFigureTests(unittest.TestCase):
                 self.assertIn('Ampliar figura', public.read_text())
 
     def test_unproduced_media_does_not_render_as_an_image(self):
-        unit = load_advanced_unit(ROOT, 'biomateriales', 1)
+        unit = load_advanced_unit(ROOT, 'ingenieria-clinica-gestion', 1)
         self.assertNotIn('lesson-figure', render_theory_sections(unit))
 
     def test_figure_asset_cannot_escape_local_asset_directory(self):
