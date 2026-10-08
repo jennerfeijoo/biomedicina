@@ -32,7 +32,7 @@ class ImagenesBiomedicasCanonicalCourseTests(unittest.TestCase):
         self.assertEqual(status["content"], "complete")
         self.assertEqual(status["sources"], "traceable")
         self.assertEqual(status["pedagogy"], "complete")
-        self.assertEqual(status["multimedia"], "planned")
+        self.assertEqual(status["multimedia"], "partial")
         self.assertEqual(status["internal_review"], "pending")
         self.assertEqual(status["external_review"], "pending")
         self.assertEqual(status["publication"], "published_provisional")
@@ -102,11 +102,12 @@ class ImagenesBiomedicasCanonicalCourseTests(unittest.TestCase):
         self.assertGreaterEqual(len(assessment["diagnostic"]["questions"]), 5)
         self.assertGreaterEqual(len(assessment["capstone"]["required_deliverables"]), 6)
 
-    def test_media_is_planned_not_falsely_completed(self) -> None:
+    def test_media_examples_preserve_remaining_planned_coverage(self) -> None:
         items = self.media["items"]
-        self.assertEqual(len(items), 6)
-        self.assertTrue(all(item["status"] == "planned" for item in items))
-        self.assertEqual(self.media["coverage_status"], "planned")
+        self.assertEqual(len(items), 9)
+        self.assertEqual(sum(item["status"] == "planned" for item in items), 6)
+        self.assertEqual(sum(item["status"] == "complete" for item in items), 3)
+        self.assertEqual(self.media["coverage_status"], "partial")
 
     def test_editorial_boundary_is_explicit(self) -> None:
         notice = self.course.get("editorial_notice", "").casefold()
