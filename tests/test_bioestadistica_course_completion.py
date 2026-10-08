@@ -17,7 +17,7 @@ class BioestadisticaCourseCompletionTests(unittest.TestCase):
         self.assertEqual(course["status"]["content"], "complete")
         self.assertEqual(course["status"]["pedagogy"], "complete")
         self.assertEqual(course["status"]["sources"], "traceable")
-        self.assertEqual(course["status"]["multimedia"], "planned")
+        self.assertEqual(course["status"]["multimedia"], "complete")
         self.assertEqual(course["status"]["internal_review"], "pending")
         self.assertEqual(course["status"]["external_review"], "pending")
         self.assertEqual(course["status"]["publication"], "published_provisional")
