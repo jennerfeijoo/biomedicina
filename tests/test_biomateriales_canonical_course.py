@@ -32,7 +32,7 @@ class BiomaterialesCanonicalCourseTests(unittest.TestCase):
         self.assertEqual(status["content"], "complete")
         self.assertEqual(status["sources"], "traceable")
         self.assertEqual(status["pedagogy"], "complete")
-        self.assertEqual(status["multimedia"], "planned")
+        self.assertEqual(status["multimedia"], "complete")
         self.assertEqual(status["internal_review"], "pending")
         self.assertEqual(status["external_review"], "pending")
         self.assertEqual(status["publication"], "published_provisional")
@@ -75,7 +75,7 @@ class BiomaterialesCanonicalCourseTests(unittest.TestCase):
             self.assertIn(claim["text"], units_by_id[claim["unit_id"]])
             self.assertIsNone(claim["reviewer_validation_id"])
         self.assertEqual(len(self.media["items"]), 6)
-        self.assertTrue(all(item["status"] == "planned" for item in self.media["items"]))
+        self.assertTrue(all(item["status"] == "complete" for item in self.media["items"]))
 
     def test_course_assessment_weights_are_complete(self):
         self.assertEqual(sum(item["weight_percent"] for item in self.course_assessment["assessment_plan"]), 100)
