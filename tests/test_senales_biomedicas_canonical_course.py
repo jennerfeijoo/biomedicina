@@ -24,7 +24,7 @@ class SenalesBiomedicasCanonicalCourseTests(unittest.TestCase):
         self.assertEqual(status["content"], "complete")
         self.assertEqual(status["sources"], "traceable")
         self.assertEqual(status["pedagogy"], "complete")
-        self.assertEqual(status["multimedia"], "planned")
+        self.assertEqual(status["multimedia"], "complete")
         self.assertEqual(status["internal_review"], "pending")
         self.assertEqual(status["external_review"], "pending")
         self.assertEqual(status["publication"], "published_provisional")
