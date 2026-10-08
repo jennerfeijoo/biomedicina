@@ -275,20 +275,27 @@ def render_equation(equation: Any) -> str:
 
 
 def render_figure(item: dict[str, Any]) -> str:
-    """Render local educational figures; only completed registry entries reach here."""
-    asset = str(item.get("asset_path") or "")
-    path = Path(asset)
-    if not asset.startswith("assets/figures/") or ".." in path.parts or path.suffix.lower() not in {".svg", ".png", ".jpg", ".webp"}:
-        raise ValueError("Figure must use a local assets/figures path")
-    src = "../../../" + asset
+    """Render completed figures with attribution and optional guided observation."""
+    from course_figure_assets import figure_source
+    src = figure_source(item)
     references = "; ".join(f'<a href="{esc(source.get("url"))}">{esc(source.get("title"))}</a>' for source in item.get("sources", []))
+    license_text = esc(item.get("license"))
+    if item.get("license_url"):
+        license_text = f'<a href="{esc(item["license_url"])}">{license_text}</a>'
+    provenance = ''
+    if item.get("image_url"):
+        provenance = f' · <a href="{esc(item["source_page_url"])}">Fuente original y descripción</a> · Imagen alojada externamente'
+    image_policy = ' referrerpolicy="no-referrer"' if item.get("image_url") else ''
+    reading = ''
+    for question in item.get("guided_observation", []):
+        reading += f'<details class="figure-observation"><summary>{esc(question["question"])}</summary><p>{esc(question["answer"])}</p></details>'
     return (
         f'<figure class="lesson-figure" id="{esc(item.get("id"))}">'
         f'<a class="lesson-figure-image" href="{esc(src)}" aria-label="{esc("Ampliar figura: " + str(item.get("title") or ""))}">'
-        f'<img src="{esc(src)}" alt="{esc(item.get("alt_text"))}" width="{int(item["width"])}" height="{int(item["height"])}" loading="lazy" decoding="async" /></a>'
+        f'<img src="{esc(src)}" alt="{esc(item.get("alt_text"))}" width="{int(item["width"])}" height="{int(item["height"])}" loading="lazy" decoding="async"{image_policy} /></a>'
         f'<figcaption><strong>{esc(item.get("title"))}.</strong> {esc(item.get("caption"))}'
-        f'<span class="lesson-figure-credit">{esc(item.get("attribution"))} · {esc(item.get("license"))}. Fuentes de apoyo: {references}.</span>'
-        f'<a href="{esc(src)}">Ampliar figura</a></figcaption></figure>'
+        f'<span class="lesson-figure-credit">{esc(item.get("attribution"))} · {license_text}{provenance}. Fuentes de apoyo: {references}.</span>'
+        f'<a href="{esc(src)}">Ampliar figura</a>{reading}</figcaption></figure>'
     )
 
 

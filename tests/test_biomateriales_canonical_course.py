@@ -74,7 +74,7 @@ class BiomaterialesCanonicalCourseTests(unittest.TestCase):
             self.assertIn(claim["source_id"], source_ids)
             self.assertIn(claim["text"], units_by_id[claim["unit_id"]])
             self.assertIsNone(claim["reviewer_validation_id"])
-        self.assertEqual(len(self.media["items"]), 6)
+        self.assertEqual(len(self.media["items"]), 8)
         self.assertTrue(all(item["status"] == "complete" for item in self.media["items"]))
 
     def test_course_assessment_weights_are_complete(self):

@@ -521,12 +521,19 @@ def validate_course_directory(course_dir: Path) -> Report:
             report.error(f"media.json.items[{media_id}].unit_id", f"unidad inexistente {unit_id}")
         if item.get("status") == "complete":
             location = f"media.json.items[{media_id}]"
-            for field in ("asset_path", "alt_text", "caption", "title", "license", "attribution", "topic_id"):
+            for field in ("alt_text", "caption", "title", "license", "attribution", "topic_id"):
                 if not str(item.get(field) or "").strip():
                     report.error(location, f"falta {field} para figura completa")
-            asset = Path(str(item.get("asset_path") or ""))
-            if not asset.as_posix().startswith("assets/figures/") or ".." in asset.parts or not (ROOT / asset).is_file():
-                report.error(location, "archivo de figura local inexistente o fuera de assets/figures")
+            from course_figure_assets import figure_source
+            try:
+                figure_source(item)
+            except ValueError as exc:
+                report.error(location, str(exc))
+            if item.get("asset_path") and not (ROOT / item["asset_path"]).is_file():
+                report.error(location, "archivo de figura local inexistente")
+            for prompt in item.get("guided_observation", []):
+                if not isinstance(prompt, dict) or not prompt.get("question") or not prompt.get("answer"):
+                    report.error(location, "observación guiada sin pregunta o respuesta")
             for dimension in ("width", "height"):
                 if not isinstance(item.get(dimension), int) or item[dimension] <= 0:
                     report.error(location, f"{dimension} debe ser un entero positivo")
