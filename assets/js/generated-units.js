@@ -831,3 +831,24 @@
     init();
   }
 })();
+
+// Entry point to the shared formative assessment banks.
+(() => {
+  const script = document.currentScript;
+  const base = new URL('../../', script.src);
+  const parts = location.pathname.split('/').filter(Boolean);
+  const isUnit = true;
+  const subject = isUnit ? parts.at(-3) : parts.at(-2);
+  const unit = isUnit ? /unidad-(\d+)\.html$/.exec(parts.at(-1)) : null;
+  if (!subject || (isUnit && !unit) || document.getElementById('question-bank-entry')) return;
+  const section = document.createElement('section');
+  section.id = 'question-bank-entry';section.className = 'section';
+  const title = document.createElement('h2');title.textContent = isUnit ? 'Test de la unidad' : 'Examen final de la asignatura';
+  const p = document.createElement('p');p.textContent = isUnit ? 'Practica con 15 preguntas seleccionadas del banco de esta unidad y revisa tus respuestas al finalizar.' : 'Practica con 50 preguntas seleccionadas de los bancos de todas las unidades. Incluye conceptos, razonamiento, errores y casos.';
+  const link = document.createElement('a');
+  const target = new URL('evaluaciones/index.html', base);target.searchParams.set('asignatura',subject);
+  if (unit) target.searchParams.set('unidad',String(Number(unit[1])));
+  link.href = target.href;link.textContent = 'Consultar banco y comenzar evaluación →';
+  section.append(title,p,link);
+  (document.querySelector('main article') || document.querySelector('main'))?.append(section);
+})();
