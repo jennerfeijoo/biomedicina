@@ -46,7 +46,7 @@ def commands() -> list[list[str]]:
 
 def public_snapshot() -> dict[str, str]:
     paths = []
-    for folder in ['ciencias-basicas', 'biologicas-medicas', 'ingenieria-biomedica', 'gestion-etica-comunicacion', 'catalogo', 'mapa', 'data']:
+    for folder in ['ciencias-basicas', 'biologicas-medicas', 'ingenieria-biomedica', 'gestion-etica-comunicacion', 'catalogo', 'mapa', 'evaluaciones', 'data']:
         paths.extend(p for p in (ROOT / folder).rglob('*') if p.is_file())
     paths.extend(p for p in ROOT.glob('*') if p.suffix in {'.html', '.xml'} or p.name == 'robots.txt')
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
