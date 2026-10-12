@@ -61,3 +61,7 @@ Las soluciones y figuras son ejercicios sintéticos desarrollados para este curs
 4. Ampliación de preguntas basadas directamente en figuras y conjuntos de datos; las preguntas de observación actuales están junto a las figuras y no forman un banco visual del examen.
 5. Profundizaciones diferenciadas en modelos espaciales, EDP, elementos finitos, multiescala y otros dominios que estas seis unidades no cubren exhaustivamente.
 6. Continuar la reconstrucción del resto del proyecto: **89 unidades de 15 asignaturas** conservan marcadores conocidos de plantilla. Su ausencia en otras unidades tampoco implica validación.
+
+## Comprobación de caché tras publicar
+
+La prueba pública mostró lecciones nuevas junto a un índice de examen anterior en caché. Se versionan los scripts del examen, se solicita un índice nuevo al abrir la página y cada unidad se carga mediante una URL asociada a su SHA-256. La comprobación de la huella se conserva: si el despliegue cambia entre solicitudes, el examen se detiene en vez de mezclar versiones. Las URLs versionadas permiten reutilizar la caché de una unidad sin confundir revisiones.
