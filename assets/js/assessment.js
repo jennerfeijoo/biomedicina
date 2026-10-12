@@ -6,7 +6,7 @@
   let index, questions=[], answers={}, ratings={}, current=0, course, scope, seed, loading=false;
   const params = new URLSearchParams(location.search);
   const names = {self_assessment:'Comprensión y razonamiento',common_errors:'Análisis de errores',worked_examples:'Caso aplicado',glossary:'Reconocimiento de conceptos'};
-  async function json(file) { const r=await fetch(new URL(file,root));if(!r.ok)throw new Error(`No se pudo cargar el recurso (${r.status}).`);return r.json(); }
+  async function json(file) { const url=new URL(file,root);url.searchParams.set('v',String(Date.now()));const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(`No se pudo cargar el recurso (${r.status}).`);return r.json(); }
   function randomSeed(){return Array.from(crypto.getRandomValues(new Uint32Array(2)),n=>n.toString(36)).join('-');}
   function selectedCourse(){return index.courses.find(c=>c.id===$('exam-course').value);}
   function updateSummary(){
@@ -86,7 +86,8 @@
       course=selectedCourse();scope=$('exam-scope').value;seed=$('exam-seed').value.trim()||randomSeed();$('exam-seed').value=seed;
       const units=scope==='final'?course.units:course.units.filter(u=>String(u.unit)===scope);
       const banks=await Promise.all(units.map(async u=>{
-        const response=await fetch(new URL(u.source,root));if(!response.ok)throw new Error('No se pudo cargar una unidad. Inténtalo de nuevo.');
+        const sourceUrl=new URL(u.source,root);sourceUrl.searchParams.set('sha256',u.sha256);
+        const response=await fetch(sourceUrl);if(!response.ok)throw new Error('No se pudo cargar una unidad. Inténtalo de nuevo.');
         const buffer=await response.arrayBuffer();const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',buffer))].map(n=>n.toString(16).padStart(2,'0')).join('');
         if(hash!==u.sha256)throw new Error('El contenido ha cambiado y el banco debe actualizarse. No se generará un examen con versiones mezcladas.');
         return core.buildBank(JSON.parse(new TextDecoder().decode(buffer)));
