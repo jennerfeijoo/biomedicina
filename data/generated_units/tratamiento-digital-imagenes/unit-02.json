@@ -6,386 +6,759 @@
   "slug": "transformaciones-de-intensidad",
   "title": "Transformaciones de intensidad",
   "status": "review",
-  "purpose": "Integrar contraste, ecualización, corrección gamma para resolver un caso de mejora visual con preservación de significado con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Diseñar transformaciones de intensidad con rango y propósito explícitos, calcular sus efectos y reconocer cuándo mejoran una visualización a costa de alterar comparaciones cuantitativas.",
   "learning_objectives": [
-    "Definir contraste, ecualización y corrección gamma mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte contraste con ecualización y delimite el papel de corrección gamma.",
-    "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-    "Resolver y comunicar un caso sobre mejora visual con preservación de significado con incertidumbre y límites.",
-    "Transferir el método de Transformaciones de intensidad a un escenario nuevo y justificar qué debe revalidarse."
+    "Calcular transformaciones afines y explicar conservación o pérdida de información.",
+    "Aplicar ventanas y recortes distinguiendo visualización de datos calibrados.",
+    "Interpretar la convención gamma y verificar dominio, extremos y monotonía.",
+    "Construir una ecualización discreta por distribución acumulada y describir sus límites.",
+    "Comparar transformaciones globales y locales, incluidos sus efectos sobre ruido y escala.",
+    "Diseñar una comparación reproducible que preserve significado y evite ajustes con datos de prueba."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Transformaciones de intensidad",
+      "heading": "1. Una función sobre valores, no una nueva adquisición",
       "paragraphs": [
-        "La unidad «Transformaciones de intensidad» sitúa contraste, ecualización y corrección gamma dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Tratamiento Digital de Imágenes, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Transformaciones de intensidad» en Tratamiento Digital de Imágenes, «contraste», se entiende así: Diferencia de señal entre regiones o estados que permite distinguirlos en una medición o imagen. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Transformaciones de intensidad», «ecualización», aporta otra dimensión al problema de Tratamiento Digital de Imágenes: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con contraste debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Transformaciones de intensidad» en Tratamiento Digital de Imágenes, «corrección gamma», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
-      ],
-      "key_points": [
-        "Distinguir observación, cálculo e inferencia en Transformaciones de intensidad.",
-        "Relacionar contraste, ecualización y corrección gamma mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Transformaciones de intensidad» dentro de Tratamiento Digital de Imágenes, el flujo recomendado es definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Tratamiento Digital de Imágenes, la evidencia pertinente incluye datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre contraste o ecualización debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Transformaciones de intensidad», los controles mínimos son fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Tratamiento Digital de Imágenes, la incertidumbre de «Transformaciones de intensidad» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: mejora visual con preservación de significado",
-      "paragraphs": [
-        "En la unidad «Transformaciones de intensidad» de Tratamiento Digital de Imágenes, el caso conductor es mejora visual con preservación de significado. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Transformaciones de intensidad» conecta contraste con ecualización y utiliza corrección gamma como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «mejora visual con preservación de significado» en Tratamiento Digital de Imágenes, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Transformaciones de intensidad» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de mejora visual con preservación de significado y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Una transformación puntual calcula una salida a partir de la intensidad de entrada. Si la misma función se usa en todos los píxeles es global; si depende de la posición o de estadísticas de una región es local. Esta clasificación no dice todavía si el método es adecuado. Hay que declarar si se pretende preparar una figura, facilitar una inspección, proporcionar entradas a un algoritmo o medir una magnitud. Una transformación útil para uno de estos fines puede ser inapropiada para otro.",
+        "La función afín y=ax+b multiplica diferencias por a y desplaza el origen por b. Para a positivo conserva el orden; si a es negativo lo invierte. Con a distinto de cero puede invertirse algebraicamente si se conservan precisión y rango. Redondear, recortar o guardar con pocos niveles puede eliminar esa reversibilidad. Sumar b no cambia la desviación estándar; multiplicar por a cambia su magnitud por |a|. Por ello un contraste relativo al ruido no aumenta automáticamente porque la imagen se vea más contrastada.",
+        "Considérese CNR=|μ1−μ2|/σ, con una definición común de ruido y σ positiva. Bajo una transformación afín global sin recorte, numerador y denominador se multiplican por |a|; su cociente se mantiene para a distinto de cero. Esto es una propiedad algebraica, no una afirmación de que toda métrica o toda tarea visual sea invariante. Una pantalla puede representar mejor un intervalo después del ajuste, aunque el dato no contenga nueva evidencia sobre la estructura. El informe debe indicar qué se ganó: visibilidad, facilidad de una tarea o precisión medida, según lo que realmente se comprobó."
       ],
       "equations": [
         {
-          "latex": "CNR=\\frac{|\\mu_1-\\mu_2|}{\\sigma_n}",
-          "meaning": "Contraste respecto al ruido entre dos regiones; las regiones y el estimador de ruido deben predefinirse.",
+          "latex": "y=ax+b,\\quad \\mu_y=a\\mu_x+b,\\quad \\sigma_y=|a|\\sigma_x",
+          "meaning": "Efecto de una transformación afín uniforme antes de redondear o recortar.",
           "variables": {
-            "\\mu": "media regional",
-            "\\sigma_n": "desviación del ruido"
+            "Símbolos": "a: ganancia; b: desplazamiento; μ: media; σ: desviación estándar."
           }
         }
       ],
       "key_points": [
-        "Delimitar el caso de mejora visual con preservación de significado antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+        "La función global usa la misma regla en todas las posiciones.",
+        "Una transformación afín invertible puede dejar de serlo por recorte.",
+        "La ganancia uniforme no mejora el CNR definido en estas condiciones."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "2. Ventanas y recorte: una decisión de representación",
       "paragraphs": [
-        "La reproducibilidad de «Transformaciones de intensidad» en Tratamiento Digital de Imágenes requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Transformaciones de intensidad» es esta: una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución. Por ello, la entrega de Tratamiento Digital de Imágenes separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Transformaciones de intensidad» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de contraste, ecualización y corrección gamma debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Tratamiento Digital de Imágenes.",
-        "El producto de dominio será un pipeline de imagen reproducible con informe cuantitativo sobre mejora visual con preservación de significado. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Tratamiento Digital de Imágenes como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Para visualizar un intervalo [l,h] con h>l, un modelo didáctico usa y=clip((x−l)/(h−l),0,1). Los valores menores que l aparecen negros y los mayores que h blancos; entre ellos la escala es lineal. Si se retiene la matriz original, este recorte de pantalla no destruye sus datos. Si se guarda únicamente la imagen transformada, se pierden las diferencias fuera de la ventana. Elegir límites más próximos magnifica pequeñas diferencias interiores y satura una parte mayor del rango exterior.",
+        "En una parametrización continua se puede escribir l=c−w/2 y h=c+w/2. No debe confundirse esta fórmula con todas las convenciones de DICOM. El estándar distingue LINEAR_EXACT de la función LINEAR por defecto, que incorpora desplazamiento de 0,5 y anchura efectiva w−1 en su tramo interior; además contempla el caso w=1 como umbral. Para implementar una lectura DICOM se sigue el atributo y su definición, después de las transformaciones de modalidad correspondientes. Los ejercicios de esta unidad etiquetan expresamente el modelo simplificado y no constituyen un visor DICOM validado.",
+        "Estirar por mínimos y máximos hace depender la ventana de valores extremos. Un único artefacto puede comprimir visualmente el resto. Usar percentiles reduce la influencia de extremos, pero recorta una fracción deliberada de datos y depende de la máscara y de la definición de percentil. Si cada imagen recibe límites propios, un valor de gris deja de significar la misma magnitud entre imágenes. Para comparar intensidades absolutas se necesita una escala común o una justificación explícita de por qué la normalización es parte de la pregunta."
+      ],
+      "equations": [
+        {
+          "latex": "y=\\min(1,\\max(0,(x-l)/(h-l)))",
+          "meaning": "Ventana lineal continua didáctica, con h>l; no sustituye la función DICOM LINEAR por defecto.",
+          "variables": {
+            "Símbolos": "x: entrada; l,h: límites; y: valor de pantalla entre 0 y 1."
+          }
+        }
+      ],
+      "figures": [
+        {
+          "id": "TDI-U02-WINDOW",
+          "title": "Una ventana estrecha también pierde diferencias",
+          "asset_path": "assets/figures/tratamiento-digital-imagenes/unit-02-window.svg",
+          "width": 1200,
+          "height": 800,
+          "alt_text": "La ventana continua 25–75 duplica la pendiente de 0–100, pero reúne más valores en sus extremos.",
+          "caption": "La ventana continua 25–75 duplica la pendiente de 0–100, pero reúne más valores en sus extremos.",
+          "attribution": "Elaboración propia de CitoNauta; datos sintéticos definidos por ecuaciones o matrices.",
+          "license": "CC BY-NC 4.0",
+          "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+          "sources": [
+            {
+              "title": "Código reproducible de las figuras",
+              "url": "https://github.com/jennerfeijoo/biomedicina/blob/main/scripts/build_image_foundations_figures.py"
+            }
+          ],
+          "guided_observation": [
+            {
+              "question": "¿Qué entradas quedan indistinguibles como blanco en la ventana 25–75?",
+              "answer": "Todas las entradas mayores o iguales que 75. La figura recortada no permite recuperar sus diferencias."
+            }
+          ]
+        }
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un pipeline de imagen reproducible con informe cuantitativo que pueda ser auditado y corregido."
+        "Una ventana asigna rango visible y reúne valores exteriores.",
+        "El modelo continuo del ejercicio no sustituye DICOM LINEAR.",
+        "Ventanas distintas impiden comparar grises como magnitudes idénticas."
+      ]
+    },
+    {
+      "heading": "3. Gamma: declarar la convención antes de interpretar",
+      "paragraphs": [
+        "En esta unidad la corrección gamma se define como y=x^γ para x entre 0 y 1 y γ positiva. Un exponente menor que uno eleva los valores interiores y uno mayor que uno los reduce. Los extremos cero y uno permanecen iguales. Algunas herramientas expresan el parámetro usando el exponente recíproco; por eso indicar solamente «gamma 2» no basta para reproducir el resultado. Escribir la función y mostrar varios pares entrada-salida evita la ambigüedad.",
+        "La pendiente γx^(γ−1) explica que el efecto no sea uniforme. Con γ menor que uno, pequeñas diferencias cerca del negro se expanden fuertemente; también puede hacerse más visible su ruido. Con γ mayor que uno se comprime esa zona. No se aplica una potencia fraccionaria sin revisar valores negativos: puede dejar de producir resultados reales. Normalizar entradas es una elección que necesita límites y tratamiento del fondo, no un paso invisible que siempre signifique lo mismo.",
+        "Una transformación estrictamente creciente preserva orden, pero no conserva distancias, cocientes ni medias. Para valores 0 y 1, la media de sus raíces cuadradas es 0,5; la raíz de su media es aproximadamente 0,7071. Por tanto, transformar una media no suele equivaler a promediar píxeles transformados. Esta diferencia importa si se mide fluorescencia o se comparan regiones después de realzar una figura. Tampoco se confunde esta transformación matemática con la decodificación de un espacio de color: RGB puede estar codificado de forma no lineal y tiene su propia convención."
+      ],
+      "equations": [
+        {
+          "latex": "y=x^{\\gamma},\\quad \\frac{dy}{dx}=\\gamma x^{\\gamma-1}",
+          "meaning": "Convención usada en todos los cálculos de gamma de esta unidad; 0≤x≤1 y γ>0.",
+          "variables": {
+            "Símbolos": "γ: exponente, no su recíproco; x,y: intensidades normalizadas."
+          }
+        }
+      ],
+      "figures": [
+        {
+          "id": "TDI-U02-GAMMA",
+          "title": "La convención gamma cambia el resultado",
+          "asset_path": "assets/figures/tratamiento-digital-imagenes/unit-02-gamma.svg",
+          "width": 1200,
+          "height": 800,
+          "alt_text": "Con y=x^γ, gamma 0,5 transforma 0,25 en 0,5; gamma 2 lo transforma en 0,0625.",
+          "caption": "Con y=x^γ, gamma 0,5 transforma 0,25 en 0,5; gamma 2 lo transforma en 0,0625.",
+          "attribution": "Elaboración propia de CitoNauta; datos sintéticos definidos por ecuaciones o matrices.",
+          "license": "CC BY-NC 4.0",
+          "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+          "sources": [
+            {
+              "title": "Código reproducible de las figuras",
+              "url": "https://github.com/jennerfeijoo/biomedicina/blob/main/scripts/build_image_foundations_figures.py"
+            }
+          ],
+          "guided_observation": [
+            {
+              "question": "¿Cuál de estas curvas es lineal y por qué importa para promediar?",
+              "answer": "Gamma 1: y=x. Las otras son no lineales y, en general, transformar una media no equivale a promediar las intensidades transformadas."
+            }
+          ]
+        }
+      ],
+      "key_points": [
+        "La dirección del cambio depende de la convención del exponente.",
+        "El dominio debe revisarse antes de aplicar potencias fraccionarias.",
+        "Una transformación no lineal no conmuta en general con promediar."
+      ]
+    },
+    {
+      "heading": "4. Ecualización global por distribución acumulada",
+      "paragraphs": [
+        "La ecualización utiliza la distribución de intensidades para reasignar niveles. En una versión discreta explícita con L niveles, se cuentan n_k píxeles en cada nivel k, se obtiene p_k=n_k/N y se acumula F(k)=Σ desde j=0 hasta k de p_j. Aquí definimos la salida como round((L−1)F(k)), con empates hacia arriba. Esta convención se elige para poder calcular a mano; existen variantes que restan la primera acumulada no nula. No se mezclan claves obtenidas con reglas diferentes.",
+        "Con cuatro niveles y cuentas [4,2,1,1], la acumulada es [0,5;0,75;0,875;1]. Nuestra regla produce [2,2,3,3]. Las cuentas de salida pasan a [0,0,6,2], que no forman un histograma uniforme. En una distribución discreta varios niveles pueden reunirse y no es posible dividir libremente una masa de píxeles idénticos. El resultado puede ocupar mejor ciertas regiones del rango, pero prometer uniformidad exacta en una imagen finita sería incorrecto. Tampoco aparece información que permita separar dos píxeles originalmente iguales.",
+        "La transformación global es no decreciente y su tabla depende de la composición de la imagen. Cambiar cuánto fondo entra en el histograma puede modificar la salida del mismo objeto. La media puede variar, los espacios entre niveles cambian y la inversión puede dejar de ser única cuando se fusionan niveles. Por eso ecualizar cada imagen de un experimento no equivale a calibrar el instrumento. En un método aprendido o ajustado con datos hay que definir qué estadísticas se estiman en entrenamiento y cómo se aplican después sin consultar los resultados de prueba."
+      ],
+      "equations": [
+        {
+          "latex": "F(k)=\\sum_{j=0}^{k}\\frac{n_j}{N},\\qquad T(k)=\\mathrm{round}((L-1)F(k))",
+          "meaning": "Convención didáctica de ecualización discreta; el redondeo de empates se define hacia arriba.",
+          "variables": {
+            "Símbolos": "nk: cuenta del nivel; N: total; L: niveles; F: acumulada; T: tabla de salida."
+          }
+        }
+      ],
+      "key_points": [
+        "La tabla de ecualización depende de las cuentas seleccionadas.",
+        "Una imagen discreta no garantiza una salida exactamente uniforme.",
+        "Fusionar niveles impide reconstruir de forma única sus entradas."
+      ]
+    },
+    {
+      "heading": "5. Contraste local, ruido y comparaciones defendibles",
+      "paragraphs": [
+        "La ecualización adaptativa calcula transformaciones en regiones y combina sus resultados. CLAHE limita las cuentas de los histogramas locales antes de redistribuirlas; con ello controla parte del realce que sería excesivo en regiones poco variables. El significado numérico del límite, tamaño de región e interpolación depende de la implementación. No se traslada un número entre herramientas suponiendo equivalencia. Regiones pequeñas pueden destacar variaciones finas y ruido; regiones grandes se acercan a cambios de escala más amplia.",
+        "Al depender del vecindario, un valor original puede terminar con salidas diferentes en regiones distintas. Esto rompe la interpretación de una única tabla global entre intensidad y magnitud. Una zona aparentemente más brillante después de CLAHE no prueba por sí misma mayor concentración de marcador. Para cuantificar se conserva una rama de datos cuya transformación esté justificada; la rama de visualización documenta los parámetros de realce. Esta separación permite enseñar detalles sin presentar colores artificiales como mediciones calibradas.",
+        "Una comparación útil fija antes la tarea, la región analizada y el criterio. Por ejemplo: ¿el ajuste facilita detectar un borde sintético de contraste conocido y qué hace con una región que solo contiene ruido? Se muestran el original y el resultado con escalas declaradas, se revisa saturación y se repite con perturbaciones de parámetros. Si se eligen límites, gamma o región para maximizar desempeño, esa selección se hace sin utilizar el conjunto final de prueba. Ajustar automáticamente cada imagen mediante una regla predefinida no es por sí solo fuga de etiquetas, pero puede cambiar el significado de las intensidades y debe evaluarse como parte del procedimiento.",
+        "El producto de aprendizaje es una tabla y una figura que permitan reconstruir la transformación, además de una conclusión limitada. «El borde resulta más visible con esta ventana» es una observación que todavía necesita una tarea para cuantificar su utilidad. «El contraste respecto al ruido mejoró» exige definir y medir ese cociente en datos adecuados. «El método sirve para diagnóstico» requeriría otra clase de evidencia que no aportan estos ejercicios sintéticos. Separar estas afirmaciones evita premiar solo la imagen que parece más atractiva."
+      ],
+      "equations": [],
+      "key_points": [
+        "El contraste local puede alterar también la representación del ruido.",
+        "Los parámetros de CLAHE dependen de la implementación utilizada.",
+        "La selección de ajustes debe preservar una prueba independiente."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "contraste",
-      "definition": "Diferencia de señal entre regiones o estados que permite distinguirlos en una medición o imagen."
+      "term": "Transformación puntual",
+      "definition": "Operación que asigna a cada píxel una salida a partir de su intensidad mediante una regla declarada."
     },
     {
-      "term": "ecualización",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Transformación global",
+      "definition": "Uso de la misma función de intensidad en todas las posiciones de una imagen."
     },
     {
-      "term": "corrección gamma",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de una cadena de formación, reconstrucción, procesamiento y cuantificación de imagen; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Transformación local",
+      "definition": "Regla de intensidad que depende de la posición o de estadísticas de su entorno."
     },
     {
-      "term": "Transformaciones de intensidad",
-      "definition": "Dominio de estudio que integra contraste, ecualización, corrección gamma para resolver un problema delimitado y verificable."
+      "term": "Ganancia afín",
+      "definition": "Factor multiplicativo que escala diferencias de intensidad en y=ax+b."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de mejora visual con preservación de significado usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Desplazamiento afín",
+      "definition": "Término aditivo que cambia el origen de intensidad sin modificar diferencias en y=ax+b."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Ventana de visualización",
+      "definition": "Intervalo de entrada que se distribuye sobre el rango visible, con tratamiento declarado de valores exteriores."
     },
     {
-      "term": "Evidencia",
-      "definition": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Recorte de intensidad",
+      "definition": "Asignación al límite inferior o superior de los valores fuera de un intervalo elegido."
     },
     {
-      "term": "Control",
-      "definition": "Fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Corrección gamma",
+      "definition": "Transformación de potencia cuya interpretación requiere declarar el exponente y el dominio."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Monotonía estricta",
+      "definition": "Propiedad de mantener un orden estricto de entradas en las salidas, sea creciente o decreciente."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Distribución acumulada",
+      "definition": "Proporción de observaciones cuyo valor no supera un nivel dado."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Ecualización global",
+      "definition": "Reasignación de niveles basada en la distribución acumulada de intensidades de una región completa."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "CLAHE",
+      "definition": "Ecualización adaptativa con limitación de cuentas en histogramas locales antes de su redistribución."
+    },
+    {
+      "term": "Tabla de consulta",
+      "definition": "Correspondencia explícita entre códigos de entrada y valores de salida de una transformación."
+    },
+    {
+      "term": "CNR",
+      "definition": "Cociente entre diferencia absoluta de medias regionales y una medida de ruido previamente definida."
+    },
+    {
+      "term": "Estiramiento por percentiles",
+      "definition": "Reasignación de un intervalo delimitado por percentiles al rango de salida, con recorte declarado de extremos."
+    },
+    {
+      "term": "Fuga de información de prueba",
+      "definition": "Uso de datos o resultados reservados para evaluación final al seleccionar o ajustar el procedimiento."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Transformaciones de intensidad",
-      "scenario": "Un equipo propone estudiar mejora visual con preservación de significado, pero su pregunta mezcla contraste, ecualización y corrección gamma sin definir unidades, referencias ni resultado admisible.",
+      "title": "Ganancia y desplazamiento",
+      "scenario": "Para intensidades [10,20,30], calcula y=2x−5 y compara medias.",
+      "answer": "Salidas [15,35,55]; media pasa de 20 a 35.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de contraste, ecualización y corrección gamma.",
-        "Seleccionar datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y registrar procedencia y condiciones.",
-        "Predefinir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "Transformar cada valor",
+        "Promediar",
+        "Comprobar 2·20−5"
       ],
-      "interpretation": "El resultado defendible es un pipeline de imagen reproducible con informe cuantitativo trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "La media sigue la transformación afín.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+        "No hay recorte ni redondeo en este ejemplo."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre contraste y ecualización en el caso de mejora visual con preservación de significado; una condición vinculada con corrección gamma podría producir el mismo patrón.",
+      "title": "Contraste y ruido",
+      "scenario": "Dos regiones tienen medias 30 y 50; la desviación de ruido usada es 5. Aplica y=4x+10 sin recorte. Compara CNR.",
+      "answer": "CNR inicial 4; final (210−130)/20=4.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar corrección gamma como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Calcular medias 130 y 210",
+        "Multiplicar desviación por 4",
+        "Dividir diferencia por ruido"
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "La ganancia cambia escala, no este cociente.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "Se mantiene la misma definición del ruido y las mismas regiones."
+      ]
+    },
+    {
+      "title": "Ventana continua",
+      "scenario": "Usa y=clip((x−0)/100,0,1) para x=[−20,0,25,100,140].",
+      "answer": "[0; 0; 0,25; 1; 1].",
+      "reasoning_steps": [
+        "Dividir por 100",
+        "Limitar a 0 y 1"
+      ],
+      "interpretation": "−20 y 0 ya no se distinguen en la salida; tampoco 100 y 140.",
+      "limitations": [
+        "Modelo continuo didáctico, no implementación general DICOM."
+      ]
+    },
+    {
+      "title": "Recuperación parcial",
+      "scenario": "Tras una ventana continua [10,50], un píxel de pantalla vale 0,25 y otro 1. ¿Puedes recuperar sus entradas?",
+      "answer": "El primero vale 20; el segundo puede ser cualquier x≥50.",
+      "reasoning_steps": [
+        "Invertir 10+40·0,25",
+        "Reconocer la meseta superior"
+      ],
+      "interpretation": "Solo el tramo no saturado tiene inversa única.",
+      "limitations": [
+        "Supone salida exacta sin cuantización adicional."
+      ]
+    },
+    {
+      "title": "El exponente importa",
+      "scenario": "Para x=0,36 calcula y=x^γ con γ=0,5 y γ=2.",
+      "answer": "0,6 y 0,1296, respectivamente.",
+      "reasoning_steps": [
+        "Calcular raíz y cuadrado",
+        "Comparar con 0,36"
+      ],
+      "interpretation": "La dirección del cambio depende de la convención del exponente.",
+      "limitations": [
+        "Entradas normalizadas y no negativas."
+      ]
+    },
+    {
+      "title": "Promediar no conmuta",
+      "scenario": "Para x=[0,04;0,64], compara media de raíces con raíz de la media.",
+      "answer": "Media de raíces=(0,2+0,8)/2=0,5; raíz de 0,34≈0,5831.",
+      "reasoning_steps": [
+        "Transformar antes de promediar",
+        "Invertir el orden",
+        "Comparar"
+      ],
+      "interpretation": "La no linealidad cambia resúmenes regionales.",
+      "limitations": [
+        "No se trata de un error numérico de redondeo."
+      ]
+    },
+    {
+      "title": "Tabla discreta explícita",
+      "scenario": "Cuatro niveles tienen cuentas [4,2,1,1]. Calcula T(k)=round(3F(k)) con empates hacia arriba y las cuentas de salida.",
+      "answer": "T=[2,2,3,3]; cuentas de salida [0,0,6,2].",
+      "reasoning_steps": [
+        "Dividir por 8",
+        "Acumular [0,5;0,75;0,875;1]",
+        "Multiplicar por 3 y redondear",
+        "Agrupar cuentas"
+      ],
+      "interpretation": "La salida no es uniforme y reúne niveles diferentes.",
+      "limitations": [
+        "Otras convenciones de ecualización dan tablas distintas."
+      ]
+    },
+    {
+      "title": "La misma salida, distinto dato",
+      "scenario": "La imagen A usa ventana [0,100] y B [0,200]. Ambas muestran y=0,5 en un píxel no saturado. Calcula entradas.",
+      "answer": "A:50; B:100.",
+      "reasoning_steps": [
+        "Invertir cada ventana",
+        "Comparar magnitudes"
+      ],
+      "interpretation": "El mismo gris no representa el mismo valor con límites diferentes.",
+      "limitations": [
+        "Se usa el modelo continuo de ventana."
+      ]
+    },
+    {
+      "title": "Una excepción en el máximo",
+      "scenario": "Datos [10,20,30,1000] se estiran por mínimo y máximo a [0,1]. ¿Qué salida recibe 30?",
+      "answer": "20/990≈0,020202.",
+      "reasoning_steps": [
+        "Restar mínimo 10",
+        "Dividir por amplitud 990"
+      ],
+      "interpretation": "Un extremo alto comprime visualmente los valores ordinarios.",
+      "limitations": [
+        "Excluir 1000 requiere una regla justificada; no basta que resulte incómodo."
+      ]
+    },
+    {
+      "title": "Fondo local",
+      "scenario": "Dos regiones reciben transformaciones locales T1(x)=x² y T2(x)=√x para entradas 0–1. Compara salida de x=0,25.",
+      "answer": "T1=0,0625; T2=0,5.",
+      "reasoning_steps": [
+        "Aplicar ambas funciones",
+        "Comparar mismo dato con distintos contextos"
+      ],
+      "interpretation": "Una transformación local puede impedir comparar brillo como magnitud absoluta.",
+      "limitations": [
+        "Ejemplo ilustrativo de funciones locales, no implementación de CLAHE."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "A. Dos ventanas, una comparación",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Resuelve antes de consultar los criterios de comprobación. Muestra cálculo o argumento y una limitación."
       ],
       "problems": [
-        "Define contraste mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo ecualización modifica o complementa a contraste.",
-        "Propón una prueba que distinga el papel de corrección gamma de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Compara ventanas continuas [0,100] y [25,75] para entradas [0,25,50,75,100]. Dibuja ambas funciones e identifica pérdidas."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Respuesta razonada, cálculo o figura cuando corresponda y revisión de la primera respuesta."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
+        "Solución orientativa: Primera salida [0;0,25;0,5;0,75;1]; segunda [0;0;0,5;1;1]. La estrecha tiene el doble de pendiente interior y une niveles extremos.",
+        "Los ejes deben distinguir entrada y salida; identificar saturación y explicar qué se conserva si el original permanece intacto.",
+        "Rúbrica formativa: 0 = planteamiento incompatible; 1 = método correcto pero desarrollo incompleto; 2 = resultado y justificación coherentes con los criterios anteriores. No es una escala validada."
       ]
     },
     {
-      "title": "Taller de evidencia: mejora visual con preservación de significado",
+      "title": "B. Derivar la invariancia del CNR",
       "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo definir tarea de imagen → auditar adquisición → procesar sin fuga → cuantificar → comparar referencia → analizar generalización.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
+        "Resuelve antes de consultar los criterios de comprobación. Muestra cálculo o argumento y una limitación."
       ],
       "problems": [
-        "Construye una tabla de trazabilidad para contraste, ecualización y corrección gamma.",
-        "Selecciona entre datos originales, metadatos DICOM, fantomas o referencias, métricas, anotaciones y evaluación externa y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
+        "Demuestra la invariancia de |μ1−μ2|/σ ante y=ax+b con a≠0 y sin recorte; explica el fallo con a=0."
       ],
       "deliverables": [
-        "Pipeline de imagen reproducible con informe cuantitativo.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
+        "Respuesta razonada, cálculo o figura cuando corresponda y revisión de la primera respuesta."
       ],
       "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
+        "Solución orientativa: Numerador=|a||μ1−μ2| y denominador=|a|σ; se cancelan para σ>0. Con a=0 todas las salidas son b y el cociente es 0/0, no una mejora.",
+        "Indicar σ>0, mismas regiones, valor absoluto y ausencia de recorte; una transformación no lineal no queda cubierta por la demostración.",
+        "Rúbrica formativa: 0 = planteamiento incompatible; 1 = método correcto pero desarrollo incompleto; 2 = resultado y justificación coherentes con los criterios anteriores. No es una escala validada."
       ]
     },
     {
-      "title": "Reto de transferencia y revisión por pares",
+      "title": "C. Otra ecualización calculable",
       "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
+        "Resuelve antes de consultar los criterios de comprobación. Muestra cálculo o argumento y una limitación."
       ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de mejora visual con preservación de significado y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte contraste, ecualización y corrección gamma.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
+      "problems": [
+        "Para cuentas [1,3,0,4], construye F y T=round(3F), empates hacia arriba. Compara el histograma resultante con el inicial."
       ],
       "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
+        "Respuesta razonada, cálculo o figura cuando corresponda y revisión de la primera respuesta."
       ],
       "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "Solución orientativa: F=[0,125;0,5;0,5;1]; T=[0,2,2,3]; cuentas finales [1,0,3,4]. El nivel de entrada 2 tiene cero muestras, pero su tabla puede definirse.",
+        "Sumar ocho píxeles antes y después, conservar orden no decreciente y no afirmar uniformidad de salida.",
+        "Rúbrica formativa: 0 = planteamiento incompatible; 1 = método correcto pero desarrollo incompleto; 2 = resultado y justificación coherentes con los criterios anteriores. No es una escala validada."
+      ]
+    },
+    {
+      "title": "D. Un control para el realce",
+      "instructions": [
+        "Resuelve antes de consultar los criterios de comprobación. Muestra cálculo o argumento y una limitación."
+      ],
+      "problems": [
+        "Se comparan imágenes sintéticas: una con un objeto de contraste conocido y otra de fondo con ruido. Propón una evaluación de gamma o CLAHE antes de escoger parámetros."
+      ],
+      "deliverables": [
+        "Respuesta razonada, cálculo o figura cuando corresponda y revisión de la primera respuesta."
+      ],
+      "checking_criteria": [
+        "Solución orientativa: Fijar tarea, máscara y métrica; comparar también falsas estructuras en fondo; variar parámetros con una regla registrada; seleccionar en desarrollo y reservar imágenes independientes para evaluación. Conservar original, escala y semilla.",
+        "Identificar al menos un resultado que haría rechazar el ajuste; distinguir mejor apariencia, rendimiento medido y afirmaciones clínicas no evaluadas.",
+        "Rúbrica formativa: 0 = planteamiento incompatible; 1 = método correcto pero desarrollo incompleto; 2 = resultado y justificación coherentes con los criterios anteriores. No es una escala validada."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar contraste como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar contraste en una explicación."
+      "error": "Multiplicar toda la imagen por diez multiplica el CNR por diez.",
+      "correction": "Sin recorte ni cambio de regiones, señal diferencial y desviación del ruido se multiplican por diez: ese CNR permanece igual."
     },
     {
-      "error": "Afirmar que una relación entre contraste y ecualización demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Una ventana estrecha recupera diferencias que el detector saturó.",
+      "correction": "Solo reasigna valores existentes; no separa entradas colapsadas durante la adquisición."
     },
     {
-      "error": "Añadir corrección gamma después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "El valor blanco de una imagen recortada siempre equivale al límite superior exacto.",
+      "correction": "Puede representar cualquier entrada por encima del límite y no tiene inversa única."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir fantoma o imagen sintética, repetición, anotador alternativo, perturbación conocida y conjunto externo, resultados negativos, fallos y cambios de procedimiento."
+      "error": "La fórmula continua de ventana es idéntica a DICOM LINEAR en todos los casos.",
+      "correction": "DICOM LINEAR define ajustes y un caso w=1; comprobar VOI LUT Function y no confundir con LINEAR_EXACT."
     },
     {
-      "error": "Generalizar la conclusión de Transformaciones de intensidad al uso clínico o real.",
-      "correction": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
+      "error": "Gamma menor que uno siempre oscurece.",
+      "correction": "Con la convención y=x^γ en [0,1], eleva valores interiores; otras convenciones pueden usar el recíproco."
+    },
+    {
+      "error": "Transformar la media es igual a promediar tras aplicar gamma.",
+      "correction": "Una transformación no lineal no conmuta en general con el promedio; calcular ambas operaciones por separado."
+    },
+    {
+      "error": "La ecualización discreta siempre da igual número de píxeles en cada nivel.",
+      "correction": "Una tabla determinista puede fusionar niveles y dejar otros vacíos; no garantiza uniformidad exacta."
+    },
+    {
+      "error": "CLAHE conserva una calibración global de intensidades.",
+      "correction": "Depende del contexto local; iguales entradas pueden recibir distintas salidas."
+    },
+    {
+      "error": "La imagen con mayor contraste visual es automáticamente la mejor para cuantificar.",
+      "correction": "Puede amplificar ruido, saturar o alterar escala; evaluar una tarea y conservar datos apropiados para medir."
+    },
+    {
+      "error": "Puedo elegir gamma con el conjunto de prueba y seguir llamándolo evaluación independiente.",
+      "correction": "La elección usa información de prueba; debe separarse ajuste y evaluación final."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar mejora visual con preservación de significado?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "Bajo y=3x+5 sin recorte, ¿cómo cambia una diferencia de 4 unidades?",
+      "answer": "Pasa a 12 unidades.",
+      "reasoning": "El desplazamiento se cancela al restar; la ganancia multiplica la diferencia.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Cómo se relacionan contraste y ecualización?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; corrección gamma puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿En qué condiciones es invertible y=ax+b?",
+      "answer": "Si a es distinto de cero y no se pierde información por recorte, redondeo o representación insuficiente.",
+      "reasoning": "Entonces x=(y−b)/a; la existencia algebraica no garantiza recuperar datos alterados.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre corrección gamma?",
-      "answer": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "Si media=10 y desviación=2, ¿cuáles son tras y=−2x+7?",
+      "answer": "Media −13 y desviación 4.",
+      "reasoning": "La media conserva el signo de a; la desviación usa su valor absoluto.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Por qué una ganancia lineal global no eleva necesariamente el CNR?",
+      "answer": "Sin recorte, la diferencia de medias y la desviación del ruido se multiplican por la misma magnitud.",
+      "reasoning": "Su cociente no cambia si se emplean las mismas regiones y definición de ruido.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "En la ventana continua [20,100], ¿qué salida 0–1 recibe x=60?",
+      "answer": "0,5.",
+      "reasoning": "Se calcula (60−20)/(100−20).",
+      "objective_ids": [
+        "U2-LO2"
+      ]
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Qué información pierde una imagen guardada después de recortar en [20,100]?",
+      "answer": "Las diferencias entre valores inferiores a 20 y entre valores superiores a 100, además de posibles pérdidas numéricas.",
+      "reasoning": "Todos los valores de cada extremo reciben la misma salida.",
+      "objective_ids": [
+        "U2-LO2"
+      ]
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre mejora visual con preservación de significado?",
-      "answer": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Puede implementarse DICOM LINEAR por defecto usando siempre (x−c)/w+0,5?",
+      "answer": "No; LINEAR incorpora ajustes de 0,5 y w−1, y tiene un caso de umbral con w=1.",
+      "reasoning": "La fórmula continua simplificada no representa todas las convenciones del estándar.",
+      "objective_ids": [
+        "U2-LO2"
+      ]
     },
     {
-      "question": "¿Qué demuestra dominio de Transformaciones de intensidad?",
-      "answer": "Producir un pipeline de imagen reproducible con informe cuantitativo auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Por qué ventanas diferentes impiden interpretar igual gris como igual intensidad entre imágenes?",
+      "answer": "Porque cada ventana asigna la misma salida a entradas distintas.",
+      "reasoning": "La escala de representación cambia aunque la paleta sea idéntica.",
+      "objective_ids": [
+        "U2-LO2"
+      ]
+    },
+    {
+      "question": "Con y=x^γ, ¿qué produce γ=0,5 sobre x=0,25?",
+      "answer": "0,5.",
+      "reasoning": "Se aplica la raíz cuadrada; con esta convención eleva valores interiores.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "Con y=x^γ, ¿qué produce γ=2 sobre x=0,25?",
+      "answer": "0,0625.",
+      "reasoning": "El cuadrado reduce valores entre cero y uno.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "¿Puede aplicarse x^0,5 en los reales a intensidades negativas sin más decisiones?",
+      "answer": "No; hay que revisar escala y dominio antes de transformar.",
+      "reasoning": "Una raíz cuadrada negativa no es real; desplazar datos cambia el significado y debe justificarse.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "¿Una potencia creciente conserva la media de una región?",
+      "answer": "No en general, ni conmuta con el promedio.",
+      "reasoning": "Para [0,1], media de raíces=0,5 y raíz de la media≈0,7071.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "Con cuentas [1,1,2] en tres niveles, ¿cuál es la acumulada?",
+      "answer": "[0,25;0,5;1].",
+      "reasoning": "Se divide por cuatro y se suman frecuencias progresivamente.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Por qué la ecualización discreta no garantiza histograma uniforme?",
+      "answer": "Las masas de píxeles de un mismo nivel no se pueden repartir arbitrariamente con una tabla determinista.",
+      "reasoning": "Varios niveles pueden fusionarse y algunos niveles de salida quedar vacíos.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Qué cambia si se incluye mucho más fondo al estimar una ecualización global?",
+      "answer": "Cambia la distribución acumulada y, por tanto, puede cambiar la salida del objeto.",
+      "reasoning": "La transformación depende de las cuentas de toda la región seleccionada.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Una tabla de ecualización que fusiona dos niveles tiene inversa única?",
+      "answer": "No.",
+      "reasoning": "Una misma salida corresponde a dos entradas; se ha perdido distinción.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Qué limita CLAHE antes de redistribuir cuentas?",
+      "answer": "Las cuentas de los histogramas locales según el límite definido por la implementación.",
+      "reasoning": "No recorta directamente toda la imagen con una única ventana global.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Por qué un mismo valor puede verse distinto en dos regiones tras realce local?",
+      "answer": "Porque la transformación depende del vecindario y su distribución.",
+      "reasoning": "No existe necesariamente una única relación global entrada-salida.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Un contraste local mayor demuestra menor ruido?",
+      "answer": "No; el realce también puede expandir fluctuaciones del fondo.",
+      "reasoning": "Hay que examinar una región o control de ruido y medir con una definición explícita.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Por qué no se copia un valor de clip limit entre bibliotecas sin comprobarlo?",
+      "answer": "Porque normalización, tamaño de región y convención del parámetro pueden diferir.",
+      "reasoning": "Un número igual no asegura la misma operación.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Cómo compararías dos ventanas para una misma figura cuantitativa?",
+      "answer": "Conservaría el original y documentaría límites, saturación y tarea; usaría una escala común si comparo magnitudes.",
+      "reasoning": "La apariencia por sí sola no dice qué información se conserva.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
+    },
+    {
+      "question": "¿Dónde se elige gamma si se optimiza la precisión de un algoritmo con etiquetas?",
+      "answer": "En entrenamiento o validación, manteniendo independiente el conjunto final de prueba.",
+      "reasoning": "Usar la prueba para elegir gamma convierte su resultado en parte del ajuste.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
+    },
+    {
+      "question": "¿Normalizar cada imagen con una regla previamente fijada es necesariamente fuga de etiquetas?",
+      "answer": "No, aunque puede cambiar el significado cuantitativo y debe evaluarse como parte del procedimiento.",
+      "reasoning": "La fuga depende de qué información se usa para diseñar o ajustar la regla.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
+    },
+    {
+      "question": "¿Qué debe contener la conclusión de un ensayo con imágenes sintéticas?",
+      "answer": "Tarea, transformación, resultado, condiciones y límites de transferencia.",
+      "reasoning": "Un resultado controlado enseña una propiedad del método, no establece utilidad clínica.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
     }
   ],
   "biomedical_connections": [
-    {
-      "topic": "Aplicación principal",
-      "connection": "Mejora visual con preservación de significado."
-    },
-    {
-      "topic": "Evidencia",
-      "connection": "Datos originales, metadatos dicom, fantomas o referencias, métricas, anotaciones y evaluación externa."
-    },
-    {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
-    },
-    {
-      "topic": "Límite",
-      "connection": "Una imagen visualmente convincente o una métrica global alta no demuestra validez clínica ni robustez fuera de distribución."
-    }
+    "Microscopía cuantitativa: medir sobre una escala justificada y reservar el realce no lineal para una rama documentada.",
+    "Visores de imagen: distinguir calibración de modalidad, ventana y representación final.",
+    "Algoritmos de imagen: fijar preprocesamiento sin optimizarlo con el conjunto reservado de prueba."
   ],
   "sources": [
     {
-      "title": "3D Slicer documentation",
-      "organization": "3D Slicer community",
-      "url": "https://slicer.readthedocs.io/",
-      "type": "documentación",
-      "description": "Visualización, segmentación y flujos reproducibles.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "scikit-image 0.25: exposure",
+      "url": "https://scikit-image.org/docs/0.25.x/api/skimage.exposure.html",
+      "organization": "Documentación oficial del proyecto o estándar indicado",
+      "type": "documentación primaria",
+      "description": "Convención gamma, transformaciones por histograma y parámetros de CLAHE. La versión se identifica para que los valores por defecto no se asuman universales.",
+      "verification_status": "resource_read_2026-10-12"
     },
     {
-      "title": "ITK documentation",
-      "organization": "Insight Toolkit community",
-      "url": "https://docs.itk.org/",
-      "type": "documentación",
-      "description": "Registro, filtrado y segmentación de imágenes.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "scikit-image: Histogram Equalization",
+      "url": "https://scikit-image.org/docs/0.25.x/auto_examples/color_exposure/plot_equalize.html",
+      "organization": "Documentación oficial del proyecto o estándar indicado",
+      "type": "documentación primaria",
+      "description": "Comparación visual entre estiramiento, ecualización y ecualización adaptativa.",
+      "verification_status": "resource_read_2026-10-12"
     },
     {
-      "title": "NIBIB Science Topics",
-      "organization": "NIBIB",
-      "url": "https://www.nibib.nih.gov/science-education/science-topics",
-      "type": "recurso oficial",
-      "description": "Principios de modalidades y tecnologías de imagen.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "DICOM PS3.3: VOI LUT Module, C.11.2",
+      "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_c.11.2.html",
+      "organization": "Documentación oficial del proyecto o estándar indicado",
+      "type": "documentación primaria",
+      "description": "Orden de transformaciones y diferencias entre LINEAR y LINEAR_EXACT. Se consulta el apartado, no se afirma conformidad del curso con todo DICOM.",
+      "verification_status": "resource_read_2026-10-12"
     },
     {
-      "title": "The Cancer Imaging Archive",
-      "organization": "National Cancer Institute",
-      "url": "https://www.cancerimagingarchive.net/",
-      "type": "datos abiertos",
-      "description": "Colecciones de imagen con metadatos de investigación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "scikit-image: tipos y rangos de imagen",
+      "url": "https://scikit-image.org/docs/stable/user_guide/data_types.html",
+      "organization": "Documentación oficial del proyecto o estándar indicado",
+      "type": "documentación primaria",
+      "description": "Convenciones de rango, conversión a flotante y riesgos al reescalar intensidades; comprobar versión y función antes de implementar.",
+      "verification_status": "resource_read_2026-10-12"
     },
     {
-      "title": "MONAI documentation",
-      "organization": "MONAI Consortium",
-      "url": "https://docs.monai.io/",
-      "type": "documentación",
-      "description": "Flujos reproducibles de aprendizaje profundo en imagen médica.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "NumPy: histogram",
+      "url": "https://numpy.org/doc/stable/reference/generated/numpy.histogram.html",
+      "organization": "NumPy Developers",
+      "type": "documentación primaria",
+      "description": "Cuentas, bordes de intervalos y diferencia entre frecuencia y densidad; referencia para implementar y comprobar histogramas de los ejercicios.",
+      "verification_status": "resource_read_2026-10-12"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad reescrita el 12 de octubre de 2026. Revisión interna de explicaciones, cálculos y preguntas; revisión disciplinar y pedagógica independiente pendiente. Los ejercicios sintéticos y la autoevaluación no certifican dominio ni utilidad clínica.",
+  "assessment_blueprint": {
+    "review_date": "2026-10-12",
+    "review_status": "internal_editorial_review_external_review_pending",
+    "enforce_objective_coverage": true,
+    "objectives": [
+      {
+        "id": "U2-LO1",
+        "description": "Calcular transformaciones afines y explicar conservación o pérdida de información."
+      },
+      {
+        "id": "U2-LO2",
+        "description": "Aplicar ventanas y recortes distinguiendo visualización de datos calibrados."
+      },
+      {
+        "id": "U2-LO3",
+        "description": "Interpretar la convención gamma y verificar dominio, extremos y monotonía."
+      },
+      {
+        "id": "U2-LO4",
+        "description": "Construir una ecualización discreta por distribución acumulada y describir sus límites."
+      },
+      {
+        "id": "U2-LO5",
+        "description": "Comparar transformaciones globales y locales, incluidos sus efectos sobre ruido y escala."
+      },
+      {
+        "id": "U2-LO6",
+        "description": "Diseñar una comparación reproducible que preserve significado y evite ajustes con datos de prueba."
+      }
+    ],
+    "note": "Cuatro preguntas abiertas por objetivo; el test de unidad reserva al menos una por cada uno de los seis objetivos antes de completar 15. Alineación editorial interna, no validación psicométrica. El final de la asignatura sigue bloqueado por las unidades 3–6 pendientes."
+  }
 }
