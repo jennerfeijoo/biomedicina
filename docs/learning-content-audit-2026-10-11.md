@@ -6,13 +6,13 @@ Alcance: todas las asignaturas y unidades del corpus JSON publicado. La lectura 
 
 - courses: **94**
 - units: **617**
-- questions: **24381**
-- usable_questions: **22117**
-- blocked_units: **89**
+- questions: **24450**
+- usable_questions: **22237**
+- blocked_units: **87**
 - final_tests_available: **79**
-- unit_tests_available: **528**
-- units_under_60: **539**
-- self_assessments: **5794**
+- unit_tests_available: **530**
+- units_under_60: **537**
+- self_assessments: **5826**
 - answers_without_reasoning: **2804**
 - repeated_prompts_5plus: **4**
 - claim_registries: **20**
@@ -25,7 +25,7 @@ Alcance: todas las asignaturas y unidades del corpus JSON publicado. La lectura 
 2. **P1 — Profundidad desigual.** Presencia de una sección, longitud o ausencia del marcador conocido no demuestran suficiencia. Revisar explicaciones causales, prerrequisitos, cálculos, ejemplos de transferencia y límites por objetivo.
 3. **P1 — Evaluación insuficiente.** Las respuestas breves sin razonamiento necesitan criterios observables y retroalimentación específica. Los bancos iniciales recuperan preguntas y convierten errores, casos y glosarios del contenido existente: no son miles de preguntas nuevas redactadas y validadas.
 4. **P1 — Alineación no demostrada.** Un ID de objetivo enlazado no prueba que el ítem lo evalúe. Por ejemplo, en RM U3, Q03 sobre T2* está enlazado con LO03, que exige predecir contraste con parámetros, mientras LO02 distingue relajaciones. Debe revisarse el vínculo y la demanda cognitiva, no solo su sintaxis.
-5. **P1 — Muestreo de contenidos.** El final representa todas las unidades y reserva comprensión, análisis de errores y casos cuando están disponibles. Un máximo del 40 % corresponde a reconocimiento del glosario. No se afirma cobertura de cada subtema u objetivo para todo el corpus. Modelado y Simulación incorpora una primera matriz revisada internamente: cada test reserva sus objetivos declarados; siguen pendientes revisión externa y pilotaje.
+5. **P1 — Muestreo de contenidos.** El final representa todas las unidades y reserva comprensión, análisis de errores y casos cuando están disponibles. Un máximo del 40 % corresponde a reconocimiento del glosario. No se afirma cobertura de cada subtema u objetivo para todo el corpus. Modelado y Simulación y las unidades 1–2 de Tratamiento Digital de Imágenes incorporan matrices revisadas internamente: sus tests reservan los objetivos declarados; siguen pendientes revisión externa y pilotaje.
 6. **P1 — Dominio práctico.** Un test de 50 preguntas debe acompañarse de problemas nuevos, análisis de datos, interpretación de figuras y proyectos con rúbricas. Aprobar preguntas de reconocimiento no demuestra saber ejecutar un método.
 7. **P2 — Variedad visual.** Añadir preguntas apoyadas en figuras, gráficos y datos reales/sintéticos verificables; no inferir diagnóstico ni magnitudes a partir de imágenes sin metadatos.
 
@@ -135,7 +135,7 @@ Para cada objetivo: definir prerrequisitos → revisar mecanismo y fuentes prima
 | Señales Biomédicas | 6 | 288 | Disponible para práctica | 0 |
 | Simulación y Planificación Quirúrgica | 6 | 153 | Bloqueado | 6 |
 | Sistemas de Ayuda a la Decisión Médica | 6 | 153 | Bloqueado | 6 |
-| Tratamiento Digital de Imágenes | 6 | 153 | Bloqueado | 6 |
+| Tratamiento Digital de Imágenes | 6 | 222 | Bloqueado | 4 |
 | Ciencia Regulatoria, Calidad y Seguridad de Tecnologías Médicas | 8 | 232 | Disponible para práctica | 0 |
 | Comunicación Científica | 6 | 278 | Disponible para práctica | 0 |
 | Economía y Gestión de Empresas | 6 | 310 | Disponible para práctica | 0 |
@@ -949,8 +949,8 @@ Para cada objetivo: definir prerrequisitos → revisar mecanismo y fuentes prima
 
 ### Tratamiento Digital de Imágenes
 
-- **U1: Imagen digital** — 25 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
-- **U2: Transformaciones de intensidad** — 26 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
+- **U1: Imagen digital** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Sin alertas de los indicadores examinados; revisión científica pendiente.
+- **U2: Transformaciones de intensidad** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Sin alertas de los indicadores examinados; revisión científica pendiente.
 - **U3: Filtrado espacial** — 26 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
 - **U4: Procesamiento frecuencial** — 26 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
 - **U5: Morfología y segmentación** — 25 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos

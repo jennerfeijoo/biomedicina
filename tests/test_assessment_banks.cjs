@@ -47,3 +47,17 @@ for(let seed=0;seed<100;seed++){
 assert.throws(()=>core.select(modelingBanks,35,'insufficient-coverage'),/objetivo/);
 const missing=JSON.parse(JSON.stringify(modelingBanks[0]));missing.items=missing.items.filter(q=>!q.objectiveIds?.includes('U1-LO1'));
 assert.throws(()=>core.select([missing],15,'missing-objective'),/objetivo/);
+
+// Partial rewrite: two usable unit banks must not silently unlock the final.
+const imageFoundations=index.courses.find(c=>c.id==='tratamiento-digital-imagenes');
+assert.equal(imageFoundations.final_test_available,false);
+for(const u of imageFoundations.units){
+ const b=core.buildBank(JSON.parse(fs.readFileSync(u.source)));
+ if(u.unit<=2){
+  assert.equal(b.blocked,false);assert.equal(b.items.length,60);assert.equal(b.requiredObjectives.length,6);
+  for(let seed=0;seed<40;seed++){
+   const qs=core.select([b],15,'image-foundations-'+seed);check(qs,15,[u.unit]);
+   for(const id of b.requiredObjectives)assert(qs.some(q=>q.objectiveIds?.includes(id)),id);
+  }
+ } else assert.equal(b.blocked,true);
+}
