@@ -339,6 +339,7 @@ def render_worked_examples(unit: dict[str, Any]) -> str:
     for index, example in enumerate(examples, start=1):
         title = str(example.get("title") or f"Ejemplo {index}").strip()
         scenario = str(example.get("scenario") or "").strip()
+        answer = str(example.get("answer") or "").strip()
         steps = as_text_list(example.get("reasoning_steps"))
         interpretation = str(example.get("interpretation") or example.get("conclusion") or "").strip()
         raw_limitations = example.get("limitations")
@@ -355,6 +356,8 @@ def render_worked_examples(unit: dict[str, Any]) -> str:
         if steps:
             rendered.append("        <h4>Razonamiento paso a paso</h4>")
             rendered.append(render_text_list(steps, ordered=True, css_class="case-steps"))
+        if answer:
+            rendered.append(f"        <p><strong>Solución.</strong> {esc(answer)}</p>")
         if interpretation:
             rendered.append(f"        <p><strong>Interpretación.</strong> {esc(interpretation)}</p>")
         if limitations:

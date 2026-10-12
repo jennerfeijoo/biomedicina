@@ -15,6 +15,7 @@
     const available=value==='final'?c.final_test_available:units[0]?.unit_test_available;
     $('bank-summary').textContent=available ? `${units.reduce((s,u)=>s+u.questions,0)} preguntas candidatas en el banco. Se seleccionarán ${value==='final'?50:15} sin repetición dentro del intento. Revisión disciplinar pendiente.` :
       'Evaluación pendiente: esta selección incluye contenido de plantilla o un banco insuficiente. Consulta la auditoría y las lecciones disponibles.';
+    if(available && units.every(u=>u.reserved_objectives>0)) $('bank-summary').textContent+=` La selección reserva al menos una pregunta para cada uno de los ${units.reduce((s,u)=>s+u.reserved_objectives,0)} objetivos mapeados internamente. Esto no acredita dominio.`;
     $('exam-start').disabled=!available || loading;
   }
   function updateScopes(){
@@ -52,7 +53,7 @@
   function summaryText(){
     const objective=questions.filter(q=>q.options), open=questions.filter(q=>!q.options);
     const correct=objective.filter(q=>answers[q.id]===q.answer).length;
-    const rated=open.filter(q=>ratings[q.id]!==undefined);
+    const rated=open.filter(q=>answers[q.id]?.trim() && ratings[q.id]!==undefined);
     return `Corrección automática (reconocimiento): ${correct}/${objective.length}. Respuestas abiertas: ${rated.length}/${open.length} autoevaluadas${rated.length?`; ${rated.reduce((s,q)=>s+ratings[q.id],0)}/${rated.length*2} puntos autoasignados`:''}. Sin responder: ${questions.length-progress()}. Estas medidas no equivalen entre sí ni certifican dominio.`;
   }
   function finishExam(){
@@ -70,7 +71,7 @@
       const link=make('a',`Repasar unidad ${q.unit}`);link.href=new URL(`${course.path.replace(/index\.html$/,'')}unidades/unidad-${String(q.unit).padStart(2,'0')}.html#teoria`,root);box.append(link);
       if(!q.options){const label=make('label','Autoevaluación con la rúbrica');label.htmlFor=`rate-${i}`;const select=make('select');select.id=`rate-${i}`;
         for(const [value,text]of [['','Sin evaluar'],['0','0 · Ausente o incorrecta'],['1','1 · Parcial o sin justificación'],['2','2 · Correcta y justificada']]){const option=make('option',text);option.value=value;select.append(option);}
-        if(!answers[q.id]?.trim()){ratings[q.id]=0;select.value='0';select.disabled=true;}
+        if(!answers[q.id]?.trim()){select.value='';select.disabled=true;label.textContent='Sin respuesta · no autoevaluada';}
         select.onchange=()=>{if(select.value==='')delete ratings[q.id];else ratings[q.id]=Number(select.value);score.textContent=summaryText();};box.append(label,select);
       }
       host.append(box);
