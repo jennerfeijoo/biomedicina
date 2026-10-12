@@ -25,3 +25,25 @@ function check(qs,n,expectedUnits){
 }
 assert.throws(()=>core.select([],50,'empty'));assert.throws(()=>core.select([{unit:1,blocked:false,items:[]}],50,'short'));
 console.log(JSON.stringify({finals,units,items}));
+
+// This course has an internally reviewed blueprint: all 36 declared objectives
+// must appear, rather than inferring coverage from unit presence alone.
+const modeling=index.courses.find(c=>c.id==='modelado-simulacion-biomedicina');
+const modelingBanks=modeling.units.map(u=>core.buildBank(JSON.parse(fs.readFileSync(u.source))));
+for(const bank of modelingBanks){
+ assert.equal(bank.items.length,60);assert.equal(bank.requiredObjectives.length,6);
+ for(let seed=0;seed<40;seed++){
+  const qs=core.select([bank],15,'unit-objectives-'+seed);
+  for(const id of bank.requiredObjectives)assert(qs.some(q=>q.objectiveIds?.includes(id)),id);
+ }
+}
+for(let seed=0;seed<100;seed++){
+ const qs=core.select(modelingBanks,50,'final-objectives-'+seed);check(qs,50,[1,2,3,4,5,6]);
+ for(const b of modelingBanks){
+  for(const id of b.requiredObjectives)assert(qs.some(q=>q.unit===b.unit&&q.objectiveIds?.includes(id)),id);
+  for(const kind of ['common_errors','worked_examples'])assert(qs.some(q=>q.unit===b.unit&&q.kind===kind));
+ }
+}
+assert.throws(()=>core.select(modelingBanks,35,'insufficient-coverage'),/objetivo/);
+const missing=JSON.parse(JSON.stringify(modelingBanks[0]));missing.items=missing.items.filter(q=>!q.objectiveIds?.includes('U1-LO1'));
+assert.throws(()=>core.select([missing],15,'missing-objective'),/objetivo/);

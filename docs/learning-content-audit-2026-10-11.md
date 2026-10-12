@@ -6,13 +6,13 @@ Alcance: todas las asignaturas y unidades del corpus JSON publicado. La lectura 
 
 - courses: **94**
 - units: **617**
-- questions: **24174**
-- usable_questions: **21757**
-- blocked_units: **95**
-- final_tests_available: **78**
-- unit_tests_available: **522**
-- units_under_60: **545**
-- self_assessments: **5698**
+- questions: **24381**
+- usable_questions: **22117**
+- blocked_units: **89**
+- final_tests_available: **79**
+- unit_tests_available: **528**
+- units_under_60: **539**
+- self_assessments: **5794**
 - answers_without_reasoning: **2804**
 - repeated_prompts_5plus: **4**
 - claim_registries: **20**
@@ -25,7 +25,7 @@ Alcance: todas las asignaturas y unidades del corpus JSON publicado. La lectura 
 2. **P1 — Profundidad desigual.** Presencia de una sección, longitud o ausencia del marcador conocido no demuestran suficiencia. Revisar explicaciones causales, prerrequisitos, cálculos, ejemplos de transferencia y límites por objetivo.
 3. **P1 — Evaluación insuficiente.** Las respuestas breves sin razonamiento necesitan criterios observables y retroalimentación específica. Los bancos iniciales recuperan preguntas y convierten errores, casos y glosarios del contenido existente: no son miles de preguntas nuevas redactadas y validadas.
 4. **P1 — Alineación no demostrada.** Un ID de objetivo enlazado no prueba que el ítem lo evalúe. Por ejemplo, en RM U3, Q03 sobre T2* está enlazado con LO03, que exige predecir contraste con parámetros, mientras LO02 distingue relajaciones. Debe revisarse el vínculo y la demanda cognitiva, no solo su sintaxis.
-5. **P1 — Muestreo de contenidos.** El final representa todas las unidades y reserva comprensión, análisis de errores y casos cuando están disponibles. Un máximo del 40 % corresponde a reconocimiento del glosario. No se afirma cobertura de cada subtema u objetivo: falta una matriz de especificación revisada.
+5. **P1 — Muestreo de contenidos.** El final representa todas las unidades y reserva comprensión, análisis de errores y casos cuando están disponibles. Un máximo del 40 % corresponde a reconocimiento del glosario. No se afirma cobertura de cada subtema u objetivo para todo el corpus. Modelado y Simulación incorpora una primera matriz revisada internamente: cada test reserva sus objetivos declarados; siguen pendientes revisión externa y pilotaje.
 6. **P1 — Dominio práctico.** Un test de 50 preguntas debe acompañarse de problemas nuevos, análisis de datos, interpretación de figuras y proyectos con rúbricas. Aprobar preguntas de reconocimiento no demuestra saber ejecutar un método.
 7. **P2 — Variedad visual.** Añadir preguntas apoyadas en figuras, gráficos y datos reales/sintéticos verificables; no inferir diagnóstico ni magnitudes a partir de imágenes sin metadatos.
 
@@ -129,7 +129,7 @@ Para cada objetivo: definir prerrequisitos → revisar mecanismo y fuentes prima
 | Laboratorio de Imágenes Biomédicas | 6 | 433 | Disponible para práctica | 0 |
 | Laboratorio de Señales Biomédicas | 6 | 162 | Disponible para práctica | 0 |
 | Machine Learning Biomédico y Validación de Modelos Clínicos | 8 | 216 | Disponible para práctica | 0 |
-| Modelado y Simulación en Biomedicina | 6 | 153 | Bloqueado | 6 |
+| Modelado y Simulación en Biomedicina | 6 | 360 | Disponible para práctica | 0 |
 | NLP y Recuperación de Información | 6 | 153 | Bloqueado | 6 |
 | Polímeros y Procesamiento de Materiales | 6 | 152 | Bloqueado | 6 |
 | Señales Biomédicas | 6 | 288 | Disponible para práctica | 0 |
@@ -895,12 +895,12 @@ Para cada objetivo: definir prerrequisitos → revisar mecanismo y fuentes prima
 
 ### Modelado y Simulación en Biomedicina
 
-- **U1: Formulación del modelo** — 25 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
-- **U2: Modelos deterministas** — 25 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
-- **U3: Modelos estocásticos y de agentes** — 25 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
-- **U4: Estimación y sensibilidad** — 25 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
-- **U5: Verificación y validación** — 27 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
-- **U6: Simulación para decisiones** — 26 candidatos; 8 autoevaluaciones; 2 casos; 5 fuentes. P0: contenido de plantilla; examen bloqueado; P1: banco inferior a la meta editorial de 60 preguntas por unidad; P1: menos de cuatro casos resueltos
+- **U1: Formulación del modelo** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Revisar profundidad: menos de 1000 palabras de teoría (indicador, no veredicto)
+- **U2: Modelos deterministas** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Revisar profundidad: menos de 1000 palabras de teoría (indicador, no veredicto)
+- **U3: Modelos estocásticos y de agentes** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Revisar profundidad: menos de 1000 palabras de teoría (indicador, no veredicto)
+- **U4: Estimación y sensibilidad** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Revisar profundidad: menos de 1000 palabras de teoría (indicador, no veredicto)
+- **U5: Verificación y validación** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Revisar profundidad: menos de 1000 palabras de teoría (indicador, no veredicto)
+- **U6: Simulación para decisiones** — 60 candidatos; 24 autoevaluaciones; 10 casos; 5 fuentes. Revisar profundidad: menos de 1000 palabras de teoría (indicador, no veredicto)
 
 ### NLP y Recuperación de Información
 

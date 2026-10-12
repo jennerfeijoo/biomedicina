@@ -6,386 +6,679 @@
   "slug": "modelos-deterministas",
   "title": "Modelos deterministas",
   "status": "review",
-  "purpose": "Integrar EDO, compartimentos, estado y parámetros para resolver un caso de simulación de farmacocinética y fisiología con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Resolver modelos deterministas de compartimentos y distinguir comportamiento del sistema, aproximación numérica y error de formulación.",
   "learning_objectives": [
-    "Definir EDO, compartimentos y estado y parámetros mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte EDO con compartimentos y delimite el papel de estado y parámetros.",
-    "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-    "Resolver y comunicar un caso sobre simulación de farmacocinética y fisiología con incertidumbre y límites.",
-    "Transferir el método de Modelos deterministas a un escenario nuevo y justificar qué debe revalidarse."
+    "Derivar y resolver eliminación e incorporación de primer orden.",
+    "Formular transferencias entre compartimentos respetando conservación.",
+    "Analizar equilibrio, estabilidad y restricciones físicas.",
+    "Aplicar Euler y evaluar convergencia frente a una solución analítica.",
+    "Escoger un integrador y tolerancias de acuerdo con escalas y observables.",
+    "Interpretar las limitaciones de una trayectoria determinista."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Modelos deterministas",
+      "heading": "Eliminación, entrada y solución analítica",
       "paragraphs": [
-        "La unidad «Modelos deterministas» sitúa EDO, compartimentos y estado y parámetros dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Modelado y Simulación en Biomedicina, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Modelos deterministas» en Modelado y Simulación en Biomedicina, «EDO», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Modelos deterministas», «compartimentos», aporta otra dimensión al problema de Modelado y Simulación en Biomedicina: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con EDO debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Modelos deterministas» en Modelado y Simulación en Biomedicina, «estado y parámetros», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Un modelo determinista produce la misma trayectoria si se mantienen ecuaciones, entradas, parámetros y condiciones iniciales, dejando aparte diferencias de cálculo. No afirma que el organismo sea determinista ni que los parámetros sean conocidos. Es una representación condicional. Empezamos con cantidad A, eliminación de primer orden kA y una entrada constante u en un compartimento bien mezclado.",
+        "Sin entrada, separar variables en dA/dt=−kA e integrar da A(t)=A₀ exp(−kt). Para k positivo la cantidad es positiva y decrece; su derivada inicial es −kA₀. La semivida se obtiene imponiendo A/A₀=1/2: t½=ln(2)/k. Es constante en este modelo porque la pérdida depende proporcionalmente de la cantidad presente, no de una cantidad fija por hora.",
+        "Con entrada constante, dA/dt=u−kA tiene solución A(t)=u/k+(A₀−u/k)exp(−kt), para k>0. La cantidad se aproxima al equilibrio A*=u/k. Si el volumen V es constante y k=CL/V, C*=u/CL. Esta identidad se deduce del balance; no convierte un cálculo ilustrativo en una pauta de administración clínica.",
+        "Los cambios de entrada exigen resolver por tramos conservando el estado al cambiar de régimen. Al apagar u, la eliminación comienza desde la cantidad alcanzada entonces. Un aporte instantáneo idealizado se representa como salto de A, no como una entrada finita mantenida durante todo el paso. Hay que especificar si las mediciones ocurren antes o después del salto."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Modelos deterministas.",
-        "Relacionar EDO, compartimentos y estado y parámetros mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
-      ]
-    },
-    {
-      "heading": "Método, evidencia y controles",
-      "paragraphs": [
-        "Para «Modelos deterministas» dentro de Modelado y Simulación en Biomedicina, el flujo recomendado es idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Modelado y Simulación en Biomedicina, la evidencia pertinente incluye cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre EDO o compartimentos debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Modelos deterministas», los controles mínimos son equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Modelado y Simulación en Biomedicina, la incertidumbre de «Modelos deterministas» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
-      ],
-      "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: simulación de farmacocinética y fisiología",
-      "paragraphs": [
-        "En la unidad «Modelos deterministas» de Modelado y Simulación en Biomedicina, el caso conductor es simulación de farmacocinética y fisiología. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Modelos deterministas» conecta EDO con compartimentos y utiliza estado y parámetros como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «simulación de farmacocinética y fisiología» en Modelado y Simulación en Biomedicina, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Modelos deterministas» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de simulación de farmacocinética y fisiología y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "La trayectoria es condicional a los supuestos.",
+        "La semivida no es 1/k.",
+        "El equilibrio requiere balance neto cero.",
+        "Las discontinuidades necesitan tratamiento explícito."
       ],
       "equations": [
         {
-          "latex": "\\sum \\mathbf{F}=m\\mathbf{a}",
-          "meaning": "Balance de fuerzas para el sistema definido; requiere declarar marco de referencia, cuerpo libre y fuerzas externas.",
+          "latex": "A(t)=\\frac{u}{k}+\\left(A_0-\\frac{u}{k}\\right)e^{-kt}",
+          "meaning": "Solución de un compartimento con entrada y eliminación constantes, k>0.",
           "variables": {
-            "m": "masa",
-            "\\mathbf{a}": "aceleración"
+            "A_0": "cantidad inicial",
+            "u": "entrada de cantidad por tiempo",
+            "k": "constante positiva de eliminación",
+            "t": "tiempo"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de simulación de farmacocinética y fisiología antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Dos compartimentos, equilibrio y física",
       "paragraphs": [
-        "La reproducibilidad de «Modelos deterministas» en Modelado y Simulación en Biomedicina requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Modelos deterministas» es esta: una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica. Por ello, la entrega de Modelado y Simulación en Biomedicina separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Modelos deterministas» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de EDO, compartimentos y estado y parámetros debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Modelado y Simulación en Biomedicina.",
-        "El producto de dominio será un modelo mecánico documentado con verificación y límites sobre simulación de farmacocinética y fisiología. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Modelado y Simulación en Biomedicina como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "En dos compartimentos de cantidades A₁ y A₂, una transferencia lineal puede escribirse k₁₂A₁ hacia el segundo y k₂₁A₂ hacia el primero. Si la eliminación ocurre desde el primero, dA₁/dt=u−(k₁₂+k₁₀)A₁+k₂₁A₂ y dA₂/dt=k₁₂A₁−k₂₁A₂. Los coeficientes tienen unidades de inverso de tiempo; las cantidades y volúmenes no deben mezclarse sin transformar las ecuaciones.",
+        "Al sumar ambas ecuaciones, d(A₁+A₂)/dt=u−k₁₀A₁. La cancelación de transferencias internas es una comprobación útil del modelo y del código. Sin entrada ni eliminación, el total debe conservarse. Los valores individuales sí pueden variar hasta equilibrar flujos; equilibrio no significa ausencia de intercambio microscópico o macroscópico entre regiones.",
+        "Para estudiar estabilidad local de un equilibrio se perturban los estados y se observa si la perturbación decae. En el modelo escalar u−kA, una desviación δ satisface dδ/dt=−kδ y desaparece para k>0. En sistemas lineales, las partes reales negativas de los autovalores implican estabilidad asintótica. Un autovalor nulo requiere más análisis y puede reflejar una cantidad conservada.",
+        "La positividad es una restricción física cuando los estados son cantidades. Con tasas no negativas, el campo de un sistema compartimental apropiado no debe empujar un estado cero hacia cantidades negativas. Si la solución numérica produce valores negativos importantes, conviene revisar ecuaciones y paso de integración antes de recortarlos a cero: el recorte puede ocultar un fallo y alterar conservación."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un modelo mecánico documentado con verificación y límites que pueda ser auditado y corregido."
+        "Los intercambios aparecen con signos opuestos.",
+        "La suma ofrece una prueba de conservación.",
+        "Estabilidad describe perturbaciones del equilibrio.",
+        "Positividad y conservación deben comprobarse juntas."
+      ]
+    },
+    {
+      "heading": "Euler: precisión, estabilidad y convergencia",
+      "paragraphs": [
+        "Euler explícito aproxima la derivada con Aₙ₊₁=Aₙ+h f(tₙ,Aₙ). Para eliminación pura resulta Aₙ₊₁=(1−kh)Aₙ. Es fácil de implementar y permite entender que resolver una ecuación no equivale a evaluarla una sola vez. La trayectoria aproximada depende del paso h aunque el problema físico esté completamente definido.",
+        "En la ecuación de prueba con k>0, la estabilidad asintótica de Euler exige |1−kh|<1, es decir 0<kh<2. Para evitar alternancia de signos y preservar cantidades no negativas se necesita además kh≤1. Así, un paso puede ser estable pero físicamente inadecuado. En kh=2 aparece oscilación sin decaimiento y no estabilidad asintótica.",
+        "La convergencia se estudia manteniendo el mismo tiempo final y reduciendo h. En condiciones regulares Euler tiene error global de primer orden: aproximadamente se divide por dos cuando se divide h por dos, dentro del régimen asintótico. No basta comparar dos curvas a simple vista. Se calcula el error contra una solución analítica o se comparan varias resoluciones y la salida de interés.",
+        "La precisión numérica no arregla el modelo. Un millón de pasos resuelve con mayor precisión las ecuaciones elegidas, pero no incorpora saturación, retrasos o heterogeneidad ausentes. Conviene separar error de discretización, incertidumbre de parámetros, error de observación y discrepancia estructural. Cada componente requiere una intervención distinta para reducirlo."
+      ],
+      "key_points": [
+        "Euler aproxima la derivada local.",
+        "Estabilidad y positividad no son equivalentes.",
+        "Comparar pasos al mismo tiempo final.",
+        "Resolver mejor no corrige ecuaciones inadecuadas."
+      ],
+      "figures": [
+        {
+          "id": "MOD-U02-FIG01",
+          "title": "Estabilidad y positividad",
+          "asset_path": "assets/figures/modelado-simulacion-biomedicina/unit-02.svg",
+          "width": 1200,
+          "height": 800,
+          "alt_text": "Comparación analítica de Euler con pasos 0,5 y 1,5 h para k=1 h⁻¹. El paso mayor alterna signos aunque decae en magnitud.",
+          "caption": "Comparación analítica de Euler con pasos 0,5 y 1,5 h para k=1 h⁻¹. El paso mayor alterna signos aunque decae en magnitud.",
+          "attribution": "Elaboración propia de CitoNauta a partir de ecuaciones del ejercicio; datos sintéticos",
+          "license": "CC BY-NC 4.0",
+          "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+          "sources": [
+            {
+              "title": "Código y ecuaciones reproducibles de las seis figuras",
+              "url": "https://github.com/jennerfeijoo/biomedicina/blob/main/scripts/build_modeling_figures.py"
+            }
+          ],
+          "guided_observation": [
+            {
+              "question": "¿Por qué la curva naranja es físicamente inadmisible?",
+              "answer": "Representa cantidades negativas. Su factor de avance es −0,5: estabilidad en magnitud no garantiza positividad."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Integradores, eventos y escalas múltiples",
+      "paragraphs": [
+        "Los métodos adaptativos ajustan pasos internos según estimaciones de error. En solve_ivp, RK45 es una opción inicial para muchos problemas no rígidos; Radau o BDF pueden ser adecuados ante rigidez. La rigidez aparece cuando escalas rápidas obligan a pasos de estabilidad muy pequeños aunque la salida evolucione lentamente. La elección debe comprobarse en el problema, no por prestigio del algoritmo.",
+        "Las tolerancias absolutas y relativas tienen papeles distintos. Un control local del tipo atol+rtol·|y| evita exigir error relativo indefinido cerca de cero. Estados con escalas diferentes pueden necesitar tolerancias absolutas distintas. Esas tolerancias no son un intervalo de confianza ni garantizan por sí solas el error global o la exactitud de un observable derivado.",
+        "Los tiempos solicitados en t_eval indican dónde almacenar la solución, no fuerzan todos los pasos internos. Un evento busca raíces de una función, por ejemplo C−C_umbral, y necesita definir dirección y si detiene la integración. Cruces múltiples dentro de un paso pueden pasar inadvertidos. Saltos conocidos de entrada se resuelven mejor separando intervalos que confiando en que el integrador los descubra.",
+        "El cuaderno reproducible registra ecuaciones, unidades, estado inicial, integrador, tolerancias, eventos y comparación de refinamiento. Una tabla de cantidad total y mínimo de cada estado complementa la figura. Para trasladar el modelo a datos reales se requieren estimación e identificación, desarrolladas en la unidad 4, y evidencia de verificación y validación, tratada en la unidad 5."
+      ],
+      "key_points": [
+        "Elegir método según escalas y evidencia numérica.",
+        "Tolerancia local no equivale a incertidumbre biológica.",
+        "Los tiempos de salida no son los pasos internos.",
+        "Verificar eventos y restricciones físicas."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "EDO",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Modelo determinista",
+      "definition": "Representación que fija una trayectoria dadas las mismas condiciones, entradas y parámetros."
     },
     {
-      "term": "compartimentos",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Ecuación diferencial ordinaria",
+      "definition": "Relación entre estados y derivadas respecto a una única variable independiente."
     },
     {
-      "term": "estado y parámetros",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Problema de valor inicial",
+      "definition": "Sistema dinámico acompañado de estados especificados en el instante de partida."
     },
     {
-      "term": "Modelos deterministas",
-      "definition": "Dominio de estudio que integra EDO, compartimentos, estado y parámetros para resolver un problema delimitado y verificable."
+      "term": "Eliminación de primer orden",
+      "definition": "Pérdida cuya tasa es proporcional a la cantidad presente."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de simulación de farmacocinética y fisiología usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Semivida",
+      "definition": "Tiempo necesario para reducir a la mitad una cantidad en las condiciones del modelo."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Equilibrio",
+      "definition": "Estado en el que las derivadas se anulan bajo entradas fijas."
     },
     {
-      "term": "Evidencia",
-      "definition": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Estabilidad asintótica",
+      "definition": "Propiedad por la que perturbaciones suficientemente pequeñas decaen hacia un equilibrio."
     },
     {
-      "term": "Control",
-      "definition": "Equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Autovalor",
+      "definition": "Escalar que caracteriza la acción de una matriz en una dirección propia y ayuda a analizar dinámica lineal."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Invariante",
+      "definition": "Magnitud que permanece constante a lo largo de una evolución bajo condiciones especificadas."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Positividad",
+      "definition": "Propiedad que mantiene no negativos los estados que representan cantidades no negativas."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Euler explícito",
+      "definition": "Método que avanza usando la pendiente evaluada al inicio de cada paso."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Paso de integración",
+      "definition": "Intervalo temporal utilizado para avanzar una solución numérica."
+    },
+    {
+      "term": "Error global",
+      "definition": "Diferencia acumulada entre solución numérica y exacta en un punto del intervalo."
+    },
+    {
+      "term": "Rigidez",
+      "definition": "Situación en la que ciertas escalas del problema imponen restricciones severas de estabilidad a métodos explícitos."
+    },
+    {
+      "term": "Tolerancia absoluta",
+      "definition": "Escala de error local admisible que mantiene sentido cerca de estados nulos."
+    },
+    {
+      "term": "Evento",
+      "definition": "Condición definida por una raíz que se detecta durante una integración."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Modelos deterministas",
-      "scenario": "Un equipo propone estudiar simulación de farmacocinética y fisiología, pero su pregunta mezcla EDO, compartimentos y estado y parámetros sin definir unidades, referencias ni resultado admisible.",
+      "title": "Decaimiento exacto",
+      "scenario": "A₀=100 mg, k=0,2 h⁻¹, t=5 h, u=0. Calcula A.",
+      "answer": "36,7879 mg aproximadamente.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de EDO, compartimentos y estado y parámetros.",
-        "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y registrar procedencia y condiciones.",
-        "Predefinir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "kt=1",
+        "Evaluar 100e⁻¹"
       ],
-      "interpretation": "El resultado defendible es un modelo mecánico documentado con verificación y límites trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "Permanece aproximadamente el 36,8 %.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre EDO y compartimentos en el caso de simulación de farmacocinética y fisiología; una condición vinculada con estado y parámetros podría producir el mismo patrón.",
+      "title": "Semivida numérica",
+      "scenario": "k=0,2 h⁻¹. Calcula t½.",
+      "answer": "3,4657 h aproximadamente.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar estado y parámetros como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Imponer e^(−kt)=1/2",
+        "Dividir ln(2) entre 0,2"
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "No son 5 h.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Entrada hacia equilibrio",
+      "scenario": "A₀=0, u=10 mg/h, k=0,2 h⁻¹. Calcula A a 5 h y su equilibrio.",
+      "answer": "A(5)=31,6060 mg; A*=50 mg.",
+      "reasoning_steps": [
+        "Usar (u/k)(1−e^(−kt))",
+        "Comparar con u/k"
+      ],
+      "interpretation": "Aún no se alcanzó el equilibrio.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Apagar una entrada",
+      "scenario": "Al apagar u hay 40 mg y k=0,1 h⁻¹. Calcula cantidad 3 h después.",
+      "answer": "29,6327 mg.",
+      "reasoning_steps": [
+        "Reiniciar tiempo del tramo",
+        "Evaluar 40e^(−0,3)"
+      ],
+      "interpretation": "Se conserva la continuidad del estado al apagar.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Paso físicamente imposible",
+      "scenario": "A₀=10 mg, k=1 h⁻¹; Euler usa h=1,5 h. Calcula A₁.",
+      "answer": "−5 mg, resultado físicamente inadmisible.",
+      "reasoning_steps": [
+        "Factor 1−kh=−0,5",
+        "Multiplicar por 10"
+      ],
+      "interpretation": "Estabilidad en magnitud no basta.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Refinamiento de Euler",
+      "scenario": "A₀=1, k=1, t final=1. Compara h=0,5 y 0,25 con e⁻¹.",
+      "answer": "0,25 y 0,31640625 frente a 0,36787944.",
+      "reasoning_steps": [
+        "Calcular (1−h)^(1/h)",
+        "Errores absolutos 0,11787944 y 0,05147319"
+      ],
+      "interpretation": "El refinamiento acerca a la solución exacta.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Intercambio instantáneo",
+      "scenario": "A₁=20 mg, A₂=10 mg, k₁₂=0,3, k₂₁=0,2, k₁₀=0,1 h⁻¹, u=0. Calcula derivadas.",
+      "answer": "dA₁/dt=−6 mg/h; dA₂/dt=4 mg/h; total −2 mg/h.",
+      "reasoning_steps": [
+        "Transferencia de ida 6 y vuelta 2",
+        "Restar eliminación 2 en el primero",
+        "Sumar"
+      ],
+      "interpretation": "La pérdida total coincide con k₁₀A₁.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Umbral de concentración",
+      "scenario": "C₀=8 mg/L, k=0,5 h⁻¹, umbral 2 mg/L. Calcula cruce exacto.",
+      "answer": "t=2,7726 h aproximadamente.",
+      "reasoning_steps": [
+        "Resolver e^(−0,5t)=1/4",
+        "Usar ln(4)/0,5"
+      ],
+      "interpretation": "Dos semividas reducen a una cuarta parte.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Equilibrio de concentración",
+      "scenario": "u=12 mg/h, CL=3 L/h, V=6 L. Calcula C*, A* y k.",
+      "answer": "C*=4 mg/L; A*=24 mg; k=0,5 h⁻¹.",
+      "reasoning_steps": [
+        "C*=u/CL",
+        "A*=VC*",
+        "k=CL/V"
+      ],
+      "interpretation": "Cada resultado conserva sus propias unidades.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Sin eliminación",
+      "scenario": "A₀=5 mg, u=2 mg/h, k=0; evalúa a 4 h.",
+      "answer": "A=13 mg.",
+      "reasoning_steps": [
+        "Integrar dA/dt=2",
+        "Sumar 5+2·4"
+      ],
+      "interpretation": "No existe equilibrio finito con esa entrada positiva.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Taller de transferencia con soluciones justificadas",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Resuelve primero sin consultar las soluciones de los casos. Conserva unidades, supuestos y pasos intermedios.",
+        "Entrega los ocho problemas con una comprobación independiente y una limitación específica."
       ],
       "problems": [
-        "Define EDO mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo compartimentos modifica o complementa a EDO.",
-        "Propón una prueba que distinga el papel de estado y parámetros de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Implementa Euler para A₀=1, k=1 hasta t=1 con h=1/8, 1/16 y 1/32; compara errores y cocientes.",
+        "Deriva C(t) para volumen constante a partir de A(t), identificando k=CL/V.",
+        "Suma los balances de tres compartimentos conectados en cadena y verifica la cancelación de intercambios.",
+        "Compara un salto de 10 mg con una entrada de 10 mg/h durante una hora; explica por qué difieren sus trayectorias.",
+        "Resuelve entrada constante durante 2 h seguida de eliminación durante 3 h sin reiniciar la cantidad en cero.",
+        "Usa dos tolerancias y dos métodos para la misma salida final; registra cantidad mínima y conservación.",
+        "Construye un ejemplo de Euler estable pero negativo y explica por qué no representa una cantidad física.",
+        "Diseña un evento de cruce descendente y comprueba su tiempo contra una solución analítica."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Cuaderno con ecuaciones, cálculos, figuras y discusión de discrepancias.",
+        "Respuesta revisada después de comparar con los casos y criterios de la unidad."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: simulación de farmacocinética y fisiología",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para EDO, compartimentos y estado y parámetros.",
-        "Selecciona entre cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Modelo mecánico documentado con verificación y límites.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de simulación de farmacocinética y fisiología y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte EDO, compartimentos y estado y parámetros.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "0: falta el mecanismo o el planteamiento es incompatible con los supuestos.",
+        "1: planteamiento correcto con cálculo, justificación o límite incompleto.",
+        "2: mecanismo, desarrollo, unidades o criterios y comprobación coherentes.",
+        "La autoevaluación orienta el estudio; una entrega revisada por otra persona aporta evidencia adicional."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar EDO como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar EDO en una explicación."
+      "error": "La semivida es 1/k.",
+      "correction": "Es ln(2)/k; 1/k es el tiempo hasta una fracción e⁻¹."
     },
     {
-      "error": "Afirmar que una relación entre EDO y compartimentos demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Equilibrio significa que no hay transferencias.",
+      "correction": "Puede haber flujos opuestos iguales y derivadas nulas."
     },
     {
-      "error": "Añadir estado y parámetros después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "El intercambio A₁→A₂ se resta en ambas ecuaciones.",
+      "correction": "Se resta del origen y se suma al destino."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Todo paso estable preserva cantidades positivas.",
+      "correction": "Euler con 1<kh<2 es estable en magnitud pero alterna signos."
     },
     {
-      "error": "Generalizar la conclusión de Modelos deterministas al uso clínico o real.",
-      "correction": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+      "error": "Elegir más tiempos de salida reduce necesariamente el error del integrador.",
+      "correction": "Compruebe pasos, tolerancias y refinamiento, no solo densidad de la gráfica."
+    },
+    {
+      "error": "Una tolerancia numérica es un intervalo de confianza.",
+      "correction": "Controla una estimación de error del algoritmo, no incertidumbre estadística."
+    },
+    {
+      "error": "Un estado negativo se arregla ocultándolo en la figura.",
+      "correction": "Investigue formulación, tolerancias y paso; informe el fallo."
+    },
+    {
+      "error": "Un aporte instantáneo se puede extender arbitrariamente un paso entero.",
+      "correction": "Defina un salto o una entrada de duración y cantidad conservadas."
+    },
+    {
+      "error": "La solución analítica valida la biología.",
+      "correction": "Verifica cálculos para una ecuación, que debe contrastarse con datos."
+    },
+    {
+      "error": "Todos los problemas deben resolverse con el mismo integrador.",
+      "correction": "Compare métodos apropiados para rigidez, eventos y precisión requerida."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar simulación de farmacocinética y fisiología?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Por qué la semivida de primer orden no depende de A₀?",
+      "answer": "Al imponer A/A₀=1/2, A₀ se cancela y queda ln(2)/k.",
+      "reasoning": "Es consecuencia de la proporcionalidad, no una propiedad de toda eliminación.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Cómo se relacionan EDO y compartimentos?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; estado y parámetros puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Qué ocurre si k=0 en presencia de entrada constante u?",
+      "answer": "A=A₀+ut.",
+      "reasoning": "No se usa u/k; el balance se integra directamente.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre estado y parámetros?",
-      "answer": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Se alcanza exactamente A*=u/k en un tiempo finito desde otro estado?",
+      "answer": "No en el modelo continuo ideal con k>0; se aproxima asintóticamente.",
+      "reasoning": "El término exponencial no se anula en un tiempo finito.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Cómo continúas la solución tras apagar una entrada a t₁?",
+      "answer": "Usando A(t₁) como condición inicial del tramo con u=0.",
+      "reasoning": "Reiniciar en cero perdería cantidad sin un flujo que lo explique.",
+      "objective_ids": [
+        "U2-LO1"
+      ]
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "En dos compartimentos con entrada u al primero, intercambio interno y eliminación k₁₀A₁ solo desde el primero, ¿cuál es el balance total?",
+      "answer": "d(A₁+A₂)/dt=u−k₁₀A₁.",
+      "reasoning": "Los términos k₁₂A₁ y k₂₁A₂ se cancelan por ser internos.",
+      "objective_ids": [
+        "U2-LO2"
+      ]
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Pueden existir flujos entre compartimentos en equilibrio?",
+      "answer": "Sí, si los flujos opuestos se compensan.",
+      "reasoning": "Derivada nula exige flujo neto cero, no cada flujo cero.",
+      "objective_ids": [
+        "U2-LO2"
+      ]
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre simulación de farmacocinética y fisiología?",
-      "answer": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "Si k₁₂ tiene unidades h⁻¹, ¿debe multiplicar A₁ o C₁ en un balance de mg/h?",
+      "answer": "A₁, salvo que se introduzca explícitamente el volumen correspondiente.",
+      "reasoning": "k₁₂A₁ tiene mg/h y k₁₂C₁ no.",
+      "objective_ids": [
+        "U2-LO2"
+      ]
     },
     {
-      "question": "¿Qué demuestra dominio de Modelos deterministas?",
-      "answer": "Producir un modelo mecánico documentado con verificación y límites auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué verifica sumar ecuaciones antes de simular?",
+      "answer": "Que transferencias internas y pérdidas externas estén contabilizadas coherentemente.",
+      "reasoning": "Detecta signos o términos duplicados incluso antes de elegir integrador.",
+      "objective_ids": [
+        "U2-LO2"
+      ]
+    },
+    {
+      "question": "¿Por qué A*=u/k es estable para k positivo?",
+      "answer": "Una perturbación δ evoluciona como δ(0)e^(−kt).",
+      "reasoning": "El factor exponencial reduce su magnitud.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "¿Qué indica un autovalor con parte real positiva en un sistema lineal?",
+      "answer": "Una dirección de perturbación que crece, por lo que el equilibrio es inestable.",
+      "reasoning": "La solución contiene un factor exponencial creciente.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "¿Permite un autovalor cero concluir estabilidad asintótica?",
+      "answer": "No.",
+      "reasoning": "Puede haber conservación o direcciones sin decaimiento; se requiere examinar el sistema.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "¿Por qué no debe corregirse automáticamente toda cantidad negativa recortándola?",
+      "answer": "Puede ocultar un paso inadecuado o una ecuación errónea y modificar balances.",
+      "reasoning": "La corrección visual no explica el origen del fallo.",
+      "objective_ids": [
+        "U2-LO3"
+      ]
+    },
+    {
+      "question": "Para Euler con kh=1,5, ¿la trayectoria decae y conserva positividad?",
+      "answer": "Decae en magnitud pero alterna signos; no conserva positividad.",
+      "reasoning": "El factor de avance es −0,5.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Qué pasa con Euler si kh=2?",
+      "answer": "Alterna con magnitud constante y no converge al equilibrio.",
+      "reasoning": "El factor es −1, en el borde de estabilidad.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Qué se mantiene fijo al comparar h y h/2?",
+      "answer": "El problema, condiciones iniciales y tiempo final de evaluación.",
+      "reasoning": "Cambiar el horizonte impediría atribuir diferencias al paso.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Qué patrón apoya convergencia de primer orden?",
+      "answer": "Errores que aproximadamente se reducen a la mitad al dividir h por dos.",
+      "reasoning": "El patrón debe observarse en el régimen de refinamiento adecuado.",
+      "objective_ids": [
+        "U2-LO4"
+      ]
+    },
+    {
+      "question": "¿Por qué un método explícito puede ser lento en un problema rígido?",
+      "answer": "La estabilidad puede exigir pasos mucho menores que la escala de la salida buscada.",
+      "reasoning": "Una componente rápida limita el avance aunque ya apenas contribuya a la salida.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Qué diferencia hay entre t_eval y los pasos internos?",
+      "answer": "t_eval fija tiempos de salida; el integrador adaptativo elige sus propios pasos.",
+      "reasoning": "Más puntos dibujados no demuestran mayor precisión de integración.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Por qué usar tolerancia absoluta cerca de cero?",
+      "answer": "La escala relativa se vuelve muy pequeña y no basta para controlar razonablemente el error.",
+      "reasoning": "atol aporta una referencia de magnitud independiente de y.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Qué revisar si un evento se cruza y no se detecta?",
+      "answer": "Definición, dirección, tamaño de paso y posibles cruces múltiples.",
+      "reasoning": "Detectar cambios entre pasos puede perder raíces internas.",
+      "objective_ids": [
+        "U2-LO5"
+      ]
+    },
+    {
+      "question": "¿Una curva determinista excluye incertidumbre en sus parámetros?",
+      "answer": "No; pueden simularse múltiples curvas condicionadas a distintos parámetros.",
+      "reasoning": "Determinismo de la evolución y conocimiento de parámetros son dimensiones distintas.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
+    },
+    {
+      "question": "¿Una tolerancia de 10⁻⁸ demuestra precisión fisiológica de ocho decimales?",
+      "answer": "No.",
+      "reasoning": "Control numérico local y error de representación del organismo no son equivalentes.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
+    },
+    {
+      "question": "¿Qué debe acompañar una curva de dos compartimentos para revisar conservación?",
+      "answer": "El balance de la cantidad total y flujos externos acumulados.",
+      "reasoning": "Una figura de un solo estado no muestra todas las transferencias.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
+    },
+    {
+      "question": "¿Qué evidencia falta para extrapolar una eliminación lineal a cantidades muy altas?",
+      "answer": "Que la proporcionalidad se mantenga en ese rango, sin saturación relevante.",
+      "reasoning": "Una solución exacta solo es exacta para la ecuación elegida.",
+      "objective_ids": [
+        "U2-LO6"
+      ]
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Simulación de farmacocinética y fisiología."
+      "topic": "Resultado de aprendizaje U2-LO1",
+      "connection": "Derivar y resolver eliminación e incorporación de primer orden."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental."
+      "topic": "Resultado de aprendizaje U2-LO2",
+      "connection": "Formular transferencias entre compartimentos respetando conservación."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "topic": "Resultado de aprendizaje U2-LO3",
+      "connection": "Analizar equilibrio, estabilidad y restricciones físicas."
     },
     {
-      "topic": "Límite",
-      "connection": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+      "topic": "Resultado de aprendizaje U2-LO4",
+      "connection": "Aplicar Euler y evaluar convergencia frente a una solución analítica."
+    },
+    {
+      "topic": "Resultado de aprendizaje U2-LO5",
+      "connection": "Escoger un integrador y tolerancias de acuerdo con escalas y observables."
+    },
+    {
+      "topic": "Resultado de aprendizaje U2-LO6",
+      "connection": "Interpretar las limitaciones de una trayectoria determinista."
     }
   ],
   "sources": [
     {
-      "title": "SimTK",
-      "organization": "Stanford University",
-      "url": "https://simtk.org/",
-      "type": "plataforma abierta",
-      "description": "Software y proyectos de modelado biomédico.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "solve_ivp",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Problemas de valor inicial, métodos, tolerancias y eventos; documentación de software, no validación fisiológica.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
       "title": "Computational Modeling",
       "organization": "NIBIB",
       "url": "https://www.nibib.nih.gov/science-education/science-topics/computational-modeling",
-      "type": "recurso oficial",
-      "description": "Modelos físicos y computacionales en biomedicina.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "type": "fuente primaria o documentación oficial",
+      "description": "Introducción a modelos mecanísticos, basados en datos e híbridos; no demuestra validez de los ejemplos sintéticos.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "FEBio User Manual",
-      "organization": "FEBio",
-      "url": "https://help.febio.org/",
-      "type": "documentación",
-      "description": "Elementos finitos para biomecánica y tejidos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Assessing the Credibility of Computational Modeling and Simulation in Medical Device Submissions",
+      "organization": "FDA",
+      "url": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/assessing-credibility-computational-modeling-and-simulation-medical-device-submissions",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Página de la guía final de 2023: credibilidad para un uso definido y enfoque según riesgo; ámbito de modelos físicos y mecanísticos en dispositivos.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "SOFA Framework",
-      "organization": "SOFA Consortium",
-      "url": "https://www.sofa-framework.org/",
-      "type": "software abierto",
-      "description": "Simulación interactiva de sistemas deformables.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "curve_fit",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Mínimos cuadrados no lineales, ponderación y límites de la covarianza local.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "IT'IS Virtual Population",
-      "organization": "IT'IS Foundation",
-      "url": "https://itis.swiss/virtual-population/virtual-population/overview/",
-      "type": "modelos anatómicos",
-      "description": "Modelos humanos computacionales con documentación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Strengthening the reporting of empirical simulation studies: STRESS",
+      "organization": "Monks y colaboradores; registro EQUATOR",
+      "url": "https://www.equator-network.org/reporting-guidelines/strengthening-the-reporting-of-empirical-simulation-studies-introducing-the-stress-guidelines/",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Ficha bibliográfica y acceso a listas de reporte para eventos discretos, dinámica de sistemas y agentes; no es una certificación.",
+      "verification_status": "resource_read_2026-10-11"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad reescrita el 11 de octubre de 2026 con cálculos sintéticos comprobados y preguntas revisadas internamente. Sigue en revisión disciplinar y pedagógica; ni el contenido ni los tests certifican dominio completo. Pendientes revisión independiente, pilotaje y análisis de las respuestas del alumnado.",
+  "assessment_blueprint": {
+    "review_date": "2026-10-11",
+    "review_status": "internal_editorial_review_external_review_pending",
+    "objectives": [
+      {
+        "id": "U2-LO1",
+        "description": "Derivar y resolver eliminación e incorporación de primer orden."
+      },
+      {
+        "id": "U2-LO2",
+        "description": "Formular transferencias entre compartimentos respetando conservación."
+      },
+      {
+        "id": "U2-LO3",
+        "description": "Analizar equilibrio, estabilidad y restricciones físicas."
+      },
+      {
+        "id": "U2-LO4",
+        "description": "Aplicar Euler y evaluar convergencia frente a una solución analítica."
+      },
+      {
+        "id": "U2-LO5",
+        "description": "Escoger un integrador y tolerancias de acuerdo con escalas y observables."
+      },
+      {
+        "id": "U2-LO6",
+        "description": "Interpretar las limitaciones de una trayectoria determinista."
+      }
+    ],
+    "note": "Alineación manual interna: cuatro autoevaluaciones abiertas por cada uno de los seis objetivos. El test reserva una por objetivo y unidad antes de añadir errores, casos y otras preguntas. Esto garantiza representación de objetivos declarados, no de todos los subtemas ni dominio. Pendientes revisión disciplinar externa y pilotaje.",
+    "enforce_objective_coverage": true
+  }
 }

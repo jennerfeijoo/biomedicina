@@ -6,386 +6,678 @@
   "slug": "modelos-estocasticos-y-de-agentes",
   "title": "Modelos estocásticos y de agentes",
   "status": "review",
-  "purpose": "Integrar azar, transición de estados, heterogeneidad para resolver un caso de estudio de poblaciones celulares o procesos asistenciales con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Construir y evaluar simulaciones estocásticas, de eventos y de agentes, distinguiendo variabilidad del sistema y error Monte Carlo.",
   "learning_objectives": [
-    "Definir azar, transición de estados y heterogeneidad mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte azar con transición de estados y delimite el papel de heterogeneidad.",
-    "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-    "Resolver y comunicar un caso sobre estudio de poblaciones celulares o procesos asistenciales con incertidumbre y límites.",
-    "Transferir el método de Modelos estocásticos y de agentes a un escenario nuevo y justificar qué debe revalidarse."
+    "Distinguir variables aleatorias, realizaciones y distribuciones de salida.",
+    "Construir transiciones de Markov y convertir tasas en probabilidades.",
+    "Simular tiempos de eventos bajo riesgos constantes y reconocer sus límites.",
+    "Especificar reglas, interacciones y orden de actualización de agentes.",
+    "Diseñar réplicas independientes y cuantificar error Monte Carlo.",
+    "Documentar y comprobar un experimento estocástico reproducible."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Modelos estocásticos y de agentes",
+      "heading": "Por qué una trayectoria no basta",
       "paragraphs": [
-        "La unidad «Modelos estocásticos y de agentes» sitúa azar, transición de estados y heterogeneidad dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Modelado y Simulación en Biomedicina, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Modelos estocásticos y de agentes» en Modelado y Simulación en Biomedicina, «azar», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Modelos estocásticos y de agentes», «transición de estados», aporta otra dimensión al problema de Modelado y Simulación en Biomedicina: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con azar debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Modelos estocásticos y de agentes» en Modelado y Simulación en Biomedicina, «heterogeneidad», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Una simulación estocástica representa ciertas transiciones mediante variables aleatorias. Dos ejecuciones con iguales parámetros pueden diferir porque emplean distintas realizaciones. La pregunta deja de ser únicamente qué trayectoria aparece y pasa a incluir qué distribución de trayectorias resulta, cuál es la probabilidad de un evento y con qué precisión se ha estimado esa probabilidad.",
+        "Es necesario separar variabilidad aleatoria e incertidumbre sobre parámetros. En un modelo de tiempos de espera, la dispersión entre individuos puede persistir aunque se conozca exactamente la tasa; la incertidumbre sobre esa tasa depende de los datos disponibles. Un experimento anidado puede muestrear primero parámetros plausibles y luego muchas realizaciones para cada conjunto. Mezclar ambas capas sin identificarlas impide saber qué reducir con nuevos datos.",
+        "Un generador pseudoaleatorio produce una secuencia reproducible determinada por su estado. Registrar una semilla permite repetir un experimento junto con algoritmo, versión y reglas de consumo de números. No garantiza que todos los programas o versiones generen exactamente la misma secuencia. Repetir veinte veces una misma semilla desde el mismo estado repite una trayectoria, no aporta veinte réplicas independientes.",
+        "La salida debe definirse antes del muestreo: número de eventos a una hora, tiempo de extinción, máximo de ocupación o media de espera por réplica. No son intercambiables. Un promedio puede ocultar eventos raros importantes; informar cuantiles y probabilidades de superar umbrales ayuda a mostrar esa estructura. Estimar colas pequeñas exige muchas más réplicas que dibujar una curva representativa."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Modelos estocásticos y de agentes.",
-        "Relacionar azar, transición de estados y heterogeneidad mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Distinguir realización y distribución.",
+        "Separar variabilidad y parámetros desconocidos.",
+        "Repetibilidad no crea independencia.",
+        "Elegir la salida antes de simular."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "Cadenas de Markov y tiempos de espera",
       "paragraphs": [
-        "Para «Modelos estocásticos y de agentes» dentro de Modelado y Simulación en Biomedicina, el flujo recomendado es idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Modelado y Simulación en Biomedicina, la evidencia pertinente incluye cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre azar o transición de estados debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Modelos estocásticos y de agentes», los controles mínimos son equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Modelado y Simulación en Biomedicina, la incertidumbre de «Modelos estocásticos y de agentes» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "En una cadena de Markov discreta, la distribución del siguiente estado depende del estado actual bajo las reglas definidas. Una matriz P contiene probabilidades de transición; si se usan distribuciones fila, pₙ₊₁=pₙP. Cada fila debe sumar uno y tener entradas no negativas. La convención fila o columna debe escribirse para evitar transponer inadvertidamente el problema.",
+        "La propiedad de Markov pertenece a la elección de estados. «En tratamiento» puede no bastar si la probabilidad de salida depende de cuánto tiempo se lleva allí; se puede ampliar el estado para incluir duración o usar otro modelo. Un estado absorbente tiene probabilidad uno de permanecer en sí mismo. Ni la absorción ni la independencia temporal deben asumirse por comodidad sin discutir su significado.",
+        "En tiempo continuo, una tasa constante λ tiene unidades de inverso de tiempo. La probabilidad de al menos un evento en Δt es 1−exp(−λΔt), no λΔt salvo aproximación para intervalos pequeños. El tiempo de espera exponencial tiene supervivencia exp(−λt), media 1/λ y puede muestrearse como −ln(U)/λ con U uniforme entre cero y uno, excluidos los extremos.",
+        "Si compiten eventos con tasas constantes a₁,…,a_m en el estado actual, su tasa total es a₀=Σa_j. Se muestrea una espera exponencial con a₀ y se elige el evento j con probabilidad a_j/a₀; después se actualiza el estado y se recalculan tasas. Si a₀=0 no hay próximo evento bajo esas reglas. Tasas que cambian explícitamente con el tiempo requieren un tratamiento adicional."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
-      ]
-    },
-    {
-      "heading": "Aplicación razonada: estudio de poblaciones celulares o procesos asistenciales",
-      "paragraphs": [
-        "En la unidad «Modelos estocásticos y de agentes» de Modelado y Simulación en Biomedicina, el caso conductor es estudio de poblaciones celulares o procesos asistenciales. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Modelos estocásticos y de agentes» conecta azar con transición de estados y utiliza heterogeneidad como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «estudio de poblaciones celulares o procesos asistenciales» en Modelado y Simulación en Biomedicina, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Modelos estocásticos y de agentes» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de estudio de poblaciones celulares o procesos asistenciales y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "Las filas de P son distribuciones.",
+        "La duración puede exigir ampliar el estado.",
+        "Una tasa no es una probabilidad.",
+        "Recalcular propensiones después de cada evento."
       ],
       "equations": [
         {
-          "latex": "\\sum \\mathbf{F}=m\\mathbf{a}",
-          "meaning": "Balance de fuerzas para el sistema definido; requiere declarar marco de referencia, cuerpo libre y fuerzas externas.",
+          "latex": "P(T\\leq\\Delta t)=1-e^{-\\lambda\\Delta t}",
+          "meaning": "Probabilidad de ocurrencia antes de Δt bajo un tiempo de espera exponencial de tasa constante.",
           "variables": {
-            "m": "masa",
-            "\\mathbf{a}": "aceleración"
+            "T": "tiempo de espera",
+            "λ": "tasa positiva",
+            "Δt": "intervalo temporal"
           }
         }
       ],
-      "key_points": [
-        "Delimitar el caso de estudio de poblaciones celulares o procesos asistenciales antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
+      "figures": [
+        {
+          "id": "MOD-U03-FIG01",
+          "title": "Tasa y probabilidad",
+          "asset_path": "assets/figures/modelado-simulacion-biomedicina/unit-03.svg",
+          "width": 1200,
+          "height": 800,
+          "alt_text": "Para riesgo constante, 1−exp(−λΔt) se compara con λΔt. La aproximación supera uno fuera de intervalos pequeños.",
+          "caption": "Para riesgo constante, 1−exp(−λΔt) se compara con λΔt. La aproximación supera uno fuera de intervalos pequeños.",
+          "attribution": "Elaboración propia de CitoNauta a partir de ecuaciones del ejercicio; datos sintéticos",
+          "license": "CC BY-NC 4.0",
+          "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+          "sources": [
+            {
+              "title": "Código y ecuaciones reproducibles de las seis figuras",
+              "url": "https://github.com/jennerfeijoo/biomedicina/blob/main/scripts/build_modeling_figures.py"
+            }
+          ],
+          "guided_observation": [
+            {
+              "question": "¿Por qué el punto λΔt=1 no implica certeza?",
+              "answer": "La probabilidad exacta es 1−e⁻¹≈0,632; la aproximación lineal es insuficiente en ese intervalo."
+            }
+          ]
+        }
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Agentes, contactos y orden de actualización",
       "paragraphs": [
-        "La reproducibilidad de «Modelos estocásticos y de agentes» en Modelado y Simulación en Biomedicina requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Modelos estocásticos y de agentes» es esta: una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica. Por ello, la entrega de Modelado y Simulación en Biomedicina separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Modelos estocásticos y de agentes» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de azar, transición de estados y heterogeneidad debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Modelado y Simulación en Biomedicina.",
-        "El producto de dominio será un modelo mecánico documentado con verificación y límites sobre estudio de poblaciones celulares o procesos asistenciales. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Modelado y Simulación en Biomedicina como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Un modelo de agentes representa entidades con estados y reglas locales de interacción. Las entidades pueden ser células, partículas o personas ficticias, pero la elección debe responder a una hipótesis. La heterogeneidad solo aporta información si se especifican distribuciones, dependencias y mecanismos; asignar atributos al azar no crea por sí solo una explicación biológica.",
+        "La actualización sincrónica calcula todos los cambios desde el estado previo y los aplica conjuntamente. La asincrónica modifica estados durante el recorrido; por tanto, un agente actualizado puede influir inmediatamente en el siguiente. Ninguna es universalmente correcta. Un proceso de contacto que se propaga en cadena dentro de un único paso puede ser un efecto del orden de ejecución, no del fenómeno que se buscaba estudiar.",
+        "Las reglas deben impedir eventos incompatibles: un agente no puede consumir más recurso del disponible ni desaparecer dos veces. Cuando hay competición, se debe especificar desempate, exclusión y conservación. Las condiciones espaciales también importan: una frontera reflectante, absorbente o periódica cambia contactos y salidas. El tamaño de la población y la resolución espacial forman parte del experimento.",
+        "ODD organiza la descripción de modelos de agentes y exige suficiente detalle para entender lo que ejecuta el programa. En este curso se aplica a propósito, entidades, variables, escalas, procesos, planificación, inicialización, entradas y submodelos. El reporte debe describir reglas concretas y decisiones de diseño. Una narración sobre «comportamiento emergente» no sustituye el algoritmo ni las pruebas de sus componentes."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un modelo mecánico documentado con verificación y límites que pueda ser auditado y corregido."
+        "Explicar por qué hacen falta agentes.",
+        "Declarar sincronía y orden de ejecución.",
+        "Respetar exclusión y conservación.",
+        "Describir reglas ejecutables, no solo una historia."
+      ]
+    },
+    {
+      "heading": "Réplicas, precisión y verificación",
+      "paragraphs": [
+        "Las réplicas independientes permiten estimar una media de salida y su error Monte Carlo. Si cada réplica produce un escalar Y y la desviación entre réplicas es s, el error estándar de la media es s/√R para R réplicas independientes con varianza finita. La dispersión s describe trayectorias; s/√R describe precisión de la media estimada. Aumentar R reduce la segunda, no elimina la primera.",
+        "Para una proporción estimada p̂ a partir de R indicadores independientes, una aproximación al error estándar es √[p̂(1−p̂)/R]. Cerca de cero o uno y con pocos eventos, esa aproximación puede ser engañosa. Observar cero eventos no demuestra que su probabilidad sea cero. Se necesitan métodos de intervalo adecuados y una muestra acorde con la rareza que se quiere estudiar.",
+        "En simulaciones de colas o sistemas sostenidos, la inicialización vacía puede sesgar un promedio de régimen permanente. Se distingue una simulación terminante con horizonte sustantivo de otra orientada a régimen estacionario. El calentamiento, el horizonte y la autocorrelación deben justificarse; los puntos consecutivos de una misma trayectoria no son automáticamente réplicas independientes.",
+        "La verificación comienza en casos pequeños: transiciones que suman uno, estados absorbentes que no se abandonan, tasa cero sin eventos, y un evento único con espera media conocida. Después se evalúan reglas combinadas, réplicas y precisión del estimador. Las listas STRESS ayudan a documentar el experimento. Conservar semillas, versiones y salidas por réplica permite reproducir tanto resultados favorables como anomalías."
+      ],
+      "key_points": [
+        "s describe dispersión y s/√R precisión de la media.",
+        "La precisión crece como raíz del número de réplicas.",
+        "No contar instantes correlacionados como réplicas.",
+        "Verificar casos de tasa cero y reglas simples."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "azar",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Realización",
+      "definition": "Una trayectoria concreta obtenida al ejecutar un modelo aleatorio."
     },
     {
-      "term": "transición de estados",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Variabilidad aleatoria",
+      "definition": "Dispersión atribuida al mecanismo probabilístico representado."
     },
     {
-      "term": "heterogeneidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Error Monte Carlo",
+      "definition": "Incertidumbre de estimación causada por usar un número finito de realizaciones."
     },
     {
-      "term": "Modelos estocásticos y de agentes",
-      "definition": "Dominio de estudio que integra azar, transición de estados, heterogeneidad para resolver un problema delimitado y verificable."
+      "term": "Semilla",
+      "definition": "Valor que inicializa el estado de un generador pseudoaleatorio."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de estudio de poblaciones celulares o procesos asistenciales usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Réplica independiente",
+      "definition": "Ejecución cuya aleatoriedad no se reutiliza como si fuera nueva información de otra ejecución."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Cadena de Markov",
+      "definition": "Modelo en el que el siguiente estado depende del actual según transiciones especificadas."
     },
     {
-      "term": "Evidencia",
-      "definition": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Matriz de transición",
+      "definition": "Tabla de probabilidades de pasar entre estados en un intervalo definido."
     },
     {
-      "term": "Control",
-      "definition": "Equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Estado absorbente",
+      "definition": "Estado del que no se sale bajo las reglas del modelo."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Tasa de evento",
+      "definition": "Intensidad por unidad de tiempo que determina un proceso de ocurrencias."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Distribución exponencial",
+      "definition": "Ley de espera con tasa constante y ausencia de memoria."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Propensión",
+      "definition": "Intensidad de ocurrencia de un evento en el estado actual de una simulación."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Agente",
+      "definition": "Entidad individual con variables y reglas de interacción explícitas."
+    },
+    {
+      "term": "Actualización sincrónica",
+      "definition": "Esquema que calcula cambios desde un estado común previo y los aplica juntos."
+    },
+    {
+      "term": "Actualización asincrónica",
+      "definition": "Esquema en que los cambios se aplican durante la secuencia de actualización."
+    },
+    {
+      "term": "Calentamiento",
+      "definition": "Tramo inicial que puede excluirse justificadamente al estudiar régimen estacionario."
+    },
+    {
+      "term": "Autocorrelación",
+      "definition": "Dependencia estadística de una secuencia con valores de la misma secuencia a distintos retardos."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Modelos estocásticos y de agentes",
-      "scenario": "Un equipo propone estudiar estudio de poblaciones celulares o procesos asistenciales, pero su pregunta mezcla azar, transición de estados y heterogeneidad sin definir unidades, referencias ni resultado admisible.",
+      "title": "Tasa a probabilidad",
+      "scenario": "λ=2 h⁻¹ y Δt=0,5 h. Calcula probabilidad de al menos un evento.",
+      "answer": "0,63212056 aproximadamente.",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de azar, transición de estados y heterogeneidad.",
-        "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y registrar procedencia y condiciones.",
-        "Predefinir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "λΔt=1",
+        "Calcular 1−e⁻¹"
       ],
-      "interpretation": "El resultado defendible es un modelo mecánico documentado con verificación y límites trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "La aproximación lineal daría 1 y sería muy imprecisa.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre azar y transición de estados en el caso de estudio de poblaciones celulares o procesos asistenciales; una condición vinculada con heterogeneidad podría producir el mismo patrón.",
+      "title": "Espera transformada",
+      "scenario": "U=e⁻² y λ=4 h⁻¹. Obtén una espera mediante −ln(U)/λ.",
+      "answer": "0,5 h.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar heterogeneidad como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "−ln(e⁻²)=2",
+        "Dividir entre 4"
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "Una realización no tiene por qué coincidir con la media 0,25 h.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Eventos competidores",
+      "scenario": "Tasas 3 y 1 por hora. Calcula espera media y probabilidad del primer tipo.",
+      "answer": "Media 0,25 h; probabilidad 0,75.",
+      "reasoning_steps": [
+        "Sumar tasas: 4",
+        "Invertir total",
+        "Dividir 3 entre 4"
+      ],
+      "interpretation": "La espera usa el total, la elección usa proporciones.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Un paso de Markov",
+      "scenario": "p=(1,0) y P tiene filas (0,8;0,2) y (0,1;0,9). Calcula pP.",
+      "answer": "(0,8;0,2).",
+      "reasoning_steps": [
+        "Multiplicar la distribución fila por P",
+        "Comprobar suma uno"
+      ],
+      "interpretation": "Tras un paso hay incertidumbre sobre el estado.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Dos pasos de Markov",
+      "scenario": "Con distribución fila p=(0,8;0,2) y P de filas (0,8;0,2) y (0,1;0,9), calcula pP.",
+      "answer": "(0,66;0,34).",
+      "reasoning_steps": [
+        "Primera componente 0,8·0,8+0,2·0,1",
+        "Segunda 0,8·0,2+0,2·0,9"
+      ],
+      "interpretation": "La actualización mezcla trayectorias posibles.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Precisión de una media",
+      "scenario": "En 100 réplicas independientes s=6 minutos. Calcula MCSE y el esperado con 400.",
+      "answer": "0,6 y 0,3 minutos.",
+      "reasoning_steps": [
+        "Dividir 6 entre √100",
+        "Dividir 6 entre √400"
+      ],
+      "interpretation": "Cuadruplicar réplicas reduce el error a la mitad.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Proporción estimada",
+      "scenario": "Ocurren 40 eventos en 200 réplicas independientes. Calcula p̂ y su error estándar aproximado.",
+      "answer": "p̂=0,2; SE≈0,028284.",
+      "reasoning_steps": [
+        "Dividir 40/200",
+        "Calcular √(0,2·0,8/200)"
+      ],
+      "interpretation": "Es error del estimador de probabilidad, no variación de una trayectoria.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Cadena de tres agentes",
+      "scenario": "A activo, B y C inactivos; A activa B y B puede activar C con certeza. Actualiza A,B,C secuencialmente o desde el estado previo. ¿Cómo difiere un paso?",
+      "answer": "Asincrónico puede activar B y C; sincrónico activa B pero no C en ese paso.",
+      "reasoning_steps": [
+        "Revisar cuándo se lee el estado de B",
+        "Aplicar cada regla desde el estado correspondiente"
+      ],
+      "interpretation": "La planificación temporal cambia la propagación.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Recursos limitados",
+      "scenario": "Tres agentes solicitan una unidad cada uno; hay dos unidades. ¿Qué regla hace admisible el paso?",
+      "answer": "Seleccionar dos mediante prioridad o sorteo declarado y dejar uno sin asignación.",
+      "reasoning_steps": [
+        "Verificar disponibilidad",
+        "Resolver competencia antes de consumir"
+      ],
+      "interpretation": "No basta restar tres y ocultar el valor −1.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Tasa nula",
+      "scenario": "Un estado tiene a₁=a₂=0 y no hay entradas externas futuras. ¿Qué debe devolver el simulador de eventos?",
+      "answer": "Ningún próximo evento; mantener el estado.",
+      "reasoning_steps": [
+        "a₀=0",
+        "Evitar dividir por cero",
+        "Finalizar hasta el horizonte"
+      ],
+      "interpretation": "Es una prueba de borde reproducible.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Taller de transferencia con soluciones justificadas",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Resuelve primero sin consultar las soluciones de los casos. Conserva unidades, supuestos y pasos intermedios.",
+        "Entrega los ocho problemas con una comprobación independiente y una limitación específica."
       ],
       "problems": [
-        "Define azar mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo transición de estados modifica o complementa a azar.",
-        "Propón una prueba que distinga el papel de heterogeneidad de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Simula 1000 esperas exponenciales de tasa 2 h⁻¹ y compara media con 0,5 h; registra semilla y MCSE.",
+        "Calcula tres pasos adicionales de la matriz del caso resuelto y verifica suma y no negatividad.",
+        "Compara 1−exp(−λΔt) y λΔt para productos 0,01, 0,1 y 1; calcula discrepancias.",
+        "Escribe pseudocódigo de eventos competidores con comprobación de tasa total nula.",
+        "Diseña una regla de agentes con recurso conservado y tres pruebas que detecten consumo duplicado.",
+        "Repite un experimento con semillas independientes y separa desviación de salidas y error de la media.",
+        "Explica qué datos necesitarías para distinguir espera exponencial de dependencia con duración.",
+        "Redacta una descripción ODD breve de los tres agentes y compara actualización sincrónica y asincrónica."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Cuaderno con ecuaciones, cálculos, figuras y discusión de discrepancias.",
+        "Respuesta revisada después de comparar con los casos y criterios de la unidad."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: estudio de poblaciones celulares o procesos asistenciales",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para azar, transición de estados y heterogeneidad.",
-        "Selecciona entre cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Modelo mecánico documentado con verificación y límites.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de estudio de poblaciones celulares o procesos asistenciales y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte azar, transición de estados y heterogeneidad.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "0: falta el mecanismo o el planteamiento es incompatible con los supuestos.",
+        "1: planteamiento correcto con cálculo, justificación o límite incompleto.",
+        "2: mecanismo, desarrollo, unidades o criterios y comprobación coherentes.",
+        "La autoevaluación orienta el estudio; una entrega revisada por otra persona aporta evidencia adicional."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar azar como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar azar en una explicación."
+      "error": "Una tasa de 2 por hora equivale a probabilidad 2.",
+      "correction": "Convierta tasa y horizonte a una probabilidad mediante un modelo de espera."
     },
     {
-      "error": "Afirmar que una relación entre azar y transición de estados demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Las filas de P pueden sumar 1,2 si hay dos eventos posibles.",
+      "correction": "Una distribución de estados excluyentes debe sumar uno."
     },
     {
-      "error": "Añadir heterogeneidad después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "La media entre réplicas es una trayectoria real observada.",
+      "correction": "Es un resumen que puede no coincidir con ninguna realización."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Una semilla demuestra independencia.",
+      "correction": "Controle secuencias y diseño de réplicas; una semilla solo inicializa el generador."
     },
     {
-      "error": "Generalizar la conclusión de Modelos estocásticos y de agentes al uso clínico o real.",
-      "correction": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+      "error": "Más réplicas eliminan variabilidad biológica.",
+      "correction": "Reducen error Monte Carlo del estimador, no la dispersión representada."
+    },
+    {
+      "error": "Un riesgo dependiente de duración siempre es exponencial constante.",
+      "correction": "Amplíe el estado o utilice una distribución o riesgo apropiado."
+    },
+    {
+      "error": "Actualización sincrónica y asincrónica son equivalentes.",
+      "correction": "Compare reglas y propagación dentro de cada paso."
+    },
+    {
+      "error": "Cero eventos observados demuestra riesgo nulo.",
+      "correction": "Informe tamaño muestral e incertidumbre compatible con eventos raros."
+    },
+    {
+      "error": "Los agentes pueden consumir primero y corregir después el recurso negativo.",
+      "correction": "Especifique exclusión, disponibilidad y prioridades antes de actualizar."
+    },
+    {
+      "error": "Se puede eliminar calentamiento sin explicar la pregunta.",
+      "correction": "Justifique si se estudia régimen estacionario o un proceso terminante."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar estudio de poblaciones celulares o procesos asistenciales?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "¿Qué distingue la desviación entre trayectorias del error Monte Carlo de su media?",
+      "answer": "La primera describe variabilidad de Y; el segundo precisión al estimar E[Y].",
+      "reasoning": "Más réplicas reducen error de estimación sin hacer idénticas las trayectorias.",
+      "objective_ids": [
+        "U3-LO1"
+      ]
     },
     {
-      "question": "¿Cómo se relacionan azar y transición de estados?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; heterogeneidad puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Por qué una trayectoria mediana no describe bien un evento raro?",
+      "answer": "Puede no contenerlo aunque tenga consecuencias relevantes.",
+      "reasoning": "La frecuencia y cola de la distribución requieren análisis específico.",
+      "objective_ids": [
+        "U3-LO1"
+      ]
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre heterogeneidad?",
-      "answer": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Cómo separarías incertidumbre de tasa y aleatoriedad de eventos?",
+      "answer": "Muestrearía tasas y realizaría réplicas condicionadas a cada tasa, registrando ambas capas.",
+      "reasoning": "Así se identifica qué dispersión procede de parámetros o realizaciones.",
+      "objective_ids": [
+        "U3-LO1"
+      ]
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Qué pregunta debe preceder a elegir el número de réplicas?",
+      "answer": "Qué salida y precisión se necesitan estimar.",
+      "reasoning": "La media y una probabilidad muy pequeña exigen esfuerzos distintos.",
+      "objective_ids": [
+        "U3-LO1"
+      ]
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "¿Qué debe cumplir cada fila de una matriz de transición estocástica?",
+      "answer": "Valores no negativos con suma uno.",
+      "reasoning": "Es una distribución condicional completa del siguiente estado.",
+      "objective_ids": [
+        "U3-LO2"
+      ]
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "¿Por qué λΔt puede fallar como probabilidad?",
+      "answer": "Puede superar uno y aproxima mal intervalos grandes.",
+      "reasoning": "La expresión exponencial mantiene el rango de probabilidad bajo riesgo constante.",
+      "objective_ids": [
+        "U3-LO2"
+      ]
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre estudio de poblaciones celulares o procesos asistenciales?",
-      "answer": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Qué cambio de estado puede recuperar memoria relevante?",
+      "answer": "Incluir tiempo de permanencia cuando condiciona las transiciones.",
+      "reasoning": "Un estado demasiado agregado puede ocultar dependencias del pasado.",
+      "objective_ids": [
+        "U3-LO2"
+      ]
     },
     {
-      "question": "¿Qué demuestra dominio de Modelos estocásticos y de agentes?",
-      "answer": "Producir un modelo mecánico documentado con verificación y límites auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué representa P_ii=1 en una fila sin otras transiciones?",
+      "answer": "Un estado absorbente.",
+      "reasoning": "Toda la probabilidad se asigna a permanecer en i.",
+      "objective_ids": [
+        "U3-LO2"
+      ]
+    },
+    {
+      "question": "¿Cómo se selecciona entre eventos competidores con tasas constantes a_j?",
+      "answer": "Tras muestrear espera con la suma, elegir j con probabilidad a_j/Σa_j.",
+      "reasoning": "La intensidad relativa determina qué evento ocurre primero.",
+      "objective_ids": [
+        "U3-LO3"
+      ]
+    },
+    {
+      "question": "¿Qué hacer si la suma de propensiones es cero?",
+      "answer": "Detener eventos hasta un cambio externo explícito, si existe.",
+      "reasoning": "No se puede dividir por cero ni muestrear una espera finita de esa tasa.",
+      "objective_ids": [
+        "U3-LO3"
+      ]
+    },
+    {
+      "question": "¿Por qué recalcular propensiones después de un evento?",
+      "answer": "Porque cambia el estado del que dependen las tasas.",
+      "reasoning": "Mantener tasas antiguas puede permitir eventos incompatibles con el estado nuevo.",
+      "objective_ids": [
+        "U3-LO3"
+      ]
+    },
+    {
+      "question": "¿Cuándo es insuficiente usar una espera exponencial de tasa fija?",
+      "answer": "Cuando el riesgo cambia durante la espera o existe memoria no representada.",
+      "reasoning": "La ley exponencial supone riesgo constante en ese tramo.",
+      "objective_ids": [
+        "U3-LO3"
+      ]
+    },
+    {
+      "question": "¿Qué información mínima necesita una regla de contacto?",
+      "answer": "Quién puede contactar, cuándo, con qué probabilidad y qué estados cambian.",
+      "reasoning": "«Los agentes interactúan» no determina un algoritmo reproducible.",
+      "objective_ids": [
+        "U3-LO4"
+      ]
+    },
+    {
+      "question": "¿Por qué el orden asincrónico puede cambiar una propagación?",
+      "answer": "Los cambios tempranos afectan contactos posteriores del mismo paso.",
+      "reasoning": "Una cadena de cambios puede atravesar varios agentes antes del siguiente tiempo.",
+      "objective_ids": [
+        "U3-LO4"
+      ]
+    },
+    {
+      "question": "¿Cómo se trata un recurso solicitado por varios agentes?",
+      "answer": "Con reglas explícitas de disponibilidad y desempate.",
+      "reasoning": "Sin ellas se puede asignar más recurso que el existente.",
+      "objective_ids": [
+        "U3-LO4"
+      ]
+    },
+    {
+      "question": "¿Por qué una frontera periódica no es un detalle gráfico?",
+      "answer": "Conecta bordes opuestos y modifica vecinos y flujos.",
+      "reasoning": "Cambia la topología de interacción del modelo.",
+      "objective_ids": [
+        "U3-LO4"
+      ]
+    },
+    {
+      "question": "¿Cuántas réplicas requiere reducir a la mitad s/√R si s se mantiene?",
+      "answer": "Cuatro veces las réplicas.",
+      "reasoning": "El error disminuye con la raíz de R.",
+      "objective_ids": [
+        "U3-LO5"
+      ]
+    },
+    {
+      "question": "¿Por qué repetir la misma semilla no da réplicas independientes?",
+      "answer": "Reproduce la misma secuencia y trayectoria bajo idéntico código.",
+      "reasoning": "No se añade información aleatoria nueva.",
+      "objective_ids": [
+        "U3-LO5"
+      ]
+    },
+    {
+      "question": "¿Son cien tiempos de una trayectoria cien réplicas?",
+      "answer": "No necesariamente; suelen estar correlacionados.",
+      "reasoning": "La independencia debe justificarse o tratarse con otro estimador.",
+      "objective_ids": [
+        "U3-LO5"
+      ]
+    },
+    {
+      "question": "¿Qué significa obtener cero eventos en cien réplicas?",
+      "answer": "Frecuencia observada cero, no probabilidad verdadera demostrada cero.",
+      "reasoning": "Un evento raro puede no aparecer en una muestra finita.",
+      "objective_ids": [
+        "U3-LO5"
+      ]
+    },
+    {
+      "question": "¿Qué comprobarías primero en un simulador de un único evento?",
+      "answer": "Tasa cero y espera media 1/λ para tasa positiva.",
+      "reasoning": "Son referencias simples con predicciones conocidas.",
+      "objective_ids": [
+        "U3-LO6"
+      ]
+    },
+    {
+      "question": "¿Qué registrar además de una semilla para reproducir una simulación?",
+      "answer": "Algoritmo, versión, inicialización, reglas, parámetros y orden de actualización.",
+      "reasoning": "La semilla no define por sí sola cómo se consumen números aleatorios.",
+      "objective_ids": [
+        "U3-LO6"
+      ]
+    },
+    {
+      "question": "¿Por qué distinguir experimento terminante de estacionario?",
+      "answer": "El horizonte y el tratamiento de la inicialización responden a preguntas diferentes.",
+      "reasoning": "Eliminar un tramo inicial puede ser incorrecto si ese tramo es precisamente el fenómeno estudiado.",
+      "objective_ids": [
+        "U3-LO6"
+      ]
+    },
+    {
+      "question": "¿Un reporte ODD completo prueba que las reglas son biológicamente correctas?",
+      "answer": "No; permite examinarlas y contrastarlas.",
+      "reasoning": "La claridad del algoritmo no sustituye evidencia empírica.",
+      "objective_ids": [
+        "U3-LO6"
+      ]
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Estudio de poblaciones celulares o procesos asistenciales."
+      "topic": "Resultado de aprendizaje U3-LO1",
+      "connection": "Distinguir variables aleatorias, realizaciones y distribuciones de salida."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental."
+      "topic": "Resultado de aprendizaje U3-LO2",
+      "connection": "Construir transiciones de Markov y convertir tasas en probabilidades."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "topic": "Resultado de aprendizaje U3-LO3",
+      "connection": "Simular tiempos de eventos bajo riesgos constantes y reconocer sus límites."
     },
     {
-      "topic": "Límite",
-      "connection": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+      "topic": "Resultado de aprendizaje U3-LO4",
+      "connection": "Especificar reglas, interacciones y orden de actualización de agentes."
+    },
+    {
+      "topic": "Resultado de aprendizaje U3-LO5",
+      "connection": "Diseñar réplicas independientes y cuantificar error Monte Carlo."
+    },
+    {
+      "topic": "Resultado de aprendizaje U3-LO6",
+      "connection": "Documentar y comprobar un experimento estocástico reproducible."
     }
   ],
   "sources": [
     {
+      "title": "The ODD Protocol for Describing Agent-Based and Other Simulation Models (2020)",
+      "organization": "Grimm y colaboradores; JASSS",
+      "url": "https://www.jasss.org/23/2/7.html",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Descripción reproducible de entidades, procesos, programación y decisiones de diseño de modelos de agentes.",
+      "verification_status": "resource_read_2026-10-11"
+    },
+    {
+      "title": "Strengthening the reporting of empirical simulation studies: STRESS",
+      "organization": "Monks y colaboradores; registro EQUATOR",
+      "url": "https://www.equator-network.org/reporting-guidelines/strengthening-the-reporting-of-empirical-simulation-studies-introducing-the-stress-guidelines/",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Ficha bibliográfica y acceso a listas de reporte para eventos discretos, dinámica de sistemas y agentes; no es una certificación.",
+      "verification_status": "resource_read_2026-10-11"
+    },
+    {
       "title": "Computational Modeling",
       "organization": "NIBIB",
       "url": "https://www.nibib.nih.gov/science-education/science-topics/computational-modeling",
-      "type": "recurso oficial",
-      "description": "Modelos físicos y computacionales en biomedicina.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "type": "fuente primaria o documentación oficial",
+      "description": "Introducción a modelos mecanísticos, basados en datos e híbridos; no demuestra validez de los ejemplos sintéticos.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "FEBio User Manual",
-      "organization": "FEBio",
-      "url": "https://help.febio.org/",
-      "type": "documentación",
-      "description": "Elementos finitos para biomecánica y tejidos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Basics: sensitivity analysis",
+      "organization": "SALib",
+      "url": "https://salib.readthedocs.io/en/latest/user_guide/basics.html",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Muestreo, ejecución y análisis; índices de primer orden, interacciones y orden total.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "SOFA Framework",
-      "organization": "SOFA Consortium",
-      "url": "https://www.sofa-framework.org/",
-      "type": "software abierto",
-      "description": "Simulación interactiva de sistemas deformables.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "IT'IS Virtual Population",
-      "organization": "IT'IS Foundation",
-      "url": "https://itis.swiss/virtual-population/virtual-population/overview/",
-      "type": "modelos anatómicos",
-      "description": "Modelos humanos computacionales con documentación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
-    },
-    {
-      "title": "3D Print Exchange",
-      "organization": "National Institutes of Health",
-      "url": "https://3d.nih.gov/",
-      "type": "repositorio abierto",
-      "description": "Modelos tridimensionales biomédicos y educativos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Think before you fit: parameter identifiability, sensitivity and uncertainty in systems biology models",
+      "organization": "Preston y colaboradores (preprint, 2025)",
+      "url": "https://arxiv.org/abs/2508.18853",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Preprint sobre identificabilidad estructural y práctica; lectura complementaria, sin atribuir revisión por pares.",
+      "verification_status": "resource_read_2026-10-11"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad reescrita el 11 de octubre de 2026 con cálculos sintéticos comprobados y preguntas revisadas internamente. Sigue en revisión disciplinar y pedagógica; ni el contenido ni los tests certifican dominio completo. Pendientes revisión independiente, pilotaje y análisis de las respuestas del alumnado.",
+  "assessment_blueprint": {
+    "review_date": "2026-10-11",
+    "review_status": "internal_editorial_review_external_review_pending",
+    "objectives": [
+      {
+        "id": "U3-LO1",
+        "description": "Distinguir variables aleatorias, realizaciones y distribuciones de salida."
+      },
+      {
+        "id": "U3-LO2",
+        "description": "Construir transiciones de Markov y convertir tasas en probabilidades."
+      },
+      {
+        "id": "U3-LO3",
+        "description": "Simular tiempos de eventos bajo riesgos constantes y reconocer sus límites."
+      },
+      {
+        "id": "U3-LO4",
+        "description": "Especificar reglas, interacciones y orden de actualización de agentes."
+      },
+      {
+        "id": "U3-LO5",
+        "description": "Diseñar réplicas independientes y cuantificar error Monte Carlo."
+      },
+      {
+        "id": "U3-LO6",
+        "description": "Documentar y comprobar un experimento estocástico reproducible."
+      }
+    ],
+    "note": "Alineación manual interna: cuatro autoevaluaciones abiertas por cada uno de los seis objetivos. El test reserva una por objetivo y unidad antes de añadir errores, casos y otras preguntas. Esto garantiza representación de objetivos declarados, no de todos los subtemas ni dominio. Pendientes revisión disciplinar externa y pilotaje.",
+    "enforce_objective_coverage": true
+  }
 }

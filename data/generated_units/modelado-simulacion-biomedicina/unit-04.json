@@ -6,386 +6,677 @@
   "slug": "estimacion-y-sensibilidad",
   "title": "Estimación y sensibilidad",
   "status": "review",
-  "purpose": "Integrar ajuste, identificabilidad, análisis local y global para resolver un caso de determinación de parámetros influyentes con evidencia, controles, incertidumbre y comunicación proporcional.",
+  "purpose": "Estimar parámetros sin confundir buen ajuste con identificabilidad y estudiar cómo parámetros e incertidumbres afectan salidas definidas.",
   "learning_objectives": [
-    "Definir ajuste, identificabilidad y análisis local y global mediante entidades, relaciones y condiciones.",
-    "Construir un modelo que conecte ajuste con identificabilidad y delimite el papel de análisis local y global.",
-    "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental de acuerdo con la pregunta.",
-    "Diseñar controles pertinentes a partir de equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-    "Resolver y comunicar un caso sobre determinación de parámetros influyentes con incertidumbre y límites.",
-    "Transferir el método de Estimación y sensibilidad a un escenario nuevo y justificar qué debe revalidarse."
+    "Construir una función de ajuste coherente con el error de observación.",
+    "Distinguir identificabilidad estructural y práctica mediante contraejemplos.",
+    "Calcular e interpretar sensibilidad local con unidades y escalas.",
+    "Diferenciar efectos globales e interacciones bajo supuestos explícitos.",
+    "Propagar incertidumbre preservando dependencias entre parámetros.",
+    "Diseñar mediciones y controles de estimación informativos."
   ],
   "theory_sections": [
     {
-      "heading": "Modelo conceptual de Estimación y sensibilidad",
+      "heading": "Qué se ajusta y qué error se supone",
       "paragraphs": [
-        "La unidad «Estimación y sensibilidad» sitúa ajuste, identificabilidad y análisis local y global dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera. El objetivo no es memorizar tres etiquetas, sino construir un modelo que identifique entidades, escalas, entradas, transformaciones y salidas. Cada afirmación debe conservar el contexto de Modelado y Simulación en Biomedicina, porque cambiar la unidad de observación o el uso previsto puede cambiar por completo la interpretación.",
-        "El primer núcleo de «Estimación y sensibilidad» en Modelado y Simulación en Biomedicina, «ajuste», se entiende así: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Para aplicarlo con rigor se debe indicar qué se observa directamente, qué se calcula y qué se infiere. Esta separación evita presentar una representación, una señal o una categoría como si fuera el fenómeno completo y permite localizar en qué paso aparece cada supuesto.",
-        "El segundo núcleo de «Estimación y sensibilidad», «identificabilidad», aporta otra dimensión al problema de Modelado y Simulación en Biomedicina: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Su relación con ajuste debe formularse con una dirección explícita y una condición de validez. Una relación plausible no basta; es necesario especificar qué comparación, perturbación, medición o derivación permitiría apoyarla y qué resultado la debilitaría.",
-        "El tercer núcleo de «Estimación y sensibilidad» en Modelado y Simulación en Biomedicina, «análisis local y global», completa la unidad: Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas. Integrar los tres núcleos exige reconocer fronteras. El modelo debe declarar qué deja fuera, qué escalas no conecta todavía y qué variables podrían confundir la conclusión. Esa frontera convierte la explicación en una herramienta revisable y no en una narración cerrada."
+        "Estimar parámetros consiste en encontrar valores que hagan compatibles las predicciones con observaciones según un criterio explícito. En y_i=f(t_i,θ)+ε_i, el residuo es r_i=y_i−f(t_i,θ). Los mínimos cuadrados ordinarios minimizan Σr_i². Esa elección pondera todos los residuos en las unidades de y y tiene una interpretación probabilística sencilla con errores independientes, de media cero y varianza común.",
+        "Si cada observación tiene desviación conocida σ_i, minimizar Σ(r_i/σ_i)² pondera por precisión. La cantidad σ_i es una desviación estándar, no una varianza; introducir σ_i² donde la rutina espera σ_i cambia los pesos. Con errores correlacionados se necesita su covarianza y el criterio rᵀΣ⁻¹r, cuando esa matriz es válida e invertible, en lugar de fingir independencia.",
+        "Ajustar log(y) no equivale a ajustar y. La transformación puede ser apropiada para errores multiplicativos positivos, pero cambia la función de pérdida y el significado del sesgo al regresar a la escala original. Además, logaritmos de cero o valores negativos no están definidos. No se debe elegir la transformación solo porque produce una recta más atractiva.",
+        "Un optimizador local devuelve un resultado condicionado a ecuaciones, datos, inicialización, límites y criterio. Conviene probar múltiples puntos iniciales, revisar residuos y comprobar restricciones. La covarianza aproximada que devuelve una rutina puede basarse en linealización cerca del óptimo. Si hay no linealidad fuerte, fronteras o mala identificación, ese resumen puede ser insuficiente incluso cuando el algoritmo informa convergencia."
       ],
       "key_points": [
-        "Distinguir observación, cálculo e inferencia en Estimación y sensibilidad.",
-        "Relacionar ajuste, identificabilidad y análisis local y global mediante condiciones explícitas.",
-        "Declarar escala, unidad de observación y uso previsto antes del método.",
-        "Tratar supuestos y límites como parte del resultado, no como una nota final."
+        "Definir el modelo de observación.",
+        "Ponderar con la escala de error correcta.",
+        "Transformar cambia la pregunta de ajuste.",
+        "Convergencia del optimizador no demuestra identificación."
       ]
     },
     {
-      "heading": "Método, evidencia y controles",
+      "heading": "Identificabilidad: qué permiten aprender los datos",
       "paragraphs": [
-        "Para «Estimación y sensibilidad» dentro de Modelado y Simulación en Biomedicina, el flujo recomendado es idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad. La secuencia obliga a definir el problema antes de elegir una herramienta y a verificar el resultado antes de interpretarlo. En cada transición deben registrarse entradas, unidades, parámetros, versiones y criterios de aceptación, de modo que otra persona pueda reconstruir por qué se tomó cada decisión.",
-        "En esta unidad de Modelado y Simulación en Biomedicina, la evidencia pertinente incluye cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental. No toda fuente responde a la misma pregunta: una definición establece significado, un conjunto de datos permite estimar patrones y una guía puede fijar requisitos de reporte. Por ello, cada afirmación sobre ajuste o identificabilidad debe vincularse al tipo de evidencia capaz de sostenerla y a una referencia localizable.",
-        "Para evaluar «Estimación y sensibilidad», los controles mínimos son equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible. Un control no se añade para decorar el protocolo: debe discriminar entre la explicación principal y al menos una alternativa. Antes de observar el resultado se define qué patrón se espera en cada condición, qué desviación obliga a revisar el procedimiento y qué dato negativo sigue siendo informativo.",
-        "En Modelado y Simulación en Biomedicina, la incertidumbre de «Estimación y sensibilidad» puede aparecer en muestreo, medición, parámetros, procesamiento y elección del modelo. Se informará con intervalos, análisis de sensibilidad, escenarios o justificación cualitativa, según corresponda. La conclusión debe cambiar si una perturbación plausible cambia el resultado; ocultar esa dependencia produciría una seguridad que la evidencia no ofrece."
+        "La identificabilidad estructural pregunta si parámetros distintos pueden producir exactamente las mismas observaciones ideales bajo un diseño definido. Considere z(t)=A(t)/A₀=exp[−(CL/V)t]. Si solo se observa z y no se conoce V por otra vía, los datos identifican la razón k=CL/V, pero no CL y V por separado. Multiplicar ambos por el mismo factor conserva toda la curva.",
+        "La conclusión cambia al modificar lo que se observa. Si se conoce una cantidad inicial administrada y se mide concentración absoluta al inicio bajo los supuestos del modelo, esa información puede identificar V y permitir obtener CL. Por eso no se afirma que un modelo sea identificable sin especificar observables, entradas, condiciones y parámetros conocidos.",
+        "La identificabilidad práctica pregunta cuán bien se estiman parámetros con datos finitos y ruidosos. Aunque exista una solución única ideal, tiempos de muestreo poco informativos, ruido grande o parámetros compensatorios pueden producir un valle muy plano de la función de ajuste. Un intervalo amplio puede reflejar falta de información, no un error del optimizador.",
+        "Se puede inspeccionar perfiles del criterio, fijando un parámetro y reajustando los demás, así como realizar simulaciones de recuperación con datos sintéticos y diseños alternativos. Ninguna herramienta aislada resuelve todos los casos. El preprint recomendado sobre identificabilidad sirve como lectura adicional; en esta unidad las conclusiones del ejemplo CL/V se comprueban algebraicamente, sin depender de un resultado externo no demostrado."
       ],
       "key_points": [
-        "Elegir evidencia de acuerdo con el tipo de afirmación.",
-        "Predefinir controles y resultados esperados antes de inspeccionar la salida.",
-        "Conservar procedencia, parámetros y decisiones intermedias.",
-        "Propagar incertidumbre hasta la conclusión y la recomendación."
+        "Especificar observables e información conocida.",
+        "Una razón identificable no separa sus componentes.",
+        "Datos ideales y datos finitos plantean preguntas distintas.",
+        "Explorar compensaciones, no solo el mínimo."
+      ],
+      "figures": [
+        {
+          "id": "MOD-U04-FIG01",
+          "title": "Una razón no separa sus parámetros",
+          "asset_path": "assets/figures/modelado-simulacion-biomedicina/unit-04.svg",
+          "width": 1200,
+          "height": 800,
+          "alt_text": "Los pares (CL,V)=(2,10) y (4,20), en L/h y L, producen exactamente la misma curva normalizada.",
+          "caption": "Los pares (CL,V)=(2,10) y (4,20), en L/h y L, producen exactamente la misma curva normalizada.",
+          "attribution": "Elaboración propia de CitoNauta a partir de ecuaciones del ejercicio; datos sintéticos",
+          "license": "CC BY-NC 4.0",
+          "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+          "sources": [
+            {
+              "title": "Código y ecuaciones reproducibles de las seis figuras",
+              "url": "https://github.com/jennerfeijoo/biomedicina/blob/main/scripts/build_modeling_figures.py"
+            }
+          ],
+          "guided_observation": [
+            {
+              "question": "¿Se separarían los pares midiendo más veces esta misma salida ideal?",
+              "answer": "No. Ambos mantienen CL/V=0,2 h⁻¹. Hace falta información adicional que rompa la ambigüedad."
+            }
+          ]
+        }
       ]
     },
     {
-      "heading": "Aplicación razonada: determinación de parámetros influyentes",
+      "heading": "Sensibilidad local y análisis global",
       "paragraphs": [
-        "En la unidad «Estimación y sensibilidad» de Modelado y Simulación en Biomedicina, el caso conductor es determinación de parámetros influyentes. El equipo recibe un escenario simulado o datos abiertos y debe transformar una necesidad amplia en una pregunta verificable. Primero define la población, muestra, sistema u objeto; después fija el resultado admisible y los criterios que diferencian descripción, predicción, explicación y decisión.",
-        "La resolución específica de «Estimación y sensibilidad» conecta ajuste con identificabilidad y utiliza análisis local y global como condición o mecanismo que puede modificar la salida. Se construye una tabla de trazabilidad con pregunta, dato o premisa, transformación, control, resultado y límite. Si falta un eslabón, la respuesta no se rellena con intuición: se registra como evidencia pendiente y se propone una prueba discriminante.",
-        "Para el caso «determinación de parámetros influyentes» en Modelado y Simulación en Biomedicina, una relación cuantitativa útil para practicar el razonamiento es la ecuación mostrada en esta sección. No debe aplicarse de forma automática: primero se comprueban definiciones, unidades, rango y supuestos; luego se calcula un caso nominal y un caso límite. La interpretación debe explicar qué representa el número y qué aspectos del caso permanecen fuera del modelo.",
-        "El cierre de «Estimación y sensibilidad» compara la explicación principal con una alternativa razonable. Se pregunta qué observación sería compatible con ambas, qué resultado favorecería una y qué sesgo podría producir una diferencia aparente. La recomendación final se restringe al escenario de determinación de parámetros influyentes y formula el siguiente dato necesario, en lugar de extenderse a pacientes, productos o políticas no evaluados."
+        "La sensibilidad local ∂Y/∂θ_j mide cómo cambia una salida Y alrededor de un punto de parámetros. Sus unidades son las de Y divididas por las de θ_j. Una aproximación central usa [Y(θ+h)−Y(θ−h)]/(2h), manteniendo los demás parámetros fijos. Se comparan varios h porque uno grande mezcla no linealidad y uno demasiado pequeño amplifica redondeo o error del solucionador.",
+        "Si θ_j y Y no son cero, una elasticidad θ_j(∂Y/∂θ_j)/Y permite interpretar cambios relativos pequeños. Para Y=A₀e^(−kt), la sensibilidad respecto a k es −tY y la elasticidad es −kt. El signo indica dirección; la magnitud depende del tiempo. Una salida poco sensible en t=0 puede ser informativa después, aunque una señal demasiado pequeña sea difícil de medir.",
+        "El análisis global explora regiones o distribuciones de parámetros. Su resultado depende de los rangos, distribuciones y dependencias elegidos. En la descomposición de varianza clásica con entradas independientes, un índice de Sobol de primer orden describe contribución aislada y el total incluye interacciones. Un primer orden pequeño no permite descartar una variable que actúa sobre todo en interacción.",
+        "Los índices no equivalen a importancia causal ni a identificabilidad. Un parámetro puede influir mucho en una salida pero compensarse con otro durante el ajuste. SALib separa la generación de diseños, ejecución del modelo y análisis; conservar el orden de las evaluaciones es esencial. Si se cambia el rango de entrada, se ha cambiado la pregunta del análisis de sensibilidad."
+      ],
+      "key_points": [
+        "La derivada local necesita punto y unidades.",
+        "La elasticidad puede fallar cerca de cero.",
+        "El rango y las dependencias definen el análisis global.",
+        "Sensibilidad alta no garantiza estimación única."
       ],
       "equations": [
         {
-          "latex": "\\sum \\mathbf{F}=m\\mathbf{a}",
-          "meaning": "Balance de fuerzas para el sistema definido; requiere declarar marco de referencia, cuerpo libre y fuerzas externas.",
+          "latex": "S_k=\\frac{k}{Y}\\frac{\\partial Y}{\\partial k}=-kt\\quad(Y=A_0e^{-kt})",
+          "meaning": "Elasticidad local de la cantidad respecto a la constante de eliminación, con A₀ y t fijos.",
           "variables": {
-            "m": "masa",
-            "\\mathbf{a}": "aceleración"
+            "S_k": "elasticidad adimensional",
+            "k": "constante de eliminación",
+            "Y": "cantidad predicha",
+            "t": "tiempo"
           }
         }
-      ],
-      "key_points": [
-        "Delimitar el caso de determinación de parámetros influyentes antes de calcular o clasificar.",
-        "Mantener una cadena trazable entre pregunta, evidencia, método y conclusión.",
-        "Comprobar unidades, rango, supuestos y casos límite de cada ecuación.",
-        "Comparar al menos una explicación alternativa y una prueba discriminante."
       ]
     },
     {
-      "heading": "Calidad, transferencia y comunicación",
+      "heading": "Incertidumbre, diseño experimental y comprobaciones",
       "paragraphs": [
-        "La reproducibilidad de «Estimación y sensibilidad» en Modelado y Simulación en Biomedicina requiere datos o premisas accesibles, diccionario de variables, código o procedimiento, versiones, semillas cuando existan, criterios previos y registro de cambios. Repetir el mismo resultado en el mismo archivo es solo el inicio; también debe evaluarse si una persona independiente comprende el flujo y obtiene una conclusión compatible.",
-        "La principal cautela disciplinar al transferir «Estimación y sensibilidad» es esta: una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica. Por ello, la entrega de Modelado y Simulación en Biomedicina separa desempeño técnico, validez científica, utilidad para el uso y consecuencias éticas o regulatorias. Cuando una de esas capas no fue evaluada, se marca explícitamente como pendiente y no se sustituye por una frase de confianza general.",
-        "La comunicación divulgativa de «Estimación y sensibilidad» conserva el mecanismo central sin sobrecargar de jerga. Una explicación breve de ajuste, identificabilidad y análisis local y global debe incluir una idea principal, una comparación concreta y una limitación. La versión académica añade método, magnitud, incertidumbre y fuentes; ambas versiones deben ser coherentes y permitir distinguir evidencia de opinión en Modelado y Simulación en Biomedicina.",
-        "El producto de dominio será un modelo mecánico documentado con verificación y límites sobre determinación de parámetros influyentes. Se considera sólido cuando una persona puede auditar sus fuentes, reconstruir el método, detectar sus límites y decidir qué prueba continúa. La unidad se integra en Modelado y Simulación en Biomedicina como un componente que deberá reutilizarse y revisarse en el proyecto final del curso."
+        "Propagar incertidumbre significa trasladar información incierta de entradas a una distribución o intervalo de salida. Si CL y V provienen de un ajuste conjunto, sus dependencias deben conservarse; muestrearlos independientemente puede generar combinaciones incompatibles con los datos. Las bandas resultantes dependen además de si se incluyen error de medición y discrepancia estructural, que deben declararse.",
+        "Un intervalo para la media predicha no es lo mismo que uno para una nueva observación. Este último suele añadir variabilidad de observación y, según el objetivo, heterogeneidad no incluida en la media. Tampoco basta transformar por separado extremos de varios intervalos marginales y llamarlo intervalo conjunto de confianza. El procedimiento debe corresponder a la cantidad que se comunica.",
+        "El diseño experimental busca observaciones que separen hipótesis o parámetros. En eliminación, mediciones solo en t=0 informan A₀ pero no k; mediciones muy tardías pueden quedar bajo el límite del instrumento. Elegir tiempos requiere equilibrar sensibilidad, ruido y factibilidad. Añadir una medición de volumen puede resolver una ambigüedad que cien mediciones más de una curva normalizada no resuelven.",
+        "Una prueba sintética comienza con parámetros conocidos, genera observaciones bajo un modelo de error declarado y ejecuta el ajuste sin revelar la respuesta. Se compara recuperación, residuos y cobertura en múltiples conjuntos. Recuperar un caso no valida el modelo en el mundo real; sí puede detectar fallos del código o diseños poco informativos. Los resultados deben conservar también intentos que convergieron a soluciones alternativas."
       ],
       "key_points": [
-        "Diferenciar repetibilidad, reproducibilidad, validez y utilidad.",
-        "Separar desempeño técnico de afirmaciones clínicas o regulatorias.",
-        "Adaptar el lenguaje sin perder magnitud, incertidumbre ni límite.",
-        "Entregar un modelo mecánico documentado con verificación y límites que pueda ser auditado y corregido."
+        "Conservar dependencias entre parámetros.",
+        "Diferenciar media y nueva observación.",
+        "Elegir datos que separen parámetros.",
+        "Recuperación sintética verifica el procedimiento, no el organismo."
       ]
     }
   ],
   "glossary": [
     {
-      "term": "ajuste",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Residuo",
+      "definition": "Diferencia entre una observación y su predicción bajo un modelo ajustado."
     },
     {
-      "term": "identificabilidad",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Mínimos cuadrados",
+      "definition": "Criterio que estima parámetros minimizando una suma de residuos al cuadrado."
     },
     {
-      "term": "análisis local y global",
-      "definition": "Concepto de la unidad que debe definirse mediante entidades observables, relaciones, condiciones y límites dentro de un sistema mecánico biológico con geometría, materiales, cargas y condiciones de frontera; su uso exige indicar qué evidencia lo distingue de alternativas."
+      "term": "Ponderación por precisión",
+      "definition": "Escalado de residuos según incertidumbre de las observaciones."
     },
     {
-      "term": "Estimación y sensibilidad",
-      "definition": "Dominio de estudio que integra ajuste, identificabilidad, análisis local y global para resolver un problema delimitado y verificable."
+      "term": "Heterocedasticidad",
+      "definition": "Variación de la dispersión del error entre observaciones o condiciones."
     },
     {
-      "term": "Caso de aplicación",
-      "definition": "Escenario de determinación de parámetros influyentes usado para transferir conceptos sin afirmar validez fuera de las condiciones descritas."
+      "term": "Covarianza de errores",
+      "definition": "Matriz que describe varianzas y dependencias entre errores de observación."
     },
     {
-      "term": "Unidad de observación",
-      "definition": "Entidad sobre la que se registra una medición o atributo y cuya independencia o jerarquía debe declararse."
+      "term": "Identificabilidad estructural",
+      "definition": "Posibilidad de distinguir parámetros con observaciones ideales y un diseño especificado."
     },
     {
-      "term": "Evidencia",
-      "definition": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, seleccionada de acuerdo con la afirmación que se pretende sostener."
+      "term": "Identificabilidad práctica",
+      "definition": "Grado de precisión con que pueden estimarse parámetros con datos finitos y ruidosos."
     },
     {
-      "term": "Control",
-      "definition": "Equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, utilizado para distinguir explicaciones o detectar fallos del procedimiento."
+      "term": "Perfil del criterio",
+      "definition": "Evaluación de la función de ajuste fijando un parámetro y reestimando los demás."
     },
     {
-      "term": "Incertidumbre",
-      "definition": "Conocimiento incompleto sobre una medición, parámetro, modelo o decisión que debe estimarse o describirse y propagarse."
+      "term": "Sensibilidad local",
+      "definition": "Derivada de una salida respecto a un parámetro en un punto dado."
     },
     {
-      "term": "Validez",
-      "definition": "Grado en que el método y la evidencia permiten sostener la interpretación para el uso, la población y las condiciones definidas."
+      "term": "Elasticidad",
+      "definition": "Sensibilidad expresada como razón de cambios relativos locales."
     },
     {
-      "term": "Reproducibilidad",
-      "definition": "Capacidad de reconstruir un resultado con datos o premisas, procedimiento, parámetros, versiones y criterios suficientes."
+      "term": "Diferencia central",
+      "definition": "Aproximación de derivada mediante evaluaciones a ambos lados de un punto."
     },
     {
-      "term": "Transferencia",
-      "definition": "Aplicación razonada de un principio a un contexto nuevo después de comprobar qué supuestos se mantienen y cuáles cambian."
+      "term": "Sensibilidad global",
+      "definition": "Análisis de variación de salidas sobre rangos o distribuciones de entradas."
+    },
+    {
+      "term": "Interacción",
+      "definition": "Efecto conjunto que no se explica mediante la suma de contribuciones individuales aisladas."
+    },
+    {
+      "term": "Índice de primer orden",
+      "definition": "Fracción de varianza atribuida a una entrada aislada en una descomposición de Sobol apropiada."
+    },
+    {
+      "term": "Índice total",
+      "definition": "Medida de contribución de una entrada que incluye sus interacciones en el análisis de Sobol."
+    },
+    {
+      "term": "Propagación de incertidumbre",
+      "definition": "Traslado de incertidumbre de entradas y supuestos hacia salidas del modelo."
     }
   ],
   "worked_examples": [
     {
-      "title": "Del problema amplio a una evidencia verificable en Estimación y sensibilidad",
-      "scenario": "Un equipo propone estudiar determinación de parámetros influyentes, pero su pregunta mezcla ajuste, identificabilidad y análisis local y global sin definir unidades, referencias ni resultado admisible.",
+      "title": "Criterio ponderado",
+      "scenario": "Residuos 2 y 4 mg/L; σ=1 y 2 mg/L. Calcula suma ponderada y ordinaria.",
+      "answer": "Ponderada 8; ordinaria 20 (mg/L)².",
       "reasoning_steps": [
-        "Separar necesidad, pregunta científica, decisión y producto esperado.",
-        "Definir la unidad de observación y el papel específico de ajuste, identificabilidad y análisis local y global.",
-        "Seleccionar cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y registrar procedencia y condiciones.",
-        "Predefinir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible y el patrón esperado en cada control.",
-        "Redactar una conclusión limitada y el dato que permitiría revisarla."
+        "(2/1)²+(4/2)²=8",
+        "2²+4²=20"
       ],
-      "interpretation": "El resultado defendible es un modelo mecánico documentado con verificación y límites trazable; la claridad del modelo precede a cualquier cálculo, clasificación o recomendación.",
+      "interpretation": "Son criterios con distinta escala y ponderación.",
       "limitations": [
-        "El caso simulado no demuestra desempeño en un entorno real.",
-        "La conclusión depende de las definiciones y controles declarados.",
-        "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
       ]
     },
     {
-      "title": "Análisis de sensibilidad y explicación alternativa",
-      "scenario": "El análisis inicial parece apoyar una relación entre ajuste y identificabilidad en el caso de determinación de parámetros influyentes; una condición vinculada con análisis local y global podría producir el mismo patrón.",
+      "title": "Razones indistinguibles",
+      "scenario": "Compara (CL,V)=(2 L/h,10 L) y (4 L/h,20 L) en z=e^(−CL·t/V).",
+      "answer": "Ambas dan k=0,2 h⁻¹ y la misma z para todo t.",
       "reasoning_steps": [
-        "Escribir por separado el resultado observado y la explicación propuesta.",
-        "Representar análisis local y global como condición, covariable, perturbación o fuente de sesgo según el diseño.",
-        "Cambiar una suposición o parámetro plausible y recalcular o reargumentar la conclusión.",
-        "Comparar el patrón esperado bajo la explicación principal y bajo la alternativa.",
-        "Clasificar la conclusión como descriptiva, asociativa, predictiva, causal o de decisión."
+        "Dividir CL/V en cada par",
+        "Sustituir en la curva"
       ],
-      "interpretation": "Una conclusión robusta no es la que permanece idéntica ante cualquier cambio, sino la que muestra con transparencia de qué supuestos depende y qué evidencia la refutaría.",
+      "interpretation": "La observación normalizada no separa los parámetros.",
       "limitations": [
-        "El análisis de sensibilidad solo cubre las perturbaciones evaluadas.",
-        "Una alternativa no descartada reduce la fuerza de la inferencia.",
-        "La transferibilidad necesita evaluación independiente."
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Romper la simetría",
+      "scenario": "Se estima k=0,2 h⁻¹ y se mide V=12 L sin error en este ejercicio. Calcula CL.",
+      "answer": "2,4 L/h.",
+      "reasoning_steps": [
+        "Usar CL=kV",
+        "Comprobar unidades"
+      ],
+      "interpretation": "La información adicional aporta la escala faltante.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Derivada analítica",
+      "scenario": "A₀=100 mg, k=0,2 h⁻¹ y t=5 h. Calcula ∂A/∂k.",
+      "answer": "−183,9397 mg·h aproximadamente.",
+      "reasoning_steps": [
+        "A=100e⁻¹",
+        "Multiplicar por −t"
+      ],
+      "interpretation": "El signo indica menor cantidad con mayor eliminación.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Elasticidad temporal",
+      "scenario": "Para A=A₀e^(−kt), k=0,2 h⁻¹ y t=10 h, calcula elasticidad.",
+      "answer": "−2.",
+      "reasoning_steps": [
+        "S_k=−kt",
+        "Multiplicar −0,2 por 10"
+      ],
+      "interpretation": "Un cambio pequeño de 1 % en k implica aproximadamente −2 % en A.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Sensibilidad de una razón",
+      "scenario": "Y=CL/V, con CL=2 y V=10 en unidades coherentes. Calcula derivadas respecto a CL y V.",
+      "answer": "∂Y/∂CL=0,1; ∂Y/∂V=−0,02, con las unidades respectivas.",
+      "reasoning_steps": [
+        "Derivar CL/V",
+        "Evaluar 1/V y −CL/V²"
+      ],
+      "interpretation": "Dos parámetros afectan la misma razón y pueden compensarse.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Interacción pura",
+      "scenario": "X₁,X₂ son independientes, centradas y con varianzas finitas positivas; Y=X₁X₂. ¿Puede haber varianza con efectos de primer orden nulos?",
+      "answer": "Sí: E[Y dado X₁]=E[Y dado X₂]=0, pero Var(Y)=Var(X₁)Var(X₂)>0.",
+      "reasoning_steps": [
+        "Usar independencia y medias cero",
+        "Comparar medias condicionales y varianza total"
+      ],
+      "interpretation": "La variación procede de interacción.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Dependencia ignorada",
+      "scenario": "Dos pares plausibles son (CL,V)=(2,10) y (4,20). Se recombinan como (2,20) y (4,10). ¿Qué tasas aparecen?",
+      "answer": "0,1 y 0,4 frente a 0,2 en ambos pares originales.",
+      "reasoning_steps": [
+        "Calcular las cuatro razones",
+        "Comparar rangos"
+      ],
+      "interpretation": "Romper dependencia inventa variabilidad de k.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Diseño sin dinámica",
+      "scenario": "Se mide A(t)=A₀e^(−kt) cien veces únicamente en t=0. ¿Qué se aprende sobre k?",
+      "answer": "Nada de esa salida bajo el modelo; A(0)=A₀ para todo k.",
+      "reasoning_steps": [
+        "Sustituir t=0",
+        "Observar que desaparece k"
+      ],
+      "interpretation": "Más precisión inicial no reemplaza tiempos informativos.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
+      ]
+    },
+    {
+      "title": "Propagación acotada",
+      "scenario": "A₀=100 mg, t=5 h, k entre 0,1 y 0,3 h⁻¹; solo k es incierto. Calcula rango de A.",
+      "answer": "Aproximadamente 22,3130 a 60,6531 mg.",
+      "reasoning_steps": [
+        "A disminuye al aumentar k",
+        "Evaluar extremos 100e^(−1,5) y 100e^(−0,5)"
+      ],
+      "interpretation": "Es un rango condicionado, no un intervalo de confianza sin un modelo estadístico adicional.",
+      "limitations": [
+        "Escenario sintético para aprender el método; no representa datos clínicos ni establece decisiones asistenciales."
       ]
     }
   ],
   "guided_activities": [
     {
-      "title": "Pausa de recuperación y explicación",
+      "title": "Taller de transferencia con soluciones justificadas",
       "instructions": [
-        "Responde sin consultar el texto y después corrige con un color distinto.",
-        "Dibuja las relaciones antes de escribir una definición extensa.",
-        "Marca cada elemento como observado, calculado, inferido o pendiente.",
-        "Explica la unidad a una audiencia no especialista en menos de 150 palabras."
+        "Resuelve primero sin consultar las soluciones de los casos. Conserva unidades, supuestos y pasos intermedios.",
+        "Entrega los ocho problemas con una comprobación independiente y una limitación específica."
       ],
       "problems": [
-        "Define ajuste mediante entidad, relación, condición y ejemplo.",
-        "Explica cómo identificabilidad modifica o complementa a ajuste.",
-        "Propón una prueba que distinga el papel de análisis local y global de una explicación alternativa.",
-        "Redacta la afirmación central, la evidencia y la limitación con lenguaje preciso y comprensible."
+        "Ajusta un decaimiento sintético desde tres inicializaciones y compara parámetros y residuos.",
+        "Grafica el criterio de una curva normalizada sobre pares CL,V y localiza la dirección compensatoria.",
+        "Calcula diferencias centrales de ∂A/∂k con tres valores de h y contrasta con −tA.",
+        "Compara sensibilidad en t=0, 1 y 10; discute cómo el ruido modifica la elección de tiempos.",
+        "Propaga dos conjuntos de pares correlacionados y sus recombinaciones independientes; compara salidas.",
+        "Diseña una medición adicional que permita separar CL de V y explicita sus supuestos.",
+        "Genera ruido aditivo y multiplicativo por separado; explica qué ajuste corresponde a cada caso.",
+        "Escribe un informe de incertidumbre que distinga parámetros, observación, estructura y error Monte Carlo."
       ],
       "deliverables": [
-        "Mapa conceptual corregido.",
-        "Explicación breve con una limitación explícita."
+        "Cuaderno con ecuaciones, cálculos, figuras y discusión de discrepancias.",
+        "Respuesta revisada después de comparar con los casos y criterios de la unidad."
       ],
       "checking_criteria": [
-        "Las relaciones tienen dirección.",
-        "No se confunde evidencia con interpretación.",
-        "La explicación conserva el mecanismo central."
-      ]
-    },
-    {
-      "title": "Taller de evidencia: determinación de parámetros influyentes",
-      "instructions": [
-        "Usa exclusivamente datos abiertos, literatura localizable o un escenario sintético sin datos personales.",
-        "Predefine pregunta, unidad de observación, variables, controles y criterio de aceptación.",
-        "Sigue el flujo idealizar sistema → definir coordenadas y cargas → formular balances → resolver → verificar → validar y analizar sensibilidad.",
-        "Conserva cálculos, decisiones, resultados negativos y cambios de versión.",
-        "Compara el resultado con un baseline o una explicación alternativa."
-      ],
-      "problems": [
-        "Construye una tabla de trazabilidad para ajuste, identificabilidad y análisis local y global.",
-        "Selecciona entre cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental y justifica qué afirmación sostiene cada fuente.",
-        "Diseña al menos dos controles a partir de: equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible.",
-        "Ejecuta un caso nominal y un caso límite con unidades o criterios explícitos.",
-        "Realiza un análisis de sensibilidad sobre una decisión, parámetro o supuesto.",
-        "Redacta por separado resultado, interpretación, incertidumbre y siguiente prueba."
-      ],
-      "deliverables": [
-        "Modelo mecánico documentado con verificación y límites.",
-        "Datos o premisas y procedimiento reproducible.",
-        "Registro de controles y discrepancias."
-      ],
-      "checking_criteria": [
-        "Trazabilidad completa.",
-        "Controles discriminantes.",
-        "Procedimiento reproducible.",
-        "Conclusión proporcional a la evidencia."
-      ]
-    },
-    {
-      "title": "Reto de transferencia y revisión por pares",
-      "instructions": [
-        "Cambia una condición importante del caso y anticipa qué parte de la solución deja de ser válida.",
-        "Intercambia el producto con otra persona o utiliza una lista de revisión independiente.",
-        "Registra hallazgos por severidad: crítico, importante o editorial.",
-        "Corrige el producto y conserva una tabla antes-después con justificación."
-      ],
-      "tasks": [
-        "Transfiere el método a un caso distinto de determinación de parámetros influyentes y enumera supuestos que deben revalidarse.",
-        "Construye una explicación alternativa que también conecte ajuste, identificabilidad y análisis local y global.",
-        "Identifica una afirmación que exceda la evidencia y reescríbela.",
-        "Añade una figura o tabla cuya codificación visual pueda auditarse sin depender del color.",
-        "Formula una pregunta de examen que evalúe transferencia y escribe una rúbrica de tres niveles."
-      ],
-      "deliverables": [
-        "Producto revisado.",
-        "Registro antes-después.",
-        "Rúbrica de transferencia."
-      ],
-      "checking_criteria": [
-        "La revisión produce cambios verificables.",
-        "Las limitaciones son específicas.",
-        "La figura conserva unidades y procedencia.",
-        "La nueva pregunta no se responde por memorización."
+        "0: falta el mecanismo o el planteamiento es incompatible con los supuestos.",
+        "1: planteamiento correcto con cálculo, justificación o límite incompleto.",
+        "2: mecanismo, desarrollo, unidades o criterios y comprobación coherentes.",
+        "La autoevaluación orienta el estudio; una entrega revisada por otra persona aporta evidencia adicional."
       ]
     }
   ],
   "common_errors": [
     {
-      "error": "Tratar ajuste como una etiqueta autosuficiente.",
-      "correction": "Definir entidades, escala, relaciones, observables y condiciones antes de usar ajuste en una explicación."
+      "error": "El optimizador convergió: todos los parámetros son únicos.",
+      "correction": "Examine identificabilidad y soluciones alternativas."
     },
     {
-      "error": "Afirmar que una relación entre ajuste y identificabilidad demuestra mecanismo o causalidad.",
-      "correction": "Separar asociación, predicción, intervención y causalidad; proponer una comparación que discrimine explicaciones."
+      "error": "Una curva normalizada revela volumen absoluto.",
+      "correction": "La normalización puede eliminar justamente esa información de escala."
     },
     {
-      "error": "Añadir análisis local y global después de ver el resultado.",
-      "correction": "Predefinir su papel, el análisis y el criterio de interpretación o declarar el análisis como exploratorio."
+      "error": "Sensibilidad e incertidumbre son sinónimos.",
+      "correction": "Una describe respuesta a cambios; la otra conocimiento incompleto o dispersión asignada."
     },
     {
-      "error": "Presentar solo el resultado favorable y omitir controles o discrepancias.",
-      "correction": "Incluir equilibrio estático, solución analítica, refinamiento de discretización, conservación y condición extrema plausible, resultados negativos, fallos y cambios de procedimiento."
+      "error": "Un índice de primer orden pequeño implica irrelevancia.",
+      "correction": "Revise interacciones y orden total."
     },
     {
-      "error": "Generalizar la conclusión de Estimación y sensibilidad al uso clínico o real.",
-      "correction": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+      "error": "Los rangos de entrada no afectan los índices globales.",
+      "correction": "Los índices dependen de la distribución explorada."
+    },
+    {
+      "error": "Una banda de parámetros es automáticamente una banda de predicción observacional.",
+      "correction": "Incluya y declare el modelo de error necesario para nuevas observaciones."
+    },
+    {
+      "error": "Dividir h indefinidamente siempre mejora diferencias finitas.",
+      "correction": "El redondeo y el error del solucionador pueden dominar a pasos muy pequeños."
+    },
+    {
+      "error": "Una transformación logarítmica solo cambia la estética.",
+      "correction": "Cambia error, ponderación y significado del ajuste."
+    },
+    {
+      "error": "Parámetros correlacionados pueden muestrearse sin dependencia.",
+      "correction": "Preserve la distribución conjunta o declare y estudie la aproximación."
+    },
+    {
+      "error": "Más datos del mismo tipo siempre resuelven no identificabilidad estructural.",
+      "correction": "Se necesitan observables o intervenciones que rompan la simetría."
     }
   ],
   "self_assessment": [
     {
-      "question": "¿Cuál es la unidad de observación adecuada para estudiar determinación de parámetros influyentes?",
-      "answer": "Depende de la pregunta; debe declararse una entidad concreta y distinguirse de sus niveles superiores e inferiores.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir células, muestras, sujetos, dispositivos o instituciones como si fueran réplicas equivalentes."
+      "question": "Con residuos 2 y 4 y desviaciones 1 y 2, ¿cuáles son los residuos normalizados?",
+      "answer": "2 y 2.",
+      "reasoning": "Dividir por desviaciones permite comparar discrepancias en escalas de precisión.",
+      "objective_ids": [
+        "U4-LO1"
+      ]
     },
     {
-      "question": "¿Cómo se relacionan ajuste y identificabilidad?",
-      "answer": "Mediante una relación con dirección, condición y evidencia verificable; análisis local y global puede modificar o contextualizar esa relación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Responder con una lista de definiciones sin explicar la relación."
+      "question": "¿Por qué no usar la varianza donde curve_fit espera sigma unidimensional?",
+      "answer": "Porque sigma representa desviación estándar y los residuos ya se elevan al cuadrado.",
+      "reasoning": "Sustituir σ por σ² altera la ponderación prevista.",
+      "objective_ids": [
+        "U4-LO1"
+      ]
     },
     {
-      "question": "¿Qué dato apoya una afirmación sobre análisis local y global?",
-      "answer": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental, elegido de acuerdo con el tipo de afirmación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Usar una fuente secundaria o una visualización sin procedencia como prueba suficiente."
+      "question": "¿Ajustar log(y) y ajustar y minimizan el mismo error?",
+      "answer": "No.",
+      "reasoning": "Las diferencias logarítmicas enfatizan relaciones multiplicativas y cambian la pérdida.",
+      "objective_ids": [
+        "U4-LO1"
+      ]
     },
     {
-      "question": "¿Qué hace que un control sea discriminante?",
-      "answer": "Que las explicaciones rivales predigan resultados diferentes y que el control mida precisamente esa diferencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Añadir un control que no puede cambiar la interpretación."
+      "question": "¿Qué revela una tendencia temporal sistemática en residuos?",
+      "answer": "Una estructura no explicada que requiere revisar modelo o error.",
+      "reasoning": "Una suma de cuadrados pequeña no garantiza residuos compatibles con los supuestos.",
+      "objective_ids": [
+        "U4-LO1"
+      ]
     },
     {
-      "question": "¿Qué debe contener un resultado reproducible?",
-      "answer": "Pregunta, datos o premisas, diccionario, procedimiento, parámetros, versiones, controles, resultados y registro de cambios.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Entregar únicamente una figura final o un archivo ejecutado."
+      "question": "Si solo se observa exp[−(CL/V)t], ¿qué combinación se identifica?",
+      "answer": "La razón CL/V.",
+      "reasoning": "Pares con la misma razón generan exactamente la misma curva.",
+      "objective_ids": [
+        "U4-LO2"
+      ]
     },
     {
-      "question": "¿Cómo se informa una conclusión sensible a un supuesto?",
-      "answer": "Se muestra el resultado bajo valores plausibles, se identifica el punto de cambio y se limita la recomendación.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Elegir el escenario que confirma la conclusión y ocultar los demás."
+      "question": "Si solo se observa z(t)=exp[−(CL/V)t] y V no se conoce por otra vía, ¿infinitas mediciones ideales separan CL de V?",
+      "answer": "No bajo ese modelo de observación.",
+      "reasoning": "La ambigüedad es estructural, no solo falta de precisión.",
+      "objective_ids": [
+        "U4-LO2"
+      ]
     },
     {
-      "question": "¿Qué afirmación no puede sostener esta unidad sobre determinación de parámetros influyentes?",
-      "answer": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Confundir una actividad educativa o un caso simulado con validación real."
+      "question": "¿Qué diferencia un valle plano por ruido de una simetría exacta de parámetros?",
+      "answer": "El primero puede ser práctico; la segunda produce indistinguibilidad incluso con datos ideales.",
+      "reasoning": "La pregunta se resuelve examinando modelo y diseño, no solo éxito del ajuste.",
+      "objective_ids": [
+        "U4-LO2"
+      ]
     },
     {
-      "question": "¿Qué demuestra dominio de Estimación y sensibilidad?",
-      "answer": "Producir un modelo mecánico documentado con verificación y límites auditable, explicar los conceptos, resolver un caso nuevo y corregir errores con evidencia.",
-      "reasoning": "La respuesta debe conectar definición, evidencia, método y límite.",
-      "common_error": "Equiparar dominio con reconocer términos o repetir una solución."
+      "question": "¿Qué medición adicional rompería la ambigüedad CL/V si es fiable?",
+      "answer": "Una medición independiente de V, u otra observación que aporte esa escala.",
+      "reasoning": "Con V conocido se obtiene CL=kV.",
+      "objective_ids": [
+        "U4-LO2"
+      ]
+    },
+    {
+      "question": "¿Qué unidades tiene ∂A/∂k si A está en mg y k en h⁻¹?",
+      "answer": "mg·h.",
+      "reasoning": "Se divide unidad de salida por unidad del parámetro.",
+      "objective_ids": [
+        "U4-LO3"
+      ]
+    },
+    {
+      "question": "¿Qué indica elasticidad −2 cerca de un punto?",
+      "answer": "Un aumento relativo pequeño de 1 % en el parámetro produce aproximadamente −2 % en la salida.",
+      "reasoning": "Es una aproximación local, no válida automáticamente para cambios grandes.",
+      "objective_ids": [
+        "U4-LO3"
+      ]
+    },
+    {
+      "question": "¿Por qué comparar varios tamaños de diferencia finita?",
+      "answer": "Para detectar truncamiento, redondeo y ruido numérico.",
+      "reasoning": "Una derivada calculada con un único h puede ser un artefacto.",
+      "objective_ids": [
+        "U4-LO3"
+      ]
+    },
+    {
+      "question": "¿Qué problema aparece al normalizar sensibilidad por Y cuando Y≈0?",
+      "answer": "La razón puede ser inestable o indefinida.",
+      "reasoning": "Una sensibilidad absoluta puede ser más interpretable en esa región.",
+      "objective_ids": [
+        "U4-LO3"
+      ]
+    },
+    {
+      "question": "¿Un índice de primer orden nulo permite ignorar una variable?",
+      "answer": "No si contribuye por interacciones.",
+      "reasoning": "Debe examinarse el orden total y las condiciones del análisis.",
+      "objective_ids": [
+        "U4-LO4"
+      ]
+    },
+    {
+      "question": "¿Qué cambia al ampliar diez veces el rango de un parámetro en sensibilidad global?",
+      "answer": "La distribución de entradas y, por tanto, la pregunta y posiblemente los índices.",
+      "reasoning": "Los índices no son propiedades universales del nombre del parámetro.",
+      "objective_ids": [
+        "U4-LO4"
+      ]
+    },
+    {
+      "question": "¿Por qué preservar el orden de salidas de un diseño Sobol?",
+      "answer": "El estimador asocia cada salida con combinaciones específicas de entradas.",
+      "reasoning": "Reordenarlas rompe las comparaciones que estiman contribuciones.",
+      "objective_ids": [
+        "U4-LO4"
+      ]
+    },
+    {
+      "question": "¿Sensibilidad alta equivale a identificabilidad alta?",
+      "answer": "No.",
+      "reasoning": "Dos parámetros muy influyentes pueden compensarse y ser indistinguibles.",
+      "objective_ids": [
+        "U4-LO4"
+      ]
+    },
+    {
+      "question": "¿Por qué no muestrear siempre parámetros ajustados de forma independiente?",
+      "answer": "Porque pueden estar correlacionados por la información del ajuste.",
+      "reasoning": "La independencia inventa combinaciones no apoyadas y cambia las bandas de salida.",
+      "objective_ids": [
+        "U4-LO5"
+      ]
+    },
+    {
+      "question": "¿Qué diferencia una banda de media de una de nueva observación?",
+      "answer": "La segunda debe representar además el error de observación pertinente.",
+      "reasoning": "Incertidumbre en la media no incluye necesariamente dispersión de mediciones futuras.",
+      "objective_ids": [
+        "U4-LO5"
+      ]
+    },
+    {
+      "question": "¿Qué debe declararse al presentar una banda obtenida variando solo k?",
+      "answer": "Que excluye incertidumbre en otros parámetros, medición y estructura.",
+      "reasoning": "La banda no resume todas las fuentes de incertidumbre.",
+      "objective_ids": [
+        "U4-LO5"
+      ]
+    },
+    {
+      "question": "¿Puede reducirse error estructural ejecutando más muestras Monte Carlo del mismo modelo?",
+      "answer": "No por ese solo hecho.",
+      "reasoning": "Se estima mejor la distribución condicionada a una estructura que puede ser incorrecta.",
+      "objective_ids": [
+        "U4-LO5"
+      ]
+    },
+    {
+      "question": "¿Por qué datos solo en t=0 no estiman k en A₀e^(−kt)?",
+      "answer": "La predicción inicial es A₀ y su derivada respecto a k vale cero.",
+      "reasoning": "El diseño no observa la dinámica de eliminación.",
+      "objective_ids": [
+        "U4-LO6"
+      ]
+    },
+    {
+      "question": "¿Cómo comprobar un procedimiento de estimación antes de usar datos reales?",
+      "answer": "Generar datos sintéticos con parámetros conocidos y estudiar recuperación en varios conjuntos.",
+      "reasoning": "Permite comparar contra una verdad definida y detectar errores del procedimiento.",
+      "objective_ids": [
+        "U4-LO6"
+      ]
+    },
+    {
+      "question": "¿Por qué guardar resultados de varias inicializaciones?",
+      "answer": "Para detectar mínimos alternativos o direcciones mal determinadas.",
+      "reasoning": "Mostrar solo el mejor intento oculta inestabilidad del ajuste.",
+      "objective_ids": [
+        "U4-LO6"
+      ]
+    },
+    {
+      "question": "¿Qué limita concluir de una recuperación sintética perfecta?",
+      "answer": "Comprueba el caso generado, no validez de la estructura en organismos reales.",
+      "reasoning": "Generador y ajustador pueden compartir el mismo supuesto equivocado para la realidad.",
+      "objective_ids": [
+        "U4-LO6"
+      ]
     }
   ],
   "biomedical_connections": [
     {
-      "topic": "Aplicación principal",
-      "connection": "Determinación de parámetros influyentes."
+      "topic": "Resultado de aprendizaje U4-LO1",
+      "connection": "Construir una función de ajuste coherente con el error de observación."
     },
     {
-      "topic": "Evidencia",
-      "connection": "Cinemática, fuerzas, propiedades constitutivas, calibración, convergencia y comparación experimental."
+      "topic": "Resultado de aprendizaje U4-LO2",
+      "connection": "Distinguir identificabilidad estructural y práctica mediante contraejemplos."
     },
     {
-      "topic": "Calidad",
-      "connection": "Trazabilidad, controles, sensibilidad, reproducibilidad y revisión de discrepancias."
+      "topic": "Resultado de aprendizaje U4-LO3",
+      "connection": "Calcular e interpretar sensibilidad local con unidades y escalas."
     },
     {
-      "topic": "Límite",
-      "connection": "Una predicción mecánica depende de geometría, parámetros y fronteras; no autoriza por sí sola una decisión clínica o quirúrgica."
+      "topic": "Resultado de aprendizaje U4-LO4",
+      "connection": "Diferenciar efectos globales e interacciones bajo supuestos explícitos."
+    },
+    {
+      "topic": "Resultado de aprendizaje U4-LO5",
+      "connection": "Propagar incertidumbre preservando dependencias entre parámetros."
+    },
+    {
+      "topic": "Resultado de aprendizaje U4-LO6",
+      "connection": "Diseñar mediciones y controles de estimación informativos."
     }
   ],
   "sources": [
     {
-      "title": "FEBio User Manual",
-      "organization": "FEBio",
-      "url": "https://help.febio.org/",
-      "type": "documentación",
-      "description": "Elementos finitos para biomecánica y tejidos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "curve_fit",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Mínimos cuadrados no lineales, ponderación y límites de la covarianza local.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "SOFA Framework",
-      "organization": "SOFA Consortium",
-      "url": "https://www.sofa-framework.org/",
-      "type": "software abierto",
-      "description": "Simulación interactiva de sistemas deformables.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Basics: sensitivity analysis",
+      "organization": "SALib",
+      "url": "https://salib.readthedocs.io/en/latest/user_guide/basics.html",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Muestreo, ejecución y análisis; índices de primer orden, interacciones y orden total.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "IT'IS Virtual Population",
-      "organization": "IT'IS Foundation",
-      "url": "https://itis.swiss/virtual-population/virtual-population/overview/",
-      "type": "modelos anatómicos",
-      "description": "Modelos humanos computacionales con documentación.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Think before you fit: parameter identifiability, sensitivity and uncertainty in systems biology models",
+      "organization": "Preston y colaboradores (preprint, 2025)",
+      "url": "https://arxiv.org/abs/2508.18853",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Preprint sobre identificabilidad estructural y práctica; lectura complementaria, sin atribuir revisión por pares.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "3D Print Exchange",
-      "organization": "National Institutes of Health",
-      "url": "https://3d.nih.gov/",
-      "type": "repositorio abierto",
-      "description": "Modelos tridimensionales biomédicos y educativos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "solve_ivp",
+      "organization": "SciPy",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Problemas de valor inicial, métodos, tolerancias y eventos; documentación de software, no validación fisiológica.",
+      "verification_status": "resource_read_2026-10-11"
     },
     {
-      "title": "The Turing Way",
-      "organization": "The Turing Way community",
-      "url": "https://book.the-turing-way.org/",
-      "type": "guía abierta",
-      "description": "Reproducibilidad, pruebas y procedencia de modelos.",
-      "verification_status": "official_or_open_resource_checked_2026-08"
+      "title": "Assessing the Credibility of Computational Modeling and Simulation in Medical Device Submissions",
+      "organization": "FDA",
+      "url": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/assessing-credibility-computational-modeling-and-simulation-medical-device-submissions",
+      "type": "fuente primaria o documentación oficial",
+      "description": "Página de la guía final de 2023: credibilidad para un uso definido y enfoque según riesgo; ámbito de modelos físicos y mecanísticos en dispositivos.",
+      "verification_status": "resource_read_2026-10-11"
     }
   ],
-  "editorial_notice": "Material educativo con desarrollo interno completo y estado review. Requiere revisión disciplinar externa antes de considerarse verificado; no sustituye formación práctica supervisada, evaluación profesional, diagnóstico, tratamiento, certificación ni conformidad regulatoria."
+  "editorial_notice": "Unidad reescrita el 11 de octubre de 2026 con cálculos sintéticos comprobados y preguntas revisadas internamente. Sigue en revisión disciplinar y pedagógica; ni el contenido ni los tests certifican dominio completo. Pendientes revisión independiente, pilotaje y análisis de las respuestas del alumnado.",
+  "assessment_blueprint": {
+    "review_date": "2026-10-11",
+    "review_status": "internal_editorial_review_external_review_pending",
+    "objectives": [
+      {
+        "id": "U4-LO1",
+        "description": "Construir una función de ajuste coherente con el error de observación."
+      },
+      {
+        "id": "U4-LO2",
+        "description": "Distinguir identificabilidad estructural y práctica mediante contraejemplos."
+      },
+      {
+        "id": "U4-LO3",
+        "description": "Calcular e interpretar sensibilidad local con unidades y escalas."
+      },
+      {
+        "id": "U4-LO4",
+        "description": "Diferenciar efectos globales e interacciones bajo supuestos explícitos."
+      },
+      {
+        "id": "U4-LO5",
+        "description": "Propagar incertidumbre preservando dependencias entre parámetros."
+      },
+      {
+        "id": "U4-LO6",
+        "description": "Diseñar mediciones y controles de estimación informativos."
+      }
+    ],
+    "note": "Alineación manual interna: cuatro autoevaluaciones abiertas por cada uno de los seis objetivos. El test reserva una por objetivo y unidad antes de añadir errores, casos y otras preguntas. Esto garantiza representación de objetivos declarados, no de todos los subtemas ni dominio. Pendientes revisión disciplinar externa y pilotaje.",
+    "enforce_objective_coverage": true
+  }
 }
